@@ -54,7 +54,6 @@ pnpm.cmd run tauri build
 
 ## 来源与许可
 
-- 本项目中由 orangeship 原创并拥有版权的现代化程序代码采用 [MIT License](LICENSE)。
 - 规则与兼容性参考来源于 [eraTW 画蛇又添足](https://gitgud.io/era-games-zh/touhou/eratw-sub-modding)；原版及各贡献者的文本、数据和资源仍归各自权利人所有。
 - 本项目是非官方东方 Project 二次创作，使用和再分发时请遵守[东方 Project 二次创作指南](https://touhou-project.news/guideline/)。
 - 图片、字体、派生文本及其他第三方内容不因代码采用 MIT 而被重新许可，详见 [NOTICE.md](NOTICE.md)。
