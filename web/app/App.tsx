@@ -38,7 +38,6 @@ import dishesBundle from "./game/dishes.bundle.json";
 import scenesBundleImport from "./game/scenes.bundle.json";
 import { hydrateAiSettings } from "./ai/store.js";
 import KojoSourceSetup from "./game/pre/KojoSourceSetup.js";
-import { loadBundledKojoRouters } from "./game/bundled-kojo.js";
 
 // Seed the multi-map roam engine with in-map exits from every built map
 // so non-shrine residents actually move (Bug fix 2026-07-04).
@@ -59,8 +58,6 @@ const NOOP_KOJO_ROUTER: DialogueRouter = {
 const NOOP_TRAIN_MESSAGE_ROUTER: TrainMessageRouter = {
   collect: () => [],
 };
-
-const OFFLINE_KOJO_BUNDLE = import.meta.env.VITE_OFFLINE_KOJO_BUNDLE === "1";
 
 const BROWSER_PLAYER_SAVE_KEY = "browser-player";
 
@@ -90,7 +87,6 @@ export default function App() {
   const presentationMode: GamePresentationMode = "classic";
   const tauriRuntime = hasTauriRuntime();
   const kojoSourceValidation = useKojoSourceStore((s) => s.validation);
-  const loadInitialKojoSource = useKojoSourceStore((s) => s.loadInitial);
   const gameState = useGameStateStore((s) => s.state);
   const restoreGameState = useGameStateStore((s) => s.restore);
   const saveGameState = useGameStateStore((s) => s.save);
@@ -121,10 +117,9 @@ export default function App() {
     void hydrateAiSettings();
   }, []);
 
-  // The GitHub/player release does not bundle Kojo prose. Tauri normally reads
-  // the player-selected original source directory and builds parsed nodes
-  // lazily in KojoCache. A local offline package opts into the complete,
-  // staged bundles instead; plain browser builds remain fail-closed by default.
+  // The player selects an original Kojo source directory for every desktop
+  // session. Tauri reads it locally and builds parsed nodes lazily in KojoCache;
+  // plain browser builds cannot access local files and keep dialogue disabled.
   useEffect(() => {
     const callNames = buildCallNames();
     // 拠点来訪 来訪連鎖: inject the 相性 (RELATION) table once (static data).
@@ -154,19 +149,6 @@ export default function App() {
       callNames,
     });
 
-    if (OFFLINE_KOJO_BUNDLE) {
-      void loadBundledKojoRouters(callNames).then(({ dialogueRouter, trainMessageRouter }) => {
-        if (cancelled) return;
-        configureIntent({ dialogueRouter, trainMessageRouter, callNames });
-        console.log(
-          `[eraTW] bundled offline Kojo wired (${Object.keys(callNames).length} callNames)`,
-        );
-      }).catch((error) => {
-        if (!cancelled) console.warn("[eraTW] bundled offline Kojo unavailable; dialogue remains disabled:", error);
-      });
-      return () => { cancelled = true; };
-    }
-
     const selectedSource = kojoSourceValidation?.kojoRoot;
     if (!tauriRuntime || !selectedSource) return () => { cancelled = true; };
 
@@ -189,11 +171,6 @@ export default function App() {
     return () => { cancelled = true; };
   }, [kojoSourceValidation?.kojoRoot, tauriRuntime]);
 
-  // Boot — rehydrate the last player-authorized local Kojo source.
-  useEffect(() => {
-    if (tauriRuntime && !OFFLINE_KOJO_BUNDLE) void loadInitialKojoSource();
-  }, [loadInitialKojoSource, tauriRuntime]);
-
   useEffect(() => {
     if (!tauriRuntime) {
       console.log("[eraTW] browser runtime: local filesystem integration disabled");
@@ -215,10 +192,10 @@ export default function App() {
   // per-change autosave. This matches the original eraTW (manual SAVE/LOAD)
   // and is what makes 读档 meaningful: 存档 writes the file, 读档 restores it,
   // so the player can save a point, do something, and load back. The persisted
-  // file is also what 继续游戏 (and the boot load below) reads.
+  // file is also what 继续游戏 and the startup restore flow read.
 
   const canPlay = gameState !== null;
-  const needsKojoSourceSetup = tauriRuntime && !OFFLINE_KOJO_BUNDLE && !kojoSourceValidation?.isValid;
+  const needsKojoSourceSetup = tauriRuntime && !kojoSourceValidation?.isValid;
 
   const handleCommand = (intent: AgentIntent): void => {
     applyIntentAction(intent);

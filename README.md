@@ -1,76 +1,52 @@
-# eraTW Modern Player Preview
+# eraTW Reforge
 
-eraTW 的现代 Web/Tauri 游戏本体预览仓库。当前版本为 `0.2.0-alpha.1`，目标是以可序列化、可测试的 TypeScript 确定性运行时承载游戏规则，并由 React/Tauri 提供玩家界面。
+eraTW Reforge 是 eraTW 的现代化 Web/Tauri 重制项目。它保留 era 游戏以文字、指令和角色互动为中心的体验，并以现代桌面界面重新实现地图移动、角色状态、指令结算、时间推进、事件、存档和口上显示。
 
-## 仓库边界
+当前版本为 `0.2.0-alpha.1`。这是可以运行和试玩的 Alpha 版本，游戏系统仍在持续补全。
 
-- `web/`：React 玩家端、游戏数据包与 Tauri 桌面壳。
-- `modernization/runtime/`：确定性状态、命令、结算、世界调度和口上路由。
-- `modernization/importer/`：本地读取口上所需的最小解析组件。
-- `modernization/schemas/`：观察、意图和只读快照等共享契约。
-- `modernization/characters/_roles_meta.json`：运行时使用的角色职责元数据。
+## 当前内容
 
-原版 eraTW 的 ERB、CSV、resources、插件和开发审计工作台不在本仓库中；创作者工作台与调试入口也不属于本次玩家版发布。本仓库不包含维护者的 Agent 配置、MCP 配置、调试缓存或本机密钥。
+- 经典文字游戏界面与地图移动
+- 角色状态、关系、时间和世界调度
+- 日常与互动指令、确定性结算及事件流程
+- 存档与读档
+- 从玩家自己的 eraTW 目录读取角色口上
 
-## 口上来源
+部分事件、地图细节、结算规则和口上分支仍在迁移中，因此当前版本还不能视为完整替代原版。
 
-本仓库不附带原版口上正文。第一次启动桌面版时，玩家需要选择以下任一目录：
+## 开始游戏前
 
-- 原版 eraTW 项目根目录；
-- 原版项目的 `ERB` 目录；
-- `ERB/口上・メッセージ関連` 目录本身。
+桌面版每次启动都会要求选择口上来源，验证成功后才会进入游戏。可以选择以下任一目录：
 
-程序只授权读取最终识别出的口上目录，并在实际触发对话时于本机按需解析、缓存；不会上传或改写原文件。仓库中保留的 `kojo-index.json` 和 `kojo.catalog.bundle.json` 仅是路由与选项结构，不含完整口上正文。纯浏览器构建无法读取本机目录，因此对话功能保持关闭。
+- 原版 eraTW 的项目根目录
+- 项目中的 `ERB` 目录
+- `ERB/口上・メッセージ関連` 目录
 
-## 当前状态
+口上目录可以位于电脑上的任意位置，不需要与 eraTW Reforge 放在同一个文件夹。程序只会在本机读取所需文件，不会上传或改写原文件。
 
-这是供备份、协作和试玩的 Alpha 快照，不是正式稳定版。已知仍有未迁移或简化的事件、地图、结算与口上分支；缺少或不支持的路径继续失败关闭。AI 功能默认关闭，不能直接修改权威游戏状态。
+纯浏览器页面无法读取本机口上目录，因此完整体验请使用 Tauri 桌面版。
 
-## 环境要求
+## 从源码运行
 
-- Node.js 20.19 或更高版本
-- pnpm
-- 构建桌面版时需要 Rust 与 Tauri 2 的系统依赖
-
-## 获取与运行
+需要 Node.js 20.19 或更高版本、pnpm，以及 Tauri 2 所需的 Rust 和系统依赖。
 
 ```powershell
 Set-Location web
-pnpm install --frozen-lockfile
+pnpm.cmd install --frozen-lockfile
 pnpm.cmd run tauri dev
 ```
 
-玩家构建：
+构建玩家版：
 
 ```powershell
 Set-Location web
-pnpm.cmd run build:player
+pnpm.cmd run tauri build
 ```
 
-桌面开发：
+## 版本状态
 
-```powershell
-Set-Location web
-pnpm.cmd run tauri dev
-```
-
-## 本地离线包
-
-GitHub 快照不包含完整口上正文。若要制作一个不依赖 pnpm 启动、并把口上一起放进安装包的 Windows 版本，请在拥有完整口上 bundle 的开发 checkout 中执行：
-
-```powershell
-Set-Location web
-pnpm.cmd run package:offline `
-  -KojoBundle "F:\path\to\kojo.bundle.json" `
-  -TrainMessageBundle "F:\path\to\train-message.bundle.json"
-```
-
-脚本只在本机临时复制两个 bundle，构建 Tauri Windows 安装包后立即删除临时输入。产物位于 `web/src-tauri/target/release/bundle/`（通常包含 `.exe` 安装程序和 `.msi`）；最终用户双击安装后即可运行，不需要 Node、pnpm 或原版项目目录。完整口上只进入这个本地安装包，不进入 GitHub 快照，也不会被脚本上传。
-
-## 发布说明
-
-不要提交 `.env*`、`.mcp.json`、API key、Cookie、存档或本机配置。
+`0.2.0-alpha.1` 主要用于试玩、反馈和继续验证迁移结果。后续版本会继续补全原版机制、事件与角色内容，并改善桌面端体验和兼容性。
 
 ## 许可
 
-本快照暂未授予开源许可证。现代化代码、上游衍生文本与资源的权利边界尚在整理；未经权利人许可，请勿再分发。
+本项目目前尚未授予开源许可证。未经相关权利人许可，请勿重新分发项目代码、衍生文本或资源。

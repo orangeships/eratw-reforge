@@ -7,14 +7,14 @@ export default function KojoSourceSetup() {
   return (
     <section className="pre-flow" data-testid="kojo-source-setup">
       <div className="pre-flow__card">
-        <p className="pre-flow__eyebrow">首次启动</p>
-        <h1>连接原版口上</h1>
+        <p className="pre-flow__eyebrow">开始游戏前</p>
+        <h1>选择口上目录</h1>
         <p>
-          本游戏不附带原版口上正文。请选择原版 eraTW 项目根目录、ERB
-          目录，或“口上・メッセージ関連”目录本身。
+          请选择原版 eraTW 项目根目录、ERB 目录，或“口上・メッセージ関連”目录本身。
         </p>
         <p className="muted">
-          文件只在本机读取；触发对话时才解析并写入会话缓存，不会上传或改写原文件。
+          目录可以放在电脑上的任意位置，不需要与本程序位于同一个文件夹。文件只在本机读取，
+          不会上传或改写原文件。
         </p>
 
         {selectedPath && <div className="path">{selectedPath}</div>}
@@ -27,7 +27,7 @@ export default function KojoSourceSetup() {
 
         <div className="row">
           <button type="button" onClick={() => void pickAndValidate()} disabled={loading}>
-            {loading ? "正在校验…" : "选择原版口上目录"}
+            {loading ? "正在校验…" : "选择口上目录"}
           </button>
           {selectedPath && (
             <button type="button" className="secondary" onClick={() => void clear()} disabled={loading}>
