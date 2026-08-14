@@ -1,5 +1,10 @@
 # eraTW Reforge
 
+![Version](https://img.shields.io/badge/version-0.2.0--alpha.1-blue)
+![Status](https://img.shields.io/badge/status-alpha-orange)
+![Platform](https://img.shields.io/badge/platform-Windows-0078D4)
+[![License](https://img.shields.io/badge/code%20license-MIT-green)](LICENSE)
+
 eraTW Reforge 是 eraTW 的现代化 Web/Tauri 重制项目。它保留 era 游戏以文字、指令和角色互动为中心的体验，并以现代桌面界面重新实现地图移动、角色状态、指令结算、时间推进、事件、存档和口上显示。
 
 当前版本为 `0.2.0-alpha.1`。这是可以运行和试玩的 Alpha 版本，游戏系统仍在持续补全。
@@ -47,6 +52,9 @@ pnpm.cmd run tauri build
 
 `0.2.0-alpha.1` 主要用于试玩、反馈和继续验证迁移结果。后续版本会继续补全原版机制、事件与角色内容，并改善桌面端体验和兼容性。
 
-## 许可
+## 来源与许可
 
-本项目目前尚未授予开源许可证。未经相关权利人许可，请勿重新分发项目代码、衍生文本或资源。
+- 本项目中由 orangeship 原创并拥有版权的现代化程序代码采用 [MIT License](LICENSE)。
+- 规则与兼容性参考来源于 [eraTW 画蛇又添足](https://gitgud.io/era-games-zh/touhou/eratw-sub-modding)；原版及各贡献者的文本、数据和资源仍归各自权利人所有。
+- 本项目是非官方东方 Project 二次创作，使用和再分发时请遵守[东方 Project 二次创作指南](https://touhou-project.news/guideline/)。
+- 图片、字体、派生文本及其他第三方内容不因代码采用 MIT 而被重新许可，详见 [NOTICE.md](NOTICE.md)。
