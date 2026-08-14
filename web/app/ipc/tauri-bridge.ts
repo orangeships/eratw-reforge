@@ -1,22 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-/**
- * Phase 1 + 2.2 + 2.4 IPC bridge.
- *
- * All calls go through Tauri `invoke`. Frontend NEVER touches the FS directly;
- * Rust is the only side that may stat / open / read the project tree.
- */
-
-export interface ProjectValidation {
-  path: string;
-  hasErb: boolean;
-  hasCsv: boolean;
-  hasEmueraConfig: boolean;
-  isValid: boolean;
-  missing: string[];
-}
-
+/** Player/runtime IPC bridge. It exposes only the Kojo-source and save/load
+ * commands registered by the Player Tauri shell. */
 export interface KojoSourceValidation {
   path: string;
   kojoRoot: string | null;
@@ -31,32 +16,6 @@ export interface KojoSourceValidation {
  */
 export async function ping(): Promise<string> {
   return await invoke<string>("ping");
-}
-
-/**
- * Validate that a directory is an eraTW project root.
- * Returns which of {ERB/, CSV/, emuera.config} are present and which are missing.
- *
- * Does NOT recurse, does NOT read CSV/ERB contents — pure stat() over the
- * three well-known paths.
- */
-export async function validateProject(path: string): Promise<ProjectValidation> {
-  return await invoke<ProjectValidation>("validate_project_path", { path });
-}
-
-/**
- * Open a native folder picker and return the chosen absolute path (or null).
- * Uses the Tauri dialog plugin. Lazy-imported so the bundle stays small.
- */
-export async function pickProjectDir(): Promise<string | null> {
-  const { open } = await import("@tauri-apps/plugin-dialog");
-  const result = await open({
-    directory: true,
-    multiple: false,
-    title: "选择 eraTW 项目根目录",
-  });
-  if (Array.isArray(result)) return result[0] ?? null;
-  return result ?? null;
 }
 
 /** Select the original eraTW project, ERB directory, or Kojo directory. */
@@ -76,134 +35,17 @@ export async function validateKojoSource(path: string): Promise<KojoSourceValida
 }
 
 /**
- * Phase 2.1+2.2+2.3 — read a pre-generated JSON manifest from disk via Rust.
- *
- * Rust resolves `<projectRoot>/../modernization/out/<name>.json`. The build
- * script (`pnpm build-manifests`) is what produces those JSON files; the
- * Rust side never parses CSV / XML / ERB itself.
- *
- * Valid manifest names: `variable-sizes`, `characters`, `flags` (Phase 2.1)
- * + `resources`, `plugin-dicts` (Phase 2.2)
- * + `functions`, `commands` (Phase 2.3)
- * + `kojos`, `event-messages` (Phase 2.3-kojo).
- * Anything else returns an error from the Rust side (path-traversal guard).
- */
-export type ManifestName =
-  | "variable-sizes"
-  | "characters"
-  | "flags"
-  | "resources"
-  | "plugin-dicts"
-  | "functions"
-  | "commands"
-  | "kojos"
-  | "event-messages";
-
-export interface ManifestEnvelope {
-  name: ManifestName;
-  path: string;
-  data: unknown; // typed by the caller per-manifest
-}
-
-export async function getManifest(
-  projectRoot: string,
-  name: ManifestName,
-): Promise<ManifestEnvelope> {
-  return await invoke<ManifestEnvelope>("get_manifest", {
-    projectRoot,
-    name,
-  });
-}
-
-/**
- * Phase 2.2 — ask Rust to allow `<projectRoot>/resources` in the `asset://`
- * protocol scope. The renderer needs this before it can render
- * `<img src={convertFileSrc(absolutePath)} />` for sprite images.
- *
- * Idempotent on the Rust side: calling twice with the same root is a no-op.
- * Returns the absolute resources directory path (handy for building
- * `convertFileSrc` URLs).
- */
-export async function addAssetScope(projectRoot: string): Promise<string> {
-  return await invoke<string>("add_asset_scope", { projectRoot });
-}
-
-/**
- * Register `<projectRoot>/ERB/口上・メッセージ関連` for `asset://` access.
+ * Register the selected Kojo source for `asset://` access.
  * Local/Tauri play uses this so KojoCache can synchronously fetch original
- * ERB files on demand instead of bundling all parsed口上 into the frontend.
+ * ERB files on demand instead of bundling all parsed dialogue into the
+ * frontend.
  */
 export async function addKojoSourceScope(sourcePath: string): Promise<string> {
   return await invoke<string>("add_kojo_source_scope", { sourcePath });
 }
 
-/**
- * Phase 2.4 — start watching `<projectRoot>/{CSV,ERB,resources}` for changes.
- * On any fs event Rust spawns `node build-manifests.mjs` to rebuild manifests,
- * then emits either `manifest://rebuilt` or `manifest://error` (subscribe via
- * {@link onManifestRebuilt} / {@link onManifestError}).
- *
- * Idempotent: calling twice swaps the watcher. Throws on non-directory roots.
- */
-export async function startWatch(projectRoot: string): Promise<void> {
-  await invoke<void>("start_watch", { projectRoot });
-}
-
-/**
- * Phase 2.4 — tear down the active watcher. Idempotent.
- */
-export async function stopWatch(): Promise<void> {
-  await invoke<void>("stop_watch");
-}
-
-/**
- * Phase 2.4 — payload of a `manifest://rebuilt` event. Emitted after a
- * successful `pnpm build-manifests` run triggered by a fs event.
- */
-export interface ManifestRebuiltEvent {
-  projectRoot: string;
-  generatedAt: string; // ISO 8601 UTC
-  durationMs: number;
-  manifestCount: number; // always 9 for now
-}
-
-/**
- * Phase 2.4 — payload of a `manifest://error` event. Emitted when a rebuild
- * fails (bad CSV, missing node, …) or when the notify watcher itself errors.
- */
-export interface ManifestErrorEvent {
-  projectRoot: string;
-  phase: "watch" | "rebuild" | "spawn";
-  message: string; // stderr tail (~2KB max) for rebuild/ spawn, or notify message for watch
-  exitCode: number | null;
-}
-
-/**
- * Subscribe to "manifest://rebuilt" events. Returns an unlisten function —
- * call it on component unmount to avoid leaks. The handler runs in Tauri's
- * IPC event loop, NOT in a React render phase.
- */
-export async function onManifestRebuilt(
-  handler: (event: ManifestRebuiltEvent) => void,
-): Promise<UnlistenFn> {
-  return await listen<ManifestRebuiltEvent>("manifest://rebuilt", (e) => {
-    handler(e.payload);
-  });
-}
-
-/**
- * Subscribe to "manifest://error" events. See {@link onManifestRebuilt}.
- */
-export async function onManifestError(
-  handler: (event: ManifestErrorEvent) => void,
-): Promise<UnlistenFn> {
-  return await listen<ManifestErrorEvent>("manifest://error", (e) => {
-    handler(e.payload);
-  });
-}
-
 // =====================================================================
-// Phase 4 — GameState persistence (save_state / load_state)
+// GameState persistence (save_state / load_state)
 //
 // Multi-slot (2026-07-05): three manual save slots. Each slot is a
 // distinct backend file/localStorage key derived by suffixing the base

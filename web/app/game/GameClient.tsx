@@ -1,12 +1,12 @@
 /**
- * Phase 4.5D — GameClient (the player-facing 3-zone shell).
+ * GameClient — the player-facing 3-zone shell.
  *
  * The default surface (per spec): top status / middle scene+portraits /
  * bottom command grid, with the action interaction box (S4) as an
  * overlay. Renders for `screen === "mainGame"`; pre-game and developer
  * screens are other surfaces (4.5E/4.5F).
  *
- * Data flow (承重 path, survives to Phase 5):
+ * Data flow:
  *   - location = GameState.master.location (changed only via intents, S1).
  *   - scene = SCENES_BY_LOCATION[location]; present立绘 = selectPresentCharas.
  *   - exit button → ISSUE_COMMAND(moveNo) → applyIntent sets location →
@@ -128,11 +128,9 @@ const WALK_ACTIVITY: Record<number, string> = {
 };
 
 /**
- * Phase 5.5 + 7.5 — the real, ported, target-directed commands the
- * resolver can settle (replaces the disposable MOCK_ACTION_MENU).
- * These issue real COMF ids on the present NPC; the dialogue
- * reaction (kojo) is now real (Phase 6.4). 移動/就寝 stay on the
- * scene-exit model.
+ * Live target-directed commands the resolver can settle. These issue real
+ * command IDs on the present NPC; the dialogue reaction (kojo) is real too.
+ * Movement and sleep stay on the scene-exit model.
  */
 /** commands.bundle.json shape: commandNo → { label, category }. The tracked
  *  label source (built by `scripts/build-commands.ts`); availability is decided
@@ -245,12 +243,11 @@ const TRIAL_RUN = false;
 const SCHEDULER_ON = false;
 
 /**
- * 多地图 (2026-06-19) — open the second walkable map (人間の里, 44 rooms).
- * Only TWO regions are actually built: 博麗神社 + 人間の里. Cross-map exits
- * between them (and 自宅) are real; 竹林 / 霧の湖 / 紅魔館 are NOT built yet
- * (no scene exits point there — any mention is stale comment). This decouples
- * "which maps are walkable" from the two TRIAL_RUN gates (autonomous scheduler
- * tick + intimate-action menu).
+ * Multi-map travel is driven by the data-backed `REGIONS` catalog and the
+ * registered move handlers. Map IDs 0–10 currently have scenes and handlers;
+ * map ID 11 remains rendered but disabled until its scene data is authored.
+ * This is independent of the two `TRIAL_RUN` gates (autonomous scheduler tick
+ * and intimate-action menu).
  */
 const OPEN_MULTI_MAP = true;
 
@@ -551,7 +548,7 @@ export default function GameClient(props: GameClientProps) {
   const allExits = scene?.exits ?? [];
   const exits =
     TRIAL_RUN && !OPEN_MULTI_MAP ? allExits.filter((e) => staysInShrine(e.toLocation)) : allExits;
-  // Phase 8.6 — two-map interaction. The action menu is shown whenever
+  // Multi-map interaction. The action menu is shown whenever
   // ANY NPC (charaNum > 0) is present, not just 霊夢: village residents
   // (慧音/阿求/小鈴/…) become interactable in their own map. The player
   // picks the active target by clicking a portrait; we auto-default to
@@ -896,7 +893,7 @@ export default function GameClient(props: GameClientProps) {
     if (!interaction.open) {
       openInteraction(commandNo, state.eventLog.length);
     }
-    // Real COMF command on the present NPC (Phase 5.5). The resolver
+    // Real COMF command on the present NPC. The resolver
     // settles it for real; with no NPC present `target` is omitted and
     // the handler blocks gracefully.
     onIntent(issueCommand(commandNo, actionTarget));

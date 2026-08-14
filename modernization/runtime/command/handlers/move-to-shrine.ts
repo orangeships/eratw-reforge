@@ -1,7 +1,7 @@
 /**
  * Phase 7.3 — `COMF701` (move → 神社).
  *
- * Replaces the Phase 4.5B mock MOCK_MOVE_TABLE. The handler moves the master
+ * Replaces the early prototype movement table. The handler moves the master
  * to the canonical `神社:参道` location (used by `selectPresentCharas` as the
  * key) via `setSlotLocation`, which keeps `CFLAG:300現在位置` in sync with the
  * location string (2026-06-23 two-track fix), and advances the in-game clock

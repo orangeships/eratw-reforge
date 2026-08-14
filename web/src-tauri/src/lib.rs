@@ -1,15 +1,14 @@
-//! eraTW Modern Player entry.
+//! Native Tauri shell for the eraTW Modern Player.
 //!
-//! Commands exposed to the renderer:
-//!   - `ping`                            — liveness check; returns `"pong-<unix-millis>"`.
-//!   - `validate_kojo_source_path` (project) — normalize a player-selected source.
-//!   - `add_kojo_source_scope` (asset_scope) — authorize only the normalized Kojo tree.
-//!   - `save_state`        (game_state) — Phase 4: persist GameState JSON to app data dir.
-//!   - `load_state`        (game_state) — Phase 4: read GameState JSON from app data dir.
+//! The renderer invokes only the commands registered below:
+//!   - `ping` — liveness check; returns `"pong-<unix-millis>"`.
+//!   - `validate_kojo_source_path` — normalize a player-selected source.
+//!   - `add_kojo_source_scope` — authorize the normalized Kojo tree.
+//!   - `save_state` / `load_state` — persist GameState JSON in the app data dir.
 //!
 //! Plugins enabled:
-//!   - tauri-plugin-dialog — native folder picker.
-//!   - tauri-plugin-store  — persisted settings file (renderer side only).
+//!   - `tauri-plugin-dialog` — native folder picker.
+//!   - `tauri-plugin-store` — persisted settings file (renderer side only).
 
 mod asset_scope;
 mod game_state;

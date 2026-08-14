@@ -1,42 +1,20 @@
 /**
- * Phase 4 — `applyIntent` stub.
+ * Apply validated intents through the deterministic runtime.
  *
- * Pure TS function: `(state, intent) -> newState`. The new state
- * always has the previous `eventLog` plus one or more new entries
- * describing what the intent would have done. No real settlement —
- * Phase 5+ `CommandResolver` and Phase 6 `DialogueRouter` will
- * replace the per-intent bodies.
- *
- * Pipeline (every intent):
- *   1. Run `validateIntent` (Phase 2.6). On `ok: false`, append a
- *      `STATUS_MESSAGE` with `source: "validator"` and return.
- *   2. Switch on `intent.kind`. Each branch appends an event
- *      describing what would have happened and returns.
- *
- * Why pure TS (not a Tauri command):
- *   Phase 5+ settlement is in TS per the audit. Going through IPC
- *   for a pure function would be a needless round-trip and would
- *   force us to mirror `GameState`/`AgentIntent` in Rust. The
- *   Tauri commands are reserved for the I/O that genuinely needs
- *   them: `load_state` / `save_state` (Phase 4B) and
- *   `get_initial_state` (manifest merge).
- *
- * JSON-safety:
- *   `GameState` is JSON-safe by construction (Phase 3.1). The
- *   returned state is a new object reference; input is not
- *   mutated.
+ * `applyIntent` remains a pure state adapter: command intents go through the
+ * live `CommandCatalog`/`CommandResolver`, while world ticks and extension
+ * seam registrations stay in their owning runtime modules. The returned
+ * state is a new object with the appended observation events; the input is
+ * never mutated.
  */
 
 import { validateIntent, type ValidationResult } from "../../schemas/validator.js";
 import type {
   AgentIntent,
-  DialogueLine,
-  Narration,
   ObservationEvent,
   StatusMessage,
 } from "../../schemas/types.js";
 import type { GameState } from "../state/index.js";
-import { moveTargetFor, mockActionFor } from "./mock-commands.js";
 import {
   CommandCatalog,
   resolveCommand,
@@ -181,14 +159,8 @@ export interface ApplyIntentResult {
 }
 
 /**
- * Apply an `AgentIntent` to a `GameState`, returning a new state
- * with the resulting events appended to `eventLog`. The input
- * state is never mutated.
- *
- * Phase 4 stub: no real settlement. Each intent kind just
- * appends a `STATUS_MESSAGE` (and a `COMMAND_ISSUED` for
- * `ISSUE_COMMAND`) describing what would have happened. Phase 5+
- * replaces the per-kind branches.
+ * Apply an `AgentIntent` to a `GameState`, returning a new state with the
+ * resulting events appended to `eventLog`. The input state is never mutated.
  */
 /**
  * Phase 6D — resolve player-visible `%CALLNAME%` tokens.
@@ -344,9 +316,9 @@ function applyIntentCore(
         commandNo: intent.commandNo,
       };
 
-      // Phase 5F — real settlement: if a handler is registered for this
-      // commandNo, the resolver is the authority. Un-ported commands
-      // fall through to the 4.5 mock tables below (no regression).
+      // The live catalog and resolver are the only command settlement path.
+      // A command not present in the catalog is reported as unavailable below
+      // and never receives fabricated movement, narration, or dialogue.
       if (liveCatalog.has(intent.commandNo)) {
         // Deterministic per-(command, clock) seed so replays reproduce.
         const rng = createRng(intent.commandNo * 100003 + state.time.tickValue);
@@ -407,60 +379,13 @@ function applyIntentCore(
         };
       }
 
-      // Phase 4.5B mock MOVE table (disposable; Phase 5 deletes it).
-      // A move is the only ISSUE_COMMAND that changes GameState in the
-      // 4.5 prototype: it sets master.location (S1) so the SceneRouter
-      // re-projects. The path UI→intent→applyIntent→location survives
-      // into Phase 5; only this table is thrown away.
-      const moveTo = moveTargetFor(intent.commandNo);
-      if (moveTo !== undefined) {
-        const narration: Narration = {
-          kind: "NARRATION",
-          timestamp: ts,
-          text: `移动到 ${moveTo}。`,
-        };
-        return {
-          state: {
-            ...state,
-            master: { ...state.master, location: moveTo },
-            eventLog: [...state.eventLog, evt, narration],
-          },
-          appended: [evt, narration],
-          validation,
-          transitions: [],
-          commandOutcome: "ok",
-        };
-      }
-
-      // Phase 4.5B mock ACTION table (disposable). Action commands
-      // (COMF/SCOMF, S4) emit canned narration + one kojo line into the
-      // same eventLog; the UI routes them into the interaction box.
-      // No GameState mutation in the mock (master ref is preserved).
-      const action = mockActionFor(intent.commandNo);
-      if (action !== undefined) {
-        const narration: Narration = {
-          kind: "NARRATION",
-          timestamp: ts,
-          text: action.narration,
-        };
-        const line: DialogueLine = {
-          kind: "DIALOGUE_LINE",
-          timestamp: ts,
-          charaNum: action.dialogue.charaNum,
-          text: action.dialogue.text,
-        };
-        return {
-          ...appendAndReturn(state, [evt, narration, line], validation),
-          commandOutcome: "ok",
-        };
-      }
-
-      // Fallback: Phase 4 behavior — generic "queued, no resolver" line.
+      // Unknown commands fail closed: log the intent and expose a diagnostic,
+      // without mutating gameplay state or inventing player-facing output.
       const status: StatusMessage = {
         kind: "STATUS_MESSAGE",
         timestamp: ts,
         source: "apply_intent",
-        text: `command ${intent.commandNo} queued, no resolver yet (Phase 5)`,
+        text: `command ${intent.commandNo} is unavailable`,
       };
       return {
         ...appendAndReturn(state, [evt, status], validation),

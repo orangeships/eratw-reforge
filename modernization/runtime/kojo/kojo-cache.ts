@@ -56,8 +56,6 @@ import { iraiKojoSelectorKeys } from "./irai-kojo.js";
 import { iraiIdToClient } from "../state/commission.js";
 import { resolveDiaryCall } from "./diary-call.js";
 import { getTflag, TFLAG_ID } from "../state/tflag.js";
-import { renderKojoText } from "./text-renderer.js";
-import { validateKojoLines } from "./text-validation.js";
 import type { GameState } from "../state/index.js";
 import type { Rng } from "../command/types.js";
 
@@ -118,10 +116,6 @@ const ROLEPLAY_FLAG_ID = 1030;
 
 /** CFLAG:扮演口上有. */
 const ROLEPLAY_KOJO_PRESENT_CFLAG_ID = 373;
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 /** Cache key → parsed KojoNode tree. */
 type CacheEntry = { node: KojoNode; cachedAt: number };
@@ -1021,13 +1015,13 @@ export class KojoCache implements DialogueRouter {
       this.nameResolver?.(charaNum) ?? state.charas[charaNum]?.callName ?? "对方";
     const clientName =
       this.nameResolver?.(clientId) ?? state.charas[clientId]?.callName ?? targetName;
-      const context = {
-        nameResolver: (reference: number | string) =>
-          typeof reference === "number" ? this.nameResolver?.(reference) : undefined,
-        callNameAliases: { CHARA: targetName, CLIENT_ID: clientName },
-        subjectAliases: { CLIENT_ID: clientId },
-        targetName,
-      };
+    const context = {
+      nameResolver: (reference: number | string) =>
+        typeof reference === "number" ? this.nameResolver?.(reference) : undefined,
+      callNameAliases: { CHARA: targetName, CLIENT_ID: clientName },
+      subjectAliases: { CLIENT_ID: clientId },
+      targetName,
+    };
 
     // The generic IRAI wrapper TRYCALLs a name hook and then a local-id hook.
     // Those calls are additive upstream, so never stop after the first body.
@@ -1039,46 +1033,6 @@ export class KojoCache implements DialogueRouter {
       if (node) out.push(...resolveKojoNode(node, charaNum, state, rng, [], context));
     }
     return out;
-
-    const localId = Math.abs(iraiId % 1000);
-    const candidates: { file: string; text: string }[] = [];
-    for (const file of variant!.files) {
-      // IRAI bodies are authored in `*_依頼.ERB`; avoid touching unrelated
-      // command/event files on every commission action.
-      if (!file.includes("依頼") && !file.toUpperCase().includes("IRAI")) continue;
-      try {
-        const text = this.readText(file, this.projectRoot);
-        if (text.includes("M_KOJO_IRAI")) candidates.push({ file, text });
-      } catch {
-        // Missing local source should behave like "no kojo" rather than
-        // breaking a command.
-      }
-    }
-
-    for (const { text } of candidates) {
-      const blocks = this.extractIraiFunctionBlocks(text, charaNum);
-      const ordered = blocks.sort((a, b) => {
-        const exactA = new RegExp(`_${localId}_K${charaNum}(?:\\b|\\()`).test(a.name);
-        const exactB = new RegExp(`_${localId}_K${charaNum}(?:\\b|\\()`).test(b.name);
-        if (exactA !== exactB) return exactA ? -1 : 1;
-        const genericA = new RegExp(`IRAI_K${charaNum}(?:\\b|\\()`).test(a.name);
-        const genericB = new RegExp(`IRAI_K${charaNum}(?:\\b|\\()`).test(b.name);
-        if (genericA !== genericB) return genericA ? 1 : -1;
-        return a.startLine - b.startLine;
-      });
-      for (const block of ordered) {
-        const lines = this.extractIraiSceneLines(
-          block,
-          scene,
-          charaNum,
-          iraiId,
-          state,
-          rng,
-        );
-        if (lines.length > 0) return lines;
-      }
-    }
-    return [];
   }
 
   // ── Cache stats (for tests / debug) ───────────────────────────────
@@ -1134,94 +1088,6 @@ export class KojoCache implements DialogueRouter {
     // Fall back to default variant
     if (variantCode !== "") return vis.find((v) => v.variantCode === "");
     return undefined;
-  }
-
-  private extractIraiFunctionBlocks(
-    text: string,
-    charaNum: number,
-  ): { name: string; startLine: number; lines: string[] }[] {
-    const lines = text.split(/\r?\n/);
-    const blocks: { name: string; startLine: number; lines: string[] }[] = [];
-    for (let i = 0; i < lines.length; i += 1) {
-      const m = /^@([^\s(]+)(?:\s|\(|$)/.exec(lines[i]!.trim());
-      if (!m) continue;
-      const name = m[1]!;
-      if (!name.includes("M_KOJO_IRAI") || !new RegExp(`K${charaNum}(?:\\b|_|\\()`).test(name)) {
-        continue;
-      }
-      let end = lines.length;
-      for (let j = i + 1; j < lines.length; j += 1) {
-        if (/^@/.test(lines[j]!.trim())) {
-          end = j;
-          break;
-        }
-      }
-      blocks.push({ name, startLine: i + 1, lines: lines.slice(i, end) });
-    }
-    return blocks;
-  }
-
-  private extractIraiSceneLines(
-    block: { name: string; startLine: number; lines: string[] },
-    scene: string,
-    charaNum: number,
-    iraiId: number,
-    state: Readonly<GameState>,
-    rng: Rng,
-  ): KojoLine[] {
-    const caseRe = new RegExp(`^\\s*CASE\\s+\\"${escapeRegExp(scene)}\\"\\s*$`);
-    const start = block.lines.findIndex((line) => caseRe.test(line.trim()));
-    if (start < 0) return [];
-
-    const out: KojoLine[] = [];
-    for (let i = start + 1; i < block.lines.length; i += 1) {
-      const raw = block.lines[i]!;
-      const trimmed = raw.trim();
-      if (/^(CASE\b|ENDSELECT\b)/.test(trimmed)) break;
-      if (trimmed.startsWith(";") || trimmed.length === 0) continue;
-      const m = /^(PRINTFORMW|PRINTFORMDW|PRINTFORMDL|PRINTFORMD|PRINTFORML|PRINTFORM|PRINTDW|PRINTDL|PRINTW|PRINTD|PRINTL|PRINT)\b\s*(.*)$/.exec(trimmed);
-      if (!m) continue;
-      const text = this.substituteIraiText(
-        m[2] ?? "",
-        charaNum,
-        iraiId,
-        state,
-        rng,
-      ).trim();
-      if (!text) continue;
-      out.push({
-        form: m[1] as KojoLine["form"],
-        text,
-        line: block.startLine + i,
-      });
-    }
-    return validateKojoLines(out).length > 0 ? [] : out;
-  }
-
-  private substituteIraiText(
-    text: string,
-    charaNum: number,
-    iraiId: number,
-    state: Readonly<GameState>,
-    rng: Rng,
-  ): string {
-    const targetName = this.nameResolver?.(charaNum) ?? state.charas[charaNum]?.callName ?? "对方";
-    const clientId = Math.trunc(iraiId / 1000);
-    const clientName = this.nameResolver?.(clientId) ?? state.charas[clientId]?.callName ?? targetName;
-    return renderKojoText(text, {
-      state,
-      charaNum,
-      rng,
-      nameResolver: (reference) =>
-        typeof reference === "number"
-          ? this.nameResolver?.(reference)
-          : undefined,
-      aliases: {
-        CHARA: targetName,
-        CLIENT_ID: clientName,
-      },
-      targetName,
-    });
   }
 
   /** Get a parsed KojoNode from cache, or parse and cache it. */
