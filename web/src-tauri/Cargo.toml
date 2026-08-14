@@ -1,0 +1,36 @@
+[package]
+name = "eratw-modern-player"
+version = "0.2.0-alpha.1"
+description = "eraTW Modern Player Preview"
+authors = ["eraTW Modernization Team"]
+edition = "2021"
+rust-version = "1.77"
+
+# The `_lib` suffix may seem redundant but is necessary to make the lib name unique
+# and not collide with the bin name. This seems to be only an issue on Windows.
+[lib]
+name = "eratw_modern_player_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.1", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2.0"
+tauri-plugin-store = "2.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Pin alloc-no-stdlib to v2 — Tauri 2's brotli dep still uses v2's Allocator
+# trait, but the resolver may pull v3 from elsewhere and unify. Forcing v2 keeps
+# brotli's expected trait signature intact. Note: crates.io name is
+# alloc-no-stdlib (hyphen); the Rust source uses alloc_no_stdlib (underscore).
+alloc-no-stdlib = "=2.0.4"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

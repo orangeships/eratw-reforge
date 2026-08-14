@@ -1,0 +1,1726 @@
+[
+  {
+    "idx": 1,
+    "file_ja": "霊夢",
+    "cn_short": "灵梦",
+    "cn_full": "博丽 灵梦",
+    "cn_called": "灵梦",
+    "candidates": [
+      "霊夢",
+      "博丽 灵梦",
+      "灵梦"
+    ]
+  },
+  {
+    "idx": 2,
+    "file_ja": "る～こと",
+    "cn_short": "留琴",
+    "cn_full": "留琴",
+    "cn_called": "留琴",
+    "candidates": [
+      "る～こと",
+      "留琴"
+    ]
+  },
+  {
+    "idx": 3,
+    "file_ja": "カナ",
+    "cn_short": "卡娜·安娜贝拉尔",
+    "cn_full": "卡娜·安娜贝拉尔",
+    "cn_called": "卡娜",
+    "candidates": [
+      "カナ",
+      "卡娜·安娜贝拉尔",
+      "卡娜"
+    ]
+  },
+  {
+    "idx": 4,
+    "file_ja": "魅魔",
+    "cn_short": "魅魔",
+    "cn_full": "魅魔",
+    "cn_called": "魅魔",
+    "candidates": [
+      "魅魔"
+    ]
+  },
+  {
+    "idx": 5,
+    "file_ja": "サニー",
+    "cn_short": "桑尼米尔克",
+    "cn_full": "桑尼米尔克",
+    "cn_called": "桑尼",
+    "candidates": [
+      "サニー",
+      "桑尼米尔克",
+      "桑尼"
+    ]
+  },
+  {
+    "idx": 6,
+    "file_ja": "ルナ",
+    "cn_short": "露娜切露德",
+    "cn_full": "露娜切露德",
+    "cn_called": "露娜",
+    "candidates": [
+      "ルナ",
+      "露娜切露德",
+      "露娜"
+    ]
+  },
+  {
+    "idx": 7,
+    "file_ja": "スター",
+    "cn_short": "斯塔萨菲雅",
+    "cn_full": "斯塔萨菲雅",
+    "cn_called": "斯塔",
+    "candidates": [
+      "スター",
+      "斯塔萨菲雅",
+      "斯塔"
+    ]
+  },
+  {
+    "idx": 8,
+    "file_ja": "ちゆり",
+    "cn_short": "千百合",
+    "cn_full": "北白河 千百合",
+    "cn_called": "千百合",
+    "candidates": [
+      "ちゆり",
+      "北白河 千百合",
+      "千百合"
+    ]
+  },
+  {
+    "idx": 9,
+    "file_ja": "夢美",
+    "cn_short": "梦美",
+    "cn_full": "冈崎 梦美",
+    "cn_called": "梦美",
+    "candidates": [
+      "夢美",
+      "冈崎 梦美",
+      "梦美"
+    ]
+  },
+  {
+    "idx": 10,
+    "file_ja": "萃香",
+    "cn_short": "萃香",
+    "cn_full": "伊吹 萃香",
+    "cn_called": "萃香",
+    "candidates": [
+      "萃香",
+      "伊吹 萃香"
+    ]
+  },
+  {
+    "idx": 11,
+    "file_ja": "魔理沙",
+    "cn_short": "魔理沙",
+    "cn_full": "雾雨 魔理沙",
+    "cn_called": "魔理沙",
+    "candidates": [
+      "魔理沙",
+      "雾雨 魔理沙"
+    ]
+  },
+  {
+    "idx": 12,
+    "file_ja": "ルーミア",
+    "cn_short": "露米娅",
+    "cn_full": "露米娅",
+    "cn_called": "露米娅",
+    "candidates": [
+      "ルーミア",
+      "露米娅"
+    ]
+  },
+  {
+    "idx": 13,
+    "file_ja": "大妖精",
+    "cn_short": "大妖精",
+    "cn_full": "大妖精",
+    "cn_called": "大妖精",
+    "candidates": [
+      "大妖精"
+    ]
+  },
+  {
+    "idx": 14,
+    "file_ja": "チルノ",
+    "cn_short": "琪露诺",
+    "cn_full": "琪露诺",
+    "cn_called": "琪露诺",
+    "candidates": [
+      "チルノ",
+      "琪露诺"
+    ]
+  },
+  {
+    "idx": 15,
+    "file_ja": "咲夜",
+    "cn_short": "咲夜",
+    "cn_full": "十六夜 咲夜",
+    "cn_called": "咲夜",
+    "candidates": [
+      "咲夜",
+      "十六夜 咲夜"
+    ]
+  },
+  {
+    "idx": 16,
+    "file_ja": "レミリア",
+    "cn_short": "蕾米莉亚·斯卡蕾特",
+    "cn_full": "蕾米莉亚·斯卡蕾特",
+    "cn_called": "蕾米",
+    "candidates": [
+      "レミリア",
+      "蕾米莉亚·斯卡蕾特",
+      "蕾米"
+    ]
+  },
+  {
+    "idx": 17,
+    "file_ja": "アリス",
+    "cn_short": "爱丽丝·玛格特洛依德",
+    "cn_full": "爱丽丝·玛格特洛依德",
+    "cn_called": "爱丽丝",
+    "candidates": [
+      "アリス",
+      "爱丽丝·玛格特洛依德",
+      "爱丽丝"
+    ]
+  },
+  {
+    "idx": 18,
+    "file_ja": "リリーＷ",
+    "cn_short": "莉莉白",
+    "cn_full": "莉莉白",
+    "cn_called": "莉莉白",
+    "candidates": [
+      "リリーＷ",
+      "莉莉白"
+    ]
+  },
+  {
+    "idx": 19,
+    "file_ja": "リリーＢ",
+    "cn_short": "莉莉黑",
+    "cn_full": "莉莉黑",
+    "cn_called": "莉莉黑",
+    "candidates": [
+      "リリーＢ",
+      "莉莉黑"
+    ]
+  },
+  {
+    "idx": 20,
+    "file_ja": "リリカ",
+    "cn_short": "莉莉卡·普莉兹姆利巴",
+    "cn_full": "莉莉卡·普莉兹姆利巴",
+    "cn_called": "莉莉卡",
+    "candidates": [
+      "リリカ",
+      "莉莉卡·普莉兹姆利巴",
+      "莉莉卡"
+    ]
+  },
+  {
+    "idx": 21,
+    "file_ja": "メルラン",
+    "cn_short": "梅露兰·普莉兹姆利巴",
+    "cn_full": "梅露兰·普莉兹姆利巴",
+    "cn_called": "梅露兰",
+    "candidates": [
+      "メルラン",
+      "梅露兰·普莉兹姆利巴",
+      "梅露兰"
+    ]
+  },
+  {
+    "idx": 22,
+    "file_ja": "ルナサ",
+    "cn_short": "露娜萨·普莉兹姆利巴",
+    "cn_full": "露娜萨·普莉兹姆利巴",
+    "cn_called": "露娜萨",
+    "candidates": [
+      "ルナサ",
+      "露娜萨·普莉兹姆利巴",
+      "露娜萨"
+    ]
+  },
+  {
+    "idx": 23,
+    "file_ja": "妖夢",
+    "cn_short": "妖梦",
+    "cn_full": "魂魄 妖梦",
+    "cn_called": "妖梦",
+    "candidates": [
+      "妖夢",
+      "魂魄 妖梦",
+      "妖梦"
+    ]
+  },
+  {
+    "idx": 24,
+    "file_ja": "橙",
+    "cn_short": "橙",
+    "cn_full": "橙",
+    "cn_called": "橙",
+    "candidates": [
+      "橙"
+    ]
+  },
+  {
+    "idx": 25,
+    "file_ja": "藍",
+    "cn_short": "蓝",
+    "cn_full": "八云 蓝",
+    "cn_called": "蓝",
+    "candidates": [
+      "藍",
+      "八云 蓝",
+      "蓝"
+    ]
+  },
+  {
+    "idx": 26,
+    "file_ja": "紫",
+    "cn_short": "紫",
+    "cn_full": "八云 紫",
+    "cn_called": "紫",
+    "candidates": [
+      "紫",
+      "八云 紫"
+    ]
+  },
+  {
+    "idx": 27,
+    "file_ja": "リグル",
+    "cn_short": "莉格露·奈特巴格",
+    "cn_full": "莉格露·奈特巴格",
+    "cn_called": "莉格露",
+    "candidates": [
+      "リグル",
+      "莉格露·奈特巴格",
+      "莉格露"
+    ]
+  },
+  {
+    "idx": 28,
+    "file_ja": "ミスティア",
+    "cn_short": "米斯蒂娅·萝蕾拉",
+    "cn_full": "米斯蒂娅·萝蕾拉",
+    "cn_called": "米斯蒂娅",
+    "candidates": [
+      "ミスティア",
+      "米斯蒂娅·萝蕾拉",
+      "米斯蒂娅"
+    ]
+  },
+  {
+    "idx": 29,
+    "file_ja": "文",
+    "cn_short": "文",
+    "cn_full": "射命丸 文",
+    "cn_called": "文",
+    "candidates": [
+      "文",
+      "射命丸 文"
+    ]
+  },
+  {
+    "idx": 30,
+    "file_ja": "映姫",
+    "cn_short": "映姬",
+    "cn_full": "四季 映姬",
+    "cn_called": "映姬",
+    "candidates": [
+      "映姫",
+      "四季 映姬",
+      "映姬"
+    ]
+  },
+  {
+    "idx": 31,
+    "file_ja": "早苗",
+    "cn_short": "早苗",
+    "cn_full": "东风谷 早苗",
+    "cn_called": "早苗",
+    "candidates": [
+      "早苗",
+      "东风谷 早苗"
+    ]
+  },
+  {
+    "idx": 32,
+    "file_ja": "神奈子",
+    "cn_short": "神奈子",
+    "cn_full": "八坂 神奈子",
+    "cn_called": "神奈子",
+    "candidates": [
+      "神奈子",
+      "八坂 神奈子"
+    ]
+  },
+  {
+    "idx": 33,
+    "file_ja": "諏訪子",
+    "cn_short": "诹访子",
+    "cn_full": "洩矢 诹访子",
+    "cn_called": "诹访子",
+    "candidates": [
+      "諏訪子",
+      "洩矢 诹访子",
+      "诹访子"
+    ]
+  },
+  {
+    "idx": 34,
+    "file_ja": "天子",
+    "cn_short": "天子",
+    "cn_full": "比那名居 天子",
+    "cn_called": "天子",
+    "candidates": [
+      "天子",
+      "比那名居 天子"
+    ]
+  },
+  {
+    "idx": 35,
+    "file_ja": "衣玖",
+    "cn_short": "衣玖",
+    "cn_full": "永江 衣玖",
+    "cn_called": "衣玖",
+    "candidates": [
+      "衣玖",
+      "永江 衣玖"
+    ]
+  },
+  {
+    "idx": 36,
+    "file_ja": "お燐",
+    "cn_short": "燐",
+    "cn_full": "火焰猫 燐",
+    "cn_called": "阿燐",
+    "candidates": [
+      "お燐",
+      "火焰猫 燐",
+      "燐",
+      "阿燐"
+    ]
+  },
+  {
+    "idx": 37,
+    "file_ja": "お空",
+    "cn_short": "空",
+    "cn_full": "灵乌路 空",
+    "cn_called": "阿空",
+    "candidates": [
+      "お空",
+      "灵乌路 空",
+      "空",
+      "阿空"
+    ]
+  },
+  {
+    "idx": 38,
+    "file_ja": "こいし",
+    "cn_short": "恋",
+    "cn_full": "古明地 恋",
+    "cn_called": "恋",
+    "candidates": [
+      "こいし",
+      "古明地 恋",
+      "恋"
+    ]
+  },
+  {
+    "idx": 39,
+    "file_ja": "ナズーリン",
+    "cn_short": "纳兹琳",
+    "cn_full": "纳兹琳",
+    "cn_called": "纳兹琳",
+    "candidates": [
+      "ナズーリン",
+      "纳兹琳"
+    ]
+  },
+  {
+    "idx": 40,
+    "file_ja": "小傘",
+    "cn_short": "小伞",
+    "cn_full": "多多良 小伞",
+    "cn_called": "小伞",
+    "candidates": [
+      "小傘",
+      "多多良 小伞",
+      "小伞"
+    ]
+  },
+  {
+    "idx": 41,
+    "file_ja": "ぬえ",
+    "cn_short": "鵺",
+    "cn_full": "封兽 鵺",
+    "cn_called": "鵺",
+    "candidates": [
+      "ぬえ",
+      "封兽 鵺",
+      "鵺"
+    ]
+  },
+  {
+    "idx": 42,
+    "file_ja": "はたて",
+    "cn_short": "果",
+    "cn_full": "姬海棠 果",
+    "cn_called": "果",
+    "candidates": [
+      "はたて",
+      "姬海棠 果",
+      "果"
+    ]
+  },
+  {
+    "idx": 43,
+    "file_ja": "華扇",
+    "cn_short": "华扇",
+    "cn_full": "茨木 华扇",
+    "cn_called": "华扇",
+    "candidates": [
+      "華扇",
+      "茨木 华扇",
+      "华扇"
+    ]
+  },
+  {
+    "idx": 44,
+    "file_ja": "エレン",
+    "cn_short": "艾伦",
+    "cn_full": "艾伦",
+    "cn_called": "艾伦",
+    "candidates": [
+      "エレン",
+      "艾伦"
+    ]
+  },
+  {
+    "idx": 45,
+    "file_ja": "理香子",
+    "cn_short": "理香子",
+    "cn_full": "朝仓 理香子",
+    "cn_called": "理香子",
+    "candidates": [
+      "理香子",
+      "朝仓 理香子"
+    ]
+  },
+  {
+    "idx": 46,
+    "file_ja": "明羅",
+    "cn_short": "明罗",
+    "cn_full": "明罗",
+    "cn_called": "明罗",
+    "candidates": [
+      "明羅",
+      "明罗"
+    ]
+  },
+  {
+    "idx": 47,
+    "file_ja": "里香",
+    "cn_short": "里香",
+    "cn_full": "里香",
+    "cn_called": "里香",
+    "candidates": [
+      "里香"
+    ]
+  },
+  {
+    "idx": 48,
+    "file_ja": "ルイズ",
+    "cn_short": "露易兹",
+    "cn_full": "露易兹",
+    "cn_called": "露易兹",
+    "candidates": [
+      "ルイズ",
+      "露易兹"
+    ]
+  },
+  {
+    "idx": 49,
+    "file_ja": "さとり",
+    "cn_short": "觉",
+    "cn_full": "古明地 觉",
+    "cn_called": "觉",
+    "candidates": [
+      "さとり",
+      "古明地 觉",
+      "觉"
+    ]
+  },
+  {
+    "idx": 50,
+    "file_ja": "フラン",
+    "cn_short": "芙兰朵露·斯卡蕾特",
+    "cn_full": "芙兰朵露·斯卡蕾特",
+    "cn_called": "芙兰",
+    "candidates": [
+      "フラン",
+      "芙兰朵露·斯卡蕾特",
+      "芙兰"
+    ]
+  },
+  {
+    "idx": 51,
+    "file_ja": "にとり",
+    "cn_short": "河城荷取",
+    "cn_full": "河城荷取",
+    "cn_called": "荷取",
+    "candidates": [
+      "河城荷取",
+      "荷取",
+      "にとり"
+    ]
+  },
+  {
+    "idx": 52,
+    "file_ja": "鈴仙",
+    "cn_short": "铃仙·优昙华院·因幡",
+    "cn_full": "铃仙·优昙华院·因幡",
+    "cn_called": "铃仙",
+    "candidates": [
+      "鈴仙",
+      "铃仙·优昙华院·因幡",
+      "铃仙"
+    ]
+  },
+  {
+    "idx": 53,
+    "file_ja": "てゐ",
+    "cn_short": "帝",
+    "cn_full": "因幡 帝",
+    "cn_called": "帝",
+    "candidates": [
+      "てゐ",
+      "因幡 帝",
+      "帝"
+    ]
+  },
+  {
+    "idx": 54,
+    "file_ja": "パチュリー",
+    "cn_short": "帕秋莉·诺蕾姬",
+    "cn_full": "帕秋莉·诺蕾姬",
+    "cn_called": "帕秋莉",
+    "candidates": [
+      "パチュリー",
+      "帕秋莉·诺蕾姬",
+      "帕秋莉"
+    ]
+  },
+  {
+    "idx": 55,
+    "file_ja": "白蓮",
+    "cn_short": "白莲",
+    "cn_full": "圣 白莲",
+    "cn_called": "白莲",
+    "candidates": [
+      "白蓮",
+      "圣 白莲",
+      "白莲"
+    ]
+  },
+  {
+    "idx": 56,
+    "file_ja": "神子",
+    "cn_short": "神子",
+    "cn_full": "丰聪耳 神子",
+    "cn_called": "神子",
+    "candidates": [
+      "神子",
+      "丰聪耳 神子"
+    ]
+  },
+  {
+    "idx": 57,
+    "file_ja": "こころ",
+    "cn_short": "心",
+    "cn_full": "秦 心",
+    "cn_called": "心",
+    "candidates": [
+      "こころ",
+      "秦 心",
+      "心"
+    ]
+  },
+  {
+    "idx": 58,
+    "file_ja": "美鈴",
+    "cn_short": "美铃",
+    "cn_full": "红 美铃",
+    "cn_called": "美铃",
+    "candidates": [
+      "美鈴",
+      "红 美铃",
+      "美铃"
+    ]
+  },
+  {
+    "idx": 59,
+    "file_ja": "小悪魔",
+    "cn_short": "小恶魔",
+    "cn_full": "小恶魔",
+    "cn_called": "小恶魔",
+    "candidates": [
+      "小悪魔",
+      "小恶魔"
+    ]
+  },
+  {
+    "idx": 60,
+    "file_ja": "パルスィ",
+    "cn_short": "帕露西",
+    "cn_full": "水桥 帕露西",
+    "cn_called": "帕露西",
+    "candidates": [
+      "パルスィ",
+      "水桥 帕露西",
+      "帕露西"
+    ]
+  },
+  {
+    "idx": 61,
+    "file_ja": "妹紅",
+    "cn_short": "妹红",
+    "cn_full": "藤原 妹红",
+    "cn_called": "妹红",
+    "candidates": [
+      "妹紅",
+      "藤原 妹红",
+      "妹红"
+    ]
+  },
+  {
+    "idx": 62,
+    "file_ja": "輝夜",
+    "cn_short": "辉夜",
+    "cn_full": "蓬莱山 辉夜",
+    "cn_called": "辉夜",
+    "candidates": [
+      "輝夜",
+      "蓬莱山 辉夜",
+      "辉夜"
+    ]
+  },
+  {
+    "idx": 63,
+    "file_ja": "影狼",
+    "cn_short": "影狼",
+    "cn_full": "今泉 影狼",
+    "cn_called": "影狼",
+    "candidates": [
+      "影狼",
+      "今泉 影狼"
+    ]
+  },
+  {
+    "idx": 64,
+    "file_ja": "勇儀",
+    "cn_short": "勇仪",
+    "cn_full": "星熊 勇仪",
+    "cn_called": "勇仪",
+    "candidates": [
+      "勇儀",
+      "星熊 勇仪",
+      "勇仪"
+    ]
+  },
+  {
+    "idx": 65,
+    "file_ja": "椛",
+    "cn_short": "椛",
+    "cn_full": "犬走 椛",
+    "cn_called": "椛",
+    "candidates": [
+      "椛",
+      "犬走 椛"
+    ]
+  },
+  {
+    "idx": 66,
+    "file_ja": "幽々子",
+    "cn_short": "幽幽子",
+    "cn_full": "西行寺 幽幽子",
+    "cn_called": "幽幽子",
+    "candidates": [
+      "幽々子",
+      "西行寺 幽幽子",
+      "幽幽子"
+    ]
+  },
+  {
+    "idx": 67,
+    "file_ja": "慧音",
+    "cn_short": "慧音",
+    "cn_full": "上白泽 慧音",
+    "cn_called": "慧音",
+    "candidates": [
+      "慧音",
+      "上白泽 慧音"
+    ]
+  },
+  {
+    "idx": 68,
+    "file_ja": "幽香",
+    "cn_short": "幽香",
+    "cn_full": "风见 幽香",
+    "cn_called": "幽香",
+    "candidates": [
+      "幽香",
+      "风见 幽香"
+    ]
+  },
+  {
+    "idx": 69,
+    "file_ja": "マミゾウ",
+    "cn_short": "猯藏",
+    "cn_full": "二岩 猯藏",
+    "cn_called": "猯藏",
+    "candidates": [
+      "マミゾウ",
+      "二岩 猯藏",
+      "猯藏"
+    ]
+  },
+  {
+    "idx": 70,
+    "file_ja": "小鈴",
+    "cn_short": "小铃",
+    "cn_full": "本居 小铃",
+    "cn_called": "小铃",
+    "candidates": [
+      "小鈴",
+      "本居 小铃",
+      "小铃"
+    ]
+  },
+  {
+    "idx": 71,
+    "file_ja": "針妙丸",
+    "cn_short": "针妙丸",
+    "cn_full": "少名 针妙丸",
+    "cn_called": "针妙丸",
+    "candidates": [
+      "針妙丸",
+      "少名 针妙丸",
+      "针妙丸"
+    ]
+  },
+  {
+    "idx": 72,
+    "file_ja": "永琳",
+    "cn_short": "永琳",
+    "cn_full": "八意 永琳",
+    "cn_called": "永琳",
+    "candidates": [
+      "永琳",
+      "八意 永琳"
+    ]
+  },
+  {
+    "idx": 73,
+    "file_ja": "蛮奇",
+    "cn_short": "赤蛮奇",
+    "cn_full": "赤蛮奇",
+    "cn_called": "蛮奇",
+    "candidates": [
+      "蛮奇",
+      "赤蛮奇"
+    ]
+  },
+  {
+    "idx": 74,
+    "file_ja": "レティ",
+    "cn_short": "蕾蒂·霍瓦特洛克",
+    "cn_full": "蕾蒂·霍瓦特洛克",
+    "cn_called": "蕾蒂",
+    "candidates": [
+      "レティ",
+      "蕾蒂·霍瓦特洛克",
+      "蕾蒂"
+    ]
+  },
+  {
+    "idx": 75,
+    "file_ja": "メディスン",
+    "cn_short": "梅蒂欣·梅兰可莉",
+    "cn_full": "梅蒂欣·梅兰可莉",
+    "cn_called": "梅蒂欣",
+    "candidates": [
+      "メディスン",
+      "梅蒂欣·梅兰可莉",
+      "梅蒂欣"
+    ]
+  },
+  {
+    "idx": 76,
+    "file_ja": "小町",
+    "cn_short": "小町",
+    "cn_full": "小野冢 小町",
+    "cn_called": "小町",
+    "candidates": [
+      "小町",
+      "小野冢 小町"
+    ]
+  },
+  {
+    "idx": 77,
+    "file_ja": "静葉",
+    "cn_short": "静叶",
+    "cn_full": "秋 静叶",
+    "cn_called": "静叶",
+    "candidates": [
+      "静葉",
+      "秋 静叶",
+      "静叶"
+    ]
+  },
+  {
+    "idx": 78,
+    "file_ja": "穣子",
+    "cn_short": "穰子",
+    "cn_full": "秋 穰子",
+    "cn_called": "穰子",
+    "candidates": [
+      "穣子",
+      "秋 穰子",
+      "穰子"
+    ]
+  },
+  {
+    "idx": 79,
+    "file_ja": "雛",
+    "cn_short": "雏",
+    "cn_full": "键山 雏",
+    "cn_called": "雏",
+    "candidates": [
+      "雛",
+      "键山 雏",
+      "雏"
+    ]
+  },
+  {
+    "idx": 80,
+    "file_ja": "阿求",
+    "cn_short": "阿求",
+    "cn_full": "稗田 阿求",
+    "cn_called": "阿求",
+    "candidates": [
+      "阿求",
+      "稗田 阿求"
+    ]
+  },
+  {
+    "idx": 81,
+    "file_ja": "蓮子",
+    "cn_short": "莲子",
+    "cn_full": "宇佐见 莲子",
+    "cn_called": "莲子",
+    "candidates": [
+      "蓮子",
+      "宇佐见 莲子",
+      "莲子"
+    ]
+  },
+  {
+    "idx": 82,
+    "file_ja": "メリー",
+    "cn_short": "玛艾露贝莉·赫恩",
+    "cn_full": "玛艾露贝莉·赫恩",
+    "cn_called": "梅莉",
+    "candidates": [
+      "メリー",
+      "玛艾露贝莉·赫恩",
+      "梅莉"
+    ]
+  },
+  {
+    "idx": 83,
+    "file_ja": "キスメ",
+    "cn_short": "琪斯美",
+    "cn_full": "琪斯美",
+    "cn_called": "琪斯美",
+    "candidates": [
+      "キスメ",
+      "琪斯美"
+    ]
+  },
+  {
+    "idx": 84,
+    "file_ja": "ヤマメ",
+    "cn_short": "山女",
+    "cn_full": "黑谷 山女",
+    "cn_called": "山女",
+    "candidates": [
+      "ヤマメ",
+      "黑谷 山女",
+      "山女"
+    ]
+  },
+  {
+    "idx": 85,
+    "file_ja": "一輪",
+    "cn_short": "一轮",
+    "cn_full": "云居 一轮",
+    "cn_called": "一轮",
+    "candidates": [
+      "一輪",
+      "云居 一轮",
+      "一轮"
+    ]
+  },
+  {
+    "idx": 86,
+    "file_ja": "水蜜",
+    "cn_short": "水蜜",
+    "cn_full": "村纱 水蜜",
+    "cn_called": "村纱",
+    "candidates": [
+      "水蜜",
+      "村纱 水蜜",
+      "村纱"
+    ]
+  },
+  {
+    "idx": 87,
+    "file_ja": "星",
+    "cn_short": "星",
+    "cn_full": "寅丸 星",
+    "cn_called": "星",
+    "candidates": [
+      "星",
+      "寅丸 星"
+    ]
+  },
+  {
+    "idx": 88,
+    "file_ja": "響子",
+    "cn_short": "响子",
+    "cn_full": "幽谷 响子",
+    "cn_called": "响子",
+    "candidates": [
+      "響子",
+      "幽谷 响子",
+      "响子"
+    ]
+  },
+  {
+    "idx": 89,
+    "file_ja": "芳香",
+    "cn_short": "芳香",
+    "cn_full": "宫古 芳香",
+    "cn_called": "芳香",
+    "candidates": [
+      "芳香",
+      "宫古 芳香"
+    ]
+  },
+  {
+    "idx": 90,
+    "file_ja": "青娥",
+    "cn_short": "青娥",
+    "cn_full": "霍 青娥",
+    "cn_called": "青娥",
+    "candidates": [
+      "青娥",
+      "霍 青娥"
+    ]
+  },
+  {
+    "idx": 91,
+    "file_ja": "屠自古",
+    "cn_short": "屠自古",
+    "cn_full": "苏我 屠自古",
+    "cn_called": "屠自古",
+    "candidates": [
+      "屠自古",
+      "苏我 屠自古"
+    ]
+  },
+  {
+    "idx": 92,
+    "file_ja": "布都",
+    "cn_short": "布都",
+    "cn_full": "物部 布都",
+    "cn_called": "布都",
+    "candidates": [
+      "布都",
+      "物部 布都"
+    ]
+  },
+  {
+    "idx": 93,
+    "file_ja": "わかさぎ姫",
+    "cn_short": "若鹭姬",
+    "cn_full": "若鹭姬",
+    "cn_called": "若鹭姬",
+    "candidates": [
+      "わかさぎ姫",
+      "若鹭姬"
+    ]
+  },
+  {
+    "idx": 94,
+    "file_ja": "弁々",
+    "cn_short": "弁弁",
+    "cn_full": "九十九 弁弁",
+    "cn_called": "弁弁",
+    "candidates": [
+      "弁々",
+      "九十九 弁弁",
+      "弁弁"
+    ]
+  },
+  {
+    "idx": 95,
+    "file_ja": "八橋",
+    "cn_short": "八桥",
+    "cn_full": "九十九 八桥",
+    "cn_called": "八桥",
+    "candidates": [
+      "八橋",
+      "九十九 八桥",
+      "八桥"
+    ]
+  },
+  {
+    "idx": 96,
+    "file_ja": "雷鼓",
+    "cn_short": "雷鼓",
+    "cn_full": "堀川 雷鼓",
+    "cn_called": "雷鼓",
+    "candidates": [
+      "雷鼓",
+      "堀川 雷鼓"
+    ]
+  },
+  {
+    "idx": 97,
+    "file_ja": "正邪",
+    "cn_short": "正邪",
+    "cn_full": "鬼人 正邪",
+    "cn_called": "正邪",
+    "candidates": [
+      "正邪",
+      "鬼人 正邪"
+    ]
+  },
+  {
+    "idx": 98,
+    "file_ja": "依姫",
+    "cn_short": "依姬",
+    "cn_full": "绵月 依姬",
+    "cn_called": "依姬",
+    "candidates": [
+      "依姫",
+      "绵月 依姬",
+      "依姬"
+    ]
+  },
+  {
+    "idx": 99,
+    "file_ja": "豊姫",
+    "cn_short": "丰姬",
+    "cn_full": "绵月 丰姬",
+    "cn_called": "丰姬",
+    "candidates": [
+      "豊姫",
+      "绵月 丰姬",
+      "丰姬"
+    ]
+  },
+  {
+    "idx": 100,
+    "file_ja": "レイセン",
+    "cn_short": "铃仙二号",
+    "cn_full": "铃仙二号",
+    "cn_called": "铃仙二号",
+    "candidates": [
+      "レイセン",
+      "铃仙二号"
+    ]
+  },
+  {
+    "idx": 101,
+    "file_ja": "朱鷺子",
+    "cn_short": "朱鹭子",
+    "cn_full": "朱鹭子",
+    "cn_called": "朱鹭子",
+    "candidates": [
+      "朱鷺子",
+      "朱鹭子"
+    ]
+  },
+  {
+    "idx": 102,
+    "file_ja": "神綺",
+    "cn_short": "神绮",
+    "cn_full": "神绮",
+    "cn_called": "神绮",
+    "candidates": [
+      "神綺",
+      "神绮"
+    ]
+  },
+  {
+    "idx": 103,
+    "file_ja": "夢子",
+    "cn_short": "梦子",
+    "cn_full": "梦子",
+    "cn_called": "梦子",
+    "candidates": [
+      "夢子",
+      "梦子"
+    ]
+  },
+  {
+    "idx": 104,
+    "file_ja": "ユキ",
+    "cn_short": "雪",
+    "cn_full": "雪",
+    "cn_called": "雪",
+    "candidates": [
+      "ユキ",
+      "雪"
+    ]
+  },
+  {
+    "idx": 105,
+    "file_ja": "マイ",
+    "cn_short": "舞",
+    "cn_full": "舞",
+    "cn_called": "舞",
+    "candidates": [
+      "マイ",
+      "舞"
+    ]
+  },
+  {
+    "idx": 106,
+    "file_ja": "菫子",
+    "cn_short": "堇子",
+    "cn_full": "宇佐见 堇子",
+    "cn_called": "堇子",
+    "candidates": [
+      "菫子",
+      "宇佐见 堇子",
+      "堇子"
+    ]
+  },
+  {
+    "idx": 107,
+    "file_ja": "清蘭",
+    "cn_short": "清兰",
+    "cn_full": "清兰",
+    "cn_called": "清兰",
+    "candidates": [
+      "清蘭",
+      "清兰"
+    ]
+  },
+  {
+    "idx": 108,
+    "file_ja": "鈴瑚",
+    "cn_short": "铃瑚",
+    "cn_full": "铃瑚",
+    "cn_called": "铃瑚",
+    "candidates": [
+      "鈴瑚",
+      "铃瑚"
+    ]
+  },
+  {
+    "idx": 109,
+    "file_ja": "ドレミー",
+    "cn_short": "哆来咪·苏伊特",
+    "cn_full": "哆来咪·苏伊特",
+    "cn_called": "哆来咪",
+    "candidates": [
+      "ドレミー",
+      "哆来咪·苏伊特",
+      "哆来咪"
+    ]
+  },
+  {
+    "idx": 110,
+    "file_ja": "サグメ",
+    "cn_short": "探女",
+    "cn_full": "稀神 探女",
+    "cn_called": "探女",
+    "candidates": [
+      "サグメ",
+      "稀神 探女",
+      "探女"
+    ]
+  },
+  {
+    "idx": 111,
+    "file_ja": "クラウンピース",
+    "cn_short": "克劳恩皮丝",
+    "cn_full": "克劳恩皮丝",
+    "cn_called": "皮丝",
+    "candidates": [
+      "クラウンピース",
+      "克劳恩皮丝",
+      "皮丝"
+    ]
+  },
+  {
+    "idx": 112,
+    "file_ja": "純狐",
+    "cn_short": "纯狐",
+    "cn_full": "纯狐",
+    "cn_called": "纯狐",
+    "candidates": [
+      "純狐",
+      "纯狐"
+    ]
+  },
+  {
+    "idx": 113,
+    "file_ja": "ヘカーティア",
+    "cn_short": "赫卡提亚·拉碧斯拉祖利",
+    "cn_full": "赫卡提亚·拉碧斯拉祖利",
+    "cn_called": "赫卡提亚",
+    "candidates": [
+      "ヘカーティア",
+      "赫卡提亚·拉碧斯拉祖利",
+      "赫卡提亚"
+    ]
+  },
+  {
+    "idx": 114,
+    "file_ja": "くるみ",
+    "cn_short": "胡桃",
+    "cn_full": "胡桃",
+    "cn_called": "胡桃",
+    "candidates": [
+      "くるみ",
+      "胡桃"
+    ]
+  },
+  {
+    "idx": 115,
+    "file_ja": "エリー",
+    "cn_short": "艾丽",
+    "cn_full": "艾丽",
+    "cn_called": "艾丽",
+    "candidates": [
+      "エリー",
+      "艾丽"
+    ]
+  },
+  {
+    "idx": 116,
+    "file_ja": "夢月",
+    "cn_short": "梦月",
+    "cn_full": "梦月",
+    "cn_called": "梦月",
+    "candidates": [
+      "夢月",
+      "梦月"
+    ]
+  },
+  {
+    "idx": 117,
+    "file_ja": "幻月",
+    "cn_short": "幻月",
+    "cn_full": "幻月",
+    "cn_called": "幻月",
+    "candidates": [
+      "幻月"
+    ]
+  },
+  {
+    "idx": 118,
+    "file_ja": "ラルバ",
+    "cn_short": "爱塔妮缇拉尔瓦",
+    "cn_full": "爱塔妮缇拉尔瓦",
+    "cn_called": "拉尔瓦",
+    "candidates": [
+      "ラルバ",
+      "爱塔妮缇拉尔瓦",
+      "拉尔瓦"
+    ]
+  },
+  {
+    "idx": 119,
+    "file_ja": "ネムノ",
+    "cn_short": "合欢乃",
+    "cn_full": "坂田 合欢乃",
+    "cn_called": "合欢乃",
+    "candidates": [
+      "ネムノ",
+      "坂田 合欢乃",
+      "合欢乃"
+    ]
+  },
+  {
+    "idx": 120,
+    "file_ja": "あうん",
+    "cn_short": "阿吽",
+    "cn_full": "高丽野 阿吽",
+    "cn_called": "阿吽",
+    "candidates": [
+      "あうん",
+      "高丽野 阿吽",
+      "阿吽"
+    ]
+  },
+  {
+    "idx": 121,
+    "file_ja": "成美",
+    "cn_short": "成美",
+    "cn_full": "矢田寺 成美",
+    "cn_called": "成美",
+    "candidates": [
+      "成美",
+      "矢田寺 成美"
+    ]
+  },
+  {
+    "idx": 122,
+    "file_ja": "舞",
+    "cn_short": "舞",
+    "cn_full": "丁礼田 舞",
+    "cn_called": "舞",
+    "candidates": [
+      "舞",
+      "丁礼田 舞"
+    ]
+  },
+  {
+    "idx": 123,
+    "file_ja": "里乃",
+    "cn_short": "里乃",
+    "cn_full": "尔子田 里乃",
+    "cn_called": "里乃",
+    "candidates": [
+      "里乃",
+      "尔子田 里乃"
+    ]
+  },
+  {
+    "idx": 124,
+    "file_ja": "隠岐奈",
+    "cn_short": "隐岐奈",
+    "cn_full": "摩多罗 隐岐奈",
+    "cn_called": "隐岐奈",
+    "candidates": [
+      "隠岐奈",
+      "摩多罗 隐岐奈",
+      "隐岐奈"
+    ]
+  },
+  {
+    "idx": 125,
+    "file_ja": "女苑",
+    "cn_short": "女苑",
+    "cn_full": "依神 女苑",
+    "cn_called": "女苑",
+    "candidates": [
+      "女苑",
+      "依神 女苑"
+    ]
+  },
+  {
+    "idx": 126,
+    "file_ja": "紫苑",
+    "cn_short": "紫苑",
+    "cn_full": "依神 紫苑",
+    "cn_called": "紫苑",
+    "candidates": [
+      "紫苑",
+      "依神 紫苑"
+    ]
+  },
+  {
+    "idx": 127,
+    "file_ja": "瓔花",
+    "cn_short": "璎花",
+    "cn_full": "戎 璎花",
+    "cn_called": "璎花",
+    "candidates": [
+      "瓔花",
+      "戎 璎花",
+      "璎花"
+    ]
+  },
+  {
+    "idx": 128,
+    "file_ja": "潤美",
+    "cn_short": "润美",
+    "cn_full": "牛崎 润美",
+    "cn_called": "润美",
+    "candidates": [
+      "潤美",
+      "牛崎 润美",
+      "润美"
+    ]
+  },
+  {
+    "idx": 129,
+    "file_ja": "久侘歌",
+    "cn_short": "久侘歌",
+    "cn_full": "庭渡 久侘歌",
+    "cn_called": "久侘歌",
+    "candidates": [
+      "久侘歌",
+      "庭渡 久侘歌"
+    ]
+  },
+  {
+    "idx": 130,
+    "file_ja": "八千慧",
+    "cn_short": "八千慧",
+    "cn_full": "吉吊 八千慧",
+    "cn_called": "八千慧",
+    "candidates": [
+      "八千慧",
+      "吉吊 八千慧"
+    ]
+  },
+  {
+    "idx": 131,
+    "file_ja": "磨弓",
+    "cn_short": "磨弓",
+    "cn_full": "杖刀偶 磨弓",
+    "cn_called": "磨弓",
+    "candidates": [
+      "磨弓",
+      "杖刀偶 磨弓"
+    ]
+  },
+  {
+    "idx": 132,
+    "file_ja": "袿姫",
+    "cn_short": "袿姬",
+    "cn_full": "埴安神 袿姬",
+    "cn_called": "袿姬",
+    "candidates": [
+      "袿姫",
+      "埴安神 袿姬",
+      "袿姬"
+    ]
+  },
+  {
+    "idx": 133,
+    "file_ja": "早鬼",
+    "cn_short": "早鬼",
+    "cn_full": "骊驹 早鬼",
+    "cn_called": "早鬼",
+    "candidates": [
+      "早鬼",
+      "骊驹 早鬼"
+    ]
+  },
+  {
+    "idx": 134,
+    "file_ja": "美宵",
+    "cn_short": "美宵",
+    "cn_full": "奥野田 美宵",
+    "cn_called": "美宵",
+    "candidates": [
+      "美宵",
+      "奥野田 美宵"
+    ]
+  },
+  {
+    "idx": 135,
+    "file_ja": "ミケ",
+    "cn_short": "三花",
+    "cn_full": "豪德寺 三花",
+    "cn_called": "三花",
+    "candidates": [
+      "ミケ",
+      "豪德寺 三花",
+      "三花"
+    ]
+  },
+  {
+    "idx": 136,
+    "file_ja": "たかね",
+    "cn_short": "高岭",
+    "cn_full": "山城 高岭",
+    "cn_called": "高岭",
+    "candidates": [
+      "たかね",
+      "山城 高岭",
+      "高岭"
+    ]
+  },
+  {
+    "idx": 137,
+    "file_ja": "駒草",
+    "cn_short": "山如",
+    "cn_full": "驹草 山如",
+    "cn_called": "驹草",
+    "candidates": [
+      "駒草",
+      "驹草 山如",
+      "山如",
+      "驹草"
+    ]
+  },
+  {
+    "idx": 138,
+    "file_ja": "魅須丸",
+    "cn_short": "魅须丸",
+    "cn_full": "玉造 魅须丸",
+    "cn_called": "魅须丸",
+    "candidates": [
+      "魅須丸",
+      "玉造 魅须丸",
+      "魅须丸"
+    ]
+  },
+  {
+    "idx": 139,
+    "file_ja": "典",
+    "cn_short": "典",
+    "cn_full": "菅牧 典",
+    "cn_called": "典",
+    "candidates": [
+      "典",
+      "菅牧 典"
+    ]
+  },
+  {
+    "idx": 140,
+    "file_ja": "龍",
+    "cn_short": "龙",
+    "cn_full": "饭纲丸 龙",
+    "cn_called": "龙",
+    "candidates": [
+      "龍",
+      "饭纲丸 龙",
+      "龙"
+    ]
+  },
+  {
+    "idx": 141,
+    "file_ja": "千亦",
+    "cn_short": "千亦",
+    "cn_full": "天弓 千亦",
+    "cn_called": "千亦",
+    "candidates": [
+      "千亦",
+      "天弓 千亦"
+    ]
+  },
+  {
+    "idx": 142,
+    "file_ja": "百々世",
+    "cn_short": "百百世",
+    "cn_full": "姬虫 百百世",
+    "cn_called": "百百世",
+    "candidates": [
+      "百々世",
+      "姬虫 百百世",
+      "百百世"
+    ]
+  },
+  {
+    "idx": 143,
+    "file_ja": "尤魔",
+    "cn_short": "尤魔",
+    "cn_full": "饕餮 尤魔",
+    "cn_called": "尤魔",
+    "candidates": [
+      "尤魔",
+      "饕餮 尤魔"
+    ]
+  },
+  {
+    "idx": 144,
+    "file_ja": "影華扇",
+    "cn_short": "茨木童子之臂",
+    "cn_full": "茨木童子之臂",
+    "cn_called": "影华扇",
+    "candidates": [
+      "影華扇",
+      "茨木童子之臂",
+      "影华扇"
+    ]
+  },
+  {
+    "idx": 145,
+    "file_ja": "小兎姫",
+    "cn_short": "小兔姬",
+    "cn_full": "小兔姬",
+    "cn_called": "小兔姬",
+    "candidates": [
+      "小兎姫",
+      "小兔姬"
+    ]
+  },
+  {
+    "idx": 146,
+    "file_ja": "エリス",
+    "cn_short": "依莉斯",
+    "cn_full": "依莉斯",
+    "cn_called": "依莉斯",
+    "candidates": [
+      "エリス",
+      "依莉斯"
+    ]
+  },
+  {
+    "idx": 147,
+    "file_ja": "サリエル",
+    "cn_short": "萨丽爱尔",
+    "cn_full": "萨丽爱尔",
+    "cn_called": "萨丽爱尔",
+    "candidates": [
+      "サリエル",
+      "萨丽爱尔"
+    ]
+  },
+  {
+    "idx": 148,
+    "file_ja": "サラ",
+    "cn_short": "萨拉",
+    "cn_full": "萨拉",
+    "cn_called": "萨拉",
+    "candidates": [
+      "サラ",
+      "萨拉"
+    ]
+  },
+  {
+    "idx": 149,
+    "file_ja": "オレンジ",
+    "cn_short": "奥莲姬",
+    "cn_full": "奥莲姬",
+    "cn_called": "奥莲姬",
+    "candidates": [
+      "オレンジ",
+      "奥莲姬"
+    ]
+  },
+  {
+    "idx": 150,
+    "file_ja": "矜羯羅",
+    "cn_short": "矜羯罗",
+    "cn_full": "矜羯罗",
+    "cn_called": "矜羯罗",
+    "candidates": [
+      "矜羯羅",
+      "矜羯罗"
+    ]
+  }
+]

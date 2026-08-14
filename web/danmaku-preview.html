@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阿吽弹幕独立试玩</title>
+    <script type="module" src="/app/danmaku-preview.ts"></script>
+  </head>
+  <body>
+    <main class="preview-shell">
+      <section class="preview-copy">
+        <p class="preview-kicker">AUNN · SPELL CARD PROTOTYPE</p>
+        <h1>狛犬的四重呼吸</h1>
+        <p>独立弹幕试玩，不读取游戏存档，也不结算任何日常状态。</p>
+        <nav id="phase-nav" class="phase-nav" aria-label="阶段选择"></nav>
+        <div class="preview-help">
+          <span>移动　WASD / 方向键</span>
+          <span>低速　Shift</span>
+          <span>射击　自动</span>
+        </div>
+      </section>
+
+      <section id="battle-wrap" class="battle-wrap">
+        <header class="battle-hud battle-hud--boss">
+          <div><small id="phase-index">PHASE 1 / 4</small><strong id="phase-title">通常弹幕一</strong></div>
+          <div class="meter"><i id="boss-hp"></i></div>
+        </header>
+        <canvas id="battle-canvas" width="540" height="720" aria-label="阿吽弹幕试玩画面"></canvas>
+        <footer class="battle-hud battle-hud--player">
+          <div class="meter meter--player"><i id="player-hp"></i></div>
+          <span id="player-state">PLAYER HP 100　残机 3　擦弹 0</span>
+        </footer>
+        <div id="phase-card" class="phase-card">
+          <small>NORMAL</small><strong>通常弹幕一</strong><span>放射的珠链向自机位置弯曲</span>
+        </div>
+        <div id="hit-flash" class="hit-flash"></div>
+      </section>
+
+      <aside class="preview-notes">
+        <button id="pause-button" type="button">暂停</button>
+        <button id="restart-button" type="button">重开本阶段</button>
+        <p id="phase-description"></p>
+        <p class="preview-notes__fine">每阶段约 15 秒，也可以直接点击左侧阶段。试玩死亡后会在当前阶段复位，方便继续观察弹型。</p>
+      </aside>
+    </main>
+  </body>
+</html>

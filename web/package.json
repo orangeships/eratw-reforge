@@ -1,0 +1,44 @@
+{
+  "name": "eratw-modern-preview",
+  "version": "0.2.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:tauri": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/free-tauri-vite-port.ps1 && vite --mode player --port 1420",
+    "dev:mobile": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "build:player": "tsc --noEmit && vite build --mode player",
+    "build:offline": "tsc --noEmit && vite build --mode player",
+    "package:offline": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-offline.ps1",
+    "preview": "vite preview",
+    "preview:mobile": "vite preview --host 0.0.0.0",
+    "tauri": "tauri",
+    "typecheck": "tsc --noEmit",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.1.1",
+    "@tauri-apps/plugin-dialog": "^2.0.1",
+    "@tauri-apps/plugin-store": "^2.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "fast-xml-parser": "^5.8.0",
+    "jsdom": "^29.1.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.8"
+  }
+}

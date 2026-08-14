@@ -1,0 +1,565 @@
+{
+  "3": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "4": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "5": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "25": {
+    "tags": [
+      "A",
+      "V"
+    ],
+    "category": "v"
+  },
+  "26": {
+    "tags": [
+      "A",
+      "V"
+    ],
+    "category": "v"
+  },
+  "44": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "45": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "46": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "60": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "61": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "62": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "63": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "65": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "66": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "67": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "68": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "69": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "70": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "71": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "72": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "73": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "74": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "75": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "80": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "81": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "82": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "83": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "84": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "85": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "100": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "101": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "102": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "103": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "104": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "105": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "106": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "107": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "108": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "120": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "121": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "122": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "140": {
+    "tags": [
+      "HOUSI",
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "141": {
+    "tags": [
+      "SM",
+      "V"
+    ],
+    "category": "v"
+  },
+  "142": {
+    "tags": [
+      "A",
+      "SM"
+    ],
+    "category": "a"
+  },
+  "143": {
+    "tags": [
+      "A",
+      "SM",
+      "V"
+    ],
+    "category": "v"
+  },
+  "144": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "145": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "146": {
+    "tags": [
+      "A",
+      "SM"
+    ],
+    "category": "a"
+  },
+  "147": {
+    "tags": [
+      "A",
+      "SM"
+    ],
+    "category": "a"
+  },
+  "148": {
+    "tags": [
+      "A",
+      "SM"
+    ],
+    "category": "a"
+  },
+  "150": {
+    "tags": [
+      "SM"
+    ],
+    "category": "sm"
+  },
+  "185": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "305": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "306": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "307": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "308": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "309": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "310": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "311": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "312": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "313": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "314": {
+    "tags": [
+      "A",
+      "SEKUHARA"
+    ],
+    "category": "a"
+  },
+  "315": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "316": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "330": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "350": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "352": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "403": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "410": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "411": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "412": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "413": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "414": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "415": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "416": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "417": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "418": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "429": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "450": {
+    "tags": [
+      "KAJI"
+    ],
+    "category": "kaji"
+  },
+  "501": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "503": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "504": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "505": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "508": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "509": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "510": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "511": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "512": {
+    "tags": [
+      "HOUSI"
+    ],
+    "category": "service"
+  },
+  "513": {
+    "tags": [
+      "V"
+    ],
+    "category": "v"
+  },
+  "516": {
+    "tags": [
+      "A"
+    ],
+    "category": "a"
+  },
+  "560": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  },
+  "563": {
+    "tags": [
+      "SEKUHARA"
+    ],
+    "category": "sekuhara"
+  }
+}

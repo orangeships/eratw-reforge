@@ -1,0 +1,32 @@
+# Dependencies and build output
+node_modules/
+target/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Local environment and credentials
+.env
+.env.*
+!.env.player
+.mcp.json
+
+# Tooling and editor state
+.agents/
+.claude/
+.codex/
+.code-review-graph/
+.tmp-tools/
+.vs/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local packaging output
+deploy/
+release/
+
+# Development-only Kojo VM oracle shards (not used by the player bootstrap)
+web/public/kojo-vm/

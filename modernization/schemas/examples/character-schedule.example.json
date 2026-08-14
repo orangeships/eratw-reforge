@@ -1,0 +1,8 @@
+{
+  "charaNum": 1,
+  "slots": [
+    { "startTime": 0,   "endTime": 360,  "activity": "睡眠",     "source": "deterministic" },
+    { "startTime": 360, "endTime": 720,  "activity": "仕事",     "source": "deterministic" },
+    { "startTime": 720, "endTime": 1080, "activity": "自由行動", "source": "agent" }
+  ]
+}

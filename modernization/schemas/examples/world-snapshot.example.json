@@ -1,0 +1,61 @@
+{
+  "takenAt": 1718467200000,
+  "charas": [
+    { "charaNum": 0, "name": "あなた", "callName": "あなた" },
+    { "charaNum": 1, "name": "Reimu", "callName": "霊夢" },
+    { "charaNum": 11, "name": "Marisa", "callName": "魔理沙" }
+  ],
+  "flagUniverse": [
+    { "id": 0, "names": ["周回数"] },
+    { "id": 1, "names": ["調教開始"] }
+  ],
+  "commandCatalog": [
+    { "commandNo": 300, "kind": "COMF", "displayName": "会話" },
+    { "commandNo": 301, "kind": "COMF", "displayName": "愛撫" },
+    { "commandNo": 0, "kind": "SCOMF", "displayName": "助手愛撫" }
+  ],
+  "functionIndex": [
+    { "name": "USERCOM", "file": "コマンド関連/USERCOM.ERB", "line": 1 },
+    { "name": "GLOBAL_COMABLE", "file": "コマンド関連/COMABLE/COMABLE.ERB", "line": 1 },
+    { "name": "KOJO_MESSAGE_SEND", "file": "口上・メッセージ関連/KOJO_MESSAGE.ERB", "line": 17 }
+  ],
+  "kojoMap": [
+    {
+      "charaNum": 1,
+      "variants": [
+        {
+          "variantCode": "",
+          "files": [
+            { "topic": "イベント", "relPath": "個人口上/001 Reimu [霊夢]/霊夢/M_KOJO_K1_イベント.ERB", "atFuncCount": 38 },
+            { "topic": "コマンド", "relPath": "個人口上/001 Reimu [霊夢]/霊夢/M_KOJO_K1_コマンド.ERB", "atFuncCount": 359 }
+          ]
+        },
+        {
+          "variantCode": "1",
+          "files": [
+            { "topic": "コマンド", "relPath": "個人口上/001 Reimu [霊夢]/霊夢無個性版【別人修正】/M_KOJO_K1_1_コマンド.ERB", "atFuncCount": 366 }
+          ]
+        }
+      ]
+    }
+  ],
+  "genericHandlers": [
+    {
+      "relPath": "KOJO_MESSAGE.ERB",
+      "category": "DISPATCH",
+      "atFuncs": [
+        { "name": "KOJO_MESSAGE_SEND", "line": 17 }
+      ]
+    },
+    {
+      "relPath": "COMMON_KOJO.ERB",
+      "category": "COMMON",
+      "atFuncs": [
+        { "name": "KOJO_ACTIVE_INFO", "line": 14 },
+        { "name": "SET_KOJO_COLOR", "line": 29 }
+      ]
+    }
+  ],
+  "timeOfDay": null,
+  "locationMap": null
+}

@@ -1,0 +1,7 @@
+{
+  "_comment": "An IssueCommandIntent example. Use ProposeDialogueIntent / OverrideScheduleIntent / NoopIntent for the other 3 kinds; the validator test suite covers all of them.",
+  "kind": "ISSUE_COMMAND",
+  "actor": 0,
+  "commandNo": 300,
+  "variant": { "charaNum": 1, "code": "1" }
+}

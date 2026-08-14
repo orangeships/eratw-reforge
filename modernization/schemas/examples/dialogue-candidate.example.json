@@ -1,0 +1,15 @@
+{
+  "charaNum": 1,
+  "alternatives": [
+    {
+      "text": "「あら、客人？」",
+      "kojoFile": "個人口上/001 Reimu [霊夢]/霊夢/M_KOJO_K1_イベント.ERB",
+      "lineRange": null
+    },
+    {
+      "text": "「博麗の巫女としては、放っておけないわね」",
+      "kojoFile": "個人口上/001 Reimu [霊夢]/霊夢/M_KOJO_K1_コマンド.ERB",
+      "lineRange": [120, 130]
+    }
+  ]
+}

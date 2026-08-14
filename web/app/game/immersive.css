@@ -1,0 +1,377 @@
+/* Compact player presentation. The classic era surface stays untouched. */
+.game-client--immersive {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  background: #0b0b0c;
+}
+
+.game-client--immersive .game-client__top {
+  position: relative;
+  z-index: 8;
+  padding: 8px 12px 0;
+}
+
+.game-client--immersive .game-client__middle {
+  display: flex;
+  min-height: 0;
+}
+
+.game-client--immersive .game-client__middle > * {
+  flex: 1 1 auto;
+}
+
+.game-client--immersive .scene-view__stage {
+  right: 0;
+  padding-bottom: 0;
+}
+
+.game-client--immersive .scene-view__band {
+  top: auto;
+  right: 12px;
+  bottom: 12px;
+  left: auto;
+  width: min(33%, 320px);
+  height: min(32%, 220px);
+  max-height: none;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(15, 15, 16, 0.9);
+  backdrop-filter: none;
+}
+
+.immersive-hud {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: min(100%, 1120px);
+  min-height: 44px;
+  margin: 0 auto;
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e3e3e3;
+  background: rgba(15, 15, 16, 0.88);
+}
+
+.immersive-hud__primary,
+.immersive-hud__secondary,
+.immersive-hud__vitals {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.immersive-hud__primary {
+  gap: 12px;
+  font-size: 13px;
+}
+
+.immersive-hud__primary > span {
+  white-space: nowrap;
+}
+
+.immersive-hud__day {
+  color: #d7c28b;
+  font-weight: 700;
+}
+
+.immersive-hud__time {
+  color: #f1f1f1;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.immersive-hud__location {
+  overflow: hidden;
+  color: #c8c8c8;
+  text-overflow: ellipsis;
+}
+
+.immersive-hud__secondary {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  gap: 16px;
+  color: #aaa;
+  font-size: 12px;
+}
+
+.immersive-hud__vitals {
+  gap: 12px;
+}
+
+.immersive-hud__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.immersive-hud__stat-label {
+  color: #aaa;
+}
+
+.immersive-hud__stat-track {
+  display: inline-block;
+  width: 64px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.immersive-hud__stat-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #d66f69;
+}
+
+.immersive-hud__stat--stamina .immersive-hud__stat-fill {
+  background: #71bd8b;
+}
+
+.immersive-hud__stat-value {
+  color: #d8d8d8;
+  font-variant-numeric: tabular-nums;
+}
+
+.immersive-hud__target {
+  min-width: 0;
+  border: 0;
+  padding: 4px 7px;
+  border-radius: 4px;
+  color: #e4e4e4;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.immersive-hud__target:hover,
+.immersive-hud__target:focus-visible {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  outline: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.immersive-hud__target-name {
+  display: block;
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.immersive-action-dock {
+  position: relative;
+  z-index: 7;
+  order: 1;
+  display: grid;
+  gap: 8px;
+  align-self: end;
+  width: min(960px, calc(100% - 24px));
+  margin: 0 auto 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(16, 16, 17, 0.96);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+}
+
+.immersive-action-dock__actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.immersive-action-dock__tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.immersive-action-dock__action,
+.immersive-action-dock__tool {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #ededed;
+  background: #262627;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.immersive-action-dock__tool {
+  min-height: 34px;
+  padding: 5px 12px;
+  color: #bdbdbd;
+  background: transparent;
+}
+
+.immersive-action-dock__action:hover,
+.immersive-action-dock__action:focus-visible,
+.immersive-action-dock__tool:hover,
+.immersive-action-dock__tool:focus-visible {
+  border-color: rgba(255, 255, 255, 0.42);
+  color: #fff;
+  background: #353536;
+  outline: none;
+}
+
+.immersive-action-dock__action--highlighted {
+  color: #fff0b5;
+  border-color: rgba(224, 188, 91, 0.68);
+  background: #44391f;
+}
+
+.immersive-action-dock__tool--more {
+  color: #dccb9a;
+}
+
+.immersive-action-dock__tool--active {
+  color: #ffd0cb;
+  border-color: rgba(220, 104, 92, 0.64);
+  background: rgba(116, 40, 34, 0.38);
+}
+
+.immersive-action-dock__action:disabled,
+.immersive-action-dock__tool:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.immersive-action-dock__empty {
+  grid-column: 1 / -1;
+  padding: 10px 0;
+  color: #888;
+  text-align: center;
+}
+
+.game-client--immersive .excom-row--secondary {
+  order: 3;
+  max-height: 150px;
+  overflow: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  background: #111112;
+}
+
+.game-client--immersive .excom-row--secondary .excom-row__tools {
+  padding: 6px 12px;
+}
+
+.game-client--immersive .excom-row__btn {
+  color: #c8c8c8;
+  border-color: #4a4a4d;
+}
+
+.game-client--immersive .excom-row__btn:hover {
+  color: #fff;
+  border-color: #888;
+}
+
+.game-client--immersive .game-client__bottom {
+  order: 2;
+  max-height: 210px;
+  overflow: auto;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: #111112;
+}
+
+.immersive-secondary-panel {
+  order: 2;
+  max-height: 220px;
+  overflow: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: #111112;
+}
+
+.immersive-secondary-panel .command-grid {
+  padding: 6px 12px 10px;
+}
+
+.game-client--immersive .kojo-debug__launch--hidden {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .game-client--immersive {
+    gap: 5px;
+  }
+
+  .game-client--immersive .game-client__top {
+    padding: 5px 7px 0;
+  }
+
+  .immersive-hud {
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    padding: 6px 7px;
+  }
+
+  .immersive-hud__primary {
+    flex: 1 1 auto;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .immersive-hud__secondary {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .immersive-hud__vitals {
+    gap: 8px;
+  }
+
+  .immersive-hud__stat-track {
+    width: 46px;
+  }
+
+  .immersive-hud__stat-value {
+    display: none;
+  }
+
+  .immersive-action-dock {
+    width: calc(100% - 14px);
+    margin-bottom: 7px;
+    padding: 7px;
+  }
+
+  .immersive-action-dock__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .immersive-action-dock__action {
+    min-height: 42px;
+    padding: 7px 8px;
+  }
+
+  .immersive-action-dock__tools {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .immersive-action-dock__tool {
+    width: 100%;
+  }
+
+  .game-client--immersive .scene-view__stage {
+    right: 0;
+  }
+
+  .game-client--immersive .scene-view__band {
+    top: auto;
+    right: 7px;
+    bottom: 7px;
+    width: min(45%, 190px);
+    height: min(30%, 132px);
+    padding: 7px 8px;
+  }
+}

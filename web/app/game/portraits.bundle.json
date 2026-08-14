@@ -1,0 +1,10586 @@
+{
+  "1": {
+    "sprite": "立絵_服_通常_1",
+    "src": "portraits/1.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_1",
+        "src": "portraits/1.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_1",
+        "src": "portraits/1.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_1",
+      "src": "portraits/1_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_1",
+          "src": "portraits/1_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_1",
+          "src": "portraits/1_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_1",
+          "src": "portraits/1_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_1",
+          "src": "portraits/1_顔.webp",
+          "rect": [
+            720,
+            360,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "2": {
+    "sprite": "立絵_服_通常_2",
+    "src": "portraits/2.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_2",
+        "src": "portraits/2.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_2",
+        "src": "portraits/2.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_2",
+      "src": "portraits/2_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_2",
+          "src": "portraits/2_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_2",
+          "src": "portraits/2_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_2",
+          "src": "portraits/2_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "3": {
+    "sprite": "立絵_服_通常_3",
+    "src": "portraits/3.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_3",
+        "src": "portraits/3.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_3",
+        "src": "portraits/3.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_3",
+      "src": "portraits/3_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_3",
+          "src": "portraits/3_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_3",
+          "src": "portraits/3_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_3",
+          "src": "portraits/3_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "4": {
+    "sprite": "立絵_服_通常_4",
+    "src": "portraits/4.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_4",
+        "src": "portraits/4.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_4",
+        "src": "portraits/4.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_4",
+      "src": "portraits/4_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_4",
+          "src": "portraits/4_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_4",
+          "src": "portraits/4_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_4",
+          "src": "portraits/4_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "5": {
+    "sprite": "立絵_服_通常_5",
+    "src": "portraits/5.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_5",
+        "src": "portraits/5.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_5",
+        "src": "portraits/5.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_5",
+      "src": "portraits/5_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_5",
+          "src": "portraits/5_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_5",
+          "src": "portraits/5_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_5",
+          "src": "portraits/5_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "6": {
+    "sprite": "立絵_服_通常_6",
+    "src": "portraits/6.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_6",
+        "src": "portraits/6.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_6",
+        "src": "portraits/6.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_6",
+      "src": "portraits/6_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_6",
+          "src": "portraits/6_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_6",
+          "src": "portraits/6_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_6",
+          "src": "portraits/6_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "7": {
+    "sprite": "立絵_服_通常_7",
+    "src": "portraits/7.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_7",
+        "src": "portraits/7.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_7",
+        "src": "portraits/7.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_7",
+      "src": "portraits/7_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_7",
+          "src": "portraits/7_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_7",
+          "src": "portraits/7_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_7",
+          "src": "portraits/7_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "8": {
+    "sprite": "立絵_服_通常_8",
+    "src": "portraits/8.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_8",
+        "src": "portraits/8.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_8",
+        "src": "portraits/8.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_8",
+      "src": "portraits/8_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_8",
+          "src": "portraits/8_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_8",
+          "src": "portraits/8_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_8",
+          "src": "portraits/8_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "9": {
+    "sprite": "立絵_服_通常_9",
+    "src": "portraits/9.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_9",
+        "src": "portraits/9.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_9",
+        "src": "portraits/9.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_9",
+      "src": "portraits/9_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_9",
+          "src": "portraits/9_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_9",
+          "src": "portraits/9_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_9",
+          "src": "portraits/9_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "10": {
+    "sprite": "立絵_服_通常_10",
+    "src": "portraits/10.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_10",
+        "src": "portraits/10.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_10",
+        "src": "portraits/10.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_10",
+      "src": "portraits/10_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_10",
+          "src": "portraits/10_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_10",
+          "src": "portraits/10_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_10",
+          "src": "portraits/10_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "11": {
+    "sprite": "立絵_服_通常_11",
+    "src": "portraits/11.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_11",
+        "src": "portraits/11.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_11",
+        "src": "portraits/11.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_11",
+      "src": "portraits/11_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_11",
+          "src": "portraits/11_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_11",
+          "src": "portraits/11_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_11",
+          "src": "portraits/11_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "12": {
+    "sprite": "立絵_服_通常_12",
+    "src": "portraits/12.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_12",
+        "src": "portraits/12.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_12",
+        "src": "portraits/12.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_12",
+      "src": "portraits/12_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_12",
+          "src": "portraits/12_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_12",
+          "src": "portraits/12_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_12",
+          "src": "portraits/12_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "13": {
+    "sprite": "立絵_服_通常_13",
+    "src": "portraits/13.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_13",
+        "src": "portraits/13.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_13",
+        "src": "portraits/13.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_13",
+      "src": "portraits/13_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_13",
+          "src": "portraits/13_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_13",
+          "src": "portraits/13_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_13",
+          "src": "portraits/13_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "14": {
+    "sprite": "立絵_服_通常_14",
+    "src": "portraits/14.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_14",
+        "src": "portraits/14.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_14",
+        "src": "portraits/14.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_14",
+      "src": "portraits/14_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_14",
+          "src": "portraits/14_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_14",
+          "src": "portraits/14_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_14",
+          "src": "portraits/14_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "15": {
+    "sprite": "立絵_服_通常_15",
+    "src": "portraits/15.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_15",
+        "src": "portraits/15.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_15",
+        "src": "portraits/15.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_15",
+      "src": "portraits/15_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_15",
+          "src": "portraits/15_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_15",
+          "src": "portraits/15_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_15",
+          "src": "portraits/15_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "16": {
+    "sprite": "立絵_服_通常_16",
+    "src": "portraits/16.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_16",
+        "src": "portraits/16.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_16",
+        "src": "portraits/16.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_16",
+      "src": "portraits/16_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_16",
+          "src": "portraits/16_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_16",
+          "src": "portraits/16_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_16",
+          "src": "portraits/16_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "17": {
+    "sprite": "立絵_服_通常_17",
+    "src": "portraits/17.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_17",
+        "src": "portraits/17.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_17",
+        "src": "portraits/17.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_17",
+      "src": "portraits/17_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_17",
+          "src": "portraits/17_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_17",
+          "src": "portraits/17_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_17",
+          "src": "portraits/17_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "18": {
+    "sprite": "立絵_服_通常_18",
+    "src": "portraits/18.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_18",
+        "src": "portraits/18.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_18",
+        "src": "portraits/18.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_18",
+      "src": "portraits/18_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_18",
+          "src": "portraits/18_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_18",
+          "src": "portraits/18_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_18",
+          "src": "portraits/18_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "19": {
+    "sprite": "立絵_服_通常_19",
+    "src": "portraits/19.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_19",
+        "src": "portraits/19.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_19",
+        "src": "portraits/19.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_19",
+      "src": "portraits/19_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_19",
+          "src": "portraits/19_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_19",
+          "src": "portraits/19_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_19",
+          "src": "portraits/19_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "20": {
+    "sprite": "立絵_服_通常_20",
+    "src": "portraits/20.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_20",
+        "src": "portraits/20.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_20",
+        "src": "portraits/20.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_20",
+      "src": "portraits/20_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_20",
+          "src": "portraits/20_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_20",
+          "src": "portraits/20_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_20",
+          "src": "portraits/20_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "21": {
+    "sprite": "立絵_服_通常_21",
+    "src": "portraits/21.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_21",
+        "src": "portraits/21.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_21",
+        "src": "portraits/21.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_21",
+      "src": "portraits/21_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_21",
+          "src": "portraits/21_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_21",
+          "src": "portraits/21_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_21",
+          "src": "portraits/21_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "22": {
+    "sprite": "立絵_服_通常_22",
+    "src": "portraits/22.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_22",
+        "src": "portraits/22.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_22",
+        "src": "portraits/22.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_22",
+      "src": "portraits/22_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_22",
+          "src": "portraits/22_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_22",
+          "src": "portraits/22_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_22",
+          "src": "portraits/22_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "23": {
+    "sprite": "立絵_服_通常_23",
+    "src": "portraits/23.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_23",
+        "src": "portraits/23.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_23",
+        "src": "portraits/23.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_23",
+      "src": "portraits/23_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_23",
+          "src": "portraits/23_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_23",
+          "src": "portraits/23_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_23",
+          "src": "portraits/23_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "24": {
+    "sprite": "立絵_服_通常_24",
+    "src": "portraits/24.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_24",
+        "src": "portraits/24.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_24",
+        "src": "portraits/24.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_24",
+      "src": "portraits/24_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_24",
+          "src": "portraits/24_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_24",
+          "src": "portraits/24_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_24",
+          "src": "portraits/24_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "25": {
+    "sprite": "立絵_服_通常_25",
+    "src": "portraits/25.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_25",
+        "src": "portraits/25.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_25",
+        "src": "portraits/25.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_25",
+      "src": "portraits/25_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_25",
+          "src": "portraits/25_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_25",
+          "src": "portraits/25_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_25",
+          "src": "portraits/25_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "26": {
+    "sprite": "立絵_服_通常_26",
+    "src": "portraits/26.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_26",
+        "src": "portraits/26.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_26",
+        "src": "portraits/26.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_26",
+      "src": "portraits/26_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_26",
+          "src": "portraits/26_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_26",
+          "src": "portraits/26_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_26",
+          "src": "portraits/26_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "27": {
+    "sprite": "立絵_服_通常_27",
+    "src": "portraits/27.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_27",
+        "src": "portraits/27.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_27",
+        "src": "portraits/27.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_27",
+      "src": "portraits/27_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_27",
+          "src": "portraits/27_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_27",
+          "src": "portraits/27_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_27",
+          "src": "portraits/27_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "28": {
+    "sprite": "立絵_服_通常_28",
+    "src": "portraits/28.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_28",
+        "src": "portraits/28.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_28",
+        "src": "portraits/28.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_28",
+      "src": "portraits/28_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_28",
+          "src": "portraits/28_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_28",
+          "src": "portraits/28_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_28",
+          "src": "portraits/28_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "29": {
+    "sprite": "立絵_服_通常_29",
+    "src": "portraits/29.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_29",
+        "src": "portraits/29.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_29",
+        "src": "portraits/29.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_29",
+      "src": "portraits/29_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_29",
+          "src": "portraits/29_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_29",
+          "src": "portraits/29_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_29",
+          "src": "portraits/29_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "30": {
+    "sprite": "立絵_服_通常_30",
+    "src": "portraits/30.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_30",
+        "src": "portraits/30.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_30",
+        "src": "portraits/30.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_30",
+      "src": "portraits/30_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_30",
+          "src": "portraits/30_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_30",
+          "src": "portraits/30_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_30",
+          "src": "portraits/30_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_30",
+          "src": "portraits/30_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "31": {
+    "sprite": "立絵_服_通常_31",
+    "src": "portraits/31.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_31",
+        "src": "portraits/31.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_31",
+        "src": "portraits/31.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_31",
+      "src": "portraits/31_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_31",
+          "src": "portraits/31_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_31",
+          "src": "portraits/31_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_31",
+          "src": "portraits/31_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "32": {
+    "sprite": "立絵_服_通常_32",
+    "src": "portraits/32.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_32",
+        "src": "portraits/32.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_32",
+        "src": "portraits/32.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_32",
+      "src": "portraits/32_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_32",
+          "src": "portraits/32_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_32",
+          "src": "portraits/32_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_32",
+          "src": "portraits/32_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "33": {
+    "sprite": "立絵_服_通常_33",
+    "src": "portraits/33.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_33",
+        "src": "portraits/33.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_33",
+        "src": "portraits/33.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_33",
+      "src": "portraits/33_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_33",
+          "src": "portraits/33_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_33",
+          "src": "portraits/33_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_33",
+          "src": "portraits/33_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "34": {
+    "sprite": "立絵_服_通常_34",
+    "src": "portraits/34.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_34",
+        "src": "portraits/34.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_34",
+        "src": "portraits/34.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_34",
+      "src": "portraits/34_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_34",
+          "src": "portraits/34_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_34",
+          "src": "portraits/34_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_34",
+          "src": "portraits/34_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "35": {
+    "sprite": "立絵_服_通常_35",
+    "src": "portraits/35.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_35",
+        "src": "portraits/35.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_35",
+        "src": "portraits/35.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_35",
+      "src": "portraits/35_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_35",
+          "src": "portraits/35_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_35",
+          "src": "portraits/35_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_35",
+          "src": "portraits/35_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "36": {
+    "sprite": "立絵_服_通常_36",
+    "src": "portraits/36.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_36",
+        "src": "portraits/36.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_36",
+        "src": "portraits/36.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_36",
+      "src": "portraits/36_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_36",
+          "src": "portraits/36_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_36",
+          "src": "portraits/36_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_36",
+          "src": "portraits/36_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "37": {
+    "sprite": "立絵_服_通常_37",
+    "src": "portraits/37.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_37",
+        "src": "portraits/37.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_37",
+        "src": "portraits/37.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_37",
+      "src": "portraits/37_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_37",
+          "src": "portraits/37_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_37",
+          "src": "portraits/37_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_37",
+          "src": "portraits/37_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_37",
+          "src": "portraits/37_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "38": {
+    "sprite": "立絵_服_通常_38",
+    "src": "portraits/38.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_38",
+        "src": "portraits/38.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_38",
+        "src": "portraits/38.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_38",
+      "src": "portraits/38_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_38",
+          "src": "portraits/38_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_38",
+          "src": "portraits/38_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_38",
+          "src": "portraits/38_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "39": {
+    "sprite": "立絵_服_通常_39",
+    "src": "portraits/39.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_39",
+        "src": "portraits/39.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_39",
+        "src": "portraits/39.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_39",
+      "src": "portraits/39_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_39",
+          "src": "portraits/39_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_39",
+          "src": "portraits/39_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_39",
+          "src": "portraits/39_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "40": {
+    "sprite": "立絵_服_通常_40",
+    "src": "portraits/40.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_40",
+        "src": "portraits/40.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_40",
+        "src": "portraits/40.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_40",
+      "src": "portraits/40_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_40",
+          "src": "portraits/40_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_40",
+          "src": "portraits/40_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_40",
+          "src": "portraits/40_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "41": {
+    "sprite": "立絵_服_通常_41",
+    "src": "portraits/41.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_41",
+        "src": "portraits/41.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_41",
+        "src": "portraits/41.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_41",
+      "src": "portraits/41_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_41",
+          "src": "portraits/41_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_41",
+          "src": "portraits/41_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_41",
+          "src": "portraits/41_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "42": {
+    "sprite": "立絵_服_通常_42",
+    "src": "portraits/42.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_42",
+        "src": "portraits/42.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_42",
+        "src": "portraits/42.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_42",
+      "src": "portraits/42_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_42",
+          "src": "portraits/42_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_42",
+          "src": "portraits/42_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_42",
+          "src": "portraits/42_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_42",
+          "src": "portraits/42_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "43": {
+    "sprite": "立絵_服_通常_43",
+    "src": "portraits/43.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_43",
+        "src": "portraits/43.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_43",
+        "src": "portraits/43.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_43",
+      "src": "portraits/43_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_43",
+          "src": "portraits/43_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_43",
+          "src": "portraits/43_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_43",
+          "src": "portraits/43_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "44": {
+    "sprite": "立絵_服_通常_44",
+    "src": "portraits/44.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_44",
+        "src": "portraits/44.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_44",
+        "src": "portraits/44.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_44",
+      "src": "portraits/44_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_44",
+          "src": "portraits/44_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_44",
+          "src": "portraits/44_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_44",
+          "src": "portraits/44_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "49": {
+    "sprite": "立絵_服_通常_49",
+    "src": "portraits/49.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_49",
+        "src": "portraits/49.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_49",
+        "src": "portraits/49.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_49",
+      "src": "portraits/49_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_49",
+          "src": "portraits/49_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_49",
+          "src": "portraits/49_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_49",
+          "src": "portraits/49_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_49",
+          "src": "portraits/49_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "50": {
+    "sprite": "立絵_服_通常_50",
+    "src": "portraits/50.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_50",
+        "src": "portraits/50.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_50",
+        "src": "portraits/50.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_50",
+      "src": "portraits/50_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_50",
+          "src": "portraits/50_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_50",
+          "src": "portraits/50_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_50",
+          "src": "portraits/50_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "51": {
+    "sprite": "立絵_服_通常_51",
+    "src": "portraits/51.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_51",
+        "src": "portraits/51.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_51",
+        "src": "portraits/51.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_51",
+      "src": "portraits/51_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_51",
+          "src": "portraits/51_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_51",
+          "src": "portraits/51_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_51",
+          "src": "portraits/51_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "52": {
+    "sprite": "立絵_服_通常_52",
+    "src": "portraits/52.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_52",
+        "src": "portraits/52.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_52",
+        "src": "portraits/52.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_52",
+      "src": "portraits/52_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_52",
+          "src": "portraits/52_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_52",
+          "src": "portraits/52_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_52",
+          "src": "portraits/52_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "53": {
+    "sprite": "立絵_服_通常_53",
+    "src": "portraits/53.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_53",
+        "src": "portraits/53.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_53",
+        "src": "portraits/53.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_53",
+      "src": "portraits/53_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_53",
+          "src": "portraits/53_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_53",
+          "src": "portraits/53_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_53",
+          "src": "portraits/53_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "54": {
+    "sprite": "立絵_服_通常_54",
+    "src": "portraits/54.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_54",
+        "src": "portraits/54.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_54",
+        "src": "portraits/54.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_54",
+      "src": "portraits/54_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_54",
+          "src": "portraits/54_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_54",
+          "src": "portraits/54_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_54",
+          "src": "portraits/54_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "55": {
+    "sprite": "立絵_服_通常_55",
+    "src": "portraits/55.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_55",
+        "src": "portraits/55.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_55",
+        "src": "portraits/55.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_55",
+      "src": "portraits/55_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_55",
+          "src": "portraits/55_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_55",
+          "src": "portraits/55_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_55",
+          "src": "portraits/55_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "56": {
+    "sprite": "立絵_服_通常_56",
+    "src": "portraits/56.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_56",
+        "src": "portraits/56.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_56",
+        "src": "portraits/56.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_56",
+      "src": "portraits/56_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_56",
+          "src": "portraits/56_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_56",
+          "src": "portraits/56_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_56",
+          "src": "portraits/56_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "57": {
+    "sprite": "立絵_服_通常_57",
+    "src": "portraits/57.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_57",
+        "src": "portraits/57.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_57",
+        "src": "portraits/57.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_57",
+      "src": "portraits/57_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_57",
+          "src": "portraits/57_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_57",
+          "src": "portraits/57_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_57",
+          "src": "portraits/57_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "58": {
+    "sprite": "立絵_服_通常_58",
+    "src": "portraits/58.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_58",
+        "src": "portraits/58.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_58",
+        "src": "portraits/58.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_58",
+      "src": "portraits/58_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_58",
+          "src": "portraits/58_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_58",
+          "src": "portraits/58_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_58",
+          "src": "portraits/58_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "59": {
+    "sprite": "立絵_服_通常_59",
+    "src": "portraits/59.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_59",
+        "src": "portraits/59.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_59",
+        "src": "portraits/59.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_59",
+      "src": "portraits/59_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_59",
+          "src": "portraits/59_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_59",
+          "src": "portraits/59_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_59",
+          "src": "portraits/59_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "60": {
+    "sprite": "立絵_服_通常_60",
+    "src": "portraits/60.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_60",
+        "src": "portraits/60.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_60",
+        "src": "portraits/60.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_60",
+      "src": "portraits/60_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_60",
+          "src": "portraits/60_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_60",
+          "src": "portraits/60_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_60",
+          "src": "portraits/60_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "61": {
+    "sprite": "立絵_服_通常_61",
+    "src": "portraits/61.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_61",
+        "src": "portraits/61.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_61",
+        "src": "portraits/61.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_61",
+      "src": "portraits/61_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_61",
+          "src": "portraits/61_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_61",
+          "src": "portraits/61_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_61",
+          "src": "portraits/61_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "62": {
+    "sprite": "立絵_服_通常_62",
+    "src": "portraits/62.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_62",
+        "src": "portraits/62.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_62",
+        "src": "portraits/62.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_62",
+      "src": "portraits/62_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_62",
+          "src": "portraits/62_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_62",
+          "src": "portraits/62_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_62",
+          "src": "portraits/62_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "63": {
+    "sprite": "立絵_服_通常_63",
+    "src": "portraits/63.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_63",
+        "src": "portraits/63.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_63",
+        "src": "portraits/63.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_63",
+      "src": "portraits/63_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_63",
+          "src": "portraits/63_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_63",
+          "src": "portraits/63_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_63",
+          "src": "portraits/63_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "64": {
+    "sprite": "立絵_服_通常_64",
+    "src": "portraits/64.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_64",
+        "src": "portraits/64.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_64",
+        "src": "portraits/64.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_64",
+      "src": "portraits/64_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_64",
+          "src": "portraits/64_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_64",
+          "src": "portraits/64_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_64",
+          "src": "portraits/64_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "65": {
+    "sprite": "立絵_服_通常_65",
+    "src": "portraits/65.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_65",
+        "src": "portraits/65.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_65",
+        "src": "portraits/65.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_65",
+      "src": "portraits/65_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_65",
+          "src": "portraits/65_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_65",
+          "src": "portraits/65_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_65",
+          "src": "portraits/65_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "66": {
+    "sprite": "立絵_服_通常_66",
+    "src": "portraits/66.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_66",
+        "src": "portraits/66.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_66",
+        "src": "portraits/66.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_66",
+      "src": "portraits/66_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_66",
+          "src": "portraits/66_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_66",
+          "src": "portraits/66_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_66",
+          "src": "portraits/66_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "67": {
+    "sprite": "立絵_服_通常_67",
+    "src": "portraits/67.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_67",
+        "src": "portraits/67.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_67",
+        "src": "portraits/67.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_67",
+      "src": "portraits/67_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_67",
+          "src": "portraits/67_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_67",
+          "src": "portraits/67_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_67",
+          "src": "portraits/67_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "68": {
+    "sprite": "立絵_服_通常_68",
+    "src": "portraits/68.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_68",
+        "src": "portraits/68.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_68",
+        "src": "portraits/68.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_68",
+      "src": "portraits/68_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_68",
+          "src": "portraits/68_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_68",
+          "src": "portraits/68_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_68",
+          "src": "portraits/68_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_68",
+          "src": "portraits/68_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "69": {
+    "sprite": "立絵_服_通常_69",
+    "src": "portraits/69.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_69",
+        "src": "portraits/69.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_69",
+        "src": "portraits/69.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_69",
+      "src": "portraits/69_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_69",
+          "src": "portraits/69_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_69",
+          "src": "portraits/69_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_69",
+          "src": "portraits/69_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "70": {
+    "sprite": "立絵_服_通常_70",
+    "src": "portraits/70.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_70",
+        "src": "portraits/70.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_70",
+        "src": "portraits/70.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_70",
+      "src": "portraits/70_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_70",
+          "src": "portraits/70_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_70",
+          "src": "portraits/70_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_70",
+          "src": "portraits/70_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "71": {
+    "sprite": "立絵_服_通常_71",
+    "src": "portraits/71.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_71",
+        "src": "portraits/71.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_71",
+        "src": "portraits/71.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_71",
+      "src": "portraits/71_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_71",
+          "src": "portraits/71_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_71",
+          "src": "portraits/71_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_71",
+          "src": "portraits/71_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "72": {
+    "sprite": "立絵_服_通常_72",
+    "src": "portraits/72.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_72",
+        "src": "portraits/72.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_72",
+        "src": "portraits/72.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_72",
+      "src": "portraits/72_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_72",
+          "src": "portraits/72_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_72",
+          "src": "portraits/72_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_72",
+          "src": "portraits/72_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "73": {
+    "sprite": "立絵_服_通常_73",
+    "src": "portraits/73.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_73",
+        "src": "portraits/73.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_73",
+        "src": "portraits/73.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_73",
+      "src": "portraits/73_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_73",
+          "src": "portraits/73_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_73",
+          "src": "portraits/73_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_73",
+          "src": "portraits/73_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "74": {
+    "sprite": "立絵_服_通常_74",
+    "src": "portraits/74.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_74",
+        "src": "portraits/74.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_74",
+        "src": "portraits/74.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_74",
+      "src": "portraits/74_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_74",
+          "src": "portraits/74_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_74",
+          "src": "portraits/74_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_74",
+          "src": "portraits/74_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "75": {
+    "sprite": "立絵_服_通常_75",
+    "src": "portraits/75.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_75",
+        "src": "portraits/75.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_75",
+        "src": "portraits/75.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_75",
+      "src": "portraits/75_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_75",
+          "src": "portraits/75_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_75",
+          "src": "portraits/75_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_75",
+          "src": "portraits/75_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "76": {
+    "sprite": "立絵_服_通常_76",
+    "src": "portraits/76.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_76",
+        "src": "portraits/76.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_76",
+        "src": "portraits/76.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_76",
+      "src": "portraits/76_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_76",
+          "src": "portraits/76_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_76",
+          "src": "portraits/76_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_76",
+          "src": "portraits/76_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "77": {
+    "sprite": "立絵_服_通常_77",
+    "src": "portraits/77.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_77",
+        "src": "portraits/77.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_77",
+        "src": "portraits/77.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_77",
+      "src": "portraits/77_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_77",
+          "src": "portraits/77_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_77",
+          "src": "portraits/77_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_77",
+          "src": "portraits/77_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "78": {
+    "sprite": "立絵_服_通常_78",
+    "src": "portraits/78.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_78",
+        "src": "portraits/78.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_78",
+        "src": "portraits/78.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_78",
+      "src": "portraits/78_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_78",
+          "src": "portraits/78_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_78",
+          "src": "portraits/78_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_78",
+          "src": "portraits/78_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "79": {
+    "sprite": "立絵_服_通常_79",
+    "src": "portraits/79.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_79",
+        "src": "portraits/79.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_79",
+        "src": "portraits/79.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_79",
+      "src": "portraits/79_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_79",
+          "src": "portraits/79_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_79",
+          "src": "portraits/79_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_79",
+          "src": "portraits/79_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "80": {
+    "sprite": "立絵_服_通常_80",
+    "src": "portraits/80.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_80",
+        "src": "portraits/80.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_80",
+        "src": "portraits/80.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_80",
+      "src": "portraits/80_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_80",
+          "src": "portraits/80_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_80",
+          "src": "portraits/80_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_80",
+          "src": "portraits/80_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "81": {
+    "sprite": "立絵_服_通常_81",
+    "src": "portraits/81.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_81",
+        "src": "portraits/81.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_81",
+        "src": "portraits/81.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_81",
+      "src": "portraits/81_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_81",
+          "src": "portraits/81_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_81",
+          "src": "portraits/81_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_81",
+          "src": "portraits/81_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "82": {
+    "sprite": "立絵_服_通常_82",
+    "src": "portraits/82.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_82",
+        "src": "portraits/82.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_82",
+        "src": "portraits/82.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_82",
+      "src": "portraits/82_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_82",
+          "src": "portraits/82_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_82",
+          "src": "portraits/82_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_82",
+          "src": "portraits/82_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "83": {
+    "sprite": "立絵_服_通常_83",
+    "src": "portraits/83.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_83",
+        "src": "portraits/83.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_83",
+        "src": "portraits/83.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_83",
+      "src": "portraits/83_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_83",
+          "src": "portraits/83_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_83",
+          "src": "portraits/83_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_83",
+          "src": "portraits/83_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "84": {
+    "sprite": "立絵_服_通常_84",
+    "src": "portraits/84.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_84",
+        "src": "portraits/84.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_84",
+        "src": "portraits/84.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_84",
+      "src": "portraits/84_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_84",
+          "src": "portraits/84_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_84",
+          "src": "portraits/84_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_84",
+          "src": "portraits/84_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "85": {
+    "sprite": "立絵_服_通常_85",
+    "src": "portraits/85.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_85",
+        "src": "portraits/85.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_85",
+        "src": "portraits/85.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_85",
+      "src": "portraits/85_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_85",
+          "src": "portraits/85_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_85",
+          "src": "portraits/85_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_85",
+          "src": "portraits/85_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "86": {
+    "sprite": "立絵_服_通常_86",
+    "src": "portraits/86.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_86",
+        "src": "portraits/86.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_86",
+        "src": "portraits/86.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_86",
+      "src": "portraits/86_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_86",
+          "src": "portraits/86_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_86",
+          "src": "portraits/86_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_86",
+          "src": "portraits/86_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "87": {
+    "sprite": "立絵_服_通常_87",
+    "src": "portraits/87.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_87",
+        "src": "portraits/87.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_87",
+        "src": "portraits/87.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_87",
+      "src": "portraits/87_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_87",
+          "src": "portraits/87_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_87",
+          "src": "portraits/87_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_87",
+          "src": "portraits/87_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "88": {
+    "sprite": "立絵_服_通常_88",
+    "src": "portraits/88.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_88",
+        "src": "portraits/88.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_88",
+        "src": "portraits/88.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_88",
+      "src": "portraits/88_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_88",
+          "src": "portraits/88_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_88",
+          "src": "portraits/88_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_88",
+          "src": "portraits/88_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "89": {
+    "sprite": "立絵_服_通常_89",
+    "src": "portraits/89.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_89",
+        "src": "portraits/89.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_89",
+        "src": "portraits/89.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_89",
+      "src": "portraits/89_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_89",
+          "src": "portraits/89_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_89",
+          "src": "portraits/89_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_89",
+          "src": "portraits/89_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "90": {
+    "sprite": "立絵_服_通常_90",
+    "src": "portraits/90.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_90",
+        "src": "portraits/90.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_90",
+        "src": "portraits/90.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_90",
+      "src": "portraits/90_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_90",
+          "src": "portraits/90_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_90",
+          "src": "portraits/90_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_90",
+          "src": "portraits/90_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "91": {
+    "sprite": "立絵_服_通常_91",
+    "src": "portraits/91.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_91",
+        "src": "portraits/91.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_91",
+        "src": "portraits/91.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_91",
+      "src": "portraits/91_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_91",
+          "src": "portraits/91_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_91",
+          "src": "portraits/91_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_91",
+          "src": "portraits/91_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "92": {
+    "sprite": "立絵_服_通常_92",
+    "src": "portraits/92.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_92",
+        "src": "portraits/92.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_92",
+        "src": "portraits/92.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_92",
+      "src": "portraits/92_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_92",
+          "src": "portraits/92_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_92",
+          "src": "portraits/92_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_92",
+          "src": "portraits/92_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "93": {
+    "sprite": "立絵_服_通常_93",
+    "src": "portraits/93.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_93",
+        "src": "portraits/93.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_93",
+        "src": "portraits/93.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_93",
+      "src": "portraits/93_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_93",
+          "src": "portraits/93_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_93",
+          "src": "portraits/93_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_93",
+          "src": "portraits/93_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "94": {
+    "sprite": "立絵_服_通常_94",
+    "src": "portraits/94.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_94",
+        "src": "portraits/94.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_94",
+        "src": "portraits/94.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_94",
+      "src": "portraits/94_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_94",
+          "src": "portraits/94_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_94",
+          "src": "portraits/94_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_94",
+          "src": "portraits/94_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "95": {
+    "sprite": "立絵_服_通常_95",
+    "src": "portraits/95.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_95",
+        "src": "portraits/95.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_95",
+        "src": "portraits/95.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_95",
+      "src": "portraits/95_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_95",
+          "src": "portraits/95_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_95",
+          "src": "portraits/95_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_95",
+          "src": "portraits/95_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "96": {
+    "sprite": "立絵_服_通常_96",
+    "src": "portraits/96.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_96",
+        "src": "portraits/96.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_96",
+        "src": "portraits/96.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_96",
+      "src": "portraits/96_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_96",
+          "src": "portraits/96_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_96",
+          "src": "portraits/96_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_96",
+          "src": "portraits/96_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "97": {
+    "sprite": "立絵_服_通常_97",
+    "src": "portraits/97.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_97",
+        "src": "portraits/97.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_97",
+        "src": "portraits/97.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_97",
+      "src": "portraits/97_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_97",
+          "src": "portraits/97_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_97",
+          "src": "portraits/97_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_97",
+          "src": "portraits/97_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "98": {
+    "sprite": "立絵_服_通常_98",
+    "src": "portraits/98.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_98",
+        "src": "portraits/98.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_98",
+        "src": "portraits/98.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_98",
+      "src": "portraits/98_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_98",
+          "src": "portraits/98_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_98",
+          "src": "portraits/98_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_98",
+          "src": "portraits/98_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "99": {
+    "sprite": "立絵_服_通常_99",
+    "src": "portraits/99.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_99",
+        "src": "portraits/99.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_99",
+        "src": "portraits/99.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_99",
+      "src": "portraits/99_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_99",
+          "src": "portraits/99_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_99",
+          "src": "portraits/99_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_99",
+          "src": "portraits/99_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "100": {
+    "sprite": "立絵_服_通常_100",
+    "src": "portraits/100.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_100",
+        "src": "portraits/100.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_100",
+        "src": "portraits/100.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_100",
+      "src": "portraits/100_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_100",
+          "src": "portraits/100_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_100",
+          "src": "portraits/100_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_100",
+          "src": "portraits/100_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "101": {
+    "sprite": "立絵_服_通常_101",
+    "src": "portraits/101.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_101",
+        "src": "portraits/101.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_101",
+        "src": "portraits/101.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_101",
+      "src": "portraits/101_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_101",
+          "src": "portraits/101_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_101",
+          "src": "portraits/101_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_101",
+          "src": "portraits/101_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "107": {
+    "sprite": "立絵_服_通常_107",
+    "src": "portraits/107.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_107",
+        "src": "portraits/107.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_107",
+        "src": "portraits/107.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_107",
+      "src": "portraits/107_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_107",
+          "src": "portraits/107_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_107",
+          "src": "portraits/107_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_107",
+          "src": "portraits/107_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "108": {
+    "sprite": "立絵_服_通常_108",
+    "src": "portraits/108.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_108",
+        "src": "portraits/108.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_108",
+        "src": "portraits/108.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_108",
+      "src": "portraits/108_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_108",
+          "src": "portraits/108_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_108",
+          "src": "portraits/108_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_108",
+          "src": "portraits/108_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "109": {
+    "sprite": "立絵_服_通常_109",
+    "src": "portraits/109.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_109",
+        "src": "portraits/109.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_109",
+        "src": "portraits/109.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_109",
+      "src": "portraits/109_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_109",
+          "src": "portraits/109_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_109",
+          "src": "portraits/109_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_109",
+          "src": "portraits/109_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_109",
+          "src": "portraits/109_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "110": {
+    "sprite": "立絵_服_通常_110",
+    "src": "portraits/110.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_110",
+        "src": "portraits/110.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_110",
+        "src": "portraits/110.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_110",
+      "src": "portraits/110_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_110",
+          "src": "portraits/110_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_110",
+          "src": "portraits/110_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_110",
+          "src": "portraits/110_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "111": {
+    "sprite": "立絵_服_通常_111",
+    "src": "portraits/111.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_111",
+        "src": "portraits/111.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_111",
+        "src": "portraits/111.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_111",
+      "src": "portraits/111_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_111",
+          "src": "portraits/111_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_111",
+          "src": "portraits/111_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_111",
+          "src": "portraits/111_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "112": {
+    "sprite": "立絵_服_通常_112",
+    "src": "portraits/112.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_112",
+        "src": "portraits/112.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_112",
+        "src": "portraits/112.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_112",
+      "src": "portraits/112_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_112",
+          "src": "portraits/112_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_112",
+          "src": "portraits/112_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_112",
+          "src": "portraits/112_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "113": {
+    "sprite": "立絵_服_通常_113",
+    "src": "portraits/113.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_113",
+        "src": "portraits/113.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_113",
+        "src": "portraits/113.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_113",
+      "src": "portraits/113_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_113",
+          "src": "portraits/113_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_113",
+          "src": "portraits/113_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_113",
+          "src": "portraits/113_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "114": {
+    "sprite": "立絵_服_通常_114",
+    "src": "portraits/114.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_114",
+        "src": "portraits/114.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_114",
+        "src": "portraits/114.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_114",
+      "src": "portraits/114_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_114",
+          "src": "portraits/114_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_114",
+          "src": "portraits/114_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_114",
+          "src": "portraits/114_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "115": {
+    "sprite": "立絵_服_通常_115",
+    "src": "portraits/115.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_115",
+        "src": "portraits/115.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_115",
+        "src": "portraits/115.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_115",
+      "src": "portraits/115_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_115",
+          "src": "portraits/115_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_115",
+          "src": "portraits/115_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_115",
+          "src": "portraits/115_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "116": {
+    "sprite": "立絵_服_通常_116",
+    "src": "portraits/116.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_116",
+        "src": "portraits/116.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_116",
+        "src": "portraits/116.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_116",
+      "src": "portraits/116_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_116",
+          "src": "portraits/116_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_116",
+          "src": "portraits/116_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_116",
+          "src": "portraits/116_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "117": {
+    "sprite": "立絵_服_通常_117",
+    "src": "portraits/117.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_117",
+        "src": "portraits/117.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_117",
+        "src": "portraits/117.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_117",
+      "src": "portraits/117_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_117",
+          "src": "portraits/117_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_117",
+          "src": "portraits/117_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_117",
+          "src": "portraits/117_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "118": {
+    "sprite": "立絵_服_通常_118",
+    "src": "portraits/118.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_118",
+        "src": "portraits/118.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_118",
+        "src": "portraits/118.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_118",
+      "src": "portraits/118_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_118",
+          "src": "portraits/118_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_118",
+          "src": "portraits/118_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_118",
+          "src": "portraits/118_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "119": {
+    "sprite": "立絵_服_通常_119",
+    "src": "portraits/119.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_119",
+        "src": "portraits/119.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_119",
+        "src": "portraits/119.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_119",
+      "src": "portraits/119_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_119",
+          "src": "portraits/119_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_119",
+          "src": "portraits/119_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_119",
+          "src": "portraits/119_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "120": {
+    "sprite": "立絵_服_通常_120",
+    "src": "portraits/120.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_120",
+        "src": "portraits/120.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_120",
+        "src": "portraits/120.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_120",
+      "src": "portraits/120_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_120",
+          "src": "portraits/120_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_120",
+          "src": "portraits/120_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_120",
+          "src": "portraits/120_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "121": {
+    "sprite": "立絵_服_通常_121",
+    "src": "portraits/121.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_121",
+        "src": "portraits/121.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_121",
+        "src": "portraits/121.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_121",
+      "src": "portraits/121_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_121",
+          "src": "portraits/121_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_121",
+          "src": "portraits/121_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_121",
+          "src": "portraits/121_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "125": {
+    "sprite": "立絵_服_通常_125",
+    "src": "portraits/125.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_125",
+        "src": "portraits/125.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_125",
+        "src": "portraits/125.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_125",
+      "src": "portraits/125_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_125",
+          "src": "portraits/125_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_125",
+          "src": "portraits/125_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_125",
+          "src": "portraits/125_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "126": {
+    "sprite": "立絵_服_通常_126",
+    "src": "portraits/126.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_126",
+        "src": "portraits/126.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_126",
+        "src": "portraits/126.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_126",
+      "src": "portraits/126_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_126",
+          "src": "portraits/126_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_126",
+          "src": "portraits/126_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_126",
+          "src": "portraits/126_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "127": {
+    "sprite": "立絵_服_通常_127",
+    "src": "portraits/127.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_127",
+        "src": "portraits/127.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_127",
+        "src": "portraits/127.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_127",
+      "src": "portraits/127_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_127",
+          "src": "portraits/127_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_127",
+          "src": "portraits/127_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_127",
+          "src": "portraits/127_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "128": {
+    "sprite": "立絵_服_通常_128",
+    "src": "portraits/128.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_128",
+        "src": "portraits/128.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_128",
+        "src": "portraits/128.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_128",
+      "src": "portraits/128_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_128",
+          "src": "portraits/128_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_128",
+          "src": "portraits/128_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_128",
+          "src": "portraits/128_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_128",
+          "src": "portraits/128_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "129": {
+    "sprite": "立絵_服_通常_129",
+    "src": "portraits/129.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_129",
+        "src": "portraits/129.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_129",
+        "src": "portraits/129.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_129",
+      "src": "portraits/129_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_129",
+          "src": "portraits/129_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_129",
+          "src": "portraits/129_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_129",
+          "src": "portraits/129_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_129",
+          "src": "portraits/129_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "130": {
+    "sprite": "立絵_服_通常_130",
+    "src": "portraits/130.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_130",
+        "src": "portraits/130.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_130",
+        "src": "portraits/130.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_130",
+      "src": "portraits/130_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_130",
+          "src": "portraits/130_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_130",
+          "src": "portraits/130_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_130",
+          "src": "portraits/130_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_130",
+          "src": "portraits/130_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "131": {
+    "sprite": "立絵_服_通常_131",
+    "src": "portraits/131.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_131",
+        "src": "portraits/131.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_131",
+        "src": "portraits/131.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_131",
+      "src": "portraits/131_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_131",
+          "src": "portraits/131_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_131",
+          "src": "portraits/131_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_131",
+          "src": "portraits/131_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_131",
+          "src": "portraits/131_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "132": {
+    "sprite": "立絵_服_通常_132",
+    "src": "portraits/132.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_132",
+        "src": "portraits/132.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_132",
+        "src": "portraits/132.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_132",
+      "src": "portraits/132_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_132",
+          "src": "portraits/132_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_132",
+          "src": "portraits/132_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_132",
+          "src": "portraits/132_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_132",
+          "src": "portraits/132_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "133": {
+    "sprite": "立絵_服_通常_133",
+    "src": "portraits/133.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_133",
+        "src": "portraits/133.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_133",
+        "src": "portraits/133.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_133",
+      "src": "portraits/133_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_133",
+          "src": "portraits/133_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_133",
+          "src": "portraits/133_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_133",
+          "src": "portraits/133_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_133",
+          "src": "portraits/133_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "134": {
+    "sprite": "立絵_服_通常_134",
+    "src": "portraits/134.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_134",
+        "src": "portraits/134.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_134",
+        "src": "portraits/134.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_134",
+      "src": "portraits/134_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_134",
+          "src": "portraits/134_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_134",
+          "src": "portraits/134_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_134",
+          "src": "portraits/134_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "135": {
+    "sprite": "立絵_服_通常_135",
+    "src": "portraits/135.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_135",
+        "src": "portraits/135.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_135",
+        "src": "portraits/135.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_135",
+      "src": "portraits/135_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_135",
+          "src": "portraits/135_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_135",
+          "src": "portraits/135_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_135",
+          "src": "portraits/135_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_135",
+          "src": "portraits/135_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "136": {
+    "sprite": "立絵_服_通常_136",
+    "src": "portraits/136.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_136",
+        "src": "portraits/136.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_136",
+        "src": "portraits/136.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_136",
+      "src": "portraits/136_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_136",
+          "src": "portraits/136_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_136",
+          "src": "portraits/136_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_136",
+          "src": "portraits/136_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_136",
+          "src": "portraits/136_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "137": {
+    "sprite": "立絵_服_通常_137",
+    "src": "portraits/137.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_137",
+        "src": "portraits/137.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_137",
+        "src": "portraits/137.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_137",
+      "src": "portraits/137_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_137",
+          "src": "portraits/137_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_137",
+          "src": "portraits/137_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_137",
+          "src": "portraits/137_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_137",
+          "src": "portraits/137_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "138": {
+    "sprite": "立絵_服_通常_138",
+    "src": "portraits/138.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_138",
+        "src": "portraits/138.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_138",
+        "src": "portraits/138.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_138",
+      "src": "portraits/138_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_138",
+          "src": "portraits/138_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_138",
+          "src": "portraits/138_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_138",
+          "src": "portraits/138_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_138",
+          "src": "portraits/138_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "139": {
+    "sprite": "立絵_服_通常_139",
+    "src": "portraits/139_拼接.webp",
+    "rect": [
+      367,
+      500,
+      274,
+      500
+    ],
+    "face": {
+      "sprite": "顔絵_服_通常_139",
+      "src": "portraits/139_拼接.webp",
+      "rect": [
+        394,
+        500,
+        274,
+        300
+      ]
+    }
+  },
+  "140": {
+    "sprite": "立絵_服_通常_140",
+    "src": "portraits/140.webp",
+    "rect": [
+      0,
+      0,
+      300,
+      300
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_140",
+        "src": "portraits/140.webp",
+        "rect": [
+          300,
+          0,
+          300,
+          300
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_140",
+        "src": "portraits/140.webp",
+        "rect": [
+          600,
+          0,
+          300,
+          300
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_140",
+      "src": "portraits/140_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_140",
+          "src": "portraits/140_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_140",
+          "src": "portraits/140_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_140",
+          "src": "portraits/140_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_140",
+          "src": "portraits/140_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "142": {
+    "sprite": "立絵_服_通常_142",
+    "src": "portraits/142.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_142",
+        "src": "portraits/142.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_142",
+        "src": "portraits/142.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_142",
+      "src": "portraits/142_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_142",
+          "src": "portraits/142_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_142",
+          "src": "portraits/142_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_142",
+          "src": "portraits/142_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_142",
+          "src": "portraits/142_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "143": {
+    "sprite": "立絵_服_通常_143",
+    "src": "portraits/143.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_143",
+        "src": "portraits/143.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_143",
+        "src": "portraits/143.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_143",
+      "src": "portraits/143_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_143",
+          "src": "portraits/143_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_143",
+          "src": "portraits/143_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_143",
+          "src": "portraits/143_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "145": {
+    "sprite": "立絵_服_通常_145",
+    "src": "portraits/145.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_145",
+        "src": "portraits/145.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_145",
+        "src": "portraits/145.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_145",
+      "src": "portraits/145_Face.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_145",
+          "src": "portraits/145_Face.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_145",
+          "src": "portraits/145_Face.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "152": {
+    "sprite": "立絵_服_通常_152",
+    "src": "portraits/152.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_152",
+        "src": "portraits/152.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_152",
+        "src": "portraits/152.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_152",
+      "src": "portraits/152_Face.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_152",
+          "src": "portraits/152_Face.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_152",
+          "src": "portraits/152_Face.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "153": {
+    "sprite": "立絵_服_通常_153",
+    "src": "portraits/153.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_153",
+        "src": "portraits/153.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_153",
+        "src": "portraits/153.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_153",
+      "src": "portraits/153_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_153",
+          "src": "portraits/153_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_153",
+          "src": "portraits/153_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_153",
+          "src": "portraits/153_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_153",
+          "src": "portraits/153_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "154": {
+    "sprite": "立絵_服_通常_154",
+    "src": "portraits/154.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_154",
+        "src": "portraits/154.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_154",
+        "src": "portraits/154.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_154",
+      "src": "portraits/154_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_154",
+          "src": "portraits/154_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_154",
+          "src": "portraits/154_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_154",
+          "src": "portraits/154_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_154",
+          "src": "portraits/154_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "155": {
+    "sprite": "立絵_服_通常_155",
+    "src": "portraits/155.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_155",
+        "src": "portraits/155.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_155",
+        "src": "portraits/155.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_155",
+      "src": "portraits/155_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_155",
+          "src": "portraits/155_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_155",
+          "src": "portraits/155_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_155",
+          "src": "portraits/155_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_155",
+          "src": "portraits/155_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "156": {
+    "sprite": "立絵_服_通常_156",
+    "src": "portraits/156.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_156",
+        "src": "portraits/156.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_156",
+        "src": "portraits/156.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_156",
+      "src": "portraits/156_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_156",
+          "src": "portraits/156_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_156",
+          "src": "portraits/156_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_156",
+          "src": "portraits/156_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_156",
+          "src": "portraits/156_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "157": {
+    "sprite": "立絵_服_通常_157",
+    "src": "portraits/157.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_157",
+        "src": "portraits/157.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_157",
+        "src": "portraits/157.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_157",
+      "src": "portraits/157_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_157",
+          "src": "portraits/157_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_157",
+          "src": "portraits/157_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_157",
+          "src": "portraits/157_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_157",
+          "src": "portraits/157_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "158": {
+    "sprite": "立絵_服_通常_158",
+    "src": "portraits/158.webp",
+    "rect": [
+      0,
+      0,
+      360,
+      360
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_158",
+        "src": "portraits/158.webp",
+        "rect": [
+          360,
+          0,
+          360,
+          360
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_158",
+        "src": "portraits/158.webp",
+        "rect": [
+          720,
+          0,
+          360,
+          360
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_158",
+      "src": "portraits/158_顔.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_158",
+          "src": "portraits/158_顔.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_158",
+          "src": "portraits/158_顔.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        },
+        "lust": {
+          "sprite": "顔絵_服_発情_158",
+          "src": "portraits/158_顔.webp",
+          "rect": [
+            900,
+            0,
+            180,
+            180
+          ]
+        },
+        "sleep": {
+          "sprite": "顔絵_服_睡眠_158",
+          "src": "portraits/158_顔.webp",
+          "rect": [
+            720,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "159": {
+    "sprite": "立絵_服_通常_159",
+    "src": "portraits/mugen_159.webp",
+    "rect": [
+      0,
+      0,
+      215,
+      215
+    ],
+    "face": {
+      "sprite": "顔絵_服_通常_159",
+      "src": "portraits/mugen_159_顔.webp",
+      "rect": [
+        0,
+        0,
+        145,
+        145
+      ],
+      "variants": {
+        "lust": {
+          "sprite": "顔絵_服_発情_159",
+          "src": "portraits/mugen_159_顔.webp",
+          "rect": [
+            145,
+            0,
+            145,
+            145
+          ]
+        }
+      }
+    }
+  },
+  "160": {
+    "sprite": "立絵_服_通常_160",
+    "src": "portraits/160.webp",
+    "rect": [
+      0,
+      0,
+      180,
+      180
+    ],
+    "variants": {
+      "smile": {
+        "sprite": "立絵_服_笑顔_160",
+        "src": "portraits/160.webp",
+        "rect": [
+          180,
+          0,
+          180,
+          180
+        ]
+      },
+      "angry": {
+        "sprite": "立絵_服_憤怒_160",
+        "src": "portraits/160.webp",
+        "rect": [
+          360,
+          0,
+          180,
+          180
+        ]
+      }
+    },
+    "face": {
+      "sprite": "顔絵_服_通常_160",
+      "src": "portraits/160_Face.webp",
+      "rect": [
+        0,
+        0,
+        180,
+        180
+      ],
+      "variants": {
+        "smile": {
+          "sprite": "顔絵_服_笑顔_160",
+          "src": "portraits/160_Face.webp",
+          "rect": [
+            180,
+            0,
+            180,
+            180
+          ]
+        },
+        "angry": {
+          "sprite": "顔絵_服_憤怒_160",
+          "src": "portraits/160_Face.webp",
+          "rect": [
+            360,
+            0,
+            180,
+            180
+          ]
+        }
+      }
+    }
+  },
+  "161": {
+    "sprite": "立絵_服_通常_161",
+    "src": "portraits/161_拼接.webp",
+    "rect": [
+      0,
+      0,
+      355,
+      492
+    ],
+    "face": {
+      "sprite": "顔絵_服_通常_161",
+      "src": "portraits/161_拼接.webp",
+      "rect": [
+        34,
+        0,
+        300,
+        292
+      ]
+    }
+  },
+  "162": {
+    "sprite": "立絵_服_通常_162",
+    "src": "portraits/162_拼接.webp",
+    "rect": [
+      384,
+      0,
+      383,
+      500
+    ],
+    "face": {
+      "sprite": "顔絵_服_通常_162",
+      "src": "portraits/162_拼接.webp",
+      "rect": [
+        432,
+        0,
+        300,
+        300
+      ]
+    }
+  },
+  "163": {
+    "sprite": "立絵_服_通常_163",
+    "src": "portraits/163_拼接.webp",
+    "rect": [
+      185,
+      0,
+      343,
+      489
+    ],
+    "face": {
+      "sprite": "顔絵_服_通常_163",
+      "src": "portraits/163_拼接.webp",
+      "rect": [
+        203,
+        0,
+        300,
+        289
+      ]
+    }
+  },
+  "164": {
+    "sprite": "立絵_服_通常_164",
+    "src": "portraits/164_拼接.webp",
+    "rect": [
+      0,
+      0,
+      462,
+      500
+    ],
+    "face": {
+      "sprite": "顔絵_服_通常_164",
+      "src": "portraits/164_拼接.webp",
+      "rect": [
+        81,
+        0,
+        300,
+        300
+      ]
+    }
+  },
+  "165": {
+    "sprite": "立絵_服_通常_165",
+    "src": "portraits/165_拼接.webp",
+    "rect": [
+      426,
+      427,
+      500,
+      500
+    ],
+    "face": {
+      "sprite": "顔絵_服_通常_165",
+      "src": "portraits/165_拼接.webp",
+      "rect": [
+        526,
+        427,
+        300,
+        300
+      ]
+    }
+  }
+}

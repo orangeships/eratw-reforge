@@ -1,0 +1,4089 @@
+{
+  "0": {
+    "gate": {},
+    "deferred": []
+  },
+  "1": {
+    "gate": {},
+    "deferred": [
+      "STAIN:3 >= 2 && (STAIN:3 != 16 && STAIN:3 != 17 && STAIN:3 != 128 && STAIN:3 != 129 && STAIN:3 != 144 && STAIN:3 != 145) && ASSIPLAY == 0 && TALENT:PLAYER:汚臭耐性 < 2",
+      "ABL:ASSI:従順 <= 3 && TALENT:ASSI:汚臭耐性 < 0",
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "2": {
+    "gate": {},
+    "deferred": [
+      "STAIN:2 >= 4 && (STAIN:2 != 18 && STAIN:2 != 19 && STAIN:2 != 128 && STAIN:2 != 129 && STAIN:2 != 130 && STAIN:2 != 131 && STAIN:2 != 144 && STAIN:2 != 145 && STAIN:2 != 146 && STAIN:2 != 147) && ASSIPLAY == 0 && TALENT:PLAYER:汚臭耐性 < 2",
+      "ABL:ASSI:従順 <= 3 && TALENT:ASSI:汚臭耐性 < 0",
+      "TALENT:PLAYER:猫舌 && ABL:PLAYER:技巧 < 2",
+      "!(HAS_PENIS(TARGET))",
+      "TEQUIP:12"
+    ]
+  },
+  "3": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "!(TALENT:2 & 1)",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && !TALENT:ASSI:施虐狂",
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "4": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "STAIN:4 >= 2 && (STAIN:3 != 16 && STAIN:3 != 17) && ASSIPLAY == 0 && TALENT:PLAYER:汚臭耐性 < 2",
+      "TALENT:PLAYER:猫舌 && ABL:PLAYER:技巧 < 2",
+      "TEQUIP:0 & 4 || TEQUIP:0 & 2",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23"
+    ]
+  },
+  "5": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "6": {
+    "gate": {},
+    "deferred": []
+  },
+  "7": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:16",
+      "TEQUIP:17",
+      "TEQUIP:24"
+    ]
+  },
+  "8": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "ABL:従順< 2",
+      "TALENT:処女 && ABL:従順 < 3 && ABL:露出癖 < 3",
+      "TEQUIP:縄",
+      "TEQUIP:0 & 4 || TEQUIP:0 & 2",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "9": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:小悪魔 == 0",
+      "TEQUIP:縄",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "10": {
+    "gate": {},
+    "deferred": [
+      "(TEQUIP:1 & 2) && TEQUIP:3 == 0",
+      "TEQUIP:17",
+      "TEQUIP:16",
+      "TEQUIP:24",
+      "TEQUIP:体位 == 5 || TEQUIP:体位 == 2 || TEQUIP:体位 == 3"
+    ]
+  },
+  "11": {
+    "gate": {},
+    "deferred": [
+      "(TEQUIP:1 & 2) && TEQUIP:3 == 0",
+      "TEQUIP:17",
+      "TEQUIP:16",
+      "TEQUIP:24",
+      "TEQUIP:体位 == 5 || TEQUIP:体位 == 2 || TEQUIP:体位 == 3",
+      "MASTER_POSE(0,4) && MASTER_POSE(0,4) != TARGET",
+      "TEQUIP:LOCAL:吸乳头 && LOCAL != TARGET",
+      "LOCAL:1"
+    ]
+  },
+  "12": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:24",
+      "TALENT:胸围 == -2"
+    ]
+  },
+  "13": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "ABL:従順< 2",
+      "TALENT:処女 && ABL:従順 < 3 && ABL:露出癖 < 3",
+      "TEQUIP:縄",
+      "TEQUIP:0 & 4 || TEQUIP:0 & 2",
+      "TEQUIP:14 || TEQUIP:15",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "15": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "GETBIT(TALENT:TARGET:性別,1)"
+    ]
+  },
+  "19": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:口球",
+      "PREVCOM == 20 && TARGET == TFLAG:切换到前一回的TARGET"
+    ]
+  },
+  "20": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:口球"
+    ]
+  },
+  "21": {
+    "gate": {},
+    "deferred": []
+  },
+  "22": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "(FLAG:70 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "23": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "(FLAG:70 && CFLAG:TARGET:344 == 0)",
+      "TEQUIP:LOCAL",
+      "TEQUIP:50 != -1",
+      "TEQUIP:51 != -1",
+      "TEQUIP:32",
+      "TEQUIP:41",
+      "TEQUIP:42",
+      "TEQUIP:継続接吻",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "24": {
+    "gate": {},
+    "deferred": [
+      "GETPALAMLV(PALAM:欲情,10) < 5",
+      "TCVAR:强行",
+      "!SHIRAHU(TARGET)",
+      "CFLAG:延迟",
+      "TEQUIP:LOCAL",
+      "TEQUIP:32",
+      "TEQUIP:41",
+      "TEQUIP:42",
+      "TEQUIP:継続接吻"
+    ]
+  },
+  "25": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "!(TALENT:2 & 1)",
+      "ABL:PLAYER:指 < 3",
+      "TEQUIP:50 != -1",
+      "TEQUIP:51 != -1",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:レズっ気 <= 3) && !TALENT:ASSI:サド",
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "26": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:Ｖセックス != PLAYER && TEQUIP:Ａセックス != PLAYER"
+    ]
+  },
+  "40": {
+    "gate": {},
+    "deferred": [
+      "ITEM:0 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 8"
+    ]
+  },
+  "41": {
+    "gate": {
+      "requiresIndoor": true
+    },
+    "deferred": [
+      "ITEM:1 == 0 && NOITEM == 0",
+      "ABL:ASSI:技巧 < 3 && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:32"
+    ]
+  },
+  "42": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "TEQUIP:11",
+      "ITEM:2 == 0 && NOITEM == 0",
+      "TEQUIP:0 > 1",
+      "HAS_PENIS(TARGET)",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:32"
+    ]
+  },
+  "43": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:12",
+      "ITEM:3 == 0 && NOITEM == 0",
+      "!(HAS_PENIS(TARGET))",
+      "TEQUIP:0 > 1",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:33"
+    ]
+  },
+  "44": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "TALENT:196 == 99",
+      "ITEM:4 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 4",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:百合属性 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0"
+    ]
+  },
+  "45": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "TEQUIP:14",
+      "ITEM:5 == 0 && NOITEM == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4",
+      "TEQUIP:21",
+      "TEQUIP:15",
+      "TEQUIP:22",
+      "TEQUIP:23"
+    ]
+  },
+  "46": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "TEQUIP:15",
+      "ITEM:6 == 0 && NOITEM == 0",
+      "TEQUIP:0 > 1",
+      "TEQUIP:14",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "TEQUIP:33"
+    ]
+  },
+  "47": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:16",
+      "ITEM:10 == 0 && NOITEM == 0",
+      "TEQUIP:1 > 1 && TEQUIP:3 == 0",
+      "TEQUIP:17",
+      "TEQUIP:24",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:32"
+    ]
+  },
+  "48": {
+    "gate": {
+      "requiresIndoor": true
+    },
+    "deferred": [
+      "TEQUIP:17",
+      "ITEM:11 == 0 && NOITEM == 0",
+      "TALENT:母乳体質 == 0",
+      "TEQUIP:1 > 1 && TEQUIP:3 == 0",
+      "TEQUIP:16",
+      "TEQUIP:24",
+      "ABL:TARGET:Ｂ感覚 <= 2",
+      "!(TALENT:2 & 1)",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:32",
+      "TEQUIP:33"
+    ]
+  },
+  "49": {
+    "gate": {},
+    "deferred": [
+      "ITEM:0 == 0 && NOITEM == 0",
+      "(TEQUIP:1 & 2) && TEQUIP:3 == 0",
+      "TEQUIP:17",
+      "TEQUIP:24"
+    ]
+  },
+  "50": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:PLAYER:避孕套",
+      "!ITEM:45",
+      "!HAS_PENIS(PLAYER)",
+      "TEQUIP:Ｖセックス == PLAYER && TEQUIP:Ａセックス == PLAYER"
+    ]
+  },
+  "51": {
+    "gate": {},
+    "deferred": [
+      "!ITEM:口服避孕薬"
+    ]
+  },
+  "60": {
+    "gate": {},
+    "deferred": [
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "TALENT:196 == 99",
+      "挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:百合属性 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:体位 == 5"
+    ]
+  },
+  "61": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:技巧 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:体位 == 4"
+    ]
+  },
+  "62": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "EXP:2 < EXPLV:3",
+      "挿入不可(TARGET) == 1 && EXP:Ａ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ａ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2)  && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:技巧 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:体位 == 5"
+    ]
+  },
+  "63": {
+    "gate": {},
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "EXP:2 < EXPLV:3",
+      "挿入不可(TARGET) == 1 && EXP:Ａ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ａ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2)  && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:技巧 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:体位 == 4"
+    ]
+  },
+  "64": {
+    "gate": {},
+    "deferred": [
+      "BASE:勃起 < 1000",
+      "!(TALENT:PLAYER:2 & 1)",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "!(HAS_PENIS(TARGET))",
+      "TEQUIP:PLAYER:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:33"
+    ]
+  },
+  "65": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:技巧 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "TEQUIP:縄",
+      "IS_STANDING_SEX(65) ;addition custom code"
+    ]
+  },
+  "66": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "EXP:2 < EXPLV:3",
+      "TEQUIP:縄",
+      "挿入不可(TARGET) == 1 && !TALENT:PLAYER:禁断的知識 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ａ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:技巧 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "IS_STANDING_SEX(66) ;addition custom code"
+    ]
+  },
+  "67": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 4",
+      "挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:技巧 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女",
+      "TEQUIP:体位 == 5 || TEQUIP:体位 == 2",
+      "!CAN_STANDING_SEX(67) && !CAN_NORMAL_SEX(67)"
+    ]
+  },
+  "68": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 4",
+      "挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:技巧 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "TEQUIP:体位 == 4 || TEQUIP:体位 == 1",
+      "!CAN_STANDING_SEX(68) && !CAN_NORMAL_SEX(68)"
+    ]
+  },
+  "69": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "EXP:2 < EXPLV:3",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 4",
+      "挿入不可(TARGET) == 1 && EXP:Ａ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ａ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:技巧 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:体位 == 5 || TEQUIP:体位 == 2",
+      "!CAN_STANDING_SEX(69) && !CAN_NORMAL_SEX(69)"
+    ]
+  },
+  "70": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "EXP:2 < EXPLV:3",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 4",
+      "挿入不可(TARGET) == 1 && EXP:Ａ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ａ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:技巧 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:体位 == 4 || TEQUIP:体位 == 1",
+      "!CAN_STANDING_SEX(70) && !CAN_NORMAL_SEX(70)"
+    ]
+  },
+  "71": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:13",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "BASE:PLAYER:勃起 < 1000",
+      "!LOCAL:2",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "!LOCAL:2 || LOCAL:2 == TARGET",
+      "(ABL:従順 <= 4 || ABL:百合属性 <= 4) && TALENT:施虐狂 == 0",
+      "(ABL:従順 <= 3 || ABL:百合属性 <= 3) && TALENT:施虐狂 == 0",
+      "TALENT:196 == 99",
+      "LOCAL:2 && !(TALENT:(LOCAL:2):2 & 1)",
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "TEQUIP:(LOCAL:2):13",
+      "TEQUIP:(LOCAL:2):14",
+      "TEQUIP:(LOCAL:2):15",
+      "TEQUIP:(LOCAL:2):21",
+      "TEQUIP:(LOCAL:2):22",
+      "TEQUIP:(LOCAL:2):23",
+      "TEQUIP:(LOCAL:2):33 || TEQUIP:33",
+      "挿入不可(TARGET) == 1 && EXP:Ａ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ａ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "EXP:(LOCAL:2):2 < EXPLV:3",
+      "TEQUIP:(LOCAL:2):0 > 1"
+    ]
+  },
+  "72": {
+    "gate": {},
+    "deferred": [
+      "!MASTER_POSE(SET_V,SET_P,1)",
+      "TEQUIP:0 & 4",
+      "TEQUIP:TARGET:50 != MASTER",
+      "挿入不可(TARGET) == 1 && !TALENT:PLAYER:禁断的知識 && EXP:Ｖ経験 < 50",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3"
+    ]
+  },
+  "73": {
+    "gate": {},
+    "deferred": [
+      "!MASTER_POSE(SET_V,SET_P,1)",
+      "TEQUIP:0 & 4",
+      "TEQUIP:TARGET:50 != MASTER",
+      "挿入不可(TARGET) == 1 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3"
+    ]
+  },
+  "74": {
+    "gate": {},
+    "deferred": [
+      "!MASTER_POSE(SET_A,SET_P,1)",
+      "TEQUIP:0 & 4",
+      "TEQUIP:TARGET:51 != MASTER"
+    ]
+  },
+  "75": {
+    "gate": {},
+    "deferred": [
+      "!MASTER_POSE(SET_A,SET_P,1)",
+      "TEQUIP:0 & 4",
+      "TEQUIP:TARGET:51 != MASTER"
+    ]
+  },
+  "79": {
+    "gate": {},
+    "deferred": [
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "!TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) != 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:百合属性 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "80": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:縄"
+    ]
+  },
+  "81": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 2)",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "挿入不可(TARGET) == 3",
+      "TEQUIP:口球"
+    ]
+  },
+  "82": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "TALENT:胸围 + ABL:技巧 < 3",
+      "TEQUIP:縄",
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:継続接吻",
+      "TEQUIP:1 > 1 && TEQUIP:3 == 0"
+    ]
+  },
+  "83": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "PALAM:潤滑 < 2000",
+      "!HAS_PENIS(PLAYER)",
+      "HAS_PENIS(TARGET)",
+      "TEQUIP:13",
+      "TEQUIP:縄",
+      "TEQUIP:0 > 1",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "84": {
+    "gate": {},
+    "deferred": [
+      "!BATHROOM()",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:32",
+      "TEQUIP:13",
+      "TEQUIP:14",
+      "TEQUIP:11",
+      "TEQUIP:16",
+      "TEQUIP:17",
+      "TEQUIP:24",
+      "TEQUIP:12",
+      "TEQUIP:18",
+      "TEQUIP:縄",
+      "TEQUIP:口球",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "85": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:縄",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "86": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "TEQUIP:口球"
+    ]
+  },
+  "87": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "TALENT:胸围 == -2",
+      "TALENT:胸围 + ABL:技巧 < 4",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:縄",
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:1 > 1 && TEQUIP:3 == 0",
+      "TEQUIP:口球"
+    ]
+  },
+  "88": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "ABL:技巧 < 1",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:口球",
+      "ABL:舌 < 3",
+      "!(TALENT:PLAYER:2 & 2)",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "89": {
+    "gate": {},
+    "deferred": [
+      "!TFLAG:套套内",
+      "TEQUIP:口球",
+      "ABL:精液中毒 < 3 && (!FLAG:70 || CFLAG:TARGET:344 == 1)"
+    ]
+  },
+  "90": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TEQUIP:PLAYER:0 & 4",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "91": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TEQUIP:PLAYER:0 & 4 || TEQUIP:PLAYER:0 & 2",
+      "TEQUIP:50 == PLAYER || TEQUIP:51 == PLAYER",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:口球",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "92": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "TEQUIP:PLAYER:0 & 4",
+      "EXP:PLAYER:2 < EXPLV:3",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "TEQUIP:12",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "93": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "TEQUIP:PLAYER:0 & 4",
+      "EXP:PLAYER:2 < EXPLV:3",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "TEQUIP:12",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "94": {
+    "gate": {},
+    "deferred": [
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "TEQUIP:PLAYER:0 & 4",
+      "EXP:PLAYER:2 < EXPLV:3",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "TEQUIP:12",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "95": {
+    "gate": {},
+    "deferred": [
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "TCVAR:100 == PLAYER && TARGET == TFLAG:103",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:体位 == 5"
+    ]
+  },
+  "96": {
+    "gate": {},
+    "deferred": [
+      "!(HAS_PENIS(TARGET))",
+      "!GETBIT(TALENT:PLAYER:2,0)",
+      "TEQUIP:継続接吻",
+      "TEQUIP:PLAYER:1 > 1 && TEQUIP:PLAYER:3 == 0"
+    ]
+  },
+  "100": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "ABL:ASSI:従順 < 3 && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 8"
+    ]
+  },
+  "101": {
+    "gate": {},
+    "deferred": [
+      "ITEM:13 == 0 && NOITEM == 0",
+      "ABL:ASSI:従順 < 4 && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 || TEQUIP:1",
+      "TEQUIP:31",
+      "TEQUIP:33"
+    ]
+  },
+  "102": {
+    "gate": {},
+    "deferred": [
+      "ITEM:46 == 0 && NOITEM == 0",
+      "ABL:ASSI:従順 < 4 && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 || TEQUIP:1",
+      "TEQUIP:31",
+      "TEQUIP:33",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "103": {
+    "gate": {},
+    "deferred": [
+      "ITEM:14 == 0 && NOITEM == 0",
+      "ABL:ASSI:従順 < 5 && TALENT:ASSI:擅長用針 == 0 && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 || TEQUIP:1",
+      "TEQUIP:31",
+      "TEQUIP:33"
+    ]
+  },
+  "104": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:18",
+      "ITEM:15 == 0 && NOITEM == 0"
+    ]
+  },
+  "105": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:縄",
+      "ITEM:16 == 0 && NOITEM == 0",
+      "ABL:PLAYER:技巧 < 1",
+      "ABL:ASSI:技巧 < 3"
+    ]
+  },
+  "106": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:口球",
+      "ITEM:17 == 0 && NOITEM == 0",
+      "TEQUIP:33"
+    ]
+  },
+  "107": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TEQUIP:縄",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "TEQUIP:拘束",
+      "ITEM:27 == 0 && NOITEM == 0"
+    ]
+  },
+  "108": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "ABL:ASSI:従順 < 3 && TALENT:ASSI:施虐狂 == 0"
+    ]
+  },
+  "120": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 1)",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:口球",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "121": {
+    "gate": {
+      "requiresIndoor": true,
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "HAS_PENIS(PLAYER)|| HAS_PENIS(TARGET)",
+      "ABL:ASSI:欲望 <= 3 && TALENT:ASSI:小悪魔 == 0",
+      "TEQUIP:縄",
+      "TEQUIP:0 > 1",
+      "TEQUIP:13",
+      "TEQUIP:11",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "122": {
+    "gate": {},
+    "deferred": [
+      "PLAYER != ASSI",
+      "!(TALENT:ASSI:2 & 1)",
+      "ABS(TALENT:体型 - TALENT:ASSI:体型) > 2 && TALENT:MASTER:禁断的知識 == 0",
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "TEQUIP:12",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "FLAG:70 == 1 && CFLAG:TARGET:344 == 0 && CFLAG:ASSI:344 == 0"
+    ]
+  },
+  "123": {
+    "gate": {},
+    "deferred": [
+      "!(HAS_PENIS(TARGET))",
+      "TEQUIP:0 > 1",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "124": {
+    "gate": {},
+    "deferred": [
+      "!(HAS_PENIS(TARGET))"
+    ]
+  },
+  "125": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "!(TALENT:2 & 1) || !(TALENT:PLAYER:2 & 1)",
+      "ABL:百合属性 < 3",
+      "TEQUIP:縄"
+    ]
+  },
+  "126": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "!(TALENT:2 & 1) || !(TALENT:PLAYER:2 & 1)",
+      "ABL:百合属性 < 3",
+      "TEQUIP:1 > 0 && TEQUIP:3 == 0",
+      "TEQUIP:縄"
+    ]
+  },
+  "127": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "TEQUIP:PLAYER:0 & 4",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "TFLAG:泡風呂"
+    ]
+  },
+  "130": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 1)",
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "TEQUIP:PLAYER:0 & 4",
+      "(HAS_PENIS(TARGET)) && ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "TEQUIP:12",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "131": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 1)",
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "TEQUIP:PLAYER:0 & 4",
+      "(HAS_PENIS(TARGET)) && ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "TEQUIP:12",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "132": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 1)",
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "TEQUIP:PLAYER:0 & 4",
+      "EXP:PLAYER:1 < EXPLV:3",
+      "(HAS_PENIS(TARGET)) && ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "TEQUIP:12",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "133": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 1)",
+      "!(HAS_PENIS(TARGET)) && ITEM:PBAND == 0",
+      "(HAS_PENIS(TARGET)) && BASE:勃起 < 1000",
+      "TEQUIP:PLAYER:0 & 4",
+      "EXP:PLAYER:1 < EXPLV:3",
+      "(HAS_PENIS(TARGET)) && ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "TEQUIP:12",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "140": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:口球",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "ABL:従順 + ABL:欲望 < 6",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && (TALENT:PLAYER:禁断的知識 == 0)",
+      "TEQUIP:33"
+    ]
+  },
+  "141": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "ABL:ASSI:従順 < 4 && TALENT:ASSI:施虐狂 == 0",
+      "EXP:0 < 150",
+      "ABL:従順 <= 3 || ABL:受虐属性 <= 3",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && TALENT:MASTER:禁断的知識 == 0",
+      "TEQUIP:0 > 1",
+      "TEQUIP:32",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:33",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "142": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:14",
+      "TEQUIP:21",
+      "ABL:ASSI:従順 < 4 && TALENT:ASSI:施虐狂 == 0",
+      "EXP:1 < 150",
+      "ABL:従順 <= 3 || ABL:受虐属性 <= 3",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && TALENT:MASTER:禁断的知識 == 0",
+      "TEQUIP:0 > 1",
+      "TEQUIP:15",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "TEQUIP:32",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:33",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "143": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:13",
+      "TEQUIP:14",
+      "TEQUIP:21",
+      "TEQUIP:15",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "!(TALENT:2 & 1)",
+      "ABL:ASSI:従順 < 4 && TALENT:ASSI:施虐狂 == 0",
+      "ABL:従順 <= 3 || ABL:受虐属性 <= 3 || EXP:Ｖ拡張経験 < 10 || EXP:Ａ拡張経験 < 10",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && TALENT:MASTER:禁断的知識 == 0",
+      "TEQUIP:0 > 1",
+      "TEQUIP:32",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:33",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "144": {
+    "gate": {},
+    "deferred": [
+      "FLAG:おもらし有効 == 0",
+      "TCVAR:利尿剤 == 0 && TALENT:漏尿癖 == 0",
+      "ABL:従順 <= 2",
+      "TEQUIP:0 > 1"
+    ]
+  },
+  "145": {
+    "gate": {},
+    "deferred": [
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:口球",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "146": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 > 1",
+      "TEQUIP:21",
+      "ITEM:9 == 0 && NOITEM == 0",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "EXP:1 < 100",
+      "ABL:従順 + ABL:欲望 + ABL:露出癖 < 10",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "147": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 > 1",
+      "TEQUIP:22",
+      "ITEM:8 == 0 && NOITEM == 0",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:23"
+    ]
+  },
+  "148": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 > 1",
+      "TEQUIP:23",
+      "ITEM:24 == 0 && NOITEM == 0",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:31"
+    ]
+  },
+  "150": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "TALENT:胸围 == -2",
+      "TALENT:胸围 + ABL:PLAYER:技巧 < 3",
+      "TEQUIP:縄",
+      "!(TALENT:PLAYER:2 & 2)",
+      "TALENT:胸围 + ABL:PLAYER:技巧 < 3"
+    ]
+  },
+  "180": {
+    "gate": {},
+    "deferred": [
+      "ITEM:40 == 0 && NOITEM == 0",
+      "TEQUIP:32"
+    ]
+  },
+  "181": {
+    "gate": {},
+    "deferred": [
+      "ITEM:41 == 0 && NOITEM == 0",
+      "TALENT:薬毒耐性",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "182": {
+    "gate": {},
+    "deferred": [
+      "ITEM:42 == 0 && NOITEM == 0",
+      "TALENT:薬毒耐性",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "TEQUIP:33"
+    ]
+  },
+  "183": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:28",
+      "(ITEM:18 == 0 || ITEM:43 == 0) && NOITEM == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "184": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:29",
+      "ITEM:22 == 0 && NOITEM == 0",
+      "ABL:従順 <= 2 && ABL:受虐属性 <= 2",
+      "(IS_VAMPIRE(TARGET) || IS_VAMPIRE(MASTER)) && TIME == 0",
+      "IS_VAMPIRE(ASSI) && TIME == 0",
+      "TEQUIP:31",
+      "TEQUIP:33",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "185": {
+    "gate": {},
+    "deferred": [
+      "ASSI < 1",
+      "ASSIPLAY",
+      "!(TALENT:ASSI:2 & 1)",
+      "ABS(TALENT:体型 - TALENT:ASSI:体型) > 2 && (TALENT:MASTER:禁断的知識 == 0)",
+      "!(TALENT:MASTER:2 & 2) && ITEM:PBAND == 0",
+      "TEQUIP:縄 == 0 && ABL:従順 < 3",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:33",
+      "FLAG:70 == 1 && CFLAG:TARGET:344 == 0 && CFLAG:ASSI:344 == 0"
+    ]
+  },
+  "186": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:30",
+      "ITEM:21 == 0 && NOITEM == 0",
+      "ABL:従順 <= 1",
+      "TEQUIP:29",
+      "TEQUIP:31",
+      "TEQUIP:33",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "187": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:31",
+      "ABL:従順 <= 1",
+      "TALENT:動物耳 && ABL:従順 <= 2",
+      "TALENT:ASSI:動物耳 && ABL:従順 <= 2",
+      "!ITEM:簡易泳池",
+      "!GETBIT (FLAG:泳池, 1) && CFLAG:MASTER:現在位置 != OMANEKIBEYA()",
+      "TEQUIP:0 || TEQUIP:1",
+      "TEQUIP:29",
+      "TEQUIP:30",
+      "TEQUIP:33",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "188": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:32",
+      "!BATHROOM()",
+      "!GETBIT (FLAG:泳池, 2) && !BATHROOM() && CFLAG:MASTER:現在位置 != OMANEKIBEYA()",
+      "TEQUIP:11",
+      "TEQUIP:16",
+      "TEQUIP:17",
+      "TEQUIP:24",
+      "ABL:従順 < 4 && TALENT:PLAYER:施虐狂 == 0",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "189": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "!TALENT:恋慕",
+      "TEQUIP:33",
+      "ITEM:23 == 0 && NOITEM == 0",
+      "ASSIPLAY",
+      "ABL:従順 < 3",
+      "TEQUIP:29",
+      "TEQUIP:30",
+      "TEQUIP:31",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "190": {
+    "gate": {},
+    "deferred": [
+      "!TALENT:恋慕",
+      "TEQUIP:34",
+      "ITEM:23 == 0 && NOITEM == 0",
+      "ASSIPLAY",
+      "ABL:従順 < 3",
+      "TEQUIP:29",
+      "TEQUIP:30",
+      "TEQUIP:31",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "191": {
+    "gate": {},
+    "deferred": [
+      "ITEM:252 == 0 && NOITEM == 0",
+      "TCVAR:睡眠薬強度 > 2",
+      "FLAG:70 == 0 && !CFLAG:恶作剧",
+      "TALENT:MASTER:禁断的知識 == 0"
+    ]
+  },
+  "192": {
+    "gate": {},
+    "deferred": [
+      "ITEM:排卵誘発剤 == 0",
+      "TALENT:薬毒耐性",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "SHIRAHU(TARGET) && CFLAG:允许无套 != 2"
+    ]
+  },
+  "233": {
+    "gate": {},
+    "deferred": [
+      "Five_Orgasm_Magic == 0"
+    ]
+  },
+  "270": {
+    "gate": {},
+    "deferred": []
+  },
+  "271": {
+    "gate": {},
+    "deferred": []
+  },
+  "272": {
+    "gate": {},
+    "deferred": []
+  },
+  "273": {
+    "gate": {},
+    "deferred": []
+  },
+  "274": {
+    "gate": {},
+    "deferred": []
+  },
+  "275": {
+    "gate": {},
+    "deferred": []
+  },
+  "276": {
+    "gate": {},
+    "deferred": []
+  },
+  "277": {
+    "gate": {},
+    "deferred": []
+  },
+  "278": {
+    "gate": {},
+    "deferred": []
+  },
+  "279": {
+    "gate": {},
+    "deferred": []
+  },
+  "280": {
+    "gate": {},
+    "deferred": []
+  },
+  "281": {
+    "gate": {},
+    "deferred": []
+  },
+  "282": {
+    "gate": {},
+    "deferred": []
+  },
+  "283": {
+    "gate": {},
+    "deferred": []
+  },
+  "284": {
+    "gate": {},
+    "deferred": []
+  },
+  "285": {
+    "gate": {},
+    "deferred": []
+  },
+  "286": {
+    "gate": {},
+    "deferred": []
+  },
+  "287": {
+    "gate": {},
+    "deferred": []
+  },
+  "288": {
+    "gate": {},
+    "deferred": []
+  },
+  "289": {
+    "gate": {},
+    "deferred": []
+  },
+  "290": {
+    "gate": {},
+    "deferred": []
+  },
+  "291": {
+    "gate": {},
+    "deferred": []
+  },
+  "292": {
+    "gate": {},
+    "deferred": []
+  },
+  "293": {
+    "gate": {},
+    "deferred": []
+  },
+  "294": {
+    "gate": {},
+    "deferred": []
+  },
+  "295": {
+    "gate": {},
+    "deferred": []
+  },
+  "296": {
+    "gate": {},
+    "deferred": []
+  },
+  "297": {
+    "gate": {},
+    "deferred": []
+  },
+  "298": {
+    "gate": {},
+    "deferred": []
+  },
+  "299": {
+    "gate": {},
+    "deferred": []
+  },
+  "300": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-co-sleeping"
+              }
+            }
+          ]
+        }
+      ],
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": []
+  },
+  "301": {
+    "gate": {
+      "cooldown": {
+        "tcvarId": 300,
+        "minutes": 60
+      },
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "notWhileBath": true,
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "TFLAG:131",
+      "CFLAG:350 == 49",
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "!AT_HOME(MASTER) && ABL:親密 < 3"
+    ]
+  },
+  "302": {
+    "gate": {
+      "cooldown": {
+        "tcvarId": 303,
+        "minutes": 60
+      },
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "notWhileTargetWorking": true,
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": []
+  },
+  "303": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!CFLAG:ブチギレ && !(ITEM:點心盒 && MARK:TARGET:反発刻印 == 1)"
+    ]
+  },
+  "304": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:行動 != 5",
+      "GROUPMATCH(CFLAG:職種, JOB_宴会参加, JOB_酔いつぶれる)",
+      "TCVAR:315 == 1",
+      "BASE:工作量 <= 0",
+      "IS_DATING_WITH_PLAYER(TARGET)",
+      "FLAG:70 && TARGET == [[美宵]]"
+    ]
+  },
+  "305": {
+    "gate": {
+      "minIntimacy": 1,
+      "requiresIndoor": true,
+      "notWhileBath": true,
+      "notWhileTargetSleeping": true,
+      "notWhileTargetWorking": true,
+      "semanticBlockers": [
+        {
+          "kind": "or",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-pranking"
+            },
+            {
+              "kind": "atom",
+              "atom": "target-co-sleeping"
+            }
+          ]
+        }
+      ],
+      "cooldown": {
+        "tcvarId": 310,
+        "minutes": 60
+      },
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "TEQUIP:六九式"
+    ]
+  },
+  "306": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "minIntimacy": 1,
+      "notWhileTargetWorking": true
+    },
+    "deferred": [
+      "TFLAG:61",
+      "GETBIT (TCVAR:26,0)"
+    ]
+  },
+  "307": {
+    "gate": {
+      "minIntimacy": 1,
+      "notWhileTargetWorking": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TARGET == 0",
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()"
+    ]
+  },
+  "308": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        },
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-sleeping"
+              }
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-co-sleeping"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-pranking"
+              }
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-co-sleeping"
+              }
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": []
+  },
+  "309": {
+    "gate": {
+      "minIntimacy": 1,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-pranking"
+              }
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-co-sleeping"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "cooldown": {
+        "tcvarId": 304,
+        "minutes": 60
+      },
+      "requiresMasterStamina": true
+    },
+    "deferred": []
+  },
+  "310": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-pranking"
+              }
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:睡眠 == 0 && GET_TARGETNUM() == 0",
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "FLAG:甲斐性無 && !CFLAG:诶嘿嘿",
+      "TFLAG:61",
+      "GETBIT (TCVAR:26,0)"
+    ]
+  },
+  "311": {
+    "gate": {
+      "minIntimacy": 2,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-co-sleeping"
+              }
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TFLAG:61",
+      "GETBIT (TCVAR:26,1)",
+      "TEQUIP:六九式"
+    ]
+  },
+  "312": {
+    "gate": {
+      "minIntimacy": 2,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-pranking"
+              }
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-co-sleeping"
+              }
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "cooldown": {
+        "tcvarId": 314,
+        "minutes": 60
+      },
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TFLAG:60 && MASTER_POSE(SET_M, SET_M) != TARGET",
+      "GETBIT (TCVAR:26,2)",
+      "TEQUIP:六九式"
+    ]
+  },
+  "313": {
+    "gate": {
+      "minIntimacy": 2,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-pranking"
+              }
+            }
+          ]
+        }
+      ],
+      "notWhileCoSleeping": true,
+      "notWhileTargetWorking": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "FLAG:甲斐性無 && !CFLAG:诶嘿嘿",
+      "TFLAG:61 && MASTER_POSE(SET_B,SET_YUBI) != TARGET",
+      "GETBIT (TCVAR:26,3)"
+    ]
+  },
+  "314": {
+    "gate": {
+      "minIntimacy": 2,
+      "notWhileTargetSleeping": true,
+      "notWhileTargetWorking": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "FLAG:甲斐性無 && !CFLAG:诶嘿嘿",
+      "TEQUIP:51 >= 0",
+      "TCVAR:20 == 72",
+      "TEQUIP:六九式",
+      "TFLAG:61 && MASTER_POSE(SET_A,SET_YUBI) != TARGET",
+      "GETBIT (TCVAR:26,4)"
+    ]
+  },
+  "315": {
+    "gate": {
+      "minIntimacy": 2,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "not",
+              "expression": {
+                "kind": "atom",
+                "atom": "target-pranking"
+              }
+            }
+          ]
+        }
+      ],
+      "notWhileCoSleeping": true,
+      "notWhileTargetWorking": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "FLAG:甲斐性無 && !CFLAG:诶嘿嘿",
+      "TFLAG:61 && MASTER_POSE(SET_C,3) != TARGET && MASTER_POSE(SET_P,SET_YUBI) != TARGET && MASTER_POSE(SET_V,SET_YUBI) != TARGET && MASTER_POSE(SET_A,SET_YUBI) != TARGET",
+      "GETBIT (TCVAR:26,5)"
+    ]
+  },
+  "316": {
+    "gate": {
+      "minIntimacy": 2,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "compare",
+              "atom": "target-pranking",
+              "op": "<",
+              "value": 2
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TEQUIP:0 & 4",
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "TEQUIP:50 >= 0",
+      "FLAG:甲斐性無 && !CFLAG:诶嘿嘿",
+      "TFLAG:61 && MASTER_POSE(SET_C,3) != TARGET && MASTER_POSE(SET_P,SET_YUBI) != TARGET && MASTER_POSE(SET_V,SET_YUBI) != TARGET && MASTER_POSE(SET_A,SET_YUBI) != TARGET",
+      "GETBIT (TCVAR:26,6)"
+    ]
+  },
+  "317": {
+    "gate": {
+      "minIntimacy": 2,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "compare",
+              "atom": "target-pranking",
+              "op": "<",
+              "value": 2
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "TEQUIP:0 & 4",
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "TCVAR:TARGET:100 != PLAYER",
+      "GETBIT (TCVAR:26,8)",
+      "CFLAG:诶嘿嘿 != 2",
+      "!ADD_CHARA_POSE(PLAYER, TARGET, SET_P, SET_V) ;addition custom code"
+    ]
+  },
+  "318": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "minIntimacy": 2,
+      "semanticBlockers": [
+        {
+          "kind": "and",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-sleeping"
+            },
+            {
+              "kind": "compare",
+              "atom": "target-pranking",
+              "op": "<",
+              "value": 2
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TEQUIP:0 & 4",
+      "CHK_DATENOW(CFLAG:约会中) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "TCVAR:TARGET:101 != PLAYER",
+      "GETBIT (TCVAR:26,8)",
+      "CFLAG:诶嘿嘿 != 2"
+    ]
+  },
+  "320": {
+    "gate": {},
+    "deferred": [
+      "TCVAR:20 != 41",
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:百合属性 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:体位 == 5"
+    ]
+  },
+  "322": {
+    "gate": {},
+    "deferred": [
+      "TCVAR:20 != 43",
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:百合属性 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:体位 == 4",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "323": {
+    "gate": {},
+    "deferred": [
+      "TCVAR:20 != 44",
+      "TALENT:196 == 99",
+      "(TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000",
+      "TEQUIP:14",
+      "TEQUIP:15",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "挿入不可(TARGET) == 1 && EXP:Ａ経験 < 50 && !TALENT:PLAYER:禁断的知識",
+      "挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ａ経験 < 50)",
+      "挿入不可(TARGET) == 3",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "TEQUIP:体位 == 4",
+      "TEQUIP:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "330": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTargetWorking": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "FLAG:甲斐性無",
+      "!(EQUIP:裙子 || EQUIP:連衣裙 || EQUIP:和服 || EQUIP:裤子) || EQUIP:0 == 0",
+      "GETBIT (TCVAR:26,7)"
+    ]
+  },
+  "331": {
+    "gate": {
+      "cooldown": {
+        "tcvarId": 300,
+        "minutes": 60
+      },
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "notWhileBath": true,
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!TFLAG:131",
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()"
+    ]
+  },
+  "332": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "notWhileBath": true,
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:妊娠自覚状態 == 1",
+      "FLAG:デート相手 && !IS_DATING_WITH_PLAYER(TARGET)",
+      "!AT_HOME(MASTER) && ABL:親密 < 3",
+      "TARGET < 1"
+    ]
+  },
+  "333": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true,
+      "notWhileTargetSleeping": true
+    },
+    "deferred": [
+      "ABL:親密 < 3",
+      "MARK:反発刻印",
+      "CFLAG:诶嘿嘿",
+      "TALENT:心情 >= 0"
+    ]
+  },
+  "334": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:職種 != JOB_宴会参加",
+      "BASE:仕事量 <= 0"
+    ]
+  },
+  "335": {
+    "gate": {
+      "requiresDrunkTarget": true,
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": []
+  },
+  "336": {
+    "gate": {
+      "minIntimacy": 2,
+      "requiresIndoor": true,
+      "notWhileBath": true,
+      "notWhileTargetSleeping": true,
+      "notWhileTargetWorking": true,
+      "semanticBlockers": [
+        {
+          "kind": "or",
+          "expressions": [
+            {
+              "kind": "atom",
+              "atom": "target-pranking"
+            },
+            {
+              "kind": "atom",
+              "atom": "target-co-sleeping"
+            }
+          ]
+        }
+      ],
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TEQUIP:六九式",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "337": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "FLAG:時間停止",
+      "CFLAG:MASTER:陪睡中",
+      "!TFLAG:描写中の兒童",
+      "!QOL_INTERACTABLE_CHILDREN()"
+    ]
+  },
+  "350": {
+    "gate": {
+      "notWhileCoSleeping": true,
+      "notWhileTargetWorking": true,
+      "notWhileTargetSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TFLAG:妄想中 == 1 && CFLAG:诶嘿嘿 != 1",
+      "CFLAG:(TARGET:LOCAL):诶嘿嘿 == 0",
+      "!GETBIT(CFLAG:(TARGET:LOCAL):既成事實 , 1) && !TALENT:(TARGET:LOCAL):合意誤認",
+      "CFLAG:(TARGET:LOCAL):睡眠",
+      "TCVAR:(TARGET:LOCAL):烂醉",
+      "!GETBIT(CFLAG:(TARGET:LOCAL):既成事實 , 1) && !TALENT:(TARGET:LOCAL):合意誤認",
+      "CFLAG:(TARGET:LOCAL):睡眠",
+      "TCVAR:(TARGET:LOCAL):烂醉",
+      "TFLAG:接吻マーク && TFLAG:接吻マーク != TARGET",
+      "GETBIT(TCVAR:随便,0)",
+      "(!GMF_AT_LARGE_MAP(MASTER) && CFLAG:現在位置 != 情人用宿屋 && CFLAG:現在位置 != 情人旅館 && CFLAG:現在位置 != OMANEKIBEYA()) && !特殊诶嘿嘿条件(TARGET)",
+      "FLAG:甲斐性無"
+    ]
+  },
+  "351": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿",
+      "CHK_DATENOW(CFLAG:MASTER:约会中)",
+      "IN_HOME(CFLAG:現在位置) == 0 && !IS_GAP_GUEST(TARGET)",
+      "COM_351_CONDITION(TARGET) == 0"
+    ]
+  },
+  "352": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "minIntimacy": 2,
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TFLAG:妄想中 == 1",
+      "GET_TARGETNUM() > 1",
+      "TALENT:恋人",
+      "!CAN_MAKE_恋人()",
+      "TALENT:TARGET:路人"
+    ]
+  },
+  "353": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhilePranking": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "CFLAG:睡眠 == 0",
+      "CFLAG:MASTER:現在位置 != CFLAG:311",
+      "GET_TARGETNUM() > 1",
+      "CFLAG:衰弱 > 0",
+      "FLAG:甲斐性無"
+    ]
+  },
+  "354": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileCoSleeping": true,
+      "notWhilePranking": true
+    },
+    "deferred": [
+      "CFLAG:睡眠 == 0",
+      "!寝室許可(TARGET)",
+      "FLAG:潜伏",
+      "IS_DATING_WITH_PLAYER(TARGET)",
+      "CFLAG:(TARGET:LOCAL):初期位置 != CFLAG:TARGET:初期位置"
+    ]
+  },
+  "355": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhilePranking": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿",
+      "BASE:MASTER:TSP <= 0"
+    ]
+  },
+  "356": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "requiresMasterStamina": true,
+      "notWhileTargetWorking": true
+    },
+    "deferred": [
+      "FLAG:時間停止",
+      "CFLAG:MASTER:現在位置 == OMANEKIBEYA()",
+      "CFLAG:诶嘿嘿",
+      "!(CFLAG:既成事実 & 合意_うふふ) && !TCVAR:泥酔",
+      "CFLAG:添い寝中",
+      "GETBIT(FLAG:潜伏,0)",
+      "FLAG:甲斐性無",
+      "TARGET < 1"
+    ]
+  },
+  "357": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "minIntimacy": 2,
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TFLAG:妄想中 == 1",
+      "TALENT:炮友 || TALENT:愛欲 || TALENT:恋慕",
+      "TALENT:恋人",
+      "TALENT:TARGET:路人",
+      "FLAG:甲斐性無"
+    ]
+  },
+  "358": {
+    "gate": {},
+    "deferred": [
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "!TALENT:変化",
+      "!(TALENT:恋慕 || TALENT:愛欲)"
+    ]
+  },
+  "360": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿 != 2",
+      "INRANGE(TCVAR:Counter行動, 40, 49)"
+    ]
+  },
+  "361": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)",
+      "CFLAG:诶嘿嘿 != 2"
+    ]
+  },
+  "362": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TFLAG:102 != 4"
+    ]
+  },
+  "363": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "notWhileBath": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "!TALENT:幼稚",
+      "IS_DATING_WITH_PLAYER(TARGET) && CFLAG:現在位置 != OMANEKIBEYA()",
+      "!ITEM:104"
+    ]
+  },
+  "364": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "FESTIVAL() != \"節分\""
+    ]
+  },
+  "365": {
+    "gate": {},
+    "deferred": [
+      "!SHIRAHU(TARGET)",
+      "!CFLAG:素材販売",
+      "TCVAR:TARGET:素材購入済み"
+    ]
+  },
+  "366": {
+    "gate": {},
+    "deferred": [
+      "TARGET <= 0",
+      "SHIRAHU(TARGET) != 1",
+      "!SEARCH_IRAI_EMPTY()",
+      "!INT_DATA_IRAI(CFLAG:TARGET:依頼内容, \"依頼受託可能条件\", TARGET)",
+      "CFLAG:TARGET:依頼状況 == 0 && GETBIT(诱导逆推_进程:TARGET:0, 0) && 诱导逆推_开关"
+    ]
+  },
+  "367": {
+    "gate": {},
+    "deferred": [
+      "!SEARCH_ACTIVE_IRAI_SLOT()"
+    ]
+  },
+  "368": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "!Activity_Duration:TARGET"
+    ]
+  },
+  "370": {
+    "gate": {
+      "notWhileTargetWorking": true
+    },
+    "deferred": [
+      "CFLAG:17:現在位置 != CFLAG:MASTER:現在位置",
+      "BASE:17:気力 <= 0"
+    ]
+  },
+  "400": {
+    "gate": {},
+    "deferred": [
+      "CFLAG:诶嘿嘿",
+      "CFLAG:MASTER:恶作剧",
+      "CFLAG:MASTER:陪睡中",
+      "TFLAG:约会道中",
+      "GMF_MAP_FORCE_MODE == 1",
+      "GMF_MAP_FORCE_MODE == -1 && GET_MAPID(CFLAG:MASTER:現在位置) != GMF_HOME_MAP",
+      "CFLAG:MASTER:現在位置 == OMANEKIBEYA() && !IS_GAP_GUEST(MASTER)",
+      "!AT_HOME(MASTER)"
+    ]
+  },
+  "401": {
+    "gate": {},
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:MASTER:311",
+      "!FLAG:胖次輸送",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "402": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:MASTER:311 && CFLAG:MASTER:現在位置 != OMANEKIBEYA() && CFLAG:陪睡中 == 0",
+      "NEMUKE() < 720",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "403": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresPrivateRoom": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:恶作剧",
+      "NEMUKE() >= 960",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "405": {
+    "gate": {},
+    "deferred": [
+      "IS_GAP_GUEST(MASTER)",
+      "TFLAG:運搬",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:诶嘿嘿 == 2",
+      "CFLAG:MASTER:恶作剧",
+      "!AT_HOME(MASTER)"
+    ]
+  },
+  "406": {
+    "gate": {},
+    "deferred": [
+      "CFLAG:MASTER:恶作剧",
+      "CFLAG:MASTER:诶嘿嘿",
+      "!AT_HOME(MASTER) && CFLAG:MASTER:現在位置 != OMANEKIBEYA()",
+      "CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置 && !OWNER ;let you read your diary even if someone else is there",
+      "CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置 && !OWNER",
+      "!TALENT:OWNER:恋慕 && ABL:MASTER:教養 < ABL:OWNER:教養 && OWNER",
+      "!TALENT:OWNER:恋慕 && CFLAG:OWNER:現在位置 == CFLAG:OWNER:初期位置 && !(FLAG:70 || !SHIRAHU(OWNER)) && OWNER",
+      "!TALENT:TARGET:恋慕 && !(FLAG:70 || !SHIRAHU(TARGET)) && TARGET"
+    ]
+  },
+  "408": {
+    "gate": {},
+    "deferred": [
+      "!AT_HOME(MASTER)",
+      "!GROUPMATCH(CFLAG:MASTER:現在位置,P58大主卧,P60大客厅,P61地の間,P62水の間,P63火の間,P64风の間,P65光の間,P66暗の間) && !(HOUGONG && FLAG:住宿人物 && CFLAG:MASTER:現在位置 == SUMIKOMI_ROOM)",
+      "CFLAG:MASTER:诶嘿嘿"
+    ]
+  },
+  "410": {
+    "gate": {
+      "notWhileCoSleeping": true,
+      "notWhileTargetWorking": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CHK_DATENOW(CFLAG:MASTER:约会中) && (!GMF_GETBIT(\"幻想乡大地图\") || GMF_IS_ODEKAKE(-1))",
+      "YOGORE:(CFLAG:MASTER:現在位置) < 100",
+      "CFLAG:诶嘿嘿 == 2",
+      "AT_HOME(MASTER) == 0 && CFLAG:MASTER:現在位置 != OMANEKIBEYA()",
+      "GETPERCENT(BASE:MASTER:酒気, MAXBASE:MASTER:酒気) > 15",
+      "TCVAR:MASTER:ゴム使用済み && TEQUIP:MASTER:コンドーム"
+    ]
+  },
+  "411": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetWorking": true,
+      "requiresTrainingRoom": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "412": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileCoSleeping": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:恶作剧",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "413": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "!KITCHEN(CFLAG:MASTER:現在位置)",
+      "CFLAG:诶嘿嘿",
+      "CFLAG:MASTER:恶作剧",
+      "DISH_NAME != \"\""
+    ]
+  },
+  "414": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresIndoor": true,
+      "notWhileBath": true
+    },
+    "deferred": [
+      "DISH_NAME == \"\"",
+      "!TIME_PROGRESS(TCVAR:MASTER:甜点空腹時刻)",
+      "!TIME_PROGRESS(TCVAR:MASTER:空腹時刻)",
+      "CFLAG:MASTER:诶嘿嘿"
+    ]
+  },
+  "415": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetSleeping": true,
+      "notWhileBath": true,
+      "requiresIndoor": true
+    },
+    "deferred": [
+      "TARGET < 1",
+      "DISH_NAME == \"\"",
+      "!TIME_PROGRESS(TCVAR:甜点空腹時刻)",
+      "!TIME_PROGRESS(TCVAR:空腹時刻)",
+      "CFLAG:MASTER:诶嘿嘿"
+    ]
+  },
+  "416": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "semanticBlockers": [
+        {
+          "kind": "or",
+          "expressions": [
+            {
+              "kind": "and",
+              "expressions": [
+                {
+                  "kind": "atom",
+                  "atom": "target-sleeping"
+                },
+                {
+                  "kind": "not",
+                  "expression": {
+                    "kind": "atom",
+                    "atom": "target-co-sleeping"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "atom",
+              "atom": "target-co-sleeping"
+            }
+          ]
+        }
+      ],
+      "notWhileTargetWorking": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "MUSIC_ABLE(LOCAL)",
+      "!LOCAL:1",
+      "(IN_TOILET(CFLAG:MASTER:現在位置) || BATHCHECK(CFLAG:MASTER:現在位置)) && AT_HOME(MASTER)",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "417": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:MASTER:311",
+      "NEMUKE() < 180",
+      "NEMUKE() > 720",
+      "TFLAG:午睡 > 0",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "418": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "!家庭菜園可(CFLAG:MASTER:現在位置) && !IS_GAP_GUEST(MASTER)",
+      "!ITEM:150",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "419": {
+    "gate": {},
+    "deferred": [
+      "FLAG:70 == 1 && !MAGIC_DLC_时间因子",
+      "!打水可(CFLAG:MASTER:現在位置) && !IS_GAP_GUEST(MASTER)",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "420": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "AT_HOME(MASTER) == 0",
+      "CFLAG:2:睡眠",
+      "CFLAG:MASTER:現在位置 != CFLAG:2:現在位置",
+      "CFLAG:MASTER:現在位置 != 323",
+      "CFLAG:MASTER:現在位置 != 923",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "421": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "FLAG:祈願内容 > 0",
+      "!天之声可(CFLAG:MASTER:現在位置) && CFLAG:MASTER:現在位置 != 守矢神社本殿",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "422": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!天之声可(CFLAG:MASTER:現在位置)",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "423": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "TARGET != 51",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "424": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:[[鈴仙]]:現在位置 && CFLAG:MASTER:現在位置 != CFLAG:[[帝]]:現在位置",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "425": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TARGET > 0 && !FLAG:70",
+      "!KITCHEN(CFLAG:MASTER:現在位置) &&  CFLAG:MASTER:現在位置 != 29 &&  CFLAG:MASTER:現在位置 != 42 &&  CFLAG:MASTER:現在位置 != 長屋街",
+      "CFLAG:诶嘿嘿 == 2",
+      "TFLAG:131"
+    ]
+  },
+  "426": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:[[鈴仙]]:現在位置 && CFLAG:MASTER:現在位置 != CFLAG:[[帝]]:現在位置",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "428": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:[[針妙丸]]:睡眠",
+      "CFLAG:诶嘿嘿 == 2",
+      "CFLAG:MASTER:魔力回収 > 0 || CFLAG:MASTER:小槌 == 8"
+    ]
+  },
+  "429": {
+    "gate": {},
+    "deferred": [
+      "EXHIBITIONIST_DIARY && GETBIT(TALENT:MASTER:性別, 0) && COM_ABLE_EXHIBITIONIST_DIARY_451()",
+      "(CFLAG:MASTER:現在位置 != CFLAG:MASTER:311) && (CFLAG:現在位置 != CFLAG:311)",
+      "!GETBIT(CFLAG:TARGET:既成事實, 1) && TARGET"
+    ]
+  },
+  "430": {
+    "gate": {},
+    "deferred": [
+      "(CFLAG:MASTER:現在位置 != CFLAG:MASTER:311) && (CFLAG:現在位置 != CFLAG:311)",
+      "!FLAG:胖次輸送",
+      "!FLAG:時間停止 && (!GETBIT(CFLAG:TARGET:既成事實, 1) && TARGET)",
+      "CFLAG:诶嘿嘿"
+    ]
+  },
+  "431": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "!ITEM:簡易泳池",
+      "DAY:2 != 2 && !GETBIT (FLAG:泳池, 1)",
+      "OPENPLACE(CFLAG:MASTER:現在位置) != 2",
+      "!AT_HOME(MASTER)",
+      "PLACE_SENTO(CFLAG:MASTER:現在位置)",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "432": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "!PLACE_SENTO(CFLAG:MASTER:現在位置)",
+      "FLAG:潜伏",
+      "CFLAG:诶嘿嘿 == 2",
+      "銭湯貸切(DAY)"
+    ]
+  },
+  "433": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "TARGET > 0 && (!FLAG:70 || CFLAG:TARGET:344 == 1)",
+      "CFLAG:MASTER:现在忙得抽不出手"
+    ]
+  },
+  "434": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!OMIKUJI_SPOT(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "435": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "!MORIYA_OMIKUJI(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "436": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "TFLAG:约会道中",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:MASTER:诶嘿嘿",
+      "!IS_LIBRARY(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "440": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿",
+      "!IN_HOME(CFLAG:MASTER:現在位置) && NOSAMES(CFLAG:MASTER:現在位置, 10, 地蔵小路, 広場, 霧之湖, 竹林入口, 森林的入口, 中有之道, 山麓樹海, 九天瀑布, 幻想風穴, 槐安通路)",
+      "IN_HOME(CFLAG:MASTER:現在位置) && !CHK_ENTRANCE(CFLAG:MASTER:現在位置, MAIN_MAP)"
+    ]
+  },
+  "441": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != GET_MAP_REPLACEMENT(P222寺子屋)",
+      "CFLAG:MASTER:現在位置 != CFLAG:67:現在位置",
+      "CFLAG:行動 != 5",
+      "TIME >= 720 && TIME <= 780",
+      "TIME >= 840",
+      "CFLAG:诶嘿嘿"
+    ]
+  },
+  "442": {
+    "gate": {},
+    "deferred": [
+      "CFLAG:诶嘿嘿",
+      "!伐採可能(CFLAG:MASTER:現在位置)",
+      "FLAG:デート相手 && !IS_DATING_WITH_PLAYER(TARGET)",
+      "CFLAG:MASTER:睡眠 || CFLAG:MASTER:イタズラ ;custom code",
+      "BASE:MASTER:気力 < 800 || BASE:MASTER:体力 < 800",
+      "FLAG:70 && BASE:MASTER:TSP < 700"
+    ]
+  },
+  "443": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "TARGET <= 0",
+      "!SHIRAHU(TARGET)",
+      "CFLAG:诶嘿嘿",
+      "!ABLE_UNIQUE_COM(TARGET)"
+    ]
+  },
+  "444": {
+    "gate": {},
+    "deferred": [
+      "!CAN_NANPA(CFLAG:MASTER:現在位置)",
+      "!INRANGE(TIME,540,1140)",
+      "CFLAG:MASTER:诶嘿嘿"
+    ]
+  },
+  "445": {
+    "gate": {},
+    "deferred": [
+      "!GATHERING_SPOT(CFLAG:MASTER:現在位置)",
+      "FLAG:デート相手 && !IS_DATING_WITH_PLAYER(TARGET)",
+      "CFLAG:MASTER:睡眠",
+      "CFLAG:诶嘿嘿",
+      "BASE:MASTER:気力 < 650 || BASE:MASTER:体力 < 680",
+      "FLAG:70 && BASE:MASTER:TSP < 120"
+    ]
+  },
+  "446": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!PHARMACY_SPOT(CFLAG:MASTER:現在位置)",
+      "ITEM:(29) == 0 && PHARMACY_SPOT(CFLAG:MASTER:現在位置) == 1",
+      "CFLAG:MASTER:睡眠",
+      "CFLAG:诶嘿嘿"
+    ]
+  },
+  "447": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!STALL_SPOT(CFLAG:MASTER:現在位置)",
+      "FLAG:デート相手 && !IS_DATING_WITH_PLAYER(TARGET)",
+      "CFLAG:MASTER:睡眠",
+      "CFLAG:诶嘿嘿",
+      "BASE:MASTER:気力 < 300 || BASE:MASTER:体力 < 400"
+    ]
+  },
+  "448": {
+    "gate": {},
+    "deferred": [
+      "CFLAG:诶嘿嘿",
+      "!HUNTING_SPOT(CFLAG:MASTER:現在位置) && !MUSHITORI_SPOT(CFLAG:MASTER:現在位置)",
+      "!ITEM:昆虫採集套装",
+      "MUSHI_TRAP && CFLAG:MASTER:現在位置 != GET_MUSHIDATA(MUSHI_TRAP, \"場所\")",
+      "FLAG:デート相手 && !IS_DATING_WITH_PLAYER(TARGET)",
+      "CFLAG:MASTER:睡眠",
+      "BASE:MASTER:気力 < 800 || BASE:MASTER:体力 < 800"
+    ]
+  },
+  "449": {
+    "gate": {},
+    "deferred": [
+      "!ITEM:昆虫採集套装",
+      "!MUSHITORI_SPOT(CFLAG:MASTER:現在位置)",
+      "GET_MONTH() == \"冬之月\"",
+      "FLAG:デート相手 && !IS_DATING_WITH_PLAYER(TARGET)",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:MASTER:诶嘿嘿",
+      "CFLAG:MASTER:睡眠",
+      "FLAG:時間停止",
+      "BASE:MASTER:気力 < 800 || BASE:MASTER:体力 < 800"
+    ]
+  },
+  "450": {
+    "gate": {},
+    "deferred": [
+      "FLAG:70 == 1 && !MAGIC_DLC_时间因子",
+      "CFLAG:MASTER:現在位置 != 拠点_酒虫 && !IS_GAP_GUEST(MASTER) && !(KITCHEN(CFLAG:MASTER:現在位置) && ITEM:982 >= 2 && MAGIC_DLC)",
+      "CFLAG:诶嘿嘿"
+    ]
+  },
+  "451": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿",
+      "EXHIBITIONIST_DIARY && GETBIT(TALENT:MASTER:性別, 0)",
+      "BASE:MASTER:精力 <= 0",
+      "CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置"
+    ]
+  },
+  "460": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:MASTER:311",
+      "TFLAG:妄想中",
+      "TIME:0 > 0 && TIME:0 < 720"
+    ]
+  },
+  "461": {
+    "gate": {},
+    "deferred": [
+      "TFLAG:妄想中 != 1"
+    ]
+  },
+  "464": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetSleeping": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "TFLAG:约会道中",
+      "!SPECIAL_AREAMOVE()",
+      "CFLAG:诶嘿嘿"
+    ]
+  },
+  "470": {
+    "gate": {},
+    "deferred": [
+      "TFLAG:妄想中",
+      "!FLAG:地主",
+      "GET_MAPID(LOCAL) != MAIN_MAP",
+      "CFLAG:MASTER:現在位置 != LOCAL",
+      "BASE:MASTER:酒気",
+      "CFLAG:诶嘿嘿",
+      "BASE:MASTER:気力 < 300 || BASE:MASTER:体力 < 300",
+      "!GROUPMATCH(TIME:5, 0, 1, 2, 3, 4, 6, 7)",
+      "TFLAG:畑仕事成功度",
+      "BASE:MASTER:TSP < 300",
+      "NEMUKE() >= 540"
+    ]
+  },
+  "480": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetWorking": true,
+      "requiresTrainingRoom": true
+    },
+    "deferred": [
+      "TARGET <= 0",
+      "!SHIRAHU(TARGET)",
+      "CFLAG:诶嘿嘿",
+      "ABL:TARGET:戦闘能力 == 0",
+      "BASE:MASTER:気力 < 500 || BASE:MASTER:体力 < 500",
+      "BASE:TARGET:気力 < 500 || BASE:TARGET:体力 < 500"
+    ]
+  },
+  "481": {
+    "gate": {},
+    "deferred": [
+      "!ITEM:测定仪"
+    ]
+  },
+  "482": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "AT_HOME(MASTER) == 0",
+      "!STALKED",
+      "IN_HOME(CFLAG:STALKED:現在位置) != 1",
+      "CFLAG:STALKED:睡眠",
+      "CFLAG:MASTER:現在位置 == CFLAG:STALKED:現在位置",
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "483": {
+    "gate": {
+      "notWhileTargetWorking": true
+    },
+    "deferred": [
+      "FLAG:時間停止",
+      "!ITEM:昆虫採集套装",
+      "!MUSHITORI_SPOT(CFLAG:MASTER:現在位置)",
+      "GET_MONTH() == \"冬之月\"",
+      "!MUSHI_CAGE:1",
+      "TARGET <= 0",
+      "!SHIRAHU(TARGET)",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:MASTER:诶嘿嘿",
+      "BASE:MASTER:気力 < 500 || BASE:MASTER:体力 < 500",
+      "BASE:TARGET:気力 < 500 || BASE:TARGET:体力 < 500"
+    ]
+  },
+  "484": {
+    "gate": {
+      "requiresTrainingRoom": true,
+      "notWhileTargetWorking": true
+    },
+    "deferred": [
+      "FLAG:時間停止",
+      "!ITEM:西瓜",
+      "!ITEM:眼罩",
+      "GET_MONTH() != \"夏之月\"",
+      "TCVAR:MASTER:打西瓜参加",
+      "TARGET <= 0",
+      "!SHIRAHU(TARGET)",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:MASTER:诶嘿嘿",
+      "BASE:MASTER:気力 < 500 || BASE:MASTER:体力 < 500",
+      "BASE:TARGET:気力 < 500 || BASE:TARGET:体力 < 500"
+    ]
+  },
+  "490": {
+    "gate": {},
+    "deferred": []
+  },
+  "491": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:恶作剧",
+      "CFLAG:诶嘿嘿 == 2",
+      "!PREPARE_WD()",
+      "!KITCHEN(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "495": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhilePranking": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿"
+    ]
+  },
+  "496": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhilePranking": true,
+      "notWhileCoSleeping": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿"
+    ]
+  },
+  "497": {
+    "gate": {},
+    "deferred": [
+      "FLAG:時間停止",
+      "!ITEM:昆虫採集套装",
+      "!MUSHITORI_SPOT(CFLAG:MASTER:現在位置)",
+      "!MUSHI_CAGE:1",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:MASTER:诶嘿嘿",
+      "BASE:MASTER:気力 < 500 || BASE:MASTER:体力 < 500"
+    ]
+  },
+  "498": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "FLAG:時間停止",
+      "!KITCHEN(CFLAG:MASTER:現在位置)",
+      "CFLAG:うふふ",
+      "CFLAG:添い寝中",
+      "CFLAG:MASTER:イタズラ",
+      "DISH_NAME != \"\"",
+      "GETBIT(TFLAG:一日一回, 14)"
+    ]
+  },
+  "499": {
+    "gate": {
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "!家庭菜園可(CFLAG:MASTER:現在位置)",
+      "CFLAG:うふふ == 2"
+    ]
+  },
+  "501": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "(ABL:ASSI:欲望 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:小悪魔 == 0",
+      "ABL:従順 < 3 || ABL:奉仕精神 < 3",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:縄",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2",
+      "TALENT:PLAYER:猫舌 && ABL:PLAYER:技巧 < 2",
+      "TEQUIP:0 & 4",
+      "TEQUIP:12",
+      "TEQUIP:口球",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "IS_STANDING_SEX(SELECTCOM) ;addition custom code"
+    ]
+  },
+  "502": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:30 == 0",
+      "TALENT:PLAYER:猫舌 && ABL:PLAYER:技巧 < 2",
+      "STAIN:3 >= 2 && (STAIN:3 != 16 && STAIN:3 != 17) && ASSIPLAY == 0 && TALENT:MASTER:汚臭耐性 < 2",
+      "ABL:ASSI:従順 <= 3 && TALENT:ASSI:汚臭耐性 < 0",
+      "TEQUIP:0 > 1",
+      "!(TALENT:2 & 1)"
+    ]
+  },
+  "503": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4",
+      "ABL:PLAYER:技巧 < 3"
+    ]
+  },
+  "504": {
+    "gate": {},
+    "deferred": [
+      "(TALENT:PLAYER:2 & 2) && BASE:MASTER:勃起 < 1000",
+      "TEQUIP:30 == 0",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "TEQUIP:0 || TEQUIP:1",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0"
+    ]
+  },
+  "505": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "ABL:技巧 < 1",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:口球",
+      "TEQUIP:縄",
+      "!(TALENT:PLAYER:2 & 2)",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "506": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "507": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "508": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2",
+      "TALENT:胸围 == -2",
+      "TALENT:胸围 + ABL:技巧 < 4",
+      "!(TALENT:PLAYER:2 & 2)",
+      "TALENT:PLAYER:猫舌 && ABL:PLAYER:技巧 < 2",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:1 > 1",
+      "TEQUIP:縄",
+      "IS_STANDING_SEX(SELECTCOM) ;addition custom code",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "509": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 2)",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TALENT:LOCAL:猫舌 && ABL:LOCAL:技巧 < 2",
+      "ABL:LOCAL:技巧 < 3 || ABL:LOCAL:奉仕精神 < 3",
+      "TEQUIP:縄 || TEQUIP:LOCAL:縄",
+      "TEQUIP:口球 || TEQUIP:LOCAL:口球"
+    ]
+  },
+  "510": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 > 1",
+      "TEQUIP:LOCAL:0 > 1",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "511": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:PLAYER:2 & 2)",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TALENT:LOCAL:猫舌 && ABL:LOCAL:技巧 < 2",
+      "ABL:LOCAL:技巧 < 4 || ABL:LOCAL:奉仕精神 < 3",
+      "!(TALENT:2 & 1) || !(TALENT:LOCAL:2 & 1)",
+      "TEQUIP:1 > 1",
+      "TEQUIP:縄 || TEQUIP:LOCAL:縄",
+      "(FLAG:70 == 1 && CFLAG:TARGET:344 == 0)"
+    ]
+  },
+  "512": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ]
+    },
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "TALENT:胸围 == -2",
+      "TALENT:胸围 == -1",
+      "TALENT:胸围 + ABL:技巧 < 4",
+      "TALENT:猫舌 && ABL:技巧 < 2",
+      "TEQUIP:19",
+      "!(TALENT:PLAYER:2 & 2)",
+      "TEQUIP:1 > 1",
+      "TEQUIP:20"
+    ]
+  },
+  "513": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:13",
+      "TEQUIP:LOCAL:13",
+      "!(TALENT:2 & 1)",
+      "!(TALENT:LOCAL:2 & 1)",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "ABS(TALENT:LOCAL:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:百合属性 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1",
+      "PALAM:LOCAL:潤滑 < PALAMLV:2 && TALENT:LOCAL:処女 && TALENT:LOCAL:処女 != -1",
+      "TEQUIP:0 & 4",
+      "TEQUIP:LOCAL:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0",
+      "TEQUIP:LOCAL:体位２ == 3"
+    ]
+  },
+  "514": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "515": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "516": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:14",
+      "TEQUIP:LOCAL:14",
+      "ABS(TALENT:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "ABS(TALENT:LOCAL:体型 - TALENT:PLAYER:体型) > 2 && !TALENT:PLAYER:禁断的知識",
+      "!(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0",
+      "PALAM:潤滑 < PALAMLV:2",
+      "PALAM:LOCAL:潤滑 < PALAMLV:2",
+      "TEQUIP:0 & 4",
+      "TEQUIP:LOCAL:0 & 4",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "517": {
+    "gate": {},
+    "deferred": [
+      "(TEQUIP:1 & 2) && TEQUIP:3 == 0",
+      "TEQUIP:17",
+      "TEQUIP:16",
+      "TEQUIP:24",
+      "TEQUIP:体位 == 5 || TEQUIP:体位 == 2 || TEQUIP:体位 == 3"
+    ]
+  },
+  "519": {
+    "gate": {
+      "semanticBlockers": [
+        {
+          "kind": "compare",
+          "atom": "target-pranking",
+          "op": ">",
+          "value": 1
+        }
+      ],
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "TEQUIP:1 > 1",
+      "TEQUIP:17",
+      "TEQUIP:16",
+      "TEQUIP:24",
+      "TEQUIP:体位 > 0"
+    ]
+  },
+  "560": {
+    "gate": {
+      "notWhileTargetSleeping": true
+    },
+    "deferred": [
+      "TFLAG:103 != TARGET"
+    ]
+  },
+  "561": {
+    "gate": {},
+    "deferred": [
+      "!CFLAG:陪睡中",
+      "NEMUKE() < 720"
+    ]
+  },
+  "562": {
+    "gate": {},
+    "deferred": [
+      "TFLAG:103 != TARGET"
+    ]
+  },
+  "563": {
+    "gate": {},
+    "deferred": [
+      "TFLAG:103 != TARGET"
+    ]
+  },
+  "580": {
+    "gate": {
+      "notWhileTargetSleeping": true
+    },
+    "deferred": [
+      "!CHK_DATENOW(CFLAG:TARGET:约会中)",
+      "!TFLAG:约会道中"
+    ]
+  },
+  "603": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!TFLAG:约会道中",
+      "CFLAG:MASTER:约会中 == MAIN_MAP",
+      "CFLAG:MASTER:現在位置 == OMANEKIBEYA()"
+    ]
+  },
+  "604": {
+    "gate": {},
+    "deferred": [
+      "TFLAG:妄想中",
+      "GMF_MAP_FORCE_MODE == 2",
+      "GMF_MAP_FORCE_MODE == -1 && GET_MAPID(CFLAG:MASTER:現在位置) == GMF_HOME_MAP",
+      "AT_HOME(MASTER)",
+      "CFLAG:MASTER:現在位置 == OMANEKIBEYA()",
+      "CFLAG:诶嘿嘿",
+      "GETBIT(FLAG:潜伏,0)",
+      "TFLAG:约会道中",
+      "TFLAG:妄想中 == 1"
+    ]
+  },
+  "605": {
+    "gate": {
+      "cooldown": {
+        "tcvarId": 309,
+        "minutes": 30
+      },
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!CHK_DATENOW(CFLAG:12)",
+      "!TFLAG:约会道中",
+      "CFLAG:MASTER:現在位置 == OMANEKIBEYA()"
+    ]
+  },
+  "610": {
+    "gate": {
+      "notWhileTargetWorking": true,
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!CHK_DATENOW(CFLAG:12)",
+      "!DATE_PARTY(CFLAG:MASTER:現在位置)",
+      "!TIME_PROGRESS(TCVAR:312)",
+      "(!MOREDATE && MONEY < 3000) || (MOREDATE && MONEY < (1500 + 1500 * (NumberOfDates)))"
+    ]
+  },
+  "611": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "TFLAG:约会道中",
+      "CFLAG:MASTER:睡眠"
+    ]
+  },
+  "612": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!CHK_DATENOW(CFLAG:12)",
+      "TFLAG:约会道中"
+    ]
+  },
+  "613": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!CHK_DATENOW(CFLAG:MASTER:约会中)",
+      "(CFLAG:MASTER:現在位置 % 100) % 10",
+      "!DATE_PARTTIME(CFLAG:MASTER:現在位置)",
+      "CFLAG:MASTER:睡眠"
+    ]
+  },
+  "614": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!KAIDASHI_SHOP(CFLAG:MASTER:現在位置)",
+      "GETBIT(TFLAG:一日一回,2)",
+      "CFLAG:MASTER:睡眠"
+    ]
+  },
+  "615": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!CHK_DATENOW(CFLAG:12)",
+      "TFLAG:约会道中",
+      "!OBENTO(CFLAG:MASTER:現在位置)",
+      "!TIME_PROGRESS(TCVAR:312)",
+      "GETBIT(TFLAG:一日一回,1)"
+    ]
+  },
+  "616": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:72:現在位置",
+      "CHK_DATENOW(CFLAG:TARGET:约会中) && TARGET > 0",
+      "TFLAG:约会道中",
+      "CFLAG:MASTER:現在位置 != 永遠亭",
+      "GETBIT(TFLAG:一日一回, 3)",
+      "CFLAG:MASTER:睡眠"
+    ]
+  },
+  "617": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!SWEETS_SHOP(CFLAG:MASTER:現在位置)",
+      "!TIME_PROGRESS(TCVAR:甜点空腹時刻)",
+      "(!MOREDATE && MONEY < 3000) || (MOREDATE && MONEY < (1500 + 1500 * (NumberOfDates)))"
+    ]
+  },
+  "618": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!FLOWER_SHOP(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "619": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!SAKE_SHOP(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "620": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!BOOK_RENTAL(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "621": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!ITEM:釣魚竿",
+      "!FISHING_SPOT(CFLAG:MASTER:現在位置)",
+      "FLAG:デート相手 && !IS_DATING_WITH_PLAYER(TARGET)",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:MASTER:诶嘿嘿",
+      "CFLAG:MASTER:睡眠",
+      "CFLAG:うふふ"
+    ]
+  },
+  "622": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!YASAI_SHOP(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "623": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != 商家町",
+      "CFLAG:MASTER:現在位置 != P205北通り",
+      "CFLAG:MASTER:睡眠 || CFLAG:MASTER:イタズラ || CFLAG:うふふ ;custom code"
+    ]
+  },
+  "624": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != 玄武之澤",
+      "CFLAG:MASTER:現在位置 != 703 ;logging custom code, changed to Genbu Ravine because Kappa's Hideout is closed most of the time",
+      "CFLAG:MASTER:睡眠 || CFLAG:MASTER:イタズラ || CFLAG:うふふ ;custom code"
+    ]
+  },
+  "625": {
+    "gate": {},
+    "deferred": []
+  },
+  "626": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!GIFT_SHOP(CFLAG:MASTER:現在位置)",
+      "GETBIT(TFLAG:一日一回, 10)",
+      "CFLAG:TARGET:每日礼物"
+    ]
+  },
+  "627": {
+    "gate": {
+      "notWhileTargetSleeping": true
+    },
+    "deferred": [
+      "!RYUJIN_STATUE(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "630": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "MAIN_MAP == 3",
+      "!HOBGOBLIN(CFLAG:MASTER:現在位置)"
+    ]
+  },
+  "631": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!CASINO_SPOT(CFLAG:MASTER:現在位置)",
+      "TFLAG:妄想中",
+      "NEMUKE() >= 700"
+    ]
+  },
+  "632": {
+    "gate": {
+      "notWhileTimeStopped": true,
+      "notWhileTargetWorking": true,
+      "requiresTrainingRoom": true,
+      "requiresMasterStamina": true
+    },
+    "deferred": [
+      "CFLAG:诶嘿嘿 == 2"
+    ]
+  },
+  "633": {
+    "gate": {
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!INRANGE(TIME, 480, 1080)",
+      "CFLAG:MASTER:現在位置 != 三途之川",
+      "CFLAG:MASTER:現在位置 != 602",
+      "CHK_DATENOW(CFLAG:12) && TARGET != FLAG:约会的对象"
+    ]
+  },
+  "634": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "!TOBA_PLACE(CFLAG:MASTER:現在位置)",
+      "TFLAG:妄想中",
+      "NEMUKE() >= 700"
+    ]
+  },
+  "697": {
+    "gate": {
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "AT_HOME(MASTER)",
+      "CFLAG:MASTER:诶嘿嘿",
+      "GETBIT(FLAG:潜伏,0)",
+      "CFLAG:LOCAL:出禁",
+      "CFLAG:LOCAL:自宅位置 == CFLAG:MASTER:現在位置 && !CFLAG:LOCAL:神社在住 && LOCAL != TARGET; && (TALENT:LOCAL:思慕 || TALENT:LOCAL:恋慕)",
+      "!LOCAL:1"
+    ]
+  },
+  "698": {
+    "gate": {
+      "notWhileTargetWorking": true,
+      "notWhileTargetSleeping": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "CFLAG:MASTER:現在位置 != CFLAG:自宅位置",
+      "!CHK_DATENOW(CFLAG:MASTER:约会中)",
+      "!IS_FALLEN(TARGET) && TALENT:セフレ != 2 && !TCVAR:TARGET:発情 && !(TCVAR:誘惑時刻 && CFLAG:溜まってる度 >= 800) && FLAG:催眠強度 <= 49",
+      "GETBIT(FLAG:潜伏,0)"
+    ]
+  },
+  "699": {
+    "gate": {
+      "requiresMasterStamina": true,
+      "notWhileTimeStopped": true
+    },
+    "deferred": [
+      "NEMUKE() >= 720 && IsRefreshed() && !M_FLAG:隙间标记",
+      "CFLAG:MASTER:現在位置 != OMANEKIBEYA()",
+      "CFLAG:MASTER:陪睡中",
+      "CFLAG:MASTER:恶作剧",
+      "CFLAG:MASTER:诶嘿嘿"
+    ]
+  },
+  "700": {
+    "gate": {},
+    "deferred": []
+  },
+  "702": {
+    "gate": {},
+    "deferred": [
+      "STAIN:2 >= 4 && (STAIN:2 != 18 && STAIN:2 != 19 && STAIN:2 != 128 && STAIN:2 != 129 && STAIN:2 != 130 && STAIN:2 != 131 && STAIN:2 != 144 && STAIN:2 != 145 && STAIN:2 != 146 && STAIN:2 != 147) && ASSIPLAY == 0 && TALENT:MASTER:汚臭耐性 < 2",
+      "ABL:ASSI:従順 <= 3 && TALENT:ASSI:汚臭耐性 < 0",
+      "TALENT:PLAYER:猫舌 && ABL:PLAYER:技巧 < 2",
+      "!(HAS_PENIS(TARGET))",
+      "TEQUIP:0 & 4",
+      "TEQUIP:12"
+    ]
+  },
+  "703": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:2 & 1)",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && !TALENT:ASSI:施虐狂",
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "705": {
+    "gate": {},
+    "deferred": [
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4"
+    ]
+  },
+  "706": {
+    "gate": {},
+    "deferred": []
+  },
+  "707": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:PLAYER:16",
+      "TEQUIP:PLAYER:17",
+      "TEQUIP:PLAYER:24"
+    ]
+  },
+  "708": {
+    "gate": {},
+    "deferred": [
+      "ABL:従順< 2",
+      "TALENT:処女 && ABL:従順 < 3 && ABL:露出癖 < 3",
+      "TEQUIP:縄",
+      "TEQUIP:0 & 4 || TEQUIP:0 & 2",
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "709": {
+    "gate": {},
+    "deferred": [
+      "!(TALENT:2 & 2)",
+      "TEQUIP:縄"
+    ]
+  },
+  "712": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:24",
+      "TALENT:胸围 == -2"
+    ]
+  },
+  "713": {
+    "gate": {},
+    "deferred": [
+      "ABL:従順< 2",
+      "TALENT:処女 && ABL:従順 < 3 && ABL:露出癖 < 3",
+      "TEQUIP:縄",
+      "TEQUIP:0 & 4 || TEQUIP:0 & 2",
+      "TEQUIP:14 || TEQUIP:15",
+      "ITEM:20 == 0 && NOITEM == 0"
+    ]
+  },
+  "740": {
+    "gate": {},
+    "deferred": [
+      "ITEM:0 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 8"
+    ]
+  },
+  "741": {
+    "gate": {},
+    "deferred": [
+      "ITEM:1 == 0 && NOITEM == 0",
+      "ABL:ASSI:技巧 < 3 && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:32",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "742": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:11",
+      "ITEM:2 == 0 && NOITEM == 0",
+      "TEQUIP:0 > 1",
+      "(HAS_PENIS(TARGET))",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:32"
+    ]
+  },
+  "743": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:12",
+      "ITEM:3 == 0 && NOITEM == 0",
+      "!(HAS_PENIS(TARGET))",
+      "TEQUIP:0 > 1",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:33"
+    ]
+  },
+  "744": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:13",
+      "!(TALENT:2 & 1)",
+      "ITEM:4 == 0 && NOITEM == 0",
+      "TEQUIP:0 & 4",
+      "(ABL:ASSI:従順 <= 4 || ABL:ASSI:百合属性 <= 4) && TALENT:ASSI:施虐狂 == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0"
+    ]
+  },
+  "745": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:14",
+      "ITEM:5 == 0 && NOITEM == 0",
+      "(ABL:ASSI:従順 <= 3 || ABL:ASSI:百合属性 <= 3) && TALENT:ASSI:施虐狂 == 0",
+      "TEQUIP:0 & 4",
+      "TEQUIP:21",
+      "TEQUIP:15",
+      "TEQUIP:22",
+      "TEQUIP:23"
+    ]
+  },
+  "746": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:15",
+      "ITEM:6 == 0 && NOITEM == 0",
+      "TEQUIP:0 > 1",
+      "TEQUIP:14",
+      "TEQUIP:21",
+      "TEQUIP:22",
+      "TEQUIP:23",
+      "TEQUIP:33"
+    ]
+  },
+  "747": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:16",
+      "ITEM:10 == 0 && NOITEM == 0",
+      "TEQUIP:1 > 1",
+      "TEQUIP:17",
+      "TEQUIP:24",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:32"
+    ]
+  },
+  "748": {
+    "gate": {},
+    "deferred": [
+      "TEQUIP:17",
+      "ITEM:11 == 0 && NOITEM == 0",
+      "TALENT:母乳体質 == 0",
+      "TEQUIP:1 > 1",
+      "TEQUIP:16",
+      "TEQUIP:24",
+      "ABL:TARGET:Ｂ感覚 <= 2",
+      "!(TALENT:2 & 1)",
+      "ABL:ASSI:技巧 < 3",
+      "TEQUIP:32",
+      "TEQUIP:33",
+      "!BEDROOM(CFLAG:PLAYER:現在位置)"
+    ]
+  },
+  "749": {
+    "gate": {},
+    "deferred": [
+      "ITEM:0 == 0 && NOITEM == 0",
+      "(TEQUIP:1 & 2) && TEQUIP:3 == 0",
+      "TEQUIP:17",
+      "TEQUIP:24"
+    ]
+  },
+  "751": {
+    "gate": {},
+    "deferred": [
+      "TARGET > 0 && FLAG:70 && CFLAG:PLAYER:现在忙得抽不出手"
+    ]
+  }
+}
