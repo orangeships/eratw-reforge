@@ -9,7 +9,7 @@ import type { SceneAsset } from "../../../modernization/runtime/scene/index.js";
  * This store holds the **ephemeral navigation state** that, per S1,
  * must NOT live in `GameState` or the save file:
  *   - `screen`: which top-level surface is showing (title / pre-game
- *     flow / mainGame). Menu navigation is UI-only.
+ *     flow / mainGame / developerTools). Menu navigation is UI-only.
  *   - `interaction`: whether the action interaction box (S4) is open
  *     and which command opened it.
  *
@@ -25,10 +25,12 @@ import type { SceneAsset } from "../../../modernization/runtime/scene/index.js";
 
 export type GameScreen =
   | "title"
+  | "projectSelect"
   | "newGameSetup"
   | "residenceSelect"
   | "kojoSelect"
   | "newGameOptions"
+  | "kojoUpdate"
   | "nightSettlement"
   | "morningMenu"
   | "mainGame"
@@ -36,7 +38,7 @@ export type GameScreen =
   | "fishingGame"
   | "stoneContest"
   | "farm"
-  ;
+  | "developerTools";
 
 /** Whether the action interaction box (S4) is open, and its context. */
 export interface InteractionState {

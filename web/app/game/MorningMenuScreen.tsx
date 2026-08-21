@@ -18,7 +18,7 @@ import {
   type ShopBuyResult,
   type ShopCatalogEntry,
 } from "../../../modernization/runtime/state/shop.js";
-import { itemCount } from "../../../modernization/runtime/state/items.js";
+import { ITEM_ID, itemCount } from "../../../modernization/runtime/state/items.js";
 import {
   formatTemperature,
   currentTimezone,
@@ -33,15 +33,21 @@ import {
 } from "../../../modernization/runtime/weather/region-override.js";
 import { weatherBackgroundStyle } from "../../../modernization/runtime/weather/background-color.js";
 import ExComPanel, { CalendarDetails } from "./ExComPanel.js";
-import { RESIDENCE_OPTIONS } from "./pre/newgame-draft.js";
-import { getCharaCflag, CFLAG_ID } from "../../../modernization/runtime/state/settlement.js";
+import { RESIDENCE_OPTIONS, type ResidenceOption } from "./pre/newgame-draft.js";
+import { regionByMapName } from "./pre/residence-data.js";
+import ResidencePicker from "./pre/ResidencePicker.js";
+import { getCharaCflag, CFLAG_ID, FLAG_ID, TALENT_ID } from "../../../modernization/runtime/state/settlement.js";
 import { OMANEKI_PLACE } from "../../../modernization/runtime/world/omaneki.js";
 import { buildGiftHistory, type GiftHistoryRow } from "../../../modernization/runtime/state/gifts.js";
 import { getMasterCflag } from "../../../modernization/runtime/state/settlement.js";
 import { portraitKindOf } from "../../../modernization/runtime/state/portrait-kind.js";
 import { BUG_CATALOG, MUSHI_MAX_CAGE } from "../../../modernization/runtime/state/bug-catching.js";
 import { FISH_CATALOG } from "../../../modernization/runtime/state/fishing.js";
-import { listPermanentCollection } from "../../../modernization/runtime/state/panty-collection.js";
+import {
+  listPantyCollection,
+  listPantyCollectionBonuses,
+  pantyPieceName,
+} from "../../../modernization/runtime/state/panty-collection.js";
 import { GATHERING_SPOT_1_ITEMS, gatheringPower } from "../../../modernization/runtime/state/gathering.js";
 import { usableMasterConsumables } from "../../../modernization/runtime/command/handlers/item-use.js";
 import itemsBundle from "./items.bundle.json";
@@ -87,6 +93,12 @@ interface Props {
   /** Flip `FLAG:立絵種類` (OPTION [3] 角色绘的类型 — 立絵↔顔絵). Optional;
    *  when absent the OPTION [3] row renders read-only. */
   onTogglePortraitKind?: () => void;
+  /** Toggle FLAG:87, the upstream automatic collection-gap transfer mode. */
+  onTogglePantyGapAuto?: () => void;
+  /** Claim one earned SHOP/BONUS2 panty collection milestone. */
+  onClaimPantyCollectionBonus?: (id: number) => boolean;
+  /** Sell duplicate permanent panties, retaining one of each species. */
+  onSellPantyDuplicates?: () => number;
 }
 
 interface MenuCommand {
@@ -372,81 +384,92 @@ function ResidencePanel({
 }) {
   const wake = masterWakeMinute(state);
   const wakeChoices = [360, 420, 480, 540, 600, 720];
-  // 搬家 / 私室候補 (实玩反馈 2026-06-28): faithful to `@SET_MAINHOME`
-  // (qol_MAP.ERB) — a region offers a fixed set of livable rooms, each owned
-  // by a 家主 and gated by `居住必要信赖度`. Day 1 is a free pick; afterwards a
-  // move needs the 家主's 信頼度 ≥ the room's required trust. The default 自室
-  // (ownerChara 0) is always free.
-  const firstDay = state.time.dayIndex === 0;
+  const currentOption = RESIDENCE_OPTIONS.find((option) => option.value === state.homeLocation);
+  const currentRegion = currentOption ? regionByMapName(currentOption.mapName) : undefined;
+  const defaultOption =
+    (currentRegion && RESIDENCE_OPTIONS.find((option) => option.mapName === currentRegion.mapName)) ??
+    RESIDENCE_OPTIONS[0];
+  const cohabitationCandidates = Object.values(state.charas)
+    .filter((slot) => {
+      const resident = (slot.state.CFLAG[CFLAG_ID.神社在住] ?? 0) !== 0;
+      const lover =
+        (slot.state.TALENT[TALENT_ID.恋慕] ?? 0) !== 0 ||
+        (slot.state.TALENT[TALENT_ID.愛欲] ?? 0) !== 0;
+      return slot.charaNum > 0 && resident && lover && !!slot.homeLocation;
+    })
+    .sort((a, b) => a.charaNum - b.charaNum);
+
   return (
-    <dl className="morning-menu__kv" data-testid="morning-residence-panel">
-      <div>
-        <dt>自宅位置</dt>
-        <dd>{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}</dd>
-      </div>
-      <div>
-        <dt>搬家（私室候補）</dt>
-        <dd className="morning-menu__choice-col">
-          {RESIDENCE_OPTIONS.map((opt) => {
-            const ownerPresent = opt.ownerChara > 0 && state.charas[opt.ownerChara] !== undefined;
-            const trust = ownerPresent ? getCharaCflag(state, opt.ownerChara, CFLAG_ID.信頼度) : 0;
-            const locked = !firstDay && opt.ownerChara > 0 && trust < opt.requiredTrust;
-            const active = opt.value === state.homeLocation;
-            const reason = locked
-              ? `${opt.ownerName}还没有信赖你到这种程度…（信赖度 ${trust} / ${opt.requiredTrust}）`
-              : undefined;
-            return (
+    <div data-testid="morning-residence-panel">
+      <dl className="morning-menu__kv">
+        <div>
+          <dt>自宅位置</dt>
+          <dd>{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}</dd>
+        </div>
+        <div>
+          <dt>起床时间</dt>
+          <dd>{minuteText(wake)}</dd>
+        </div>
+        <div>
+          <dt>调整起床时间</dt>
+          <dd className="morning-menu__choice-row">
+            {wakeChoices.map((minute) => (
               <button
-                key={opt.value}
+                key={minute}
                 type="button"
-                data-testid="morning-home-choice"
-                data-location={opt.value}
-                className={
-                  active
-                    ? "morning-menu__choice morning-menu__choice--active"
-                    : "morning-menu__choice"
-                }
-                disabled={!onSetHomeLocation || locked}
-                title={reason}
-                onClick={() => onSetHomeLocation?.(opt.value)}
+                data-testid="morning-wake-choice"
+                className={minute === wake ? "morning-menu__choice morning-menu__choice--active" : "morning-menu__choice"}
+                disabled={!onSetWakeMinute}
+                onClick={() => onSetWakeMinute?.(minute)}
               >
-                {opt.label} - {opt.roomName}
-                {opt.ownerChara > 0 && (
-                  <small>
-                    　家主:{opt.ownerName}　必要信赖度:{opt.requiredTrust}
-                    {locked ? "（不足）" : firstDay ? "（首日免判定）" : "（可入住）"}
-                  </small>
-                )}
+                {minuteText(minute)}
               </button>
-            );
-          })}
-        </dd>
-      </div>
-      <div>
-        <dt>起床时间</dt>
-        <dd>{minuteText(wake)}</dd>
-      </div>
-      <div>
-        <dt>调整起床时间</dt>
-        <dd className="morning-menu__choice-row">
-          {wakeChoices.map((minute) => (
+            ))}
+          </dd>
+        </div>
+      </dl>
+
+      <section className="morning-menu__cohabitation" data-testid="morning-cohabitation">
+        <p className="morning-menu__section-title">私室设定／同居</p>
+        <p className="morning-menu__note">
+          这里对应原版 SCHEDULE：只能回到当前地区的默认私室，或搬进已经取得「恋慕／爱欲」且标记为神社在住的角色房间。变更从翌日起生效。
+        </p>
+        <div className="morning-menu__choice-col">
+          {defaultOption && (
             <button
-              key={minute}
               type="button"
-              data-testid="morning-wake-choice"
-              className={minute === wake ? "morning-menu__choice morning-menu__choice--active" : "morning-menu__choice"}
-              disabled={!onSetWakeMinute}
-              onClick={() => onSetWakeMinute?.(minute)}
+              data-testid="morning-residence-default"
+              data-location={defaultOption.value}
+              className={defaultOption.value === state.homeLocation ? "morning-menu__choice morning-menu__choice--active" : "morning-menu__choice"}
+              disabled={!onSetHomeLocation}
+              onClick={() => onSetHomeLocation?.(defaultOption.value)}
             >
-              {minuteText(minute)}
+              默认私室：{defaultOption.label} - {defaultOption.roomName}
             </button>
-          ))}
-        </dd>
-      </div>
+          )}
+          {cohabitationCandidates.length === 0 ? (
+            <p className="morning-menu__note">目前没有满足同居条件的角色。</p>
+          ) : (
+            cohabitationCandidates.map((slot) => (
+              <button
+                key={slot.charaNum}
+                type="button"
+                data-testid="morning-cohab-choice"
+                data-location={slot.homeLocation}
+                className={slot.homeLocation === state.homeLocation ? "morning-menu__choice morning-menu__choice--active" : "morning-menu__choice"}
+                disabled={!onSetHomeLocation}
+                onClick={() => slot.homeLocation && onSetHomeLocation?.(slot.homeLocation)}
+              >
+                与{slot.callName ?? `角色${slot.charaNum}`}同居：{formatLocation(slot.homeLocation ?? "")}
+              </button>
+            ))
+          )}
+        </div>
+      </section>
       <p className="morning-menu__note">
-        自宅是场景内部的房间（就寝/返回自宅的落点）；起床予定时刻会影响下一次就寝结算；安眠枕/桐木床的恢复补正已按持有道具生效。
+        自宅是场景内部的房间（就寝／返回自宅的落点）；起床予定时刻会影响下一次就寝结算；安眠枕／桐木床的恢复补正已按持有道具生效。
       </p>
-    </dl>
+    </div>
   );
 }
 
@@ -478,7 +501,6 @@ function GapShopPanel({
 }) {
   const [message, setMessage] = useState("通信贩卖目录已接入一部分；DLC/特殊商店暂不显示。");
   const entries = SHOP_CATALOG
-    .filter((entry) => entry.sales !== "limited" || (state.itemSales?.[entry.id] ?? 0) > 0)
     // The shared catalog may expose the same inventory item through several
     // upstream shop categories. The gap-shop screen is item-centric, so one
     // row per item avoids duplicate React identities and duplicate purchases.
@@ -579,18 +601,71 @@ function InventoryPanel({
   );
 }
 
-/** SHOP [105] SHOW_COLLECTION — permanent collection viewer. */
-function CollectionPanel({ state }: { state: GameState }) {
-  const rows = listPermanentCollection(state);
+/** SHOP [105] SHOW_COLLECTION — permanent collection + PANTS_TEMP viewer. */
+function CollectionPanel({
+  state,
+  onTogglePantyGapAuto,
+  onClaimPantyCollectionBonus,
+  onSellPantyDuplicates,
+}: {
+  state: GameState;
+  onTogglePantyGapAuto?: () => void;
+  onClaimPantyCollectionBonus?: (id: number) => boolean;
+  onSellPantyDuplicates?: () => number;
+}) {
+  const rows = listPantyCollection(state);
+  const permanentRows = rows.filter((row) => row.source === "permanent");
+  const species = state.flagStore[FLAG_ID.獲得胖次種数] ?? permanentRows.length;
+  const total = rows.reduce((sum, row) => sum + row.count, 0);
+  const duplicateCount = permanentRows.reduce((sum, row) => sum + Math.max(0, row.count - 1), 0);
+  const gapCharges = itemCount(state, ITEM_ID.收藏隙間);
+  const gapAuto = (state.flagStore[FLAG_ID.C隙間自動仕様] ?? 0) !== 0;
+  const bonuses = listPantyCollectionBonuses(state);
   return (
     <div className="morning-menu__inventory" data-testid="morning-collection">
-      <p>收集种数：{rows.length}</p>
+      <p>收集种数：{species}　总数：{total}</p>
+      <p>收藏隙间：{gapCharges}　随身运输：{rows.filter((row) => row.source === "transit").length}种</p>
+      <button
+        type="button"
+        className="morning-menu__choice"
+        data-testid="morning-collection-toggle-auto"
+        disabled={!onTogglePantyGapAuto}
+        onClick={() => onTogglePantyGapAuto?.()}
+      >
+        自动放入收藏隙间：{gapAuto ? "开" : "关"}
+      </button>
+      <button
+        type="button"
+        className="morning-menu__choice"
+        data-testid="morning-collection-sell-duplicates"
+        disabled={duplicateCount === 0 || !onSellPantyDuplicates}
+        onClick={() => onSellPantyDuplicates?.()}
+      >
+        卖出重复胖次：{duplicateCount}条（￥{duplicateCount * 100}）
+      </button>
       {rows.length === 0 ? <p>收藏柜还是空的。</p> : rows.map((row) => (
-        <div className="morning-menu__list-row" key={`${row.charaNum}:${row.pieceId}`}>
-          <span>{row.name}的胖次 #{row.pieceId}</span><span>×{row.count}</span>
+        <div className="morning-menu__list-row" key={`${row.charaNum}:${row.pieceId}:${row.source}`}>
+          <span>{row.name}的{pantyPieceName(state, row.charaNum, row.pieceId)}{row.source === "transit" ? "（随身）" : ""}</span><span>×{row.count}</span>
         </div>
       ))}
-      <p className="morning-menu__note">※ 读取运行时的永久收藏区；重复品出售仍保持关闭，避免在未确认价格流程前改动收藏。</p>
+      <div className="morning-menu__subsection" data-testid="morning-collection-bonuses">
+        <p>胖次收集奖励</p>
+        {bonuses.map((bonus) => (
+          <div className="morning-menu__list-row" key={bonus.id}>
+            <span>[{bonus.id}] {bonus.threshold}种：{bonus.label}{bonus.claimed ? "（已取得）" : ""}</span>
+            <button
+              type="button"
+              className="morning-menu__choice"
+              data-testid={`morning-collection-bonus-${bonus.id}`}
+              disabled={bonus.claimed || !bonus.available || !onClaimPantyCollectionBonus}
+              onClick={() => onClaimPantyCollectionBonus?.(bonus.id)}
+            >
+              {bonus.claimed ? "已取得" : bonus.available ? "领取" : "未达成"}
+            </button>
+          </div>
+        ))}
+      </div>
+      <p className="morning-menu__note">※ 永久收藏与随身运输都按原版状态显示；回家可用 [401] 收藏，外出时消耗收藏隙间次数。</p>
     </div>
   );
 }
@@ -751,63 +826,51 @@ function MoveHomePanel({
   const wake = masterWakeMinute(state);
   const wakeChoices = [360, 420, 480, 540, 600, 720];
   const firstDay = state.time.dayIndex === 0;
+
+  const optionState = (option: ResidenceOption) => {
+    const ownerPresent = option.ownerChara > 0 && state.charas[option.ownerChara] !== undefined;
+    const trust = ownerPresent ? getCharaCflag(state, option.ownerChara, CFLAG_ID.信頼度) : 0;
+    const locked = !firstDay && option.ownerChara > 0 && trust < option.requiredTrust;
+    return {
+      disabled: locked,
+      title: locked
+        ? `${option.ownerName}还没有信赖你到这种程度…（信赖度 ${trust} / ${option.requiredTrust}）`
+        : undefined,
+      status: option.ownerChara > 0
+        ? locked
+          ? `信赖度 ${trust} / ${option.requiredTrust}（不足）`
+          : firstDay
+            ? "首日免判定"
+            : `信赖度 ${trust} / ${option.requiredTrust}（可入住）`
+        : "默认住所，无需家主判定",
+    };
+  };
+
   return (
     <div className="morning-menu__movehome" data-testid="morning-movehome">
-      <dl className="morning-menu__kv">
-        <div>
-          <dt>自宅位置</dt>
-          <dd>{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}</dd>
-        </div>
-        <div>
-          <dt>搬家（私室候補）</dt>
-          <dd className="morning-menu__choice-col">
-            {inOmaneki ? (
-              <p className="morning-menu__note morning-menu__note--warn" data-testid="morning-movehome-omaneki">
-                正在待客室（{OMANEKI_PLACE}）中,无法搬家.请先用 699 外に出る / 让角色离开.
-              </p>
-            ) : (
-              RESIDENCE_OPTIONS.map((opt) => {
-                const ownerPresent = opt.ownerChara > 0 && state.charas[opt.ownerChara] !== undefined;
-                const trust = ownerPresent ? getCharaCflag(state, opt.ownerChara, CFLAG_ID.信頼度) : 0;
-                const locked = !firstDay && opt.ownerChara > 0 && trust < opt.requiredTrust;
-                const active = opt.value === state.homeLocation;
-                const reason = locked
-                  ? `${opt.ownerName}还没有信赖你到这种程度…（信赖度 ${trust} / ${opt.requiredTrust}）`
-                  : undefined;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    data-testid="morning-home-choice"
-                    data-location={opt.value}
-                    className={
-                      active
-                        ? "morning-menu__choice morning-menu__choice--active"
-                        : "morning-menu__choice"
-                    }
-                    disabled={!onSetHomeLocation || locked}
-                    title={reason}
-                    onClick={() => onSetHomeLocation?.(opt.value)}
-                  >
-                    {opt.label} - {opt.roomName}
-                    {opt.ownerChara > 0 && (
-                      <small>
-                        　家主:{opt.ownerName}　必要信赖度:{opt.requiredTrust}
-                        {locked ? "（不足）" : firstDay ? "（首日免判定）" : "（可入住）"}
-                      </small>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </dd>
-        </div>
-      </dl>
+      {inOmaneki ? (
+        <p className="morning-menu__note morning-menu__note--warn" data-testid="morning-movehome-omaneki">
+          正在待客室（{OMANEKI_PLACE}）中，无法搬家。请先用 699 外に出る／让角色离开。
+        </p>
+      ) : (
+        <ResidencePicker
+          currentLocation={state.homeLocation}
+          onSelect={onSetHomeLocation}
+          optionState={optionState}
+          testIdPrefix="morning-movehome-"
+          optionTestId="morning-home-choice"
+          note={
+            <p className="residence-map-ui__note">
+              第一天可无视必要信赖度；之后按上游 SET_MAINHOME 的家主信赖度判定。这里的信赖度是搬家门槛，普通好感度不会替代该判定。
+            </p>
+          }
+        />
+      )}
       <p className="morning-menu__note">
-        起床时间（{minuteText(wake)}）在「居住环境设定」面板可调;搬家后起床落点会同步.
+        当前自宅：{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}。搬家后返回自宅／起床落点会同步。
       </p>
       <p className="morning-menu__note">
-        ※ wake 调整选项：{wakeChoices.map(minuteText).join(" / ")}（仅展示,不在本面板修改）
+        起床时间（{minuteText(wake)}）在「居住环境设定」面板可调；可选：{wakeChoices.map(minuteText).join(" / ")}。
       </p>
     </div>
   );
@@ -1174,6 +1237,9 @@ export default function MorningMenuScreen({
   onReleaseBug,
   onMaterializeBug,
   onTogglePortraitKind,
+  onTogglePantyGapAuto,
+  onClaimPantyCollectionBonus,
+  onSellPantyDuplicates,
 }: Props) {
   const [panel, setPanel] = useState<PanelKind | null>(initialPanel ?? null);
   const [saveMessage, setSaveMessage] = useState("");
@@ -1317,7 +1383,14 @@ export default function MorningMenuScreen({
           </PanelShell>
         )}
         {panel === "collection" && (
-          <PanelShell title="收集" onClose={() => setPanel(null)}><CollectionPanel state={state} /></PanelShell>
+          <PanelShell title="收集" onClose={() => setPanel(null)}>
+            <CollectionPanel
+              state={state}
+              onTogglePantyGapAuto={onTogglePantyGapAuto}
+              onClaimPantyCollectionBonus={onClaimPantyCollectionBonus}
+              onSellPantyDuplicates={onSellPantyDuplicates}
+            />
+          </PanelShell>
         )}
         {panel === "special-dishes" && (
           <PanelShell title="固有料理列表" onClose={() => setPanel(null)}><SpecialDishPanel state={state} /></PanelShell>

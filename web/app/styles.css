@@ -790,6 +790,8 @@ button.secondary:hover:not(:disabled) {
 .status-bar__sit-tag--swim { color: #6ecbff; } /* 游泳中 — 青 */
 .status-bar__sit-tag--sleepy { color: #c9b6ff; } /* 睡意基础紫 */
 .status-bar__sit-tag--coffee { color: #b9a4ff; } /* 清醒剂 */
+.sit-tag--alcohol { color: #d49bff; } /* 酒醉状态 */
+.status-bar__alcohol-state { color: #d49bff; margin: 0.2rem 0; }
 .status-bar__sit-tag--orange { color: #ff9a3c; } /* 马上就得回去了 */
 .status-bar__sit-tag--yellow { color: #ffd75e; } /* 非常疲惫了/睡眠可 */
 .status-bar__sit-tag--pale-yellow { color: #ffe9a8; } /* 累了/睡眠可(浅) */
@@ -943,14 +945,24 @@ button.secondary:hover:not(:disabled) {
 .scene-view__missing {
   color: #667;
 }
+/* Static room intro and dynamic @LOOK_AT prose share the same readable body
+   size. Their visual hierarchy comes from color and spacing, not a smaller
+   font that makes the middle description hard to read. */
+.scene-view__intro,
+.scene-view__ambient {
+  font-size: var(--era-fs);
+  line-height: 1.5;
+}
+.scene-view__intro {
+  margin: 0;
+  white-space: pre-line;
+}
 /* `@LOOK_AT` 动态场景散文 (MAP_UNIQUEMESSAGE / MESSAGE_TALK) — 位于静态 intro
    之下、更轻的次级地文层: 现状描写 vs 进门地文. `\n` 多行保留 (pre-line). */
 .scene-view__ambient {
   padding: 2px 14px 6px;
-  font-size: calc(var(--era-fs) - 3px);
   color: #8b95a3;
   white-space: pre-line;
-  line-height: 1.5;
   max-width: 52ch;
 }
 .scene-view__ambient p {
@@ -978,11 +990,17 @@ button.secondary:hover:not(:disabled) {
   text-shadow: 0 0 18px rgba(110, 190, 255, 0.13), 0 2px 8px rgba(0, 0, 0, 0.75);
 }
 .scene-view__portraits {
-   display: flex;
-   align-items: flex-end;
-   justify-content: center;
-   gap: 28px;
-   overflow: visible;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: min(100%, 1120px);
+  max-width: 100%;
+  box-sizing: border-box;
+  gap: clamp(4px, 1.2vw, 18px);
+  padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
 }
 .game-client--battle-exit { overflow: hidden; background: #000; pointer-events: none; perspective: 950px; }
 .game-client--battle-exit::after { content: ""; position: absolute; inset: 0; z-index: 30; background: #000; animation: danmaku-blackout 760ms ease-in forwards; }
@@ -1037,7 +1055,7 @@ button.secondary:hover:not(:disabled) {
   left: 12px;
   right: 12px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: thin;
@@ -1057,8 +1075,12 @@ button.secondary:hover:not(:disabled) {
 }
 .scene-view__portrait {
   position: relative;
+  flex: 1 1 0;
   width: 150px;
-  height: 230px;
+  min-width: 104px;
+  max-width: 150px;
+  height: 266px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1140,6 +1162,42 @@ button.secondary:hover:not(:disabled) {
   color: #eef4fa;
   text-shadow: 0 1px 2px #000;
 }
+.scene-view__portrait-dialogue {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 50%;
+  width: min(220px, 20vw);
+  max-height: 72px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 226, 151, 0.48);
+  border-radius: 7px;
+  background: rgba(12, 14, 18, 0.93);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.35);
+  color: #f4f6fa;
+  font-size: calc(var(--era-fs) - 1px);
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+}
+.scene-view__portrait-dialogue-name,
+.scene-view__portrait-dialogue-line {
+  display: block;
+}
+.scene-view__portrait-dialogue-name {
+  margin-bottom: 2px;
+  font-weight: 700;
+}
+.scene-view__portrait-dialogue-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 /* Portrait commission badge — small "?" overlay on the top-right of a chara's
    SceneView portrait. Color encodes which kind of commission state the chara
    currently has: 未受託 (green, new request), 依頼中 (blue, accepted),
@@ -1147,8 +1205,8 @@ button.secondary:hover:not(:disabled) {
 .portrait-badge {
   --badge-color: #888;
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 4px;
+  right: 4px;
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -1360,6 +1418,40 @@ button.secondary:hover:not(:disabled) {
   background: linear-gradient(180deg, rgba(5, 7, 9, 0) 0%, rgba(5, 7, 10, 0.9) 30%, rgba(4, 6, 8, 0.98) 100%);
   backdrop-filter: blur(2px);
 }
+.scene-view__initiative {
+  position: absolute;
+  z-index: 5;
+  right: 12px;
+  bottom: 142px;
+  width: min(42%, 390px);
+  max-height: 126px;
+  padding: 8px 11px;
+  overflow-y: auto;
+  border: 1px solid rgba(126, 151, 176, 0.24);
+  border-radius: 6px;
+  background: rgba(8, 12, 17, 0.84);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+}
+.scene-view__initiative-line {
+  margin: 2px 0;
+  font-size: calc(var(--era-fs) - 1px);
+  line-height: 1.45;
+}
+.scene-view__initiative-line--action {
+  color: #9aa6b2;
+  font-size: calc(var(--era-fs) - 2px);
+  font-style: italic;
+}
+.scene-view__initiative-speaker {
+  margin-right: .55em;
+  color: inherit;
+  opacity: .78;
+}
 .scene-view__line {
   margin: 2px 0;
   font-size: calc(var(--era-fs) - 1px);
@@ -1471,6 +1563,54 @@ button.secondary:hover:not(:disabled) {
   color: #5a6068;
   border-color: #2a3340;
   cursor: not-allowed;
+}
+
+.date-invitation-card,
+.date-appointment-status {
+  margin: 8px 12px 0;
+  border: 1px solid #4d7b63;
+  background: linear-gradient(90deg, rgba(27, 66, 45, 0.92), rgba(8, 18, 14, 0.96));
+  color: #e6f7eb;
+  font-family: var(--era-mono);
+}
+.date-invitation-card {
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px;
+  box-shadow: inset 3px 0 #62eba0;
+}
+.date-invitation-card__heading {
+  color: #8effa0;
+  letter-spacing: 0.12em;
+}
+.date-invitation-card p {
+  margin: 0;
+  color: #b9d2c1;
+  font-size: calc(var(--era-fs) - 1px);
+}
+.date-invitation-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.date-invitation-card__actions button {
+  padding: 4px 10px;
+  border: 1px solid #4b9a6b;
+  background: #0a1710;
+  color: #9fffb5;
+  font-family: inherit;
+  cursor: pointer;
+}
+.date-invitation-card__actions button:hover,
+.date-invitation-card__actions button:focus-visible {
+  border-color: #8effa0;
+  color: #fff;
+}
+.date-appointment-status {
+  padding: 6px 10px;
+  border-color: #34507a;
+  background: rgba(10, 20, 36, 0.94);
+  color: #b8d6ff;
 }
 
 /* --- Ex_COM display panels (能力显示/日历/污渍显示) — read-only modals --- */
@@ -2291,12 +2431,12 @@ button.secondary:hover:not(:disabled) {
   /* Fixed height (实玩反馈 2026-07-04): the box no longer grows as blocks are
      revealed — content scrolls INSIDE it — so the 继续 button below stays put
      instead of creeping down the screen on every click. */
-  height: 52vh;
+  height: min(52vh, 560px);
   overflow-y: auto;
-  padding: 16px 18px;
-  border: 1px solid rgba(100, 129, 153, 0.32);
-  background: rgba(0, 0, 0, 0.56);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.03), 0 18px 44px rgba(0, 0, 0, 0.38);
+  padding: 10px 4px 20px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   text-align: left;
 }
 .night-settlement__stream {
@@ -2308,6 +2448,16 @@ button.secondary:hover:not(:disabled) {
   min-height: 156px;
   text-align: center;
 }
+.excom-panel__calendar-wrap { margin-top: 6px; overflow-x: auto; border: 1px solid #303b45; }
+.excom-panel__calendar-table { width: 100%; min-width: 680px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.excom-panel__calendar-table th,
+.excom-panel__calendar-table td { padding: 8px 10px; border-right: 1px solid #303b45; border-bottom: 1px solid #303b45; text-align: left; vertical-align: top; }
+.excom-panel__calendar-table thead th { position: sticky; top: 0; color: #9ee8ad; background: #111a20; letter-spacing: .08em; }
+.excom-panel__calendar-table tbody th { width: 11em; color: #e7d49d; font-weight: 600; white-space: nowrap; }
+.excom-panel__calendar-table tbody th small { color: #929da8; font-weight: 400; }
+.excom-panel__calendar-table td:nth-child(2) { width: 9em; color: #e5bd78; }
+.excom-panel__calendar-table td:last-child { line-height: 1.55; }
+.excom-panel__calendar-table tr.is-today { background: rgba(69, 125, 83, .16); box-shadow: inset 3px 0 #67e47e; }
 .night-settlement__block {
   padding: 8px 0;
 }
@@ -2383,6 +2533,117 @@ button.secondary:hover:not(:disabled) {
   color: #fff;
   border-color: #ffe29a;
   box-shadow: 0 0 14px rgba(255, 216, 112, 0.16);
+}
+
+/* The night has three deliberately different beats.  An event is a scene the
+ * player acts in; the brief sleep transition does no bookkeeping on-screen;
+ * the report is an unframed reading surface after the deterministic work is
+ * complete.  Do not fold these back into one generic modal/card. */
+.night-settlement--event {
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(128, 103, 62, 0.18), transparent 34%),
+    linear-gradient(180deg, #080706 0%, #130f0d 60%, #040405 100%);
+}
+.night-settlement--event .night-settlement__panel {
+  width: min(680px, calc(100vw - 48px));
+  padding-top: clamp(72px, 13vh, 150px);
+  text-align: left;
+}
+.night-settlement--event .night-settlement__eyebrow {
+  color: #e7c36e;
+}
+.night-settlement--event .night-settlement__panel h1 {
+  margin-bottom: 34px;
+  font-size: clamp(28px, 4vw, 38px);
+  letter-spacing: 0.08em;
+}
+.night-settlement--event .night-settlement__pending {
+  min-height: 0;
+  text-align: left;
+}
+.night-settlement--event .event-choice-panel__opening {
+  max-height: min(36vh, 330px);
+}
+.night-settlement--event .event-choice-panel__question {
+  margin-top: 8px;
+  border-top-color: rgba(231, 195, 110, 0.42);
+}
+
+.night-settlement--transition .night-settlement__panel {
+  width: min(560px, calc(100vw - 48px));
+  padding-top: 30vh;
+}
+.night-settlement--transition .night-settlement__pending {
+  min-height: 0;
+  padding: 0;
+  color: #c8d5dc;
+}
+.night-settlement--transition .night-settlement__pending p {
+  margin: 0;
+  line-height: 1.9;
+}
+.night-settlement--transition .night-settlement__pending small {
+  display: block;
+  margin-top: 20px;
+  color: #93a4af;
+  letter-spacing: 0.12em;
+}
+
+.night-settlement--settlement {
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(93, 119, 143, 0.16), transparent 32%),
+    linear-gradient(180deg, #070b10 0%, #0c131a 56%, #030507 100%);
+}
+.night-settlement--settlement .night-settlement__panel {
+  width: min(720px, calc(100vw - 48px));
+  padding-top: clamp(58px, 10vh, 112px);
+  text-align: left;
+}
+.night-settlement--settlement .night-settlement__panel h1 {
+  margin-bottom: 4px;
+  font-size: clamp(28px, 4vw, 38px);
+}
+.night-settlement--settlement .night-settlement__summary {
+  margin-bottom: 22px;
+}
+.night-settlement--settlement .night-settlement__stream {
+  border-top: 1px solid rgba(125, 157, 180, 0.26);
+  border-bottom: 1px solid rgba(125, 157, 180, 0.18);
+}
+.night-settlement__actions button {
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(215, 190, 122, 0.72);
+  border-radius: 0;
+  background: transparent;
+}
+.night-settlement__actions button:hover {
+  border-color: #ffe29a;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .night-settlement--event .night-settlement__panel,
+  .night-settlement--settlement .night-settlement__panel {
+    width: min(calc(100vw - 32px), 720px);
+    padding-top: 52px;
+    padding-bottom: 28px;
+  }
+  .night-settlement--transition .night-settlement__panel {
+    width: min(calc(100vw - 32px), 560px);
+    padding-top: 24vh;
+  }
+  .night-settlement--event .event-choice-panel__opening {
+    max-height: 30vh;
+  }
+  .night-settlement--event .night-settlement__pending .event-choice-panel__options {
+    max-height: 30vh;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2670,21 +2931,60 @@ button.secondary:hover:not(:disabled) {
   color: #909aa6;
   font-size: calc(var(--era-fs) - 3px);
 }
+.morning-menu__section-title {
+  margin: 12px 0 4px;
+  color: #ffd36e;
+  font-weight: 700;
+}
+.morning-menu__cohabitation {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #273039;
+}
+.morning-menu__movehome .residence-map-ui {
+  width: 100%;
+}
+.morning-menu__movehome .residence-tabs {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.morning-menu__movehome .residence-mappreview {
+  max-height: 240px;
+}
+.morning-menu__movehome .pre-screen__cards {
+  justify-content: flex-start;
+  max-height: 34vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+.morning-menu__movehome .pre-card {
+  width: min(300px, 100%);
+}
 .morning-menu__shop-list {
   display: grid;
-  gap: 4px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
   min-width: min(680px, 100%);
 }
 .morning-menu__shop-row {
-  display: grid;
-  grid-template-columns: minmax(11em, 1fr) minmax(5em, 7em) minmax(5em, 7em) minmax(6em, 8em) max-content;
-  gap: 10px;
-  align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(88, 104, 118, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(128, 148, 166, 0.34);
+  border-radius: 7px;
+  background: linear-gradient(145deg, rgba(29, 42, 53, 0.92), rgba(13, 19, 25, 0.94));
 }
 .morning-menu__shop-name {
-  color: #f3e6a8;
+  display: block;
+  padding: 5px 7px;
+  color: #fff1ad;
+  font-size: calc(var(--era-fs) + 1px);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  background: linear-gradient(90deg, rgba(122, 87, 25, 0.72), rgba(122, 87, 25, 0));
+  border-left: 3px solid #e7bd57;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -2695,9 +2995,11 @@ button.secondary:hover:not(:disabled) {
 }
 .morning-menu__shop-price {
   color: #bdeaff;
-  text-align: right;
+  font-weight: 700;
+  text-align: left;
 }
 .morning-menu__shop-row button {
+  align-self: flex-start;
   padding: 3px 9px;
   color: #e8f7ee;
   background: rgba(32, 50, 40, 0.75);
@@ -2978,6 +3280,102 @@ button.secondary:hover:not(:disabled) {
   letter-spacing: 0.04em;
   padding: 10px 0 4px;
   border-top: 1px solid rgba(120, 170, 160, 0.28);
+}
+
+/* Shared event-session presentation. NIGHT and ODEKAKE both render the same
+ * prompt snapshot; only their outer frame differs. */
+.event-choice-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.event-choice-panel__opening {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 32vh;
+  overflow-y: auto;
+  padding-right: 6px;
+  text-align: left;
+}
+.event-choice-panel__line {
+  margin: 0;
+  line-height: 1.7;
+  color: #e8eee9;
+}
+.event-choice-panel__line--dialogue {
+  color: #f0e3b0;
+}
+.event-choice-panel__speaker {
+  display: inline-block;
+  margin-right: 0.55em;
+  color: var(--era-green);
+}
+.event-choice-panel__question {
+  flex: 0 0 auto;
+  padding: 10px 0 4px;
+  border-top: 1px solid rgba(120, 170, 160, 0.28);
+  color: var(--era-green);
+  font-size: calc(var(--era-fs) + 1px);
+  letter-spacing: 0.04em;
+}
+.event-choice-panel__options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+.event-choice-panel__option {
+  width: 100%;
+  text-align: left;
+}
+.event-choice-panel--outing .event-choice-panel__opening {
+  max-height: 28vh;
+}
+.outing-event-frame__answer {
+  flex: 0 0 auto;
+  color: #f2d58d;
+  font-size: calc(var(--era-fs) - 1px);
+}
+.event-result-lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  font-size: var(--era-fs);
+  line-height: 1.7;
+}
+.event-result-lines__line,
+.event-result-lines__empty {
+  margin: 0;
+  color: #e8eee9;
+}
+.event-result-lines__line--dialogue_line {
+  color: #f0e3b0;
+}
+.event-result-lines__empty {
+  color: #9ba7ad;
+}
+.night-settlement__pending .event-choice-panel {
+  width: 100%;
+  text-align: left;
+}
+.night-settlement__pending .event-choice-panel__options {
+  max-height: 34vh;
+}
+.night-settlement__recovery {
+  display: flex;
+  min-height: 156px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
 }
 /* 选择阶段:开场白按自然高度排布,不把提问/选项推到面板底部。
  * (结局阶段的 lines 是 flex:1 1 auto 撑满面板,这里覆盖掉。) */
@@ -3594,7 +3992,14 @@ button.secondary:hover:not(:disabled) {
   color: #667;
 }
 
-.interaction-box--radio { width: min(620px, calc(100vw - 28px)); }
+.interaction-box--radio { width: min(1040px, calc(100vw - 28px)); }
+.interaction-box__radio-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); gap: 14px; align-items: stretch; }
+.interaction-box__radio-main,
+.interaction-box__radio-side { min-width: 0; }
+.interaction-box__radio-side { display: flex; min-height: 0; border-left: 1px solid #354148; padding-left: 14px; }
+.interaction-box__radio-side .text-game-ambient { display: flex; flex: 1; min-height: 220px; border-color: #354148; background: #101719; }
+.interaction-box__radio-side .text-game-ambient__lines { overflow-y: auto; }
+.interaction-box__radio-side .text-game-ambient__line { font-size: 13px; line-height: 1.6; }
 .radio-broadcast { display: grid; gap: 14px; color: #d9e3e6; font-family: "MS Gothic", monospace; }
 .radio-broadcast__header { display: flex; align-items: center; gap: 9px; min-height: 28px; border-bottom: 1px solid #49606a; color: #b7d7da; font-size: 14px; }
 .radio-broadcast__frequency { margin-left: auto; color: #f0bd64; font-size: 12px; }
@@ -3616,6 +4021,12 @@ button.secondary:hover:not(:disabled) {
 @keyframes radio-wave { to { transform: scaleY(.36); opacity: .5; } }
 @keyframes radio-lamp { 50% { opacity: .25; } }
 @keyframes radio-static { 50% { opacity: .52; } }
+@media (max-width: 760px) {
+  .interaction-box--radio { width: min(620px, calc(100vw - 28px)); }
+  .interaction-box__radio-layout { grid-template-columns: 1fr; }
+  .interaction-box__radio-side { border-top: 1px solid #354148; border-left: 0; padding-top: 12px; padding-left: 0; }
+  .interaction-box__radio-side .text-game-ambient { min-height: 150px; }
+}
 @media (max-width: 520px) { .radio-broadcast__facts { grid-template-columns: 1fr; } }
 
 /* L1 AI 口上：设置与实时等待态。 */
@@ -4684,6 +5095,51 @@ button.secondary:hover:not(:disabled) {
   cursor: not-allowed;
 }
 
+.kojo-update__layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(360px, 1.3fr);
+  gap: 16px;
+  width: min(1040px, 96%);
+  min-height: 360px;
+  text-align: left;
+}
+.kojo-update__roster,
+.kojo-update__dialogue {
+  max-height: 52vh;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid rgba(103, 228, 126, 0.22);
+  border-radius: 8px;
+  background: rgba(8, 11, 13, 0.9);
+}
+.kojo-update__roster { list-style-position: inside; }
+.kojo-update__roster li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px;
+  color: #cfd8dc;
+}
+.kojo-update__roster li[data-status="active"] { color: #ffd36e; }
+.kojo-update__roster li[data-status="done"] { color: #8af29c; }
+.kojo-update__roster li[data-status="unsupported"] { color: #ffadad; }
+.kojo-update__roster small { white-space: nowrap; }
+.kojo-update__dialogue { color: #d8e4dc; }
+.kojo-update__entry {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.kojo-update__entry p { margin: 5px 0; white-space: pre-wrap; }
+.kojo-update__entry--active { color: #f1f7f2; }
+.kojo-update__warning { color: #ffadad; }
+.kojo-update__complete { color: #8af29c; font-weight: 700; }
+
+@media (max-width: 760px) {
+  .kojo-update__layout { grid-template-columns: 1fr; }
+  .kojo-update__roster { max-height: 24vh; }
+}
+
 /* Loaded-kojo selector: original-like list + hover description. */
 /* Master-detail (实玩反馈 2026-06-29): left = scrollable character list,
    right = fixed detail panel (label + description + counts). */
@@ -5630,11 +6086,24 @@ button.secondary:hover:not(:disabled) {
     transform: scale(.78);
     transform-origin: bottom center;
   }
+  .scene-view__portrait-dialogue {
+    width: min(180px, 42vw);
+    max-height: 58px;
+    padding: 4px 6px;
+    font-size: calc(var(--era-fs) - 2px);
+  }
   .scene-view__band {
     box-sizing: border-box;
     height: 106px;
     max-height: 40%;
     padding: 8px 10px;
+  }
+  .scene-view__initiative {
+    right: 8px;
+    bottom: 114px;
+    width: min(78%, 310px);
+    max-height: 86px;
+    padding: 6px 8px;
   }
 
   .game-client__bottom {

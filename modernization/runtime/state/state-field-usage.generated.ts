@@ -68,6 +68,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/headpat.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/talk.ts",
       "modernization/runtime/command/handlers/white-day.ts",
@@ -121,6 +122,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/headpat.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/talk.ts",
       "modernization/runtime/command/handlers/white-day.ts",
@@ -156,6 +158,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/fishing.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/command/source-check.ts",
@@ -250,6 +253,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "producers": [
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/world/mobs.ts",
@@ -259,6 +263,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf306.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/base-natural-drift.ts",
@@ -270,6 +275,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf306.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/base-natural-drift.ts",
@@ -284,6 +290,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf306.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/base-natural-drift.ts",
@@ -696,6 +703,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/reading.ts",
       "modernization/runtime/command/handlers/rukoto-420.ts",
       "modernization/runtime/command/handlers/sansaku-604.ts",
+      "modernization/runtime/command/handlers/sentinels.ts",
       "modernization/runtime/command/handlers/sento.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/serve-meal.ts",
@@ -729,7 +737,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/set-sleep.ts",
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/roam-advanced.ts",
-      "modernization/runtime/world/work/work-system.ts"
+      "modernization/runtime/world/work/work-system.ts",
+      "web/app/ai/ambient-eligibility.ts"
     ],
     "references": [
       "modernization/runtime/command/comf/compile-gate.ts",
@@ -767,6 +776,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/reading.ts",
       "modernization/runtime/command/handlers/rukoto-420.ts",
       "modernization/runtime/command/handlers/sansaku-604.ts",
+      "modernization/runtime/command/handlers/sentinels.ts",
       "modernization/runtime/command/handlers/sento.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/serve-meal.ts",
@@ -804,6 +814,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/roam-advanced.ts",
       "modernization/runtime/world/work/work-system.ts",
+      "web/app/ai/ambient-eligibility.ts",
       "web/app/state/game-state-store.ts"
     ],
     "directAccesses": [
@@ -832,6 +843,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
       "modernization/runtime/command/handlers/rukoto-420.ts",
+      "modernization/runtime/command/handlers/sentinels.ts",
       "modernization/runtime/command/handlers/sento.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/serve-meal.ts",
@@ -863,7 +875,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/sneak-in.ts",
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/roam-advanced.ts",
-      "modernization/runtime/world/work/work-system.ts"
+      "modernization/runtime/world/work/work-system.ts",
+      "web/app/ai/ambient-eligibility.ts"
     ]
   },
   {
@@ -971,6 +984,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/command-kojo.ts",
       "modernization/runtime/command/handlers/bug-catching.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/undress.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts"
@@ -999,6 +1013,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/bug-catching.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/sentinels.ts",
+      "modernization/runtime/command/handlers/undress.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts"
@@ -1027,6 +1042,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/bug-catching.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/sentinels.ts",
+      "modernization/runtime/command/handlers/undress.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts"
@@ -1123,6 +1139,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/omaneki-699.ts",
       "modernization/runtime/command/handlers/omikuji.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/panty-change.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
       "modernization/runtime/command/handlers/prayer.ts",
       "modernization/runtime/command/handlers/reading.ts",
@@ -1137,6 +1154,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/stall.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/tennokoe-422.ts",
+      "modernization/runtime/command/handlers/undress.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/water-drawing.ts",
       "modernization/runtime/command/handlers/white-day.ts",
@@ -1211,6 +1229,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/omaneki-699.ts",
       "modernization/runtime/command/handlers/omikuji.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/panty-change.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
       "modernization/runtime/command/handlers/prayer.ts",
       "modernization/runtime/command/handlers/reading.ts",
@@ -1225,6 +1244,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/stall.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/tennokoe-422.ts",
+      "modernization/runtime/command/handlers/undress.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/water-drawing.ts",
       "modernization/runtime/command/handlers/white-day.ts",
@@ -1299,6 +1319,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/omaneki-699.ts",
       "modernization/runtime/command/handlers/omikuji.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/panty-change.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
       "modernization/runtime/command/handlers/prayer.ts",
       "modernization/runtime/command/handlers/reading.ts",
@@ -1313,6 +1334,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/stall.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/tennokoe-422.ts",
+      "modernization/runtime/command/handlers/undress.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/water-drawing.ts",
       "modernization/runtime/command/handlers/white-day.ts",
@@ -1695,7 +1717,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/visit-flags.ts",
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/job-prose.ts",
-      "modernization/runtime/world/work/work-manifest.ts"
+      "modernization/runtime/world/work/work-manifest.ts",
+      "web/app/game/MorningMenuScreen.tsx"
     ],
     "references": [
       "modernization/runtime/command/comf/can-com.ts",
@@ -1769,7 +1792,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/visit-flags.ts",
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/job-prose.ts",
-      "modernization/runtime/world/work/work-manifest.ts"
+      "modernization/runtime/world/work/work-manifest.ts",
+      "web/app/game/MorningMenuScreen.tsx"
     ],
     "directAccesses": [
       "modernization/runtime/command/comf/can-com.ts",
@@ -1803,7 +1827,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/sneak-in.ts",
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/job-prose.ts",
-      "modernization/runtime/world/work/work-manifest.ts"
+      "modernization/runtime/world/work/work-manifest.ts",
+      "web/app/game/MorningMenuScreen.tsx"
     ]
   },
   {
@@ -1949,7 +1974,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
       "modernization/runtime/world/sneak-in.ts",
-      "modernization/runtime/world/whereabouts.ts"
+      "modernization/runtime/world/whereabouts.ts",
+      "web/app/game/MorningMenuScreen.tsx"
     ],
     "references": [
       "modernization/runtime/command/handlers/family7.ts",
@@ -1972,7 +1998,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
       "modernization/runtime/world/sneak-in.ts",
-      "modernization/runtime/world/whereabouts.ts"
+      "modernization/runtime/world/whereabouts.ts",
+      "web/app/game/MorningMenuScreen.tsx"
     ],
     "directAccesses": [
       "modernization/runtime/command/handlers/family7.ts",
@@ -1987,7 +2014,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/sneak-in.ts",
-      "modernization/runtime/world/whereabouts.ts"
+      "modernization/runtime/world/whereabouts.ts",
+      "web/app/game/MorningMenuScreen.tsx"
     ]
   },
   {
@@ -2285,11 +2313,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "command-completed",
     "producers": [
       "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/state/alcohol.ts"
     ],
     "consumers": [],
     "references": [
       "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/state/alcohol.ts"
     ],
     "directAccesses": []

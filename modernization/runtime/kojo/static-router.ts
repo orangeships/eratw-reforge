@@ -3435,6 +3435,23 @@ function registerSourceBackedDirectValueHandlers(): void {
       unsupported: [],
     };
   });
+  /** COMMON.ERB:@MASTER_IS_VIRGIN — all applicable non-anal virginities. */
+  const masterIsVirgin = (state: Readonly<GameState>): boolean => {
+    const talent = state.master.state.TALENT;
+    const gender = talent[TALENT_ID.性別] ?? 0;
+    const isVirgin = (talent[TALENT_ID.処女] ?? 0) !== 0;
+    const hasPenis = (gender & 2) !== 0;
+    const isDoutei = (talent[TALENT_ID.非童貞] ?? 0) === 0 && hasPenis;
+    return ((gender & 1) !== 0 && isVirgin) || (gender === 2 && isDoutei) || (gender === 3 && isDoutei && isVirgin);
+  };
+  registerFunctionCallValue("MASTER_IS_VIRGIN", ({ state }) => ({
+    value: masterIsVirgin(state) ? 1 : 0,
+    unsupported: [],
+  }));
+  registerFunctionCallPredicate("MASTER_IS_VIRGIN", ({ state }) => ({
+    value: masterIsVirgin(state),
+    unsupported: [],
+  }));
   // The same helper is also used as a bare IF predicate (`!THINKS...`).
   // Keep the predicate and value paths on one deterministic implementation;
   // do not turn this into a generic CALL/VM bridge.

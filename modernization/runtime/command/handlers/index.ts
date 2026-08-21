@@ -169,7 +169,9 @@ import {
   comf26HandlerEntry,
 } from "./h-remainder.js";
 import { undress820HandlerEntry, undress821HandlerEntry } from "./undress.js";
+import { insertionGSpot72HandlerEntry, insertionCervix73HandlerEntry } from "./insertion-derived.js";
 import { comf401HandlerEntry } from "./panty-collection.js";
+import { comf430HandlerEntry } from "./panty-change.js";
 import { COMF_HANDLER_ENTRIES } from "../comf/defs/index.js";
 
 export { moveHandlerEntry } from "./move.js";
@@ -529,8 +531,11 @@ export function registerDailyHandlers(catalog: CommandCatalog): void {
   // Both strip TARGET + MASTER via the P1-a clothing-write API.
   catalog.register(undress820HandlerEntry);
   catalog.register(undress821HandlerEntry);
+  catalog.register(insertionGSpot72HandlerEntry);
+  catalog.register(insertionCervix73HandlerEntry);
   // P4 — COMF401 收藏 (panty collection transfer)
   catalog.register(comf401HandlerEntry);
+  catalog.register(comf430HandlerEntry);
   // Phase 7 (Wave 1) — COMF364 豆まき. Multi-target bespoke (loops all
   // present NPCs, can't be a ComfDef). execCheck is double-deferred
   // (節分 calendar + 鬼族 race) so it blocks live; settlement pinned by

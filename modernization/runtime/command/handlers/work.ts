@@ -297,7 +297,7 @@ export const workHandlerEntry: HandlerEntry = {
       events.push({
         kind: "NARRATION" as const,
         timestamp: ctx.now(),
-        text: `${target.callName ?? `角色${ctx.target}`}の${JOB_LABEL[job] ?? "仕事"}を手伝った（${amount}）。`,
+        text: `帮助${target.callName ?? `角色${ctx.target}`}完成了${JOB_LABEL[job] ?? "工作"}（${amount}）。`,
       });
     }
 

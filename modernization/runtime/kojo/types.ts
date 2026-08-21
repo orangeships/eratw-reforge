@@ -1057,6 +1057,8 @@ export interface DialogueRouter {
    *  `qol_update.ERB@UPDATE_OF_KOJO_ORIGIN` calls each author's
    *  `@M_KOJO_UPDATE_K{XX}` via `TRYCALLFORM`). Resolves the body
    *  interactively so INPUT/choice pause for the player. */
+  hasUpdateKojo?(charaNum: number, state: Readonly<GameState>): boolean;
+
   resolveUpdateKojoInteractive?(
     charaNum: number,
     state: Readonly<GameState>,

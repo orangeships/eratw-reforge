@@ -94,6 +94,25 @@ function normalizeMinuteOfDay(minute: number | undefined): number {
   return (((Math.trunc(minute!) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY);
 }
 
+/** Compare the string and numeric room representations used by old saves and
+ * the modern movement bridge. Cohabitation can update the master's private
+ * room while a legacy top-level home string is still one step behind. */
+function sameRoom(left: string, right: string): boolean {
+  if (left === right) return true;
+  const leftId = locationToRoomId(left);
+  const rightId = locationToRoomId(right);
+  return leftId !== null && rightId !== null && leftId === rightId;
+}
+
+function masterAtHome(state: Readonly<GameState>): boolean {
+  const current = state.master.location;
+  const initialRoom = roomIdToLocation(state.master.state.CFLAG[CFLAG_ID.初期位置] ?? 0);
+  const homes = [state.homeLocation, state.master.homeLocation, initialRoom]
+    .filter((location): location is string => typeof location === "string" && location.length > 0);
+  if (homes.length === 0) return current === "自宅";
+  return homes.some((home) => sameRoom(home, current));
+}
+
 export function masterWakeMinute(state: Readonly<GameState>): number {
   return normalizeMinuteOfDay(state.masterWakeMinute);
 }
@@ -756,6 +775,7 @@ import { runBrewTick } from "../../state/brewing.js";
 import { getWeatherState } from "../../state/weather-state.js";
 import { masterRegionId } from "../../weather/region-system.js";
 import { mapIdOfLocation } from "../../world/location-predicates.js";
+import { locationToRoomId, roomIdToLocation } from "../../world/room-id-location.js";
 import { createRng } from "../../command/rng.js";
 // DAY-CYCLE-PLAN §S1: the post-wake morning subsystems (DAYEVENT-day /
 // 来訪フラグ / 遭遇判定 / 依頼刷新 / おはよう) now live in day-cycle.ts as an
@@ -850,8 +870,7 @@ export const sleepHandlerEntry: HandlerEntry = {
     //   - CFLAG:诶嘿嘿 == 2 → RETURN 0 (line 102, target-led H).
     const coSleeping = (ctx.state.master.state.CFLAG[CFLAG_ID.陪睡中] ?? 0) !== 0;
     if (!coSleeping) {
-      const homeLocation = ctx.state.homeLocation ?? "自宅";
-      if (ctx.state.master.location !== homeLocation) {
+      if (!masterAtHome(ctx.state)) {
         return {
           ok: false,
           reason: { kind: "com_able", code: 402, message: "这里只能休息，必须回到自己的房间（自室）才能就寝。" },

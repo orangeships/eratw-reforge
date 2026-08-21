@@ -575,6 +575,7 @@ export function renderKojoText(
 export interface KojoStringLocalsView {
   resolvedStringLocals?: readonly string[];
   resolvedNamedStringLocals?: Readonly<Record<string, string>>;
+  namedLocals?: Readonly<Record<string, number>>;
 }
 
 /**
@@ -593,7 +594,9 @@ export function substituteKojoStringLocals(
     !text.includes("%LOCALS") &&
     !text.includes("%LOCAL") &&
     !text.includes("%RESULTS") &&
-    !text.includes("%RESULT")
+    !text.includes("%RESULT") &&
+    !text.includes("PAGENUM") &&
+    !text.includes("PAGECOUNT")
   ) {
     return text;
   }
@@ -620,5 +623,10 @@ export function substituteKojoStringLocals(
     const value = read(index);
     return value === "" ? token : value;
   });
+  out = out.replace(/%(PAGENUM|PAGECOUNT)%|[\[{](PAGENUM|PAGECOUNT)[\]}]/gi,
+    (token, percentName: string | undefined, wrappedName: string | undefined) => {
+      const value = vm?.namedLocals?.[(percentName ?? wrappedName ?? "").toUpperCase()];
+      return value === undefined ? token : String(value);
+    });
   return out;
 }

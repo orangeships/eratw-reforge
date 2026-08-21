@@ -48,6 +48,7 @@ import {
 } from "../../state/settlement.js";
 import { pickOne, requirePickOne, type PromptSpec } from "../prompt.js";
 import { createGift, recordGiftPurchase, reviewGift, type DrawnGift } from "../../state/gifts.js";
+import { RINNOSUKE_HOME, RINNOSUKE_ROLE } from "../../world/dynamic-characters.js";
 
 /** Gift-shop locations on the built maps → AREA_SETBIT bit index. */
 const GIFT_SHOP_AREAS: Readonly<Record<string, { areaBit: number; areaId: number }>> = {
@@ -132,6 +133,21 @@ function check626(state: GameState, target: number):
   if (!tSlot) {
     return { ok: false, reason: { kind: "precondition", message: "没有赠送礼物的对象。" } };
   }
+  const targetMeta = state.dynamicCharacters?.[target];
+  if (
+    targetMeta?.origin === "authored" &&
+    targetMeta.role === RINNOSUKE_ROLE &&
+    tSlot.location === RINNOSUKE_HOME &&
+    state.master.location === RINNOSUKE_HOME
+  ) {
+    return {
+      ok: false,
+      reason: {
+        kind: "precondition",
+        message: "霖之助是店家，不能把在香霖堂购买的土产送给他。",
+      },
+    };
+  }
   if ((tSlot.state.CFLAG[CFLAG_ID.每日礼物] ?? 0) !== 0) {
     return { ok: false, reason: { kind: "precondition", message: "今天已经送过礼物了。" } };
   }
@@ -163,6 +179,12 @@ function buildPrompt(ctx: CommandContext): PromptSpec | null {
 
 export const souvenirShop626HandlerEntry: HandlerEntry = {
   commandNo: 626,
+  displayCheck: (ctx) => ({
+    shown: true,
+    ...(giftShopAt(ctx.state.master.location)?.areaId === 5
+      ? { labelOverride: "香霖堂" }
+      : {}),
+  }),
   execCheck: (ctx) => check626(ctx.state, ctx.target),
   prompt: buildPrompt,
   handler: (ctx) => {

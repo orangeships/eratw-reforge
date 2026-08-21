@@ -98,7 +98,7 @@ export default function NewGameOptions(props: NewGameOptionsProps) {
           className="pre-screen__primary"
           onClick={props.onDone}
         >
-          [100] 完成自定义阶段并开始游戏 →
+          [100] 完成自定义并检查角色剧本 →
         </button>
         {props.onBack && (
           <button type="button" data-testid="newgame-options-back" onClick={props.onBack}>

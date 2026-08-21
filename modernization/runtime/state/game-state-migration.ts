@@ -10,6 +10,8 @@ import {
   type CommissionState,
   type GameState,
   type DailyEventSession,
+  type EventPromptLine,
+  type EventPromptSpec,
   type MobMealSession,
   type DynamicCharacterMeta,
   type DynamicCharacterPortrait,
@@ -21,6 +23,7 @@ import {
   type DatePlanEvent,
   type DateSession,
   type OutingChoicePromptLine,
+  type OutingChoiceResultSession,
   type OutingChoiceSession,
   type OutingChoiceValue,
   type WorldEventInstance,
@@ -37,6 +40,7 @@ import {
   type WorkRuntimeEntry,
   type WorkRuntimeState,
 } from "./game-state.js";
+import { isObservationEvent } from "../../schemas/validator.js";
 import type { BattleInput, DanmakuBattleSession } from "./danmaku-game.js";
 import type { FishingGameSession } from "./fishing-game.js";
 import { defaultFishingGear, FISHING_LINES, FISHING_RODS, type FishingGearState, type FishingLineId, type FishingRodId } from "./fishing.js";
@@ -60,6 +64,7 @@ import {
   tflagLifecycle,
 } from "./tflag.js";
 import { BASE_ID, CFLAG_ID, FLAG_ID, TALENT_ID, TEQUIP_ID } from "./settlement.js";
+import { MAXPANTS, PANTS_MGMT_OFFSET } from "./panty-collection.js";
 import { JOB_ID } from "../world/work/work-manifest.js";
 import { AGENT_RUNTIME_VERSION, createAgentRuntimeState } from "../agent/init.js";
 import { ensureRinnosuke } from "../world/dynamic-characters.js";
@@ -278,6 +283,7 @@ function normalizeDailyEventSession(value: unknown): DailyEventSession | undefin
   const data = isRecord(value.data)
     ? Object.fromEntries(Object.entries(value.data).filter(([, v]) => typeof v === "number" || typeof v === "string" || typeof v === "boolean")) as Record<string, number | string | boolean>
     : undefined;
+  const prompt = normalizeDailyEventPrompt(value.prompt);
   return {
     kind,
     eventId,
@@ -285,7 +291,50 @@ function normalizeDailyEventSession(value: unknown): DailyEventSession | undefin
     sleepSeed: Math.trunc(value.sleepSeed),
     phase,
     ...(data && Object.keys(data).length > 0 ? { data } : {}),
+    ...(prompt ? { prompt } : {}),
   };
+}
+
+function normalizeDailyEventPrompt(value: unknown): EventPromptSpec | undefined {
+  if (!isRecord(value)) return undefined;
+  const kind = value.kind;
+  if (kind !== "ask_yn" && kind !== "pick_one" && kind !== "pick_many" && kind !== "free_text") return undefined;
+  if (typeof value.question !== "string" || !Array.isArray(value.options)) return undefined;
+  const options: EventPromptSpec["options"] = [];
+  for (const rawOption of value.options) {
+    if (!isRecord(rawOption)) continue;
+    const id = rawOption.id;
+    if (!(typeof id === "string" || (typeof id === "number" && Number.isFinite(id)))) continue;
+    if (typeof rawOption.label !== "string") continue;
+    const option: EventPromptSpec["options"][number] = { id, label: rawOption.label };
+    if (typeof rawOption.detail === "string") option.detail = rawOption.detail;
+    if (rawOption.disabled === true) option.disabled = true;
+    options.push(option);
+  }
+  if (kind !== "free_text" && options.length === 0) return undefined;
+  const opening = normalizeEventPromptOpening(value.opening);
+  return {
+    kind,
+    question: value.question,
+    options,
+    ...(opening.length > 0 ? { opening } : {}),
+  };
+}
+
+function normalizeEventPromptOpening(value: unknown): EventPromptLine[] {
+  if (!Array.isArray(value)) return [];
+  const lines: EventPromptLine[] = [];
+  for (const rawLine of value) {
+    if (!isRecord(rawLine) || (rawLine.kind !== "narration" && rawLine.kind !== "dialogue") || typeof rawLine.text !== "string") continue;
+    const text = rawLine.text.trim();
+    if (text.length === 0) continue;
+    const line: EventPromptLine = { kind: rawLine.kind, text };
+    if (rawLine.kind === "dialogue" && typeof rawLine.speaker === "string" && rawLine.speaker.trim().length > 0) {
+      line.speaker = rawLine.speaker.trim();
+    }
+    lines.push(line);
+  }
+  return lines;
 }
 
 function normalizeMobMealSession(value: unknown): MobMealSession | undefined {
@@ -426,6 +475,7 @@ function normalizeTrainingSession(value: unknown, state: Readonly<GameState>): T
     value.participants.length === 0 || value.participants.length > MAX_TRAINING_PARTICIPANTS ||
     value.recentCommands.length > MAX_TRAINING_RECENT_COMMANDS
   ) return undefined;
+  if (state.charas[target]!.location !== state.master.location) return undefined;
 
   const participants = value.participants.map(nonnegativeInteger);
   if (
@@ -466,6 +516,11 @@ function normalizeTrainingSession(value: unknown, state: Readonly<GameState>): T
     mode: value.mode,
     participants: participants as number[],
     recentCommands: recentCommands as TrainingCommandRecord[],
+    ...(typeof value.vInserted === "boolean" ? { vInserted: value.vInserted } : {}),
+    ...(typeof value.aInserted === "boolean" ? { aInserted: value.aInserted } : {}),
+    ...(nonnegativeInteger(value.currentPositionCommandNo) !== undefined
+      ? { currentPositionCommandNo: nonnegativeInteger(value.currentPositionCommandNo) }
+      : {}),
   };
 }
 
@@ -602,6 +657,44 @@ function normalizeOutingChoiceSession(value: unknown, warnings: string[] = []): 
     channel,
     startedAtTick,
     prompt,
+    ...(typeof value.rngSeed === "number" && Number.isFinite(value.rngSeed)
+      ? { rngSeed: Math.trunc(value.rngSeed) }
+      : {}),
+  };
+}
+
+function normalizeOutingChoiceResultSession(value: unknown, warnings: string[] = []): OutingChoiceResultSession | null {
+  if (!isRecord(value)) { warnings.push("discarded invalid outing-choice-result session"); return null; }
+  const validEvents = [2, 3, 5, 6, 7] as const;
+  if (typeof value.eventId !== "number" || !(validEvents as readonly number[]).includes(value.eventId)) {
+    warnings.push("discarded outing-choice-result session with invalid eventId");
+    return null;
+  }
+  if (value.channel !== "outing-departure" && value.channel !== "outing-return") {
+    warnings.push("discarded outing-choice-result session with invalid channel");
+    return null;
+  }
+  const prompt = normalizeOutingChoicePrompt(value.prompt, warnings);
+  if (!prompt || !Array.isArray(value.resultEvents) || !value.resultEvents.every(isObservationEvent)) {
+    warnings.push("discarded malformed outing-choice-result session");
+    return null;
+  }
+  const answer = value.answer;
+  const validAnswer = answer === "decline" || answer === "accept" || answer === "rescue" ||
+    (typeof answer === "number" && Number.isInteger(answer))
+    ? answer as OutingChoiceResultSession["answer"]
+    : undefined;
+  return {
+    kind: "outing-choice-result",
+    eventId: value.eventId as OutingChoiceResultSession["eventId"],
+    channel: value.channel,
+    startedAtTick: Number.isFinite(value.startedAtTick) ? Math.trunc(value.startedAtTick as number) : 0,
+    prompt,
+    ...(validAnswer !== undefined ? { answer: validAnswer } : {}),
+    ...(typeof value.rngSeed === "number" && Number.isFinite(value.rngSeed)
+      ? { rngSeed: Math.trunc(value.rngSeed) }
+      : {}),
+    resultEvents: value.resultEvents,
   };
 }
 
@@ -1529,6 +1622,10 @@ export function migrateGameState(
     base.dayEventsEnabled ?? 1,
   );
   next.master = normalizeSlot(raw.master, base.master, 0, next.homeLocation);
+  // The top-level home is the master's canonical residence. Backfill the
+  // slot mirror so sleep/return-home gates cannot disagree after cohabitation
+  // or when loading a save written before the mirror was persisted.
+  next.master.homeLocation = next.homeLocation ?? next.master.homeLocation;
   repairLegacyTequipWrites(next.master, sourceVersion, warnings);
   if (next.master.location === LEGACY_HAKUREI_HOME) {
     next.master.location = next.homeLocation ?? DEFAULT_HAKUREI_HOME;
@@ -1564,6 +1661,10 @@ export function migrateGameState(
       // Preserve interactive-event sessions across migration so an unresolved
       // prompt survives load/restore. The EV1 legacy kind is retired.
       next.outingEventSession = normalizeOutingChoiceSession(rawSession, warnings);
+    } else if (rawSession.kind === "outing-choice-result") {
+      // A result frame is also a resumable boundary: closing the browser or
+      // saving here must not re-run the branch or silently lose its feedback.
+      next.outingEventSession = normalizeOutingChoiceResultSession(rawSession, warnings);
     } else {
       warnings.push("discarded retired outing-event session");
     }
@@ -1664,6 +1765,21 @@ export function migrateGameState(
 
   next.flagStore = numberRecord(raw.flagStore);
   if (!(3 in next.flagStore)) next.flagStore[3] = 1;
+  // PANTS_TEMP and the two collection counters are a persisted state boundary:
+  // normalize carried buckets and rebuild their derived FLAG mirrors instead
+  // of trusting a stale/hand-edited save value.
+  next.pantsTemp = nestedNumberRecord(raw.pantsTemp);
+  let pantySpecies = 0;
+  for (const slot of Object.values(next.charas)) {
+    for (let pieceId = 0; pieceId < MAXPANTS; pieceId++) {
+      if ((slot.state.CFLAG[pieceId + PANTS_MGMT_OFFSET] ?? 0) > 0) pantySpecies++;
+    }
+  }
+  next.flagStore[FLAG_ID.獲得胖次種数] = pantySpecies;
+  const pantsInTransit = Object.values(next.pantsTemp).some((bucket) =>
+    Object.values(bucket).some((count) => count > 0),
+  );
+  next.flagStore[FLAG_ID.胖次輸送] = pantsInTransit ? 1 : 0;
   // Reproject once more after the raw flag bag is normalized so a mid-banquet
   // save cannot retain stale FLAG 30/31/32/33/34/35/36 mirrors.
   reprojectBanquetMirrors(next);
@@ -1683,6 +1799,14 @@ export function migrateGameState(
     // would make the next ordinary command adopt it as a fresh session.
     next.master.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
     for (const slot of Object.values(next.charas)) slot.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
+  }
+  if (!next.training) {
+    next.master.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
+    for (const slot of Object.values(next.charas)) slot.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
+  } else {
+    for (const slot of Object.values(next.charas)) {
+      if (slot.charaNum !== next.training.target) slot.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
+    }
   }
   const normalizedTrainingSummary = normalizeTrainingSummary(raw.lastTrainingSummary, next);
   next.lastTrainingSummary = normalizedTrainingSummary ?? null;

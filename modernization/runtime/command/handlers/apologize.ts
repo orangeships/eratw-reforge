@@ -66,7 +66,7 @@ function checkApologizeEligible(
   ctx: CommandContext,
 ): { ok: true } | { ok: false; reason: { kind: "precondition"; message: string } } {
   if (ctx.target <= 0) {
-    return { ok: false, reason: { kind: "precondition", message: "謝る需要目标角色在场。" } };
+    return { ok: false, reason: { kind: "precondition", message: "道歉需要目标角色在场。" } };
   }
   const target = ctx.state.charas[ctx.target];
   if (!target) {

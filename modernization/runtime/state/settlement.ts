@@ -162,6 +162,12 @@ export const CFLAG_ID = {
   /** 没穿内裤 — "not wearing panties" flag (AutoConst_CFLAG.ERH:74, id=291).
    *  清于夜结算（AFTERTRA.ERB:77）。 */
   没穿内裤: 291,
+  /** 获得胖次 — transient received-panty marker used by confiscation/gift
+   *  paths (AutoConst_CFLAG.ERH:78, id=293). */
+  获得胖次: 293,
+  /** 你的胖次 — master-side panty exchange marker (AutoConst_CFLAG.ERH:80,
+   *  id=294). The modern theft path intentionally leaves it unset. */
+  你的胖次: 294,
   /** 行动 — current action type. 5=working. */
   行动: 325,
   职场: 326,
@@ -240,6 +246,10 @@ export const CFLAG_ID = {
    *  on release (P-16, Parity QA Wave 8). Set by the H-mode time-stop
    *  actions (deferred). */
   時間停止行動: 344,
+  /** 時間停止バレ — whether the character noticed the time-stop intrusion.
+   *  Used by the upstream release settlement for the one-time relationship
+   *  reaction. */
+  時間停止バレ: 345,
   自慰过了: 347,
   职种: 350,
   来訪時間: 352,
@@ -361,9 +371,25 @@ export const CFLAG_ID = {
   ＳＭ過濾器: 596,
   /** 性騷擾過濾器 — show 性骚扰 (sekuhara) commands. CFLAG.csv:273. */
   性騷擾過濾器: 597,
+  /**
+   * @deprecated Use `没穿内裤` (291). Older modern tests called this alias
+   *  "NO_PANTIES_TODAY", but upstream's actual no-panties marker is CFLAG 291.
+   */
+  NO_PANTIES_TODAY: 291,
+  /** Remembered normal-outfit panty type (upstream raw CFLAG:206). */
+  当前衣装内裤: 206,
+  /** Remembered sleep-outfit panty type (upstream raw CFLAG:246). */
+  睡眠衣装内裤: 246,
+  /** Current-day panty selector (`CFLAG:きょうのぱんつ`, id 651). */
+  きょうのぱんつ: 651,
+  /** Sleep panty selector (`CFLAG:睡衣胖次`, id 652). */
+  睡衣胖次: 652,
+  /** Explicit selected panty (`CFLAG:指定胖次`, id 653). */
+  指定胖次: 653,
   /** allowKojoCom — show 個人口上 custom commands (270-299). CFLAG.csv:275. */
-  NO_PANTIES_TODAY: 206,
   allowKojoCom: 599,
+  /** ただならぬ開放感ソース追加 — one-shot time-stop panty reaction latch. */
+  ただならぬ開放感ソース追加: 295,
 } as const;
 
 /** Top-level FLAG ids (global state, not per-chara). From `FLAG.als`. */
@@ -414,6 +440,10 @@ export const FLAG_ID = {
   每日变更事件: 9,
   /** 時間停止 — global time-stop active. */
   時間停止: 70,
+  /** 收藏隙間 — portable collection-gap ownership/date marker. */
+  收藏隙間: 86,
+  /** C隙間自動仕様 — automatically send acquired panties to the gap. */
+  C隙間自動仕様: 87,
   /** 澆水代行 — ホフゴブリンに依頼: 家庭菜園 watering proxy for the month. */
   澆水代行: 85,
   /** 天滴坤神 — 三粒の天滴 blessing armed (COMF418 planting/watering sets it;
@@ -1228,6 +1258,9 @@ export const TALENT_ID = {
    *  overlay: color each room by its YOGORE (DRAW_MAP.ERB:163). Talent.csv
    *  id=160. */
   汚部屋察知: 160,
+  /** 劣情察知 — collection achievement bitmask (Talent.csv id=157).
+   * Bit 0/1 are unlocked by panty milestones 2/4. */
+  劣情察知: 157,
   /** 音楽知識 — music knowledge. Talent.als id=161. */
   音楽知識: 161,
   /** 音感 — sense of pitch. -1=音痴, 1=音感, 2=絶対音感. Talent.als id=162. */

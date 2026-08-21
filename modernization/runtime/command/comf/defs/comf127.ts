@@ -34,7 +34,6 @@
 import type { HandlerEntry } from "../../types.js";
 import {
   BASE_ID,
-  CFLAG_ID,
   SOURCE_ID,
   TALENT_ID,
 } from "../../../state/settlement.js";
@@ -78,11 +77,8 @@ export const comf127Def: ComfDef = {
   }),
 
   body: (c) => {
-    // The clean-state upstream execution audit shows COM127 as the Act_COM
-    // exit action: both participants leave H mode. The shared training
-    // lifecycle records/finalises an existing session after this body runs.
-    c.master.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
-    c.t.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
+    // A珠 is an in-session action. H cleanup belongs only to the explicit
+    // escape/end commands; keeping this state is required for follow-up acts.
     // ERB 23-24: target 体力 100 / 気力 150 drain.
     c.t.state.BASE[BASE_ID.体力] =
       (c.t.state.BASE[BASE_ID.体力] ?? 0) - 100;

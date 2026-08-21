@@ -31,6 +31,7 @@
  */
 
 import type { GameState } from "../state/index.js";
+import { ITEM_ID, itemCount } from "../state/items.js";
 import { LOCATION_PLACE_FLAGS } from "./place-flags-data.js";
 import { GENERATED_MAP_ID_BY_PREFIX } from "./generated-map-prefixes.js";
 import {
@@ -38,6 +39,7 @@ import {
   hasPlace,
   PLACE_BATH,
   PLACE_INDOOR,
+  PLACE_SKY,
   PLACE_ROOF,
   PLACE_TOILET,
   PLACE_WESTERN,
@@ -88,6 +90,23 @@ function locationPrefix(location: string): string {
 export function placeFlagsOf(location: string): bigint {
   const raw = LOCATION_PLACE_FLAGS[location] ?? 0n;
   return expandPlaceFlags(raw);
+}
+
+/**
+ * Upstream `天之声可(ARG)` also treats the player's initial home room as a
+ * heaven-listening room once ITEM:祭壇 has been awarded by the panty bonus.
+ * Keep that reward meaningful for both COMF421 and COMF422 instead of making
+ * the altar a display-only inventory item.
+ */
+export function canHearHeaven(state: Readonly<GameState>, location = state.master.location): boolean {
+  if (hasPlace(placeFlagsOf(location), PLACE_SKY)) return true;
+  const home = state.homeLocation ?? state.master.homeLocation;
+  return Boolean(
+    home &&
+    location === home &&
+    inHome(location) &&
+    itemCount(state as GameState, ITEM_ID.祭壇) > 0,
+  );
 }
 
 /** Whether upstream ROOMSETTING semantics are registered for this location.

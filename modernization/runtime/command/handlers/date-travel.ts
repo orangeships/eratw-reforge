@@ -35,6 +35,6 @@ export const returnFromDate19998HandlerEntry: HandlerEntry = {
     const home = mapIdOfLocation(next.homeLocation ?? next.master.homeLocation ?? "神社:倉庫") ?? 0;
     beginDateReturn(next, dateTravelMinutes(from, home) ?? 1);
     advanceTimeTicks(next, 5);
-    return { state: next, events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "二人で帰途についた。" }], outcome: "ok" };
+    return { state: next, events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "两人踏上了归途。" }], outcome: "ok" };
   },
 };

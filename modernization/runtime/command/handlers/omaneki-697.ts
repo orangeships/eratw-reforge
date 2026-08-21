@@ -178,14 +178,14 @@ function planOmaneki697(
   target: number,
 ): Omaneki697Plan {
   const t = state.charas[target];
-  if (!t) return { kind: "blocked", message: "訪問相手がいません。" };
+  if (!t) return { kind: "blocked", message: "没有可拜访的对象。" };
   // Body-level gates (pure, no RNG) — mirror upstream ERB 77-108.
   if (state.dateSession || (state.flagStore[FLAG_ID.デート相手] ?? 0) !== 0) {
     const partnerName =
       state.flagStore[FLAG_ID.デート相手] != null && state.flagStore[FLAG_ID.デート相手] !== 0
         ? state.charas[state.flagStore[FLAG_ID.デート相手]!]?.callName ?? "相手"
         : "相手";
-    return { kind: "blocked", message: `虽然想进入${t.callName ?? `#${target}`}の私室、却被${partnerName}死死地用眼神睨视着。` };
+    return { kind: "blocked", message: `虽然想进入${t.callName ?? `#${target}`}的私室，却被${partnerName}死死地盯住了。` };
   }
   const { jealousy, infidelity } = detectBystanders697(state as GameState, target);
   if (jealousy || infidelity) {
@@ -194,7 +194,7 @@ function planOmaneki697(
       : state.charas[infidelity]?.callName ?? `#${infidelity}`;
     // ERB 96-102: 嫉妬 is 干涉 (恶鬼般), 浮気 is 叫住 (惊讶之色).
     const verb = jealousy ? "干涉" : "叫住";
-    return { kind: "blocked", message: `虽然想进入${t.callName ?? `#${target}`}の私室、却被${actorName}给${verb}了。` };
+    return { kind: "blocked", message: `虽然想进入${t.callName ?? `#${target}`}的私室，却被${actorName}${verb}了。` };
   }
   if ((t.state.TCVAR[TCVAR_ID.お宅訪問] ?? 0) !== 0) {
     return { kind: "blocked", message: "今天还是算了吧。" };
@@ -374,7 +374,7 @@ export const omaneki697HandlerEntry: HandlerEntry = {
         state: next,
         events: [narration(next, "その相手の私室には今は訪問できません。")],
         outcome: "blocked" as const,
-        failReason: { kind: "precondition" as const, message: "訪問相手を選び直してください。" },
+        failReason: { kind: "precondition" as const, message: "请重新选择拜访对象。" },
       };
     }
     const plan = planOmaneki697(next, ctx.rng, picked);

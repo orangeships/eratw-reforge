@@ -31,11 +31,13 @@ function block(
 
 export const comf401HandlerEntry: HandlerEntry = {
   commandNo: 401,
+  gateStatus: "complete",
+  gateDiagnostics: ["home location", "FLAG:胖次輸送", "not H mode"],
   execCheck: (ctx) => {
     if (ctx.actor !== 0) return block("主人公だけが実行できます。");
     // At home base
     const masterLoc = ctx.state.master.location;
-    const homeLoc = ctx.state.homeLocation;
+    const homeLoc = ctx.state.homeLocation ?? ctx.state.master.homeLocation;
     if (!homeLoc || masterLoc !== homeLoc) {
       return block("自宅でのみ実行できます。");
     }

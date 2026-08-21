@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { GameState } from "../../../modernization/runtime/state/index.js";
 import type { AgentSettings } from "../../../modernization/runtime/agent/index.js";
 import { cancelAllRealtimeAiKojo } from "./kojo-runtime.js";
+import { resetSceneAmbientRuntime } from "./ambient-runtime.js";
 import { currentAiCharacterProfile, useAiStore } from "./store.js";
 import { listOpenAiCompatibleModels } from "./provider.js";
 
@@ -94,6 +95,7 @@ export default function AiSettingsPopup({
     updateSettings({ enabled });
     if (!enabled) {
       cancelAllRealtimeAiKojo();
+      resetSceneAmbientRuntime();
       onUpdateAgentSettings?.({ masterEnabled: false });
     }
   };
@@ -153,6 +155,18 @@ export default function AiSettingsPopup({
                     onChange={(event) => updateSettings({ kojoEnabled: event.target.checked })}
                   />
                   <span>AI 口上补全</span>
+                </label>
+                <label className="ai-settings__toggle">
+                  <input
+                    type="checkbox"
+                    checked={settings.ambientEnabled}
+                    disabled={!settings.enabled}
+                    onChange={(event) => {
+                      updateSettings({ ambientEnabled: event.target.checked });
+                      if (!event.target.checked) resetSceneAmbientRuntime();
+                    }}
+                  />
+                  <span>场景主动口上（实验性，默认关闭）</span>
                 </label>
                 <label className="ai-settings__toggle">
                   <input
@@ -326,7 +340,7 @@ export default function AiSettingsPopup({
                   checked={profile.enabled}
                   onChange={(event) => updateCharacterProfile(profileCharaNum, { enabled: event.target.checked })}
                 />
-                <span>允许该角色使用 AI 口上</span>
+                <span>允许该角色使用命令及场景 AI 口上</span>
               </label>
               <label>
                 <span>角色补充设定</span>
@@ -363,7 +377,9 @@ export default function AiSettingsPopup({
               {latest ? (
                 <>
                   <div className={`ai-settings__status ai-settings__status--${latest.status}`}>
-                    {latest.status} · COM {latest.commandNo} · 角色 {latest.target}
+                    {latest.status} · {latest.feature === "ambient-initiative"
+                      ? `场景主动口上 · ${latest.trigger ?? "未知触发"} · 角色 ${(latest.participants ?? []).join(", ")}`
+                      : `命令口上 · COM ${latest.commandNo ?? "?"} · 角色 ${latest.target ?? "?"}`}
                     {latest.durationMs !== undefined ? ` · ${latest.durationMs}ms` : ""}
                   </div>
                   {latest.error && <pre>{latest.error}</pre>}

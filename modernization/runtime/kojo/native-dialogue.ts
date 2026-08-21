@@ -426,6 +426,8 @@ export function createNativeDialogueRouter(
   router.resolveUpdateKojoInteractive = (charaNum, state, rng, choices) =>
     base.resolveUpdateKojoInteractive?.(charaNum, state, rng, choices) ??
     interactiveFrom(emptyResolution("not-authored"));
+  router.hasUpdateKojo = (charaNum, state) =>
+    base.hasUpdateKojo?.(charaNum, state) ?? false;
   router.resolvePalamKojo = (charaNum, palam, detail, state, rng, args = []) =>
     palamDetailed(charaNum, palam, detail, state, rng, args).lines;
   router.resolvePalamKojoDetailed = palamDetailed;

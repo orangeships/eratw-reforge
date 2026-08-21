@@ -7,6 +7,7 @@ import type {
 } from "../state/game-state.js";
 import type { ObservationEvent } from "../../schemas/types.js";
 import type { Rng } from "../command/types.js";
+import { createRng } from "../command/rng.js";
 import { getTflag, setTflag, TFLAG_ID } from "../state/tflag.js";
 import { addItem, ITEM_ID, itemCount, buyItem } from "../state/items.js";
 import { BASE_ID, CFLAG_ID, EX_ID, EXP_ID, FLAG_ID, MARK_ID, TALENT_ID, TCVAR_ID, advanceTimeTicks } from "../state/settlement.js";
@@ -170,6 +171,7 @@ function createChoiceSession(
   eventId: 2 | 3 | 5 | 6 | 7,
   channel: "outing-departure" | "outing-return",
   state: GameState,
+  rngSeed: number,
 ): OutingChoiceSession {
   const prompt = INTERACTIVE_EVENT_PROMPTS[eventId];
   const sessionPrompt: OutingChoicePromptSpec = eventId === 7
@@ -193,7 +195,13 @@ function createChoiceSession(
     channel,
     startedAtTick: state.time.tickValue,
     prompt: sessionPrompt,
+    rngSeed,
   };
+}
+
+function sessionRngSeed(startedAtTick: number, eventId: number, channel: "outing-departure" | "outing-return"): number {
+  const channelSalt = channel === "outing-departure" ? 0x13579bdf : 0x2468ace0;
+  return (Math.imul(startedAtTick | 0, 0x45d9f3b) ^ Math.imul(eventId | 0, 0x9e3779b9) ^ channelSalt) | 0;
 }
 
 function addBase(state: GameState, charaNum: number, id: number, delta: number): void {
@@ -335,7 +343,8 @@ function runEv2(state: GameState, rng: Rng, choice?: OutingEventChoice): Observa
   // A persisted choice session is proof that the probability gate already
   // fired. Re-rolling here could erase the accepted branch after the player
   // clicked "参加宴会".
-  if (hasDate(state) || (!choice && rng.int(10) !== 0)) return [];
+  const settledChoice = choice?.eventId === 2;
+  if ((!settledChoice && hasDate(state)) || (!settledChoice && rng.int(10) !== 0)) return [];
   if (choice?.eventId === 2 && choice.value === "decline") {
     return [
       event(state, "你婉拒了狸猫的宴会邀请。"),
@@ -374,9 +383,10 @@ function runEv2(state: GameState, rng: Rng, choice?: OutingEventChoice): Observa
 function runEv3(state: GameState, rng: Rng, channel: "outing-departure" | "outing-return", choice?: OutingEventChoice): ObservationEvent[] {
   // Unlike the other encounters, upstream EV3 is also allowed during a
   // village date (CFLAG:MASTER:约会中 == 2).
-  if (mapIdOfLocation(state.master.location) !== 2 &&
+  const settledChoice = choice?.eventId === 3;
+  if (!settledChoice && mapIdOfLocation(state.master.location) !== 2 &&
       (state.master.state.CFLAG[CFLAG_ID.约会中] ?? 0) !== 2) return [];
-  if (rng.int(channel === "outing-departure" ? 12 : 10) !== 0) return [];
+  if (!settledChoice && rng.int(channel === "outing-departure" ? 12 : 10) !== 0) return [];
   if (choice?.eventId === 3 && choice.value === "decline") {
     return [
       event(state, "你拒绝了那个男人的搭话。"),
@@ -417,7 +427,8 @@ function runEv3(state: GameState, rng: Rng, channel: "outing-departure" | "outin
 }
 
 function runEv5(state: GameState, rng: Rng, channel: "outing-departure" | "outing-return", choice?: OutingEventChoice): ObservationEvent[] {
-  if (hasDate(state) || rng.int(channel === "outing-departure" ? 12 : 10) !== 0) return [];
+  const settledChoice = choice?.eventId === 5;
+  if ((!settledChoice && hasDate(state)) || (!settledChoice && rng.int(channel === "outing-departure" ? 12 : 10) !== 0)) return [];
   if (choice?.eventId === 5 && choice.value === "decline") {
     return [
       event(state, "「嗯……那就算了。下次有机会再来找我吧？」"),
@@ -457,7 +468,8 @@ function runEv7(
   channel: "outing-departure" | "outing-return",
   choice?: OutingEventChoice,
 ): ObservationEvent[] {
-  if (hasDate(state) || rng.int(channel === "outing-departure" ? 10 : 10) !== 0) return [];
+  const settledChoice = choice?.eventId === 7;
+  if ((!settledChoice && hasDate(state)) || (!settledChoice && rng.int(channel === "outing-departure" ? 10 : 10) !== 0)) return [];
   const stoneAvailable = ((state.dailyEventFlags?.[23] ?? 0) & 1) !== 0 && itemCount(state, ITEM_ID.奇跡之石) === 0;
   if (!choice || choice.eventId !== 7 || choice.value === "decline") {
     return [
@@ -518,7 +530,8 @@ function runEv4(state: GameState, rng: Rng): ObservationEvent[] {
 }
 
 function runEv6(state: GameState, rng: Rng, channel: "outing-departure" | "outing-return", choice?: OutingEventChoice): ObservationEvent[] {
-  if (rng.int(channel === "outing-departure" ? 15 : 10) !== 0) return [];
+  const settledChoice = choice?.eventId === 6;
+  if (!settledChoice && rng.int(channel === "outing-departure" ? 15 : 10) !== 0) return [];
   if (choice?.eventId === 6 && choice.value === "decline") {
     return [
       event(state, "你看着陷阱里的小动物，最终还是决定不要妨碍猎人的诱捕。"),
@@ -633,11 +646,19 @@ export function runOutingDepartureEvents(state: GameState, rng: Rng, choice?: Ou
         // resolution path will mark settlement on completion, so a cancelled
         // prompt still allows retrying the same day.
         const pausedEventId = id as 2 | 3 | 5 | 6 | 7;
-        next.outingEventSession = createChoiceSession(pausedEventId, "outing-departure", next);
+        next.outingEventSession = createChoiceSession(
+          pausedEventId,
+          "outing-departure",
+          next,
+          sessionRngSeed(next.time.tickValue, pausedEventId, "outing-departure"),
+        );
         return {
           state: next,
           ended: false,
-          events: [event(next, INTERACTIVE_EVENT_PROMPTS[pausedEventId].question)],
+          // The dedicated outing-choice session owns the opening/question.
+          // Do not also append it to the persistent command event stream or
+          // it will remain in history after the player closes the encounter.
+          events: [],
           diagnostics: ["outing event paused: awaiting player choice"],
           selectedEventId: id,
         };
@@ -671,11 +692,19 @@ export function runOutingReturnEvents(state: GameState, rng: Rng, choice?: Outin
       const selected = runEvent(candidate, rng, id, "outing-return", choice);
       if (selected === null) {
         const pausedEventId = id as 2 | 3 | 5 | 6 | 7;
-        next.outingEventSession = createChoiceSession(pausedEventId, "outing-return", next);
+        next.outingEventSession = createChoiceSession(
+          pausedEventId,
+          "outing-return",
+          next,
+          sessionRngSeed(next.time.tickValue, pausedEventId, "outing-return"),
+        );
         return {
           state: next,
           ended: false,
-          events: [event(next, INTERACTIVE_EVENT_PROMPTS[pausedEventId].question)],
+          // The dedicated outing-choice session owns the opening/question.
+          // Keeping a second copy in command events leaves a stale question
+          // between the return-home narration and later encounter dialogue.
+          events: [],
           diagnostics: ["outing event paused: awaiting player choice"],
           selectedEventId: id,
         };
@@ -728,6 +757,7 @@ export function resolveOutingEventSession(
       channel: session.channel,
       startedAtTick: session.startedAtTick,
       prompt: session.prompt,
+      ...(session.rngSeed !== undefined ? { rngSeed: session.rngSeed } : {}),
     };
     return resolveOutingEventSession(next, answer);
   }
@@ -757,11 +787,59 @@ export function resolveOutingEventSession(
       diagnostics: [selectedOption ? "outing choice option disabled" : "outing choice option unknown"],
     };
   }
-  // Apply the authored branch deterministically. Re-seed RNG by reading the
-  // session tick so the outcome is reproducible for the same session.
-  const rng = createSessionRng(next, session.startedAtTick);
+  // Apply the authored branch on an isolated clone. The prompt is a proof
+  // that the trigger already fired; the branch must not re-check a location
+  // or probability after a return command has moved the player home.
+  const branchState = cloneGameState(next);
+  const rng = createSessionRng(
+    session.rngSeed ?? sessionRngSeed(session.startedAtTick, session.eventId, session.channel),
+  );
   const choice: OutingEventChoice = { eventId: answer.eventId, value: answer.value };
-  const events = runEvent(next, rng, session.eventId, session.channel, choice) ?? [];
+  let events: ObservationEvent[];
+  try {
+    events = runEvent(branchState, rng, session.eventId, session.channel, choice) ?? [];
+  } catch (error) {
+    const safeEvents = [event(next, "这次遭遇无法继续，已经安全结束了。")];
+    next.outingEventSession = {
+      kind: "outing-choice-result",
+      eventId: session.eventId,
+      channel: session.channel,
+      startedAtTick: session.startedAtTick,
+      prompt: session.prompt,
+      answer: answer.value,
+      rngSeed: session.rngSeed ?? sessionRngSeed(session.startedAtTick, session.eventId, session.channel),
+      resultEvents: safeEvents,
+    };
+    return {
+      state: next,
+      ended: true,
+      events: safeEvents,
+      diagnostics: [`outing choice ${session.eventId} failed closed: ${String(error)}`],
+    };
+  }
+  if (events.length === 0) {
+    // A stale/partially migrated session must never turn into a blank result
+    // frame. No gameplay effect is committed; the player gets an explicit
+    // safe termination instead.
+    events = [event(next, "这次遭遇的条件已经改变，事件没有继续。")];
+    next.outingEventSession = {
+      kind: "outing-choice-result",
+      eventId: session.eventId,
+      channel: session.channel,
+      startedAtTick: session.startedAtTick,
+      prompt: session.prompt,
+      answer: answer.value,
+      rngSeed: session.rngSeed ?? sessionRngSeed(session.startedAtTick, session.eventId, session.channel),
+      resultEvents: events,
+    };
+    return {
+      state: next,
+      ended: true,
+      events,
+      diagnostics: [`outing choice ${session.eventId} produced no visible branch; ended without effects`],
+    };
+  }
+  Object.assign(next, branchState);
   // Transition the session into `outing-choice-result` so the result panel can
   // render the full event chain (including branches the player chose) before
   // committing anything to the persistent eventLog. The previous version
@@ -773,6 +851,8 @@ export function resolveOutingEventSession(
     channel: session.channel,
     startedAtTick: session.startedAtTick,
     prompt: session.prompt,
+    answer: answer.value,
+    rngSeed: session.rngSeed ?? sessionRngSeed(session.startedAtTick, session.eventId, session.channel),
     resultEvents: events,
   };
   if (session.channel === "outing-departure") {
@@ -805,18 +885,9 @@ export function commitOutingChoiceResult(state: GameState): {
   return { state: next, events: session.resultEvents };
 }
 
-/** Reseed the RNG to the deterministic session tick so the choice branch
- *  reproduces the same outcome the player would have seen at the original
- *  call site. Mirrors the legacy `Rng` factory used by the dispatch path.
- *  The `next` / `pick` shims satisfy the `Rng` interface contract; only `int`
- *  is actually consumed by `runEvent`. */
-function createSessionRng(state: GameState, startedAtTick: number): Rng {
-  return {
-    next: () => 0,
-    int(maxExclusive: number): number {
-      const x = Math.imul((startedAtTick * 2654435761) ^ state.time.tickValue, 1597334677) >>> 0;
-      return (x % Math.max(1, maxExclusive)) | 0;
-    },
-    pick: <T>(arr: readonly T[]): T => arr[0]!,
-  };
+/** Recreate the deterministic branch stream stored at the prompt boundary.
+ *  Use the normal seeded runtime RNG so every `RAND` in a multi-roll branch
+ *  advances instead of repeating one hash-derived value. */
+function createSessionRng(seed: number): Rng {
+  return createRng(seed);
 }

@@ -334,6 +334,13 @@ export {
 } from "./kojo/static-router.js";
 export { applyKojoEffects } from "./kojo/effects.js";
 export {
+  listNewGameKojoUpdates,
+  resolveNewGameKojoUpdate,
+  type NewGameKojoUpdateCandidate,
+  type NewGameKojoUpdateResult,
+  type NewGameKojoUpdateStatus,
+} from "./kojo/new-game-update.js";
+export {
   createGameStateKojoHostRegistry,
   type KojoHostRegistry,
   type KojoHostResult,

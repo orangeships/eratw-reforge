@@ -37,6 +37,8 @@ import {
   TEQUIP_ID,
 } from "../../../state/settlement.js";
 import { isEquipped } from "../../../state/tequip.js";
+import { hasPlace, PLACE_BATH } from "../../../world/place-flags.js";
+import { placeFlagsOf } from "../../../world/location-predicates.js";
 import { makeComfHandler } from "../make-comf-handler.js";
 import type { ComfDef } from "../comf-def.js";
 
@@ -53,6 +55,9 @@ const com188Check: ExecCheck = (ctx) => {
   if (!target) return block("需要在场的对象。");
   // 解除 arm — 已装备时显示以便关闭 (上游 SIF TEQUIP:32 → RETURN 1).
   if (isEquipped(target, 32)) return { ok: true };
+  if (!hasPlace(placeFlagsOf(ctx.state.master.location), PLACE_BATH)) {
+    return block("只有浴室或温泉中才能使用淋浴。");
+  }
   // 上游 TEQUIP:11/16/17/24 → RETURN 0.
   if (isEquipped(target, TEQUIP_ID.陰蒂夾)) return block("阴蒂夹使用中无法使用。");
   if (isEquipped(target, TEQUIP_ID.乳頭夾)) return block("乳头夹使用中无法使用。");
@@ -75,6 +80,8 @@ export const comf188Def: ComfDef = {
   failThreshold: 101,
 
   timeCost: 0,
+
+  toggleTequip: 32,
 
   hModeMenuCheck: com188Check,
 

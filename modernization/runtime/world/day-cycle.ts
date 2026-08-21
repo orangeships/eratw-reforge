@@ -57,6 +57,7 @@ import { runPersonalHistoryReconciliation } from "../state/chara-info-state.js";
 import { resolveEventKojoAndApply } from "../kojo/effects.js";
 import { ensureWorkRuntime } from "./work/work-system.js";
 import { projectScheduledLocations } from "./scheduler.js";
+import { replenishPantyGap } from "../state/panty-collection.js";
 
 /** Injected dependencies for the day-cycle phases. A phase whose `needs`
  *  aren't satisfied is skipped (silent) — the faithful equivalent of the
@@ -119,6 +120,20 @@ function greetingLinesFromRouter(
  * the morning's freshly selected visitors, encounter target and requests.
  */
 export const MORNING_PHASES: readonly MorningPhase[] = [
+  {
+    id: "panty-gap-replenish",
+    upstream: "BEFORETRAIN.ERB:443-456 收藏隙間日次補充",
+    needs: [],
+    run(state, deps) {
+      const refill = replenishPantyGap(state);
+      if (refill.amount <= 0) return [];
+      return [{
+        kind: "NARRATION",
+        timestamp: deps.now(),
+        text: `☆多多的补充了收藏隙间（现在：${refill.total}个）`,
+      }];
+    },
+  },
   {
     id: "work-setup",
     upstream: "BEFORETRAIN.ERB:242 BASE:工作量 = MAXBASE:工作量; JOB_仕事内容.ERB",

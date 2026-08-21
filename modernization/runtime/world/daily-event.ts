@@ -4,7 +4,13 @@ import type { ObservationEvent } from "../../schemas/types.js";
 import { isObservationEvent } from "../../schemas/validator.js";
 import type { PromptAnswer, PromptSpec } from "../command/prompt.js";
 import type { Rng } from "../command/types.js";
-import { cloneGameState, type DailyEventSession, type GameState } from "../state/game-state.js";
+import {
+  cloneGameState,
+  type DailyEventSession,
+  type EventPromptLine,
+  type EventPromptSpec,
+  type GameState,
+} from "../state/game-state.js";
 import { buffBase } from "../state/buff.js";
 import { addItem } from "../state/items.js";
 import { ITEM_ID, hasItem } from "../state/items.js";
@@ -724,6 +730,50 @@ function validEvents(events: unknown): events is ObservationEvent[] {
   return Array.isArray(events) && events.every(isObservationEvent);
 }
 
+function promptOpening(
+  state: Readonly<GameState>,
+  events: ReadonlyArray<ObservationEvent>,
+): EventPromptLine[] {
+  const lines: EventPromptLine[] = [];
+  for (const event of events) {
+    if (event.kind === "NARRATION") {
+      if (event.text.trim().length > 0) lines.push({ kind: "narration", text: event.text });
+      continue;
+    }
+    if (event.kind === "DIALOGUE_LINE" && event.text.trim().length > 0) {
+      const speaker = event.charaNum === 0
+        ? state.master.callName
+        : state.charas[event.charaNum]?.callName;
+      lines.push({
+        kind: "dialogue",
+        ...(speaker ? { speaker } : {}),
+        text: event.text,
+      });
+    }
+  }
+  return lines;
+}
+
+/**
+ * Freeze the exact player-facing event prompt at the pause boundary. Night
+ * events used to rebuild their question from mutable state after a save,
+ * which could change prices, disabled options, or opening text mid-scene.
+ * Outing events already had this contract; both channels now share it.
+ */
+function snapshotEventPrompt(
+  state: Readonly<GameState>,
+  prompt: PromptSpec,
+  events: ReadonlyArray<ObservationEvent>,
+): EventPromptSpec {
+  const opening = promptOpening(state, events);
+  return {
+    kind: prompt.kind,
+    question: prompt.question,
+    options: prompt.options.map((option) => ({ ...option })),
+    ...(opening.length > 0 ? { opening } : {}),
+  };
+}
+
 /**
  * Evaluate the canonical table once for the current day. A registered event
  * whose gate succeeds owns the tick: unsupported/invalid effects fail closed
@@ -817,13 +867,18 @@ export function runDailyEventTick(
       });
     }
     if (outcome.kind === "needs-input") {
+      const prompt = snapshotEventPrompt(candidate, outcome.prompt, outcome.events);
+      const session = {
+        ...outcome.session,
+        prompt,
+      } satisfies DailyEventSession;
       return {
         events: [],
         pending: {
           eventId: id,
           prompt: outcome.prompt,
           previewEvents: outcome.events,
-          session: outcome.session,
+          session,
         },
         diagnostics: [],
       };
@@ -917,7 +972,13 @@ export function applyDailyBlessingExpBonus(state: GameState, before: Readonly<Re
 export function dailyEventPromptView(
   state: Readonly<GameState>,
   session: DailyEventSession,
-): { prompt: PromptSpec; lines: string[] } | null {
+): { prompt: EventPromptSpec; lines: string[] } | null {
+  if (session.prompt) {
+    return {
+      prompt: session.prompt,
+      lines: session.prompt.opening?.map((line) => line.speaker ? `${line.speaker}：${line.text}` : line.text) ?? [],
+    };
+  }
   const ev5 = ev5PromptView(state, session);
   if (ev5) return ev5;
   const ev23 = ev23PromptView(state, session);

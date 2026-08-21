@@ -232,6 +232,25 @@ export interface SleepSession {
   presentationEventLogIndex?: number;
 }
 
+/** Shared player-facing line used by resumable world-event prompts. */
+export interface EventPromptLine {
+  kind: "narration" | "dialogue";
+  speaker?: string;
+  text: string;
+}
+
+/**
+ * Serializable prompt snapshot shared by night and outing event sessions.
+ * The command prompt remains the source shape for ordinary commands; this
+ * wider event shape adds the authored opening that must survive a pause/save.
+ */
+export interface EventPromptSpec {
+  kind: "ask_yn" | "pick_one" | "pick_many" | "free_text";
+  question: string;
+  options: { id: number | string; label: string; detail?: string; disabled?: boolean }[];
+  opening?: EventPromptLine[];
+}
+
 /** Persisted continuation for a gameplay-affecting DAILY_EV prompt. */
 export interface DailyEventSession {
   kind: "ev0-fairy-punishment" | "ev20-head-visit" | "ev5-oppai" | "ev23-visit-sales";
@@ -246,6 +265,9 @@ export interface DailyEventSession {
     "sales-use" | "sales-return" | "sales-intimate" | "sales-intimate-payment";
   /** Primitive continuation data (upstream random rolls, bit flags, and selected ids). */
   data?: Record<string, number | string | boolean>;
+  /** Snapshot of the exact prompt/opening shown at the pause boundary. Older
+   * saves omit it and use the event-specific compatibility view. */
+  prompt?: EventPromptSpec;
 }
 
 /** Serializable child entity; CFLAG child counters remain compatibility mirrors. */
@@ -398,25 +420,17 @@ export interface OutingEv1Session {
  *  branches are deterministic and documented per event. */
 export type OutingChoiceValue = number | "decline" | "accept" | "rescue";
 
-/** One authored line shown before an interactive outing-event choice. It is
- *  persisted with the session so a save/load does not collapse a scene back
- *  into a bare one-line prompt. */
-export interface OutingChoicePromptLine {
-  kind: "narration" | "dialogue";
-  speaker?: string;
-  text: string;
-}
+/** One authored line shown before an interactive outing-event choice. */
+export type OutingChoicePromptLine = EventPromptLine;
 
 /** Serializable prompt offered to the player while an outing event session is
  *  paused. Mirrors the command-layer `PromptSpec` shape so the UI can re-use
  *  `PromptMenu` without an extra adapter layer. Free-text prompts are not
  *  used by upstream `GO_OUT_EV*.ERB`. */
-export interface OutingChoicePromptSpec {
+export interface OutingChoicePromptSpec extends Omit<EventPromptSpec, "kind" | "options"> {
   kind: "ask_yn" | "pick_one";
   question: string;
   options: { id: OutingChoiceValue; label: string; detail?: string; disabled?: boolean }[];
-  /** Authored scene/口上 shown above the choices, when the event has one. */
-  opening?: OutingChoicePromptLine[];
 }
 
 /** Paused outing event that requires a player decision before settlement can
@@ -434,6 +448,9 @@ export interface OutingChoiceSession {
   /** Snapshot of the prompt shown to the player (so the UI does not depend on
    *  the event registry to rebuild it). */
   prompt: OutingChoicePromptSpec;
+  /** Seed for the post-choice branch. Persisting it prevents multi-roll
+   *  aftermaths from collapsing to one repeated pseudo-random value. */
+  rngSeed?: number;
 }
 
 /** Result of an answered outing choice. The events have already been settled
@@ -448,6 +465,10 @@ export interface OutingChoiceResultSession {
   channel: "outing-departure" | "outing-return";
   startedAtTick: number;
   prompt: OutingChoicePromptSpec;
+  /** The answer that produced this result, retained for the result view and
+   *  save/load continuity. */
+  answer?: OutingChoiceValue;
+  rngSeed?: number;
   /** The authored outcome lines (matches what would have been written to the
    *  eventLog before this split). Cleared when the player dismisses the
    *  result screen. */
@@ -746,6 +767,10 @@ export interface TrainingSession {
   mode: TrainingMode;
   participants: number[];
   recentCommands: TrainingCommandRecord[];
+  /** Authoritative insertion/position state for H-derived commands. */
+  vInserted?: boolean;
+  aInserted?: boolean;
+  currentPositionCommandNo?: number;
 }
 
 export interface TrainingSummary {

@@ -212,31 +212,31 @@ function checkPerformEligible(ctx: CommandContext): { ok: true } | Blocked {
   const s = ctx.state;
   // ERB 368: FLAG:70 時間停止.
   if ((s.flagStore[FLAG_ID.時間停止] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "時間停止中は演奏できない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "时间停止中无法演奏。" } };
   }
   // ERB 343-349: いずれの楽器（30-34）も使えない → no usable instrument blocks.
   if (usableInstruments(s).length === 0) {
-    return { ok: false, reason: { kind: "precondition", message: "演奏できる楽器がない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "没有可以演奏的乐器。" } };
   }
   // ERB 356: BASE:MASTER:気力 <= 0.
   if (getMasterBase(s, BASE_ID.気力) <= 0) {
-    return { ok: false, reason: { kind: "precondition", message: "気力が足りない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "精力不足。" } };
   }
   const t = s.charas[ctx.target];
   if (!t) {
-    return { ok: false, reason: { kind: "precondition", message: "聴いてくれる相手がいない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "没有愿意聆听的对象。" } };
   }
   // ERB 358: CFLAG:诶嘿嘿 == 2 (partner-led H).
   if ((t.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) === 2) {
-    return { ok: false, reason: { kind: "precondition", message: "今は演奏する雰囲気じゃない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "现在的气氛不适合演奏。" } };
   }
   // ERB 362: 睡眠中 / 陪睡中.
   if ((t.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0 || (t.state.CFLAG[CFLAG_ID.陪睡中] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "相手は眠っている。" } };
+    return { ok: false, reason: { kind: "precondition", message: "对方正在睡觉。" } };
   }
   // ERB 365: 仕事中 (行動==5) かつ宴会参加者ではない — banquet job not modeled → working blocks.
   if ((t.state.CFLAG[CFLAG_ID.行动] ?? 0) === 5) {
-    return { ok: false, reason: { kind: "precondition", message: "相手は仕事中だ。" } };
+    return { ok: false, reason: { kind: "precondition", message: "对方正在工作。" } };
   }
   // ERB 353: BATHCHECK/IN_TOILET && AT_HOME — room props deferred (no consumer here).
   return { ok: true };
@@ -263,7 +263,7 @@ export const performMusicHandlerEntry: HandlerEntry = {
       return {
         state: next,
         events: [
-          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "演奏できる楽器がない。" },
+          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "没有可以演奏的乐器。" },
         ],
         outcome: "noop" as const,
       };
@@ -324,13 +324,13 @@ export const performMusicHandlerEntry: HandlerEntry = {
 
     // 8. Narration.
     const tone =
-      outcome === 1 ? "演奏は大成功だ！" : outcome === -1 ? "演奏は精彩を欠いてしまった……" : "演奏した。";
+      outcome === 1 ? "演奏大成功！" : outcome === -1 ? "这次演奏有些不尽如人意……" : "完成了演奏。";
     const ensemble =
-      accompanists.length > 0 ? `（${accompanists.length}人が演奏に加わった）` : "";
+      accompanists.length > 0 ? `（${accompanists.length}人加入演奏）` : "";
     const head: ObservationEvent = {
       kind: "NARRATION",
       timestamp: ctx.now(),
-      text: `${instrName}を演奏した。${tone}${ensemble}（聴衆 ${targets.length}人）`,
+      text: `演奏了${instrName}。${tone}${ensemble}（听众 ${targets.length}人）`,
     };
 
     return {

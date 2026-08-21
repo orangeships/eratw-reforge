@@ -36,6 +36,7 @@ import {
 import { selectPresentCharas } from "../../../modernization/runtime/scene/presence.js";
 import { nemuke } from "../../../modernization/runtime/state/nemuke.js";
 import { situationTags, type SituationTag } from "../../../modernization/runtime/state/situation.js";
+import { alcoholFace } from "../../../modernization/runtime/state/alcohol.js";
 import type { GameState } from "../../../modernization/runtime/state/index.js";
 import {
   formatTemperature,
@@ -66,6 +67,9 @@ const BAR_TONE: Record<string, "red" | "green" | "cyan" | "yellow" | "purple"> =
 
 export interface GameStatusBarProps {
   state: GameState;
+  /** Keep the date/weather/location/TSP/present-character band only. The
+   *  default full layout retains the classic inline work/status/param UI. */
+  layout?: "full" | "world-only";
   /** The focused interaction target (charaNum). When present + > 0, the bar
    *  also shows that chara's 体力/気力 (the original shows both via
    *  PRINT_COLORBAR). */
@@ -138,7 +142,7 @@ function StatBars(props: {
 /** Parity QA P-31 — the focused target's relational stats (好感度/信頼度 as
  *  counters, 情緒/理性 as ★ ratings out of their MAXBASE cap). eraTW shows
  *  these on the status line; the data is already modeled, this just surfaces it. */
-function RelationStats(props: { who: string; state: GameState["master"]["state"] }) {
+function RelationStats(props: { who: string; state: GameState["master"]["state"]; showWho?: boolean }) {
   const favor = getRelationStat(props.state, "好感度");
   const trust = getRelationStat(props.state, "信頼度");
   const joucho = getRelationStat(props.state, "情緒");
@@ -176,7 +180,7 @@ function RelationStats(props: { who: string; state: GameState["master"]["state"]
   };
   return (
     <div className="status-bar__relation" data-testid="status-relation">
-      <span className="status-bar__who">{props.who}</span>
+      {props.showWho !== false && <span className="status-bar__who">{props.who}</span>}
       <span className="status-bar__rel">好感度 {favor.value}</span>
       <span className="status-bar__rel">信頼度 {trust.value}</span>
       <span className="status-bar__rel" data-testid="rel-risei">理性 {rate(risei, "★", "☆", "risei")}</span>
@@ -191,7 +195,7 @@ function RelationStats(props: { who: string; state: GameState["master"]["state"]
  *  只读 `getHBodyStats` 返回的 namespace-free 对象，不直接碰命名空间。 */
 const H_CHIBURI_KEYS = ["Ｃ", "Ｖ", "Ａ", "Ｂ", "Ｍ"] as const;
 
-function HBodyStats(props: { who: string; state: GameState["master"]["state"] }) {
+function HBodyStats(props: { who: string; state: GameState["master"]["state"]; showWho?: boolean }) {
   const s = getHBodyStats(props.state);
   const semenLines: string[] = [];
   if (s.vaginalSemen > 0) semenLines.push(`膣内精液量:${s.vaginalSemen}`);
@@ -205,7 +209,7 @@ function HBodyStats(props: { who: string; state: GameState["master"]["state"] })
     .map((k) => `${k}${s.chiburi[k]}`);
   return (
     <div className="status-bar__hbody" data-testid="status-hbody">
-      <span className="status-bar__who">{props.who}</span>
+      {props.showWho !== false && <span className="status-bar__who">{props.who}</span>}
       <span className="status-bar__hbody-line" data-testid="hbody-estrus">
         生理：{s.estrusLabel}
       </span>
@@ -296,11 +300,29 @@ function PalamPanel(props: {
   state: GameState["master"]["state"];
   charaNum?: number;
   onOpenCharaInfo?: (charaNum: number) => void;
+  collapsible?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(!props.collapsible);
   return (
-    <div className="status-bar__palam" data-testid="status-palam">
+    <div
+      className="status-bar__palam"
+      data-testid="status-palam"
+      data-expanded={expanded ? "true" : "false"}
+    >
       <div className="status-bar__palam-head">
-        <span className="status-bar__palam-title">▼[Palam] 能力等级</span>
+        {props.collapsible ? (
+          <button
+            type="button"
+            className="status-bar__palam-toggle"
+            data-testid="text-game-palam-toggle"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((open) => !open)}
+          >
+            <span aria-hidden="true">{expanded ? "▼" : "▶"}</span>[Palam] 能力等级
+          </button>
+        ) : (
+          <span className="status-bar__palam-title">▼[Palam] 能力等级</span>
+        )}
         {props.charaNum !== undefined && props.onOpenCharaInfo && (
           <button
             type="button"
@@ -313,25 +335,27 @@ function PalamPanel(props: {
           </button>
         )}
       </div>
-      <div className="status-bar__palam-grid">
-        {PALAM_STAT_KEYS.map((label) => {
-          const value = getPalamStat(props.state, label);
-          const { level, fill01 } = palamLvBar(value);
-          return (
-            <span key={label} className="status-bar__palam-item">
-              <span className="status-bar__palam-label">{label}Lv</span>
-              <span className="status-bar__palam-level">{level}</span>
-              <span className="status-bar__palam-track" aria-label={`${label}Lv ${level}`}>
-                <span
-                  className="status-bar__palam-fill"
-                  style={{ width: `${Math.round(fill01 * 100)}%` }}
-                />
+      {expanded && (
+        <div className="status-bar__palam-grid">
+          {PALAM_STAT_KEYS.map((label) => {
+            const value = getPalamStat(props.state, label);
+            const { level, fill01 } = palamLvBar(value);
+            return (
+              <span key={label} className="status-bar__palam-item">
+                <span className="status-bar__palam-label">{label}Lv</span>
+                <span className="status-bar__palam-level">{level}</span>
+                <span className="status-bar__palam-track" aria-label={`${label}Lv ${level}`}>
+                  <span
+                    className="status-bar__palam-fill"
+                    style={{ width: `${Math.round(fill01 * 100)}%` }}
+                  />
+                </span>
+                <span className="status-bar__palam-value">{value}</span>
               </span>
-              <span className="status-bar__palam-value">{value}</span>
-            </span>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -366,6 +390,7 @@ const SIT_TAG_KIND_CLASS: Record<SituationTag["kind"], string> = {
   swim: "sit-tag--swim",
   sleepy: "sit-tag--sleepy",
   coffee: "sit-tag--coffee",
+  alcohol: "sit-tag--alcohol",
 };
 
 /** Sleepy-tag tone overrides the generic sleepy class color. */
@@ -396,6 +421,99 @@ function SituationTags(props: { state: GameState }) {
         </span>
       ))}
     </div>
+  );
+}
+
+function AlcoholStatus(props: { state: GameState; charaNum: number; who: string; showWho?: boolean }) {
+  const face = alcoholFace(props.state, props.charaNum);
+  if (face === "清醒") return null;
+  return (
+    <div className="status-bar__alcohol-state" data-testid={`status-alcohol-${props.charaNum}`}>
+      {props.showWho !== false ? `${props.who}：` : "酒醉："}{face}
+    </div>
+  );
+}
+
+export interface TextGameInfoPanelProps {
+  state: GameState;
+  target?: number;
+  onOpenCharaInfo?: (charaNum: number) => void;
+}
+
+/** Fixed left column for the immersive text-game surface. This is a pure
+ * presentation of the same state selectors used by the classic status bar. */
+export function TextGameInfoPanel(props: TextGameInfoPanelProps) {
+  const targetSlot =
+    props.target !== undefined && props.target > 0
+      ? props.state.charas[props.target]
+      : undefined;
+  const targetName = targetSlot
+    ? targetSlot.callName ?? `角色${targetSlot.charaNum}`
+    : "";
+  const workInfo = targetSlot
+    ? getHudWorkInfo(props.state, targetSlot.charaNum)
+    : null;
+  const battleAbility = targetSlot
+    ? getBattleAbilityDisplay(targetSlot.state)
+    : "";
+  const fortune = getFortune(props.state.master.state);
+
+  return (
+    <aside className="text-game-info" data-testid="text-game-info-panel" aria-label="角色与状态情报">
+      <section className="text-game-info__section" data-testid="text-game-object-info">
+        <h2 className="text-game-info__heading">┌ 对象情报 ┐</h2>
+        {targetSlot ? (
+          <WorkInfoLine
+            targetName={targetName}
+            work={workInfo}
+            battleAbility={battleAbility}
+          />
+        ) : (
+          <p className="text-game-info__empty">未选择对象</p>
+        )}
+      </section>
+
+      <section className="text-game-info__section" data-testid="text-game-status-info">
+        <h2 className="text-game-info__heading">┌ 状态 ┐</h2>
+        <StatBars
+          who={props.state.master.callName ?? "主人公"}
+          state={props.state.master.state}
+          keys={NAMED_STAT_KEYS.filter((key) => key !== "TSP")}
+        />
+        <Sleepiness state={props.state} />
+        <SituationTags state={props.state} />
+        {targetSlot && (
+          <div className="text-game-info__target-status">
+            <StatBars who={targetName} state={targetSlot.state} keys={["体力", "気力"]} />
+            <AlcoholStatus
+              state={props.state}
+              charaNum={targetSlot.charaNum}
+              who={targetName}
+              showWho={false}
+            />
+            <RelationStats who={targetName} state={targetSlot.state} showWho={false} />
+            <HBodyStats who={targetName} state={targetSlot.state} showWho={false} />
+          </div>
+        )}
+        <div className="status-bar__fortune" data-testid="text-game-fortune">
+          今日运势：{fortune > 0 ? fortune : "—"}
+        </div>
+      </section>
+
+      <section className="text-game-info__section" data-testid="text-game-param-info">
+        <h2 className="text-game-info__heading">┌ 属性 ┐</h2>
+        {targetSlot ? (
+          <PalamPanel
+            state={targetSlot.state}
+            charaNum={targetSlot.charaNum}
+            onOpenCharaInfo={props.onOpenCharaInfo}
+            collapsible
+          />
+        ) : (
+          <p className="text-game-info__empty">未选择对象，属性暂无内容</p>
+        )}
+      </section>
+    </aside>
   );
 }
 
@@ -485,6 +603,7 @@ export default function GameStatusBar(props: GameStatusBarProps) {
   const actionHints = getHudActionHints(props.state);
   const workInfo = targetSlot ? getHudWorkInfo(props.state, targetSlot.charaNum) : null;
   const battleAbility = targetSlot ? getBattleAbilityDisplay(targetSlot.state) : "";
+  const worldOnly = props.layout === "world-only";
 
   return (
     <div className="status-bar" data-testid="game-status-bar">
@@ -600,7 +719,7 @@ export default function GameStatusBar(props: GameStatusBarProps) {
         </div>
       )}
 
-      {targetSlot && (
+      {!worldOnly && targetSlot && (
         <WorkInfoLine
           targetName={targetName}
           work={workInfo}
@@ -614,7 +733,7 @@ export default function GameStatusBar(props: GameStatusBarProps) {
           dip into a scrollbar / padding / inter-section gap doesn't snap
           the panel shut. Entering either header or the open body cancels
           the close timer. */}
-      <div
+      {!worldOnly && <div
         className="status-bar__hover-sections"
         onMouseLeave={scheduleClose}
         onMouseEnter={cancelClose}
@@ -662,8 +781,9 @@ export default function GameStatusBar(props: GameStatusBarProps) {
               {targetSlot && (
                 <>
                   <StatBars who={targetName} state={targetSlot.state} keys={["体力", "気力"]} />
-                  <RelationStats who={targetName} state={targetSlot.state} />
-                  <HBodyStats who={targetName} state={targetSlot.state} />
+                  <AlcoholStatus state={props.state} charaNum={targetSlot.charaNum} who={targetName} showWho={false} />
+                  <RelationStats who={targetName} state={targetSlot.state} showWho={false} />
+                  <HBodyStats who={targetName} state={targetSlot.state} showWho={false} />
                 </>
               )}
               <div className="status-bar__fortune" data-testid="status-bar-fortune">
@@ -687,7 +807,7 @@ export default function GameStatusBar(props: GameStatusBarProps) {
           )}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

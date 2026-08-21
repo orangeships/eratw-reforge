@@ -73,6 +73,11 @@ export interface SaveSummary {
   name: string; // master.callName
 }
 
+export interface SeedSavePayload {
+  state: unknown;
+  summary?: SaveSummary;
+}
+
 interface StateEnvelope {
   version: 1;
   savedAt: number;
@@ -152,6 +157,20 @@ export async function saveState(
   // Rust round-trips the envelope JSON verbatim (it only hashes projectRoot
   // into a filename), so no Rust change is needed for slots or summary.
   await invoke<void>("save_state", { projectRoot, state: envelope });
+}
+
+/**
+ * Install a bundled starter save only when the player has no saves yet.
+ * This is deliberately one-shot: an existing local/Tauri save always wins.
+ */
+export async function installSeedSaveIfEmpty(
+  baseKey: string,
+  seed: SeedSavePayload,
+): Promise<boolean> {
+  const slots = await listSaveSlots(baseKey);
+  if (slots.some((slot) => slot.exists)) return false;
+  await saveState(baseKey, 1, seed.state, seed.summary);
+  return true;
 }
 
 /**

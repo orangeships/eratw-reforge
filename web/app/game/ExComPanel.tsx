@@ -164,22 +164,21 @@ export function CalendarDetails({ state, onCancelAppointment }: { state: GameSta
           </div>
         ))}
       </div>
-      <div className="excom-panel__calendar-list" data-testid="excom-calendar-upcoming">
-        {upcoming.map((day) => (
-          <section key={day.dayIndex} className="excom-panel__calendar-day">
-            <strong>第 {day.dayIndex + 1} 日　{monthName(day.season)}{day.date}日（{weekdayName(day.dayIndex)}）</strong>
-            <span>{day.festival || "无节日"}</span>
-            {day.work.length > 0 ? (
-              <ul>
-                {day.work.map((entry) => (
-                  <li key={`${entry.charaNum}:${entry.startMin}:${entry.jobType}`}>
-                    {entry.name}　{minuteLabel(entry.startMin)}-{minuteLabel(entry.endMin)}　{JOB_LABEL[entry.jobType] ?? "工作"}　{entry.location}
-                  </li>
-                ))}
-              </ul>
-            ) : <span>无已解析日程</span>}
-          </section>
-        ))}
+      <div className="excom-panel__calendar-wrap" data-testid="excom-calendar-upcoming">
+        <table className="excom-panel__calendar-table">
+          <thead><tr><th>日期</th><th>节日</th><th>公开日程</th></tr></thead>
+          <tbody>{upcoming.map((day) => (
+            <tr key={day.dayIndex} className={day.dayIndex === time.dayIndex ? "is-today" : undefined}>
+              <th scope="row">第 {day.dayIndex + 1} 日<br /><small>{monthName(day.season)}{day.date}日（{weekdayName(day.dayIndex)}）</small></th>
+              <td>{day.festival || "—"}</td>
+              <td>{day.work.length > 0 ? day.work.map((entry) => (
+                <div key={`${entry.charaNum}:${entry.startMin}:${entry.jobType}`}>
+                  {minuteLabel(entry.startMin)}-{minuteLabel(entry.endMin)}　{entry.name} · {JOB_LABEL[entry.jobType] ?? "工作"}　{entry.location}
+                </div>
+              )) : "—"}</td>
+            </tr>
+          ))}</tbody>
+        </table>
       </div>
     </div>
   );

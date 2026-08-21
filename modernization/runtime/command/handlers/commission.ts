@@ -96,15 +96,15 @@ function narration(text: string, ctx: CommandContext): ObservationEvent {
 function commission366Prompt(ctx: CommandContext): PromptSpec | null {
   const status = commissionStatus(ctx.state, ctx.target);
   if (status === COMMISSION_PROGRESS.Offered) {
-    return pickOne("依頼を受ける？", [
-      { id: "accept", label: "依頼を受ける" },
-      { id: "decline", label: "断る" },
+    return pickOne("要接受这份委托吗？", [
+      { id: "accept", label: "接受委托" },
+      { id: "decline", label: "拒绝" },
     ]);
   }
   if (status === COMMISSION_PROGRESS.Active) {
-    return pickOne("依頼を確認する？", [
-      { id: "confirm", label: "確認" },
-      { id: "abandon", label: "破棄" },
+    return pickOne("要确认这份委托吗？", [
+      { id: "confirm", label: "确认" },
+      { id: "abandon", label: "放弃委托" },
     ]);
   }
   return null;
@@ -175,14 +175,14 @@ export const comf366HandlerEntry: HandlerEntry = {
         };
       }
 
-      events.push(narration("どうやら%CALLNAME:TARGET%は%CALLNAME:MASTER%に頼み事があるようだ", ctx));
+      events.push(narration("看来%CALLNAME:TARGET%有事想拜托%CALLNAME:MASTER%。", ctx));
       events.push(...kojoEvents(ctx, target, "依頼提示時", iraiId, next));
       events.push(...describeCommission(next, target).map((line) => narration(line, ctx)));
 
       if (picked === "decline") {
-        events.push(narration("%CALLNAME:MASTER%は丁重にお断りした", ctx));
+        events.push(narration("%CALLNAME:MASTER%郑重地拒绝了。", ctx));
         events.push(...kojoEvents(ctx, target, "依頼非受託時", iraiId, next));
-        events.push(narration("%CALLNAME:TARGET%は残念そうな顔をしている", ctx));
+        events.push(narration("%CALLNAME:TARGET%露出了遗憾的神情。", ctx));
         return { state: next, events, outcome: "noop" };
       }
 
@@ -195,7 +195,7 @@ export const comf366HandlerEntry: HandlerEntry = {
           failReason: { kind: "precondition", message: "commission slots full" },
         };
       }
-      events.push(narration("%CALLNAME:MASTER%は%CALLNAME:TARGET%の依頼を受けた", ctx));
+      events.push(narration("%CALLNAME:MASTER%接受了%CALLNAME:TARGET%的委托。", ctx));
       events.push(...kojoEvents(ctx, target, "依頼受託時", slot.iraiId, next));
       return { state: next, events, outcome: "ok" };
     }
@@ -226,7 +226,7 @@ export const comf366HandlerEntry: HandlerEntry = {
       events.push(...describeCommission(next, target).map((line) => narration(line, ctx)));
       if (picked === "abandon") {
         events.push(...kojoEvents(ctx, target, "依頼破棄時", slot.iraiId, next));
-        events.push(narration("依頼を破棄しました。", ctx));
+        events.push(narration("已放弃委托。", ctx));
         clearCommissionSlot(next, slot, COMMISSION_PROGRESS.EndedFailed);
         return { state: next, events, outcome: "ok" };
       }
@@ -251,7 +251,7 @@ export const comf366HandlerEntry: HandlerEntry = {
       const success = status === COMMISSION_PROGRESS.Completed;
       events.push(...kojoEvents(ctx, target, success ? "成功報告時" : "失敗報告時", slot.iraiId, next));
       reportCommission(next, slot, ctx.rng);
-      events.push(narration(success ? "依頼を報告しました。" : "依頼の失敗を報告しました。", ctx));
+      events.push(narration(success ? "已报告委托结果。" : "已报告委托失败。", ctx));
       return { state: next, events, outcome: "ok" };
     }
 
@@ -322,9 +322,9 @@ export const comf367HandlerEntry: HandlerEntry = {
       const success = executed.result === "success";
       events.push(...kojoEvents(ctx, slot.clientId, success ? "成功報告時" : "失敗報告時", slot.iraiId, next));
       reportCommission(next, slot, ctx.rng);
-      events.push(narration(success ? "依頼を報告しました。" : "依頼の失敗を報告しました。", ctx));
+      events.push(narration(success ? "已报告委托结果。" : "已报告委托失败。", ctx));
     } else {
-      events.push(narration(`忘れずに%CALLNAME:${slot.clientId}%に報告しよう`, ctx));
+      events.push(narration(`别忘了向%CALLNAME:${slot.clientId}%报告。`, ctx));
     }
 
     return { state: next, events, outcome: "ok" };

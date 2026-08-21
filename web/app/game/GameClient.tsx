@@ -30,15 +30,15 @@ import WorldMapView from "./WorldMapView.js";
 import { currentMapIdForLocation, REGIONS } from "./regions.js";
 import CommandGrid from "./CommandGrid.js";
 import InteractionBox from "./InteractionBox.js";
-import GameStatusBar from "./GameStatusBar.js";
-import ImmersiveHud from "./ImmersiveHud.js";
-import ImmersiveActionDock from "./ImmersiveActionDock.js";
+import GameStatusBar, { TextGameInfoPanel } from "./GameStatusBar.js";
+import { SceneAmbientPanel, SceneHistoryPanel } from "./SceneSidebar.js";
 import ExComPanel, { type ExComTool } from "./ExComPanel.js";
 import CommissionPopup from "./CommissionPopup.js";
 import CharacterInfoPopup from "./CharacterInfoPopup.js";
 import KojoDebugPopup from "./KojoDebugPopup.js";
 import AiSettingsPopup from "../ai/AiSettingsPopup.js";
 import { currentAiCharacterProfile, useAiStore } from "../ai/store.js";
+import { useSceneAmbient } from "../ai/use-scene-ambient.js";
 import portraits from "./portraits.bundle.json";
 import SpriteCrop from "./SpriteCrop.js";
 import {
@@ -50,12 +50,12 @@ import { kojoColor } from "./kojo-colors.js";
 import { selectPresentCharas } from "../../../modernization/runtime/scene/presence.js";
 import { canOpenWhereabouts } from "../../../modernization/runtime/world/whereabouts.js";
 import { canStartPlayerDate } from "../../../modernization/runtime/world/date-session.js";
+import { datePlanScheduleLabel, offeredDateInvitations } from "../../../modernization/runtime/world/date-appointments.js";
 import { hasPlace, PLACE_GARDEN } from "../../../modernization/runtime/world/place-flags.js";
 import { placeFlagsOf } from "../../../modernization/runtime/world/location-predicates.js";
 import {
   liveAvailableCommands,
   isHMode,
-  isTimeStopped,
   COM_FILTERS,
   filterOn,
   quickFilterHidden,
@@ -65,6 +65,7 @@ import type { GameState } from "../../../modernization/runtime/state/index.js";
 import type {
   DatePlanEvent,
   OutingChoicePromptLine,
+  OutingChoiceValue,
 } from "../../../modernization/runtime/state/game-state.js";
 import { CFLAG_ID, getCharaCflag } from "../../../modernization/runtime/state/settlement.js";
 import {
@@ -77,9 +78,10 @@ import type { AgentIntent, IssueCommandIntent, ObservationEvent } from "../../..
 import type { CommandGridAction } from "./CommandGrid.js";
 import commandsBundle from "./commands.bundle.json";
 import { comFilterClassOf } from "./com-filter-class.js";
-import { familyRequiresHMode, familyVisibleInHMode } from "./command-families.js";
+import { COMMAND_FAMILIES, familyOf, familyRequiresHMode, familyVisibleInHMode } from "./command-families.js";
 import { weatherBackgroundStyle } from "../../../modernization/runtime/weather/background-color.js";
 import { formatGameEvent } from "./event-format.js";
+import { EventChoicePanel, EventResultLines } from "./EventChoicePanel.js";
 import { findPath } from "./pathfind.js";
 import FishingTackleShop from "./FishingTackleShop.js";
 import { sceneForPresentation } from "./scene-intro.js";
@@ -100,8 +102,8 @@ export type GamePresentationMode = "classic" | "immersive";
 
 export interface GameClientProps {
   state: GameState;
-  /** The compact player surface is selected by App; omitted callers retain
-   * the classic surface for parity and focused tests. */
+  /** App selects the three-column text-game surface; omitted callers retain
+   * the full classic surface for compatibility and focused tests. */
   presentationMode?: GamePresentationMode;
   onIntent: (intent: AgentIntent) => void;
   /** Phase D (实玩反馈 #9): walk a multi-hop map path (SKIP_MOVE) with
@@ -184,17 +186,24 @@ const COMMAND_LABELS = commandsBundle as Record<
 const COMMAND_LABEL_FALLBACKS: Record<number, string> = {
   419: "水汲み（打水）",
   480: "弹幕胜负",
+  72: "插入后·刺激Ｇ点",
+  73: "插入后·刺激子宫口",
   820: "脱衣服",
   821: "偷胖次",
   992: "邀请约会",
   201: "禁用指令",
   270: "调教口上",
-  999: "算了",
+  999: "结束幽会",
 };
 
 const PORTRAITS = portraits as unknown as Record<string, PortraitSource>;
 
 function commandLabel(commandNo: number): string {
+  if (commandNo === 0) return "爱抚";
+  if (commandNo === 72) return "插入后·刺激Ｇ点";
+  if (commandNo === 73) return "插入后·刺激子宫口";
+  if (commandNo === 700) return "自慰·爱抚自己";
+  if (commandNo === 999) return "结束幽会";
   const bundled = COMMAND_LABELS[String(commandNo)]?.label;
   if (bundled && !/^#\d+$/.test(bundled) && bundled !== "未命名行动") return bundled;
   return COMMAND_LABEL_FALLBACKS[commandNo] ?? `指令 ${commandNo}`;
@@ -294,19 +303,11 @@ function issueCommand(
  * 逆推/地图模式 preference toggles. Re-add each as its system lands.
  */
 const MENU_EXCLUDED_COMMANDS: ReadonlySet<number> = new Set([
-  400, 405, 499, 604, 650, 201, 697, 698, 699, 999, 270, 355, 448,
+  400, 405, 499, 604, 650, 201, 697, 698, 699, 270, 355, 448,
   // 实玩反馈 P2-04: H-class commands whose upstream label still resolves to
   // JP text are blocked from the menu until labels are localized.
   122, 141, 142, 143, 148, 187, 190, 511, 850,
 ]);
-
-/**
- * Commission commands (366/367) are no longer surfaced in the ActCom grid —
- * the player opens the dedicated CommissionPopup from the portrait's "?"
- * badge instead. 630 (霍布哥布林代办) is location-bound and deferred per
- * the user's plan (awaiting the 霧の湖 / 紅魔館 phase).
- */
-const COMMISSION_COMMAND_NOS: ReadonlySet<number> = new Set([366, 367]);
 
 export default function GameClient(props: GameClientProps) {
   const {
@@ -318,7 +319,6 @@ export default function GameClient(props: GameClientProps) {
     commandAvailabilityMode = "normal",
   } = props;
   const presentationMode = props.presentationMode ?? "classic";
-  const [showSecondaryPanel, setShowSecondaryPanel] = useState(false);
   const interaction = useSceneStore((s) => s.interaction);
   const openInteraction = useSceneStore((s) => s.openInteraction);
   const closeInteraction = useSceneStore((s) => s.closeInteraction);
@@ -417,6 +417,11 @@ export default function GameClient(props: GameClientProps) {
   ]);
   const activeDialogueSession = dialogueQueue[0] ?? null;
   const pendingArrivalEvents = activeDialogueSession?.transcript ?? null;
+  const offeredDates = offeredDateInvitations(state);
+  const offeredDate = offeredDates[0];
+  const scheduledDate = (state.worldEvents ?? [])
+    .filter((event): event is DatePlanEvent => event.kind === "date-plan" && ["scheduled", "waiting"].includes(event.phase) && event.scheduledStartTick != null)
+    .sort((a, b) => (a.scheduledStartTick ?? Infinity) - (b.scheduledStartTick ?? Infinity) || a.partner - b.partner)[0];
   const clearArrivalPopup = useGameStateStore((s) => s.clearArrivalPopup);
   const pendingKojoChoice = activeDialogueSession?.choice ?? null;
   const resolveKojoChoice = useGameStateStore((s) => s.resolveKojoChoiceAction);
@@ -452,12 +457,12 @@ export default function GameClient(props: GameClientProps) {
     // 刀二→Phase 8: the autonomous scheduler tick is now driven by
     // SCHEDULER_ON (decoupled from TRIAL_RUN). We deliberately don't tick
     // while the interaction box is open (the player is reading).
-    if (!SCHEDULER_ON || interaction.open) return;
+    if (!SCHEDULER_ON || interaction.open || offeredDate) return;
     const id = setInterval(() => {
       onIntent({ kind: "NOOP", reason: "tick" });
     }, 1500);
     return () => clearInterval(id);
-  }, [interaction.open, onIntent]);
+  }, [interaction.open, offeredDate?.id, onIntent]);
 
   // A sleep request is a queued screen transition, never permission to tear
   // down the command UI. The command/event tail and every owner-aware kojo
@@ -606,10 +611,47 @@ export default function GameClient(props: GameClientProps) {
   const walkEncounter = state.walkSession?.encounter;
   // A locked 私室 reached at the end of a walk → 潜入/算了 prompt (@潜入房間).
   const lockedDoor = state.walkSession?.lockedDoor;
-  // Any open walk encounter (choice OR result card) or a locked-door prompt
-  // blocks commands until the player resolves it.
+  // Any open walk encounter (choice OR result card), locked-door prompt, or
+  // NPC date invitation blocks commands until the player resolves it.
   const movementBlocked =
-    walkEncounter !== undefined || closingWalkEncounter !== null || lockedDoor !== undefined;
+    walkEncounter !== undefined || closingWalkEncounter !== null || lockedDoor !== undefined || offeredDate !== undefined;
+  const trainingMovementLocked = state.training !== undefined && state.training !== null;
+  const radioInteractionActive =
+    interaction.open &&
+    interaction.rootCommandNo === 496 &&
+    aiSettings.enabled &&
+    aiSettings.radioEnabled;
+  const formalAmbientBlock =
+    interaction.open || dialogueQueue.length > 0 || pendingPrompt !== null || pendingKojoChoice !== null;
+  const exclusiveAmbientBlock =
+    showMap ||
+    showWorldMap ||
+    movementBlocked ||
+    commissionPopupChara !== null ||
+    excomPanel !== null ||
+    characterInfoChara !== null ||
+    showKojoDebug ||
+    showAiSettings ||
+    showBugCatchingMenu ||
+    showTackleShop ||
+    danmakuExit ||
+    Boolean(
+      state.outingEventSession ||
+      state.mobGirlMemorySession ||
+      state.mobMealSession ||
+      state.sleepSession ||
+      state.danmakuBattle ||
+      state.fishingGame ||
+      state.stoneContestSession ||
+      farmScreenOpen,
+    );
+  const ambientEntry = useSceneAmbient({
+    state,
+    router: currentIntentDeps().router,
+    formalInteractionActive: formalAmbientBlock,
+    exclusiveSurfaceActive: exclusiveAmbientBlock,
+    preserveEntryWhileFormal: radioInteractionActive,
+  });
   const resultWalkEncounter = closingWalkEncounter;
   const visibleWalkEncounter = resultWalkEncounter?.encounter ?? walkEncounter;
   const showWalkEncounterChoices = walkEncounter !== undefined && resultWalkEncounter === null;
@@ -721,7 +763,6 @@ export default function GameClient(props: GameClientProps) {
   const gridActions: CommandGridAction[] = availability
     .filter((a) => a.usable)
     .filter((a) => !MENU_EXCLUDED_COMMANDS.has(a.commandNo))
-    .filter((a) => !COMMISSION_COMMAND_NOS.has(a.commandNo))
     .filter((a) => hMode ? familyVisibleInHMode(a.commandNo) : !familyRequiresHMode(a.commandNo))
     .filter((a) => !quickFilterHidden(comFilterClassOf(a.commandNo), filterTarget, state))
     .map((a) => {
@@ -730,22 +771,20 @@ export default function GameClient(props: GameClientProps) {
         label: a.labelOverride ?? commandLabel(a.commandNo),
         usable: true as const,
         highlighted: a.commandNo === 351 && filterTarget > 0 &&
-          getCharaCflag(state, filterTarget, CFLAG_ID.同行) !== 0,
+          getCharaCflag(state, filterTarget, CFLAG_ID.同行) === 0,
         ...(a.deferred ? { deferred: true as const } : {}),
       };
     })
     .sort((x, y) => x.commandNo - y.commandNo);
+  const hActionGroups = hMode
+    ? COMMAND_FAMILIES.map((family) => ({
+        id: family.id,
+        label: family.id === "hmode" ? "H 控制" : family.label,
+        items: gridActions.filter((action) => familyOf(action.commandNo).id === family.id),
+      })).filter((group) => group.items.length > 0)
+    : undefined;
 
   const bugTrapAvailable = availability.some((action) => action.commandNo === 448 && action.usable);
-
-  // The compact surface promotes a small, contextual subset. The complete
-  // live catalog remains available through “更多行动” and is unchanged for
-  // classic/creator users.
-  const primaryCommandNos = new Set([300, 301, 302, 303, 350, 351, 403, 411, 419, 440, 449, 480]);
-  const primaryActions = [
-    ...gridActions.filter((action) => primaryCommandNos.has(action.commandNo)),
-    ...gridActions.filter((action) => !primaryCommandNos.has(action.commandNo)),
-  ].slice(0, 5);
 
   // The filter toggle row (`@过滤器表示`): sex filters (Ｖ/Ａ/ＳＭ/侍奉) only
   // appear during うふふ; the rest always show. Each button's "pressed" state
@@ -783,7 +822,6 @@ export default function GameClient(props: GameClientProps) {
   const canUseGoOut = hasMap;
   const actualCompanions = Object.values(state.charas).filter((slot) => getCharaCflag(state, slot.charaNum, CFLAG_ID.同行) > 0);
   const dateEntry = actualCompanions.length === 1 && canStartPlayerDate(state, actualCompanions[0]!.charaNum).ok;
-  const offeredDate = (state.worldEvents ?? []).find((event): event is DatePlanEvent => event.kind === "date-plan" && event.phase === "offered");
   const moveCommands = withinMapExits.map((e) => ({
     commandNo: e.commandNo,
     toLocation: e.toLocation,
@@ -791,7 +829,7 @@ export default function GameClient(props: GameClientProps) {
   }));
 
   const handleExit = (commandNo: number): void => {
-    if (movementBlocked) return;
+    if (movementBlocked || trainingMovementLocked) return;
     // Move command — goes through the intent stream (S1).
     onIntent(issueCommand(commandNo));
   };
@@ -799,7 +837,7 @@ export default function GameClient(props: GameClientProps) {
   // Map click → move, then auto-return to the scene view (the player asked
   // for "click a spot and go there" — not "click then manually close the map").
   const handleMapMove = (commandNo: number): void => {
-    if (movementBlocked) return;
+    if (movementBlocked || trainingMovementLocked) return;
     onIntent(issueCommand(commandNo));
     setShowMap(false);
   };
@@ -810,7 +848,7 @@ export default function GameClient(props: GameClientProps) {
   // intermediate room, and pay the time cost once. `rooms` is the ordered
   // [first hop … destination] room list from ColoredMapView's pathfind.
   const handleMapPath = (rooms: string[]): void => {
-    if (movementBlocked) return;
+    if (movementBlocked || trainingMovementLocked) return;
     if (onWalkPath) onWalkPath(rooms);
     setShowMap(false);
   };
@@ -819,7 +857,7 @@ export default function GameClient(props: GameClientProps) {
   // (10701/10702/10703). The handler deposits the master at the region
   // entrance, then we return to the scene view.
   const handleWorldTravel = (commandNo: number): void => {
-    if (movementBlocked) return;
+    if (movementBlocked || trainingMovementLocked) return;
     const region = REGIONS.find((item) => item.commandNo === commandNo);
     if (state.dateSession?.phase === "active" && region) {
       onIntent(issueCommand(19997, state.dateSession.partner, pickOneAnswer(region.mapId)));
@@ -831,7 +869,7 @@ export default function GameClient(props: GameClientProps) {
     setShowWorldMap(false);
   };
   const openWorldMap = (): void => {
-    if (movementBlocked) return;
+    if (movementBlocked || trainingMovementLocked) return;
     setShowMap(false);
     setShowWorldMap(true);
   };
@@ -871,6 +909,13 @@ export default function GameClient(props: GameClientProps) {
     setClosingWalkEncounter(null);
   };
 
+  const handleDateInvitationResponse = (commandNo: 19989 | 19988, invitation: DatePlanEvent): void => {
+    if (!interaction.open) {
+      openInteraction(commandNo, state.eventLog.length);
+    }
+    onIntent(issueCommand(commandNo, invitation.partner));
+  };
+
   const handleAction = (commandNo: number): void => {
     if (movementBlocked) return;
     // Only the explicit practice course owns the full-screen danmaku surface.
@@ -900,7 +945,7 @@ export default function GameClient(props: GameClientProps) {
   };
 
   const handleTrackChara = (charaNum: number): void => {
-    if (movementBlocked) return;
+    if (movementBlocked || trainingMovementLocked) return;
     const target = state.charas[charaNum];
     if (!target) return;
     const path = findPath(state.master.location, target.location);
@@ -931,35 +976,44 @@ export default function GameClient(props: GameClientProps) {
       event.kind === "NARRATION" && event.text.includes("天气播报"),
     )?.text
     : undefined;
+  // COM496 owns the same formal InteractionBox surface as command dialogue.
+  // Suppress any stale scene-ambient entry from the first radio render so the
+  // radio page always has presentation priority; ambient resumes only after
+  // the modal closes and useSceneAmbient's post-paint delay elapses.
   const weatherStyle = weatherBackgroundStyle(state) as CSSProperties;
 
   return (
     <div className={`game-client${presentationMode === "immersive" ? " game-client--immersive" : ""}${danmakuExit ? " game-client--battle-exit" : ""}${battleReturn ? " game-client--battle-return" : ""}`} data-testid="game-client" style={weatherStyle}>
       <div className="game-client__top">
-        {presentationMode === "immersive" ? (
-          <ImmersiveHud
-            state={state}
-            target={actionTarget}
-            onOpenCharaInfo={(charaNum) => setCharacterInfoChara(charaNum)}
-          />
-        ) : (
-          <GameStatusBar
-            state={state}
-            target={actionTarget}
-            onReleaseTimeStop={() => handleAction(999)}
-            onTimeStop={() => handleAction(355)}
-            onOpenCharaInfo={(charaNum) => setCharacterInfoChara(charaNum)}
-          />
-        )}
+        <GameStatusBar
+          state={state}
+          target={actionTarget}
+          layout={presentationMode === "immersive" ? "world-only" : "full"}
+          onReleaseTimeStop={() => handleAction(999)}
+          onTimeStop={() => handleAction(355)}
+          onOpenCharaInfo={(charaNum) => setCharacterInfoChara(charaNum)}
+        />
       </div>
 
       <div className="game-client__middle">
+        {presentationMode === "immersive" && (
+          <TextGameInfoPanel
+            state={state}
+            target={actionTarget}
+            onOpenCharaInfo={(charaNum) => setCharacterInfoChara(charaNum)}
+          />
+        )}
+        <div className="game-client__scene-slot">
         {lockedDoor ? (
           <div className="walk-encounter-layer" data-testid="locked-door-layer">
             <SceneView
               scene={finalScene}
               present={present}
               bandEvents={state.eventLog}
+              ambientEntry={radioInteractionActive ? null : ambientEntry}
+              showInlineHistory={presentationMode === "classic"}
+              showInlineAmbient={presentationMode === "classic"}
+              showPortraitAmbient
               selectedChara={actionTarget}
               state={state}
             />
@@ -1018,6 +1072,10 @@ export default function GameClient(props: GameClientProps) {
               scene={finalScene}
               present={present}
               bandEvents={sceneBandEventsForPresentation}
+              ambientEntry={radioInteractionActive ? null : ambientEntry}
+              showInlineHistory={presentationMode === "classic"}
+              showInlineAmbient={presentationMode === "classic"}
+              showPortraitAmbient
               selectedChara={actionTarget}
               state={state}
             />
@@ -1160,6 +1218,10 @@ export default function GameClient(props: GameClientProps) {
             scene={finalScene}
             present={present}
             bandEvents={sceneBandEventsForPresentation}
+            ambientEntry={radioInteractionActive ? null : ambientEntry}
+            showInlineHistory={presentationMode === "classic"}
+            showInlineAmbient={presentationMode === "classic"}
+            showPortraitAmbient
             selectedChara={actionTarget}
             onSelectChara={setSelectedTarget}
             state={state}
@@ -1171,10 +1233,56 @@ export default function GameClient(props: GameClientProps) {
             scene={finalScene}
             present={present}
             bandEvents={sceneBandEventsForPresentation}
+            ambientEntry={radioInteractionActive ? null : ambientEntry}
+            showInlineHistory={presentationMode === "classic"}
+            showInlineAmbient={presentationMode === "classic"}
+            showPortraitAmbient
             state={state}
           />
         )}
+        </div>
+        {presentationMode === "immersive" && (
+          <aside className="text-game-right" data-testid="text-game-right-column" aria-label="AI 场景对话与历史">
+            <SceneAmbientPanel
+              entry={radioInteractionActive ? null : ambientEntry}
+              state={state}
+              enabled={aiSettings.enabled && !radioInteractionActive}
+            />
+            <section className="text-game-history-panel" data-testid="text-game-history-panel">
+              <h2 className="text-game-panel__heading">┌ 历史 ┐</h2>
+              <SceneHistoryPanel
+                events={sceneBandEventsForPresentation}
+                state={state}
+                placement="sidebar"
+              />
+            </section>
+          </aside>
+        )}
       </div>
+
+      {offeredDate && !interaction.open && (
+        <section className="date-invitation-card" data-testid="date-invitation-card" role="dialog" aria-live="assertive" aria-labelledby="date-invitation-title">
+          <div className="date-invitation-card__heading">约会邀约</div>
+          <strong id="date-invitation-title">
+            {state.charas[offeredDate.partner]?.callName ?? `#${offeredDate.partner}`}想和你约个时间一起出门。
+          </strong>
+          {offeredDates.length > 1 && <p>另有 {offeredDates.length - 1} 份邀约，回应后会依次显示。</p>}
+          <div className="date-invitation-card__actions">
+            <button type="button" data-testid="accept-date-invitation" onClick={() => handleDateInvitationResponse(19989, offeredDate)}>
+              [接受{state.charas[offeredDate.partner]?.callName ?? `#${offeredDate.partner}`}的邀约]
+            </button>
+            <button type="button" data-testid="decline-date-invitation" onClick={() => handleDateInvitationResponse(19988, offeredDate)}>
+              [婉拒{state.charas[offeredDate.partner]?.callName ?? `#${offeredDate.partner}`}]
+            </button>
+          </div>
+        </section>
+      )}
+
+      {scheduledDate && (
+        <div className="date-appointment-status" data-testid="date-appointment-status" role="status">
+          已预约：与{state.charas[scheduledDate.partner]?.callName ?? `#${scheduledDate.partner}`} · {datePlanScheduleLabel(scheduledDate)}
+        </div>
+      )}
 
       {/* Parity QA P-1 — the Ex_COM utility row (`▼[－] Ex_COM`). Tool
           buttons (变更对象→cycle target), NOT settlement commands.
@@ -1184,8 +1292,7 @@ export default function GameClient(props: GameClientProps) {
           Parity QA P-22 — 移动 moved OUT of this row into the CommandGrid 移動
           group (a single "🗺 移动" entry that opens the map menu), so it's no
           longer a buried Ex_COM tool. */}
-      {(presentationMode === "classic" || showSecondaryPanel) && (
-      <div className={presentationMode === "immersive" ? "excom-row excom-row--secondary" : "excom-row"} data-testid="excom-row">
+      <div className="excom-row" data-testid="excom-row">
         <button
           type="button"
           className="excom-row__collapse"
@@ -1196,10 +1303,10 @@ export default function GameClient(props: GameClientProps) {
         </button>
         {showExCom && (
           <span
-            className={"excom-row__tools" + (movementBlocked ? " excom-row__tools--blocked" : "")}
+            className={"excom-row__tools" + (movementBlocked || trainingMovementLocked ? " excom-row__tools--blocked" : "")}
             data-testid="excom-tools"
-            aria-disabled={movementBlocked ? "true" : undefined}
-            title={movementBlocked ? "移动遭遇处理完毕前无法使用其他指令" : undefined}
+            aria-disabled={movementBlocked || trainingMovementLocked ? "true" : undefined}
+            title={offeredDate ? `请先回应${state.charas[offeredDate.partner]?.callName ?? `#${offeredDate.partner}`}的邀约` : movementBlocked ? "移动遭遇处理完毕前无法使用其他指令" : undefined}
           >
             {/* 移动 (faithful to the original Ex_COM placement): clicking it
                 opens the colored map page where the player picks a destination
@@ -1210,6 +1317,7 @@ export default function GameClient(props: GameClientProps) {
                 type="button"
                 className="excom-row__btn"
                 data-testid="excom-move"
+                disabled={trainingMovementLocked}
                 onClick={() => setShowMap((s) => !s)}
               >
                 {showMap ? "[返回场景]" : "[移动]"}
@@ -1234,12 +1342,6 @@ export default function GameClient(props: GameClientProps) {
               <button type="button" className="excom-row__btn" data-testid="date-return" onClick={() => onIntent(issueCommand(19998, state.dateSession!.partner))}>
                 [踏上归途]
               </button>
-            )}
-            {offeredDate && (
-              <>
-                <button type="button" className="excom-row__btn" data-testid="accept-date-invitation" onClick={() => onIntent(issueCommand(19989, offeredDate.partner))}>[接受邀约]</button>
-                <button type="button" className="excom-row__btn" data-testid="decline-date-invitation" onClick={() => onIntent(issueCommand(19988, offeredDate.partner))}>[拒绝邀约]</button>
-              </>
             )}
             {gridExits.map((exit) => (
               <button
@@ -1334,9 +1436,8 @@ export default function GameClient(props: GameClientProps) {
           </span>
         )}
       </div>
-      )}
 
-      {presentationMode === "classic" ? <div className="game-client__bottom">
+      <div className="game-client__bottom">
         {/* Parity QA P-1 — the Act_COM filter toggle row (`@过滤器表示`).
             Each button subtracts its class from the grid when pressed
             (pressed = filter OFF). Sex filters only appear in うふふ.
@@ -1372,58 +1473,12 @@ export default function GameClient(props: GameClientProps) {
         <CommandGrid
           exits={[]}
           actions={movementBlocked ? [] : gridActions}
+          actionGroups={movementBlocked ? [] : hActionGroups}
           onExit={handleExit}
           onAction={handleAction}
           showExits={false}
         />
-      </div> : (
-        <>
-        <ImmersiveActionDock
-          actions={primaryActions}
-          hasMap={hasMap}
-          mapOpen={showMap}
-          movementBlocked={movementBlocked}
-          secondaryOpen={showSecondaryPanel}
-          timeStopped={isTimeStopped(state)}
-          onAction={handleAction}
-          onOpenMap={() => setShowMap((open) => !open)}
-          onToggleTimeStop={() => handleAction(isTimeStopped(state) ? 999 : 355)}
-          onToggleSecondary={() => setShowSecondaryPanel((open) => !open)}
-        />
-        {showSecondaryPanel && (
-          <div className="immersive-secondary-panel" data-testid="immersive-secondary-panel">
-            {hasNpc && !movementBlocked && (
-              <div className="command-filter-row" data-testid="command-filter-row">
-                <span className="command-filter-row__label">过滤</span>
-                {filterButtons.map((f) => (
-                  <button
-                    key={f.toggleId}
-                    type="button"
-                    className={
-                      "command-filter-row__btn" +
-                      (f.on ? "" : " command-filter-row__btn--off")
-                    }
-                    data-testid="filter-toggle"
-                    data-toggle-id={f.toggleId}
-                    data-on={f.on}
-                    onClick={() => onToggleFilter?.(f.toggleId, filterTarget)}
-                  >
-                    [{f.label}]
-                  </button>
-                ))}
-              </div>
-            )}
-            <CommandGrid
-              exits={[]}
-              actions={movementBlocked ? [] : gridActions}
-              onExit={handleExit}
-              onAction={handleAction}
-              showExits={false}
-            />
-          </div>
-        )}
-        </>
-      )}
+      </div>
 
       {showBugCatchingMenu && (
         <BugCatchingMenu
@@ -1453,6 +1508,7 @@ export default function GameClient(props: GameClientProps) {
           aiPending={activeDialogueSession?.aiRequestId !== undefined}
           aiCharaNum={activeDialogueSession?.aiCharaNum}
           radioBroadcast={radioBroadcast}
+          sceneAmbientEntry={radioInteractionActive ? ambientEntry : null}
         />
       )}
 
@@ -1538,30 +1594,14 @@ export default function GameClient(props: GameClientProps) {
               <div className="outing-event-frame__title">
                 {session.channel === "outing-departure" ? "出门时遇到的遭遇" : "归途中遇到的遭遇"}
               </div>
-              <div className="outing-event-frame__lines" data-testid="outing-event-intro">
-                {session.prompt.opening?.map((line, idx) => (
-                  <p key={`${line.kind}-${idx}`} className="outing-event-frame__line">
-                    {line.speaker && <span className="prompt-menu__intro-speaker">{line.speaker}</span>}
-                    {line.text}
-                  </p>
-                ))}
-              </div>
-              <div className="outing-event-frame__question">{session.prompt.question}</div>
-              <div className="outing-event-frame__options">
-                {session.prompt.options.map((o) => (
-                  <button
-                    key={String(o.id)}
-                    type="button"
-                    className="prompt-menu__btn"
-                    disabled={o.disabled}
-                    title={o.disabled ? "钱不够" : undefined}
-                    onClick={() => resolveOutingChoice(o.id)}
-                  >
-                    <span className="prompt-menu__label">{o.label}</span>
-                    {o.detail && <span className="prompt-menu__detail">{o.detail}</span>}
-                  </button>
-                ))}
-              </div>
+              <EventChoicePanel
+                prompt={session.prompt}
+                testId="outing-event-choice-panel"
+                openingTestId="outing-event-intro"
+                className="event-choice-panel--outing"
+                onPick={(value) => resolveOutingChoice(value as OutingChoiceValue)}
+                buttonTestId={(value) => `outing-event-option-${String(value)}`}
+              />
               <button
                 type="button"
                 className="outing-event-frame__btn"
@@ -1586,16 +1626,12 @@ export default function GameClient(props: GameClientProps) {
               <div className="outing-event-frame__title">
                 {session.channel === "outing-departure" ? "出门时遇到的遭遇" : "归途中遇到的遭遇"}
               </div>
-              <div className="outing-event-frame__lines">
-                {session.resultEvents.map((event, idx) => (
-                  <p
-                    key={`${event.kind}-${idx}`}
-                    className="outing-event-frame__line"
-                  >
-                    {event.kind === "NARRATION" ? event.text : ""}
-                  </p>
-                ))}
-              </div>
+              {session.answer !== undefined && (
+                <div className="outing-event-frame__answer" data-testid="outing-event-answer">
+                  你的选择：{session.prompt.options.find((option) => option.id === session.answer)?.label ?? String(session.answer)}
+                </div>
+              )}
+              <EventResultLines events={session.resultEvents} state={state} testId="outing-event-result-lines" />
               <button
                 type="button"
                 className="outing-event-frame__btn"
@@ -1668,7 +1704,7 @@ export default function GameClient(props: GameClientProps) {
           the last COMMAND_ISSUED event from the append-only eventLog (NOOP /
           scheduler ticks emit TIME_TICK, not COMMAND_ISSUED, so the last one
           stays the last real command until the next action). */}
-      {presentationMode === "classic" && <PrevCommandFooter eventLog={state.eventLog} />}
+      <PrevCommandFooter eventLog={state.eventLog} />
     </div>
   );
 }

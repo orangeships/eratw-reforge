@@ -13,6 +13,21 @@ export interface DateProposalProvider {
   propose(state: Readonly<GameState>, partner: number, seed: number): DateProposal | null;
 }
 
+export function offeredDateInvitations(state: Readonly<GameState>): DatePlanEvent[] {
+  return (state.worldEvents ?? [])
+    .filter((event): event is DatePlanEvent => event.kind === "date-plan" && event.phase === "offered")
+    .sort((a, b) => a.createdAtTick - b.createdAtTick || a.partner - b.partner || a.id.localeCompare(b.id));
+}
+
+export function datePlanScheduleLabel(event: Readonly<DatePlanEvent>): string {
+  if (event.scheduledStartTick == null) return "时间未定 · 地点未定";
+  const day = Math.floor(event.scheduledStartTick / 1440) + 1;
+  const minute = event.scheduledStartTick % 1440;
+  const hh = String(Math.floor(minute / 60)).padStart(2, "0");
+  const mm = String(minute % 60).padStart(2, "0");
+  return `第 ${day} 日 ${hh}:${mm} · ${event.location ?? "地点未定"}`;
+}
+
 const PUBLIC_DATE_LOCATIONS = [
   "命蓮寺", "人間之里", "紅魔館", "迷途竹林", "魔法之森",
   "冥界", "妖怪之山", "山頂", "地底", "月",
@@ -74,9 +89,11 @@ export function generateMorningDateIntentions(state: GameState, _rng?: Rng): Dat
 }
 
 export function offerDateIntentionsOnEncounter(state: GameState): DatePlanEvent[] {
+  // Several co-located characters may invite the player in the same encounter.
+  // The owner-aware UI presents the resulting offered events sequentially.
   const offered = (state.worldEvents ?? [])
     .filter((event): event is DatePlanEvent => event.kind === "date-plan" && event.phase === "seeking-player" && state.charas[event.partner]?.location === state.master.location)
-    .sort((a, b) => a.partner - b.partner);
+    .sort((a, b) => a.createdAtTick - b.createdAtTick || a.partner - b.partner);
   for (const event of offered) event.phase = "offered";
   return offered;
 }
@@ -97,7 +114,16 @@ export function scheduleAcceptedDate(state: GameState, eventId: string, provider
 export function advanceDateAppointments(state: GameState): void {
   const now = state.time.tickValue;
   for (const event of state.worldEvents ?? []) {
-    if (event.kind !== "date-plan" || event.scheduledStartTick == null) continue;
+    if (event.kind !== "date-plan") continue;
+    // A morning-generated invitation belongs to that day. Previously an NPC
+    // could keep `seeking-player` for several days and surface after the
+    // outing/event that created it was already over.
+    if (event.phase === "seeking-player" && now >= event.createdAtTick + 1440) {
+      event.phase = "cancelled";
+      event.resolvedAtTick = now;
+      continue;
+    }
+    if (event.scheduledStartTick == null) continue;
     const slot = state.charas[event.partner];
     if (event.phase === "scheduled" && now >= (event.arrivalTick ?? event.scheduledStartTick - 30)) {
       event.phase = "waiting";

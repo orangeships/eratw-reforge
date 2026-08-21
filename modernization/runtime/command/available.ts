@@ -43,6 +43,10 @@ import {
   isHMode,
   requiresHMode,
 } from "./h-mode.js";
+import {
+  RINNOSUKE_HOME,
+  RINNOSUKE_ROLE,
+} from "../world/dynamic-characters.js";
 
 /** Synthetic nav ids (room/map move) live at >= 10000. */
 export const SYNTHETIC_FLOOR = 10000;
@@ -82,13 +86,15 @@ const PROBE_RNG: Rng = {
 
 export type CommandAvailabilityMode = "normal" | "diagnostic";
 
-function isRinnosukeConversationOnlyTarget(state: Readonly<GameState>, target: number): boolean {
+const RINNOSUKE_INTERACTION_COMMANDS = new Set([300]);
+
+function isRinnosukeShopkeeperTarget(state: Readonly<GameState>, target: number): boolean {
   const meta = state.dynamicCharacters?.[target];
   const slot = state.charas[target];
   return meta?.origin === "authored" &&
-    meta.role === "kourindou-shopkeeper" &&
-    slot?.location === "魔法之森:香霖堂" &&
-    state.master.location === "魔法之森:香霖堂";
+    meta.role === RINNOSUKE_ROLE &&
+    slot?.location === RINNOSUKE_HOME &&
+    state.master.location === RINNOSUKE_HOME;
 }
 
 function gateAuditFor(entry: HandlerEntry): ExtractedCommandGateAudit {
@@ -131,7 +137,10 @@ export function availableCommands(
       gateDiagnostics: gateAudit.diagnostics,
     };
     const deferred = entry.deferred === true ? { deferred: true as const } : {};
-    if (isRinnosukeConversationOnlyTarget(state, target) && entry.commandNo !== 300) {
+    if (
+      isRinnosukeShopkeeperTarget(state, target) &&
+      !RINNOSUKE_INTERACTION_COMMANDS.has(entry.commandNo)
+    ) {
       out.push({
         commandNo: entry.commandNo,
         ...gateFields,

@@ -11,6 +11,7 @@ import { buildAiKojoCompletion, commandLabel, visibleHistoryLines } from "./cont
 import { createOpenAiCompatibleProvider } from "./provider.js";
 import { parseAiKojoResponse, parsePartialAiKojoResponse } from "./response-validator.js";
 import { currentAiCharacterProfile, currentAiSettings, useAiStore } from "./store.js";
+import { currentSceneAmbientSession } from "./ambient-store.js";
 import type {
   AiCommandHistoryEntry,
   AiGeneratedLine,
@@ -22,6 +23,7 @@ import type {
 function allowedKojoFamilies(): Set<string> {
   return new Set(currentAiSettings().kojoFamilies);
 }
+const SAFE_HISTORY_FAMILIES = new Set(["comm", "daily", "kaji"]);
 const AUTHORED_SAMPLE_LIMIT = 10;
 const MAX_AUTHORED_SAMPLE_LENGTH = 900;
 // These are ordinary command routes where authored kojo commonly branches by
@@ -59,22 +61,32 @@ export interface RecordCommandInput {
 }
 
 export function recordAiCommand(input: RecordCommandInput): AiCommandHistoryEntry {
+  const visibleEvents = visibleHistoryLines(input.events, input.state);
+  const sceneEpoch = currentSceneAmbientSession()?.sceneEpoch ?? 0;
   const entry: AiCommandHistoryEntry = {
     id: nextId("history"),
+    source: "command",
     target: input.target,
     targetName: input.state.charas[input.target]?.callName ?? `角色${input.target}`,
     commandNo: input.commandNo,
     commandLabel: commandLabel(input.commandNo),
     timestamp: Date.now(),
     location: input.state.master.location,
+    sceneEpoch,
+    gameTick: input.state.time.tickValue,
+    participantIds: input.target > 0 ? [input.target] : [],
+    witnessIds: Object.values(input.state.charas)
+      .filter((slot) => slot.charaNum > 0 && slot.charaNum !== input.target && slot.location === input.state.master.location)
+      .map((slot) => slot.charaNum),
     outcome: input.outcome,
-    visibleEvents: visibleHistoryLines(input.events, input.state),
+    visibleEvents,
     aiLines: [],
+    visibleLines: visibleEvents,
   };
   // H/sexual routes are intentionally not retained as prompt context. This
   // prevents a later everyday request from indirectly uploading adult text.
-  if (allowedKojoFamilies().has(familyIdOf(input.commandNo))) {
-    useAiStore.getState().addCommandHistory(entry);
+  if (SAFE_HISTORY_FAMILIES.has(familyIdOf(input.commandNo))) {
+    useAiStore.getState().addInteractionHistory(entry);
   }
   return entry;
 }
@@ -92,6 +104,15 @@ export interface PrepareAiKojoInput {
   seed: number;
 }
 
+export interface PrepareAiDateInvitationInput {
+  target: number;
+  beforeState: Readonly<GameState>;
+  afterState: Readonly<GameState>;
+  events: readonly ObservationEvent[];
+  router: DialogueRouter;
+  seed: number;
+}
+
 export interface AiEligibility {
   eligible: boolean;
   reason: string;
@@ -104,6 +125,8 @@ export interface CollectAuthoredVoiceSamplesInput {
   target: number;
   seed: number;
   excludeCommandNo?: number;
+  /** Avoid relationship-gated player-facing samples for NPC-public prompts. */
+  publicOnly?: boolean;
 }
 
 function shuffled<T>(items: readonly T[], rng: ReturnType<typeof createRng>): T[] {
@@ -128,12 +151,14 @@ export function collectAuthoredVoiceSamples(
   input: CollectAuthoredVoiceSamplesInput,
 ): string[] {
   if (!input.router.collectDetailed) return [];
-  const relationshipFirst = hasRelationshipVoiceState(input.state, input.target);
+  const relationshipFirst = !input.publicOnly && hasRelationshipVoiceState(input.state, input.target);
   const rng = createRng(input.seed ^ (input.target * 0x9e3779b9));
   const primaryCommands = relationshipFirst
     ? RELATION_VOICE_SAMPLE_COMMANDS
     : GENERAL_VOICE_SAMPLE_COMMANDS;
-  const fallbackCommands = relationshipFirst
+  const fallbackCommands = input.publicOnly
+    ? []
+    : relationshipFirst
     ? GENERAL_VOICE_SAMPLE_COMMANDS
     : RELATION_VOICE_SAMPLE_COMMANDS;
   const commands = [...shuffled(primaryCommands, rng), ...shuffled(fallbackCommands, rng)];
@@ -262,6 +287,58 @@ export function prepareRealtimeAiKojo(input: PrepareAiKojoInput): PreparedAiKojo
   };
 }
 
+/** Presentation-only fallback for the NPC-initiated EVENT 27 opening arm.
+ * Only a genuinely absent route is eligible; gated, unsupported and authored
+ * empty branches retain the author's fail-closed decision. */
+export function prepareRealtimeAiDateInvitation(
+  input: PrepareAiDateInvitationInput,
+): PreparedAiKojoRequest | null {
+  const settings = currentAiSettings();
+  if (!settings.enabled || !settings.kojoEnabled || !settings.baseUrl.trim() || !settings.model.trim()) return null;
+  if (input.target <= 0 || !input.afterState.charas[input.target]) return null;
+  if (!currentAiCharacterProfile(input.target).enabled) return null;
+  const resolution = input.router.resolveEventKojoDetailed?.(
+    input.target,
+    27,
+    input.afterState,
+    createRng(input.seed),
+    [0, 0],
+  );
+  if (!resolution || resolution.status !== "not-authored") return null;
+
+  const requestId = nextId("ai-date-invitation");
+  const historyEntryId = nextId("history-date-invitation");
+  const commandNo = 19987;
+  const voiceSamples = collectAuthoredVoiceSamples({
+    router: input.router,
+    state: input.afterState,
+    target: input.target,
+    seed: input.seed,
+    publicOnly: true,
+  });
+  return {
+    requestId,
+    sessionId: `event:${requestId}`,
+    target: input.target,
+    commandNo,
+    routeStatus: "not-authored",
+    historyEntryId,
+    settings,
+    completion: buildAiKojoCompletion({
+      requestId,
+      historyEntryId,
+      target: input.target,
+      commandNo,
+      beforeState: input.beforeState,
+      afterState: input.afterState,
+      events: input.events,
+      settings,
+      routeStatus: "not-authored",
+      voiceSamples,
+    }),
+  };
+}
+
 export async function generateRealtimeAiKojo(
   prepared: PreparedAiKojoRequest,
   onPartialLines?: (lines: AiGeneratedLine[]) => void,
@@ -273,6 +350,7 @@ export async function generateRealtimeAiKojo(
   useAiStore.getState().addDebugEntry({
     requestId: prepared.requestId,
     createdAt: startedAt,
+    feature: "command-kojo",
     target: prepared.target,
     commandNo: prepared.commandNo,
     routeStatus: prepared.routeStatus,
@@ -288,8 +366,14 @@ export async function generateRealtimeAiKojo(
     });
     if (controller.signal.aborted) throw new Error("AI request cancelled");
     const lines = parseAiKojoResponse(raw);
+    const aiLines = lines.map((line) => line.text);
+    const historyEntry = useAiStore.getState().interactionHistory.find(
+      (entry): entry is AiCommandHistoryEntry =>
+        entry.id === prepared.historyEntryId && entry.source === "command",
+    );
     useAiStore.getState().patchCommandHistory(prepared.historyEntryId, {
-      aiLines: lines.map((line) => line.text),
+      aiLines,
+      visibleLines: historyEntry ? [...historyEntry.visibleEvents, ...aiLines] : aiLines,
     });
     useAiStore.getState().patchDebugEntry(prepared.requestId, {
       status: "success",

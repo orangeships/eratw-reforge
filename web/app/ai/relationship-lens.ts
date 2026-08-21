@@ -1,5 +1,6 @@
 import type { GameState } from "../../../modernization/runtime/state/index.js";
 import { deriveRelationshipAuthority } from "../../../modernization/runtime/state/attitude.js";
+import { getRebellionBrand } from "../../../modernization/runtime/state/named-stats.js";
 import {
   deriveDialogueRelationshipStage,
   type DialogueRelationshipStage,
@@ -8,7 +9,8 @@ import {
 type Warmth = "uninvested" | "positive" | "warm" | "important";
 type Openness = "guarded" | "reserved" | "trusting" | "open";
 type Ease = "formal" | "familiar" | "close" | "very-close";
-type Tension = "none" | "displeased" | "angry";
+type Tension = "none" | "displeased" | "angry" | "wary" | "rejecting" | "repulsed";
+type AversionTier = 0 | 1 | 2 | 3;
 
 export interface AiRelationshipLens {
   readonly stage: DialogueRelationshipStage;
@@ -16,6 +18,7 @@ export interface AiRelationshipLens {
   readonly openness: Openness;
   readonly ease: Ease;
   readonly tension: Tension;
+  readonly aversionTier: AversionTier;
   readonly lines: readonly string[];
 }
 
@@ -49,7 +52,10 @@ function easeOf(intimacy: number): Ease {
   return "very-close";
 }
 
-function tensionOf(angry: boolean, displeasure: number): Tension {
+function tensionOf(angry: boolean, displeasure: number, aversionTier: AversionTier): Tension {
+  if (aversionTier >= 3) return "repulsed";
+  if (aversionTier >= 2) return "rejecting";
+  if (aversionTier >= 1) return "wary";
   if (angry) return "angry";
   if (displeasure > 0) return "displeased";
   return "none";
@@ -99,6 +105,9 @@ const TENSION_LINES: Record<Tension, string> = {
   none: "当前摩擦：没有明确不满或愤怒；无需为了表现关系而制造情绪冲突。",
   displeased: "当前摩擦：她对主角有尚未消散的不快；允许语气更短、更有保留，但不抹除既有关系，也不强制争吵。",
   angry: "当前摩擦：她正处于明确愤怒中；允许带刺、拒绝延伸或保持距离，但愤怒不把既有关系重置成陌生人。",
+  wary: "当前摩擦：她带有一级反感刻印，对主角存在持续戒备和抵触；不要用好感或熟悉感把这种抵触写成普通亲近。",
+  rejecting: "当前摩擦：她带有二级反感刻印，对主角有明确的疏远和拒绝倾向；允许冷淡、缩短回应或拒绝继续互动。",
+  repulsed: "当前摩擦：她带有三级反感刻印，对主角有强烈且持续的反感；应优先表现厌恶、警惕、回避或拒绝，不得按温暖、信任或亲密关系描写。",
 };
 
 export function buildAiRelationshipLens(
@@ -109,16 +118,21 @@ export function buildAiRelationshipLens(
   if (!slot) return null;
   const relation = deriveRelationshipAuthority(slot, state.master, state);
   const stage = deriveDialogueRelationshipStage(slot);
-  const warmth = warmthOf(relation.favor);
-  const openness = opennessOf(relation.trust);
-  const ease = easeOf(relation.intimacy);
-  const tension = tensionOf(relation.angry, relation.displeasure);
+  const aversionTier = getRebellionBrand(slot.state).tier as AversionTier;
+  // 反感刻印 is persistent and mechanically penalises favor/trust upstream.
+  // It must therefore dominate the prose lens instead of letting high legacy
+  // favor/trust values produce a contradictory warm prompt.
+  const warmth = aversionTier > 0 ? "uninvested" : warmthOf(relation.favor);
+  const openness = aversionTier > 0 ? "guarded" : opennessOf(relation.trust);
+  const ease = aversionTier > 0 ? "formal" : easeOf(relation.intimacy);
+  const tension = tensionOf(relation.angry, relation.displeasure, aversionTier);
   return {
     stage,
     warmth,
     openness,
     ease,
     tension,
+    aversionTier,
     lines: [
       STAGE_LINES[stage][0],
       WARMTH_LINES[warmth],
@@ -163,6 +177,9 @@ const TENSION_NAMES: Record<Tension, string> = {
   none: "无明显摩擦",
   displeased: "仍有不快",
   angry: "明确愤怒",
+  wary: "一级持续反感",
+  rejecting: "二级明确排斥",
+  repulsed: "三级强烈反感",
 };
 
 export function describeAiRelationshipChange(

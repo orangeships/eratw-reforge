@@ -32,8 +32,13 @@ import {
   reprojectSchedules,
   resolveOutingEventSession,
   commitOutingChoiceResult,
+  dailyEventPromptView,
   type OutingChoiceValue,
   runNewGameInitialLevelSync,
+  listNewGameKojoUpdates,
+  resolveNewGameKojoUpdate,
+  type NewGameKojoUpdateCandidate,
+  type NewGameKojoUpdateResult,
   seedScheduledLocations,
   snapshotCharaStates,
   settleDanmakuBattleCore,
@@ -67,6 +72,10 @@ import { addItem } from "../../../modernization/runtime/state/items.js";
 import { hasPlace, PLACE_GARDEN } from "../../../modernization/runtime/world/place-flags.js";
 import { placeFlagsOf } from "../../../modernization/runtime/world/location-predicates.js";
 import { togglePortraitKind } from "../../../modernization/runtime/state/portrait-kind.js";
+import {
+  claimPantyCollectionBonus,
+  spendCollectionDuplicates,
+} from "../../../modernization/runtime/state/panty-collection.js";
 import { resetAllCommissions } from "../../../modernization/runtime/state/commission.js";
 import { resetAllClothes } from "../../../modernization/runtime/state/clothing-write.js";
 import { materializeCaughtBug, releaseCaughtBug } from "../../../modernization/runtime/state/bug-catching.js";
@@ -132,7 +141,7 @@ import {
 } from "../../../modernization/runtime/world/first-meeting.js";
 import { commandKojoEventsFromSession } from "../../../modernization/runtime/command/command-kojo.js";
 import { CONFIGURED_ROSTER_IDS } from "../../../modernization/runtime/world/configured-roster.js";
-import { setSlotLocation } from "../../../modernization/runtime/world/room-id-location.js";
+import { locationToRoomId, setSlotLocation } from "../../../modernization/runtime/world/room-id-location.js";
 import {
   DIALOGUE_SESSION_PRIORITY,
   advanceDialogueSession,
@@ -147,10 +156,13 @@ import {
   cancelAllRealtimeAiKojo,
   cancelRealtimeAiKojo,
   generateRealtimeAiKojo,
+  prepareRealtimeAiDateInvitation,
   prepareRealtimeAiKojo,
   recordAiCommand,
 } from "../ai/kojo-runtime.js";
 import { useAiStore } from "../ai/store.js";
+import { resetSceneAmbientRuntime } from "../ai/ambient-runtime.js";
+import { offeredDateInvitations } from "../../../modernization/runtime/world/date-appointments.js";
 
 /**
  * Phase 4D — GameState store.
@@ -347,6 +359,9 @@ export function buildInitialState(now: number = NOW(), draft?: NewGameDraft): Ga
   // Faithful to @NEWGAME:71-75 (各角色 初始位置 + TIME:3 = 420 +
   // SET_SLEEP(1,MASTER,0)). 起床时刻 = masterWakeMinute (7 点).
   setSlotLocation(state.master, state.homeLocation ?? DEFAULT_HAKUREI_HOME);
+  state.master.homeLocation = state.homeLocation ?? DEFAULT_HAKUREI_HOME;
+  state.master.state.CFLAG[CFLAG_ID.初期位置] =
+    state.master.state.CFLAG[CFLAG_ID.現在位置] ?? state.master.state.CFLAG[CFLAG_ID.初期位置];
   const wake = state.masterWakeMinute ?? 420;
   state.sleepSession = {
     startedAtTick: state.time.tickValue,
@@ -845,6 +860,8 @@ interface GameStateStore {
   resolveDailyEventPromptAction: (answer: boolean | PromptAnswer) => void;
   /** Resolve the persisted world-level `@MAKANAI` prompt. */
   resolveMobMealAction: (answer: boolean) => void;
+  /** Safely skip a malformed/obsolete daily-event prompt and continue sleep. */
+  recoverDailyEventSessionAction: () => void;
   /** Clear a legacy outing EV1 session without inventing a battle result. */
   resolveOutingEventAction: () => void;
   /** Commit the player's choice for a paused `outing-choice` session (P1-04). */
@@ -882,12 +899,25 @@ interface GameStateStore {
   /** Flip `FLAG:立絵種類` (立絵↔顔絵 global toggle, eraTW OPTION [3]). A pure
    *  preference write, not a settlement intent. */
   togglePortraitKindAction: () => void;
+  /** Flip FLAG:87, the original automatic PANTS_SUKIMA transfer mode. */
+  togglePantyGapAutoAction: () => void;
+  /** Claim one earned SHOP/BONUS2 panty collection milestone. */
+  claimPantyCollectionBonusAction: (id: number) => boolean;
+  /** SHOP [105] — sell duplicate permanent panties, retaining one of each. */
+  sellPantyDuplicatesAction: () => number;
   /** Update persisted Agent Runtime settings through the authoritative store. */
   updateAgentSettingsAction: (patch: Partial<AgentSettings>) => void;
   /** Build a fresh game state. With a `draft` (from the opening wizard,
    *  #13) it applies 称呼 / 性別 / 居住地 / 游戏模式; without one it uses the
    *  faithful NEWGAME defaults. */
   newGame: (draft?: NewGameDraft) => void;
+  /** Active selected character packs with an opening UPDATE_K body. */
+  listNewGameKojoUpdatesAction: () => NewGameKojoUpdateCandidate[];
+  /** Replay one UPDATE_K path; state commits only after a complete resolution. */
+  resolveNewGameKojoUpdateAction: (
+    charaNum: number,
+    choices?: readonly number[],
+  ) => NewGameKojoUpdateResult | null;
   /** Drop the in-memory state (e.g. user cleared their last project). */
   reset: () => void;
 
@@ -917,6 +947,7 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
   async load(projectRoot) {
     cancelAgentNightCycle();
     cancelAllRealtimeAiKojo();
+    resetSceneAmbientRuntime();
     cancelVmDialogueContinuations(get().dialogueQueue);
     useAiStore.getState().resetEphemeral();
     set({ loading: true, error: null });
@@ -963,6 +994,7 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
   async restore(projectRoot, slot = 1) {
     cancelAgentNightCycle();
     cancelAllRealtimeAiKojo();
+    resetSceneAmbientRuntime();
     cancelVmDialogueContinuations(get().dialogueQueue);
     useAiStore.getState().resetEphemeral();
     set({ loading: true, error: null });
@@ -1298,9 +1330,25 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
       }
     }
 
+    const previousOfferedIds = new Set(offeredDateInvitations(s).map((event) => event.id));
+    const newInvitation = offeredDateInvitations(next).find((event) => !previousOfferedIds.has(event.id));
+    const invitationHasAuthoredLine = newInvitation
+      ? result.appended.some((event) => event.kind === "DIALOGUE_LINE" && event.charaNum === newInvitation.partner)
+      : false;
+    const preparedInvitationAi = newInvitation && !invitationHasAuthoredLine && intentDeps.router
+      ? prepareRealtimeAiDateInvitation({
+          target: newInvitation.partner,
+          beforeState: s,
+          afterState: next,
+          events: result.appended,
+          router: intentDeps.router,
+          seed: newInvitation.seed,
+        })
+      : null;
     const preparedAi =
       intent.kind === "ISSUE_COMMAND" &&
       intent.commandNo !== 621 &&
+      !preparedInvitationAi &&
       aiHistoryEntry &&
       result.commandOutcome !== undefined
         ? prepareRealtimeAiKojo({
@@ -1338,8 +1386,18 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
             },
           ]
         : [];
+    const invitationAiRequest: DialogueEnqueueRequest[] = preparedInvitationAi
+      ? [{
+          id: preparedInvitationAi.sessionId,
+          owner: "event",
+          transcript: [],
+          aiRequestId: preparedInvitationAi.requestId,
+          aiCharaNum: preparedInvitationAi.target,
+        }]
+      : [];
     const dialoguePatch = enqueueDialogueRequestsPatch(get(), [
       ...normalCommandRequest,
+      ...invitationAiRequest,
       ...transitionRequests,
     ]);
     if (preparedAi) {
@@ -1418,6 +1476,45 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
             set(dialogueQueueMirrors(queue));
           }
           commitProjectedSettlement();
+        });
+    }
+    if (preparedInvitationAi) {
+      const replaceInvitationLines = (
+        lines: ReadonlyArray<{ text: string; form: "PRINTFORML" | "PRINTFORMDL" }>,
+        pending: boolean,
+      ): void => {
+        const ui = get();
+        const index = ui.dialogueQueue.findIndex(
+          (session) => session.id === preparedInvitationAi.sessionId &&
+            session.aiRequestId === preparedInvitationAi.requestId,
+        );
+        if (index === -1) return;
+        const transcript: ObservationEvent[] = lines.map((line) => ({
+          kind: "DIALOGUE_LINE" as const,
+          timestamp: NOW(),
+          charaNum: preparedInvitationAi.target,
+          text: line.text,
+          form: line.form,
+          origin: "ai" as const,
+        }));
+        const queue = ui.dialogueQueue.map((session, sessionIndex) =>
+          sessionIndex === index
+            ? { ...session, transcript, aiRequestId: pending ? preparedInvitationAi.requestId : undefined }
+            : session);
+        set(dialogueQueueMirrors(queue));
+      };
+      void generateRealtimeAiKojo(
+        preparedInvitationAi,
+        (partialLines) => replaceInvitationLines(partialLines, true),
+      )
+        .then((lines) => replaceInvitationLines(lines, false))
+        .catch(() => {
+          // EVENT 27 fallback is presentation-only. On any provider or strict
+          // validation failure, silently remove it and leave the invitation
+          // card plus deterministic world event intact.
+          const ui = get();
+          const queue = ui.dialogueQueue.filter((session) => session.id !== preparedInvitationAi.sessionId);
+          set(dialogueQueueMirrors(queue));
         });
     }
   },
@@ -2428,13 +2525,19 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
       }
       currentRuntime.acceptedDecisions = structuredClone(snapshotRuntime.acceptedDecisions);
       currentRuntime.decisionSeq = snapshotRuntime.decisionSeq;
-      const log = [...s.state.eventLog];
+      const nightReport = [...(s.state.nightReport ?? [])];
       for (const result of allResults) {
         for (const e of result.events) {
-          log.push({ kind: e.kind, text: e.text, timestamp: NOW(), charaNum: e.charaNum } as typeof log[number]);
+          if (e.kind !== "NARRATION" && e.kind !== "DIALOGUE_LINE") continue;
+          nightReport.push({
+            kind: e.kind,
+            text: e.text,
+            timestamp: NOW(),
+            charaNum: e.charaNum,
+          } as typeof nightReport[number]);
         }
       }
-      committed.eventLog = log;
+      committed.nightReport = nightReport;
       set({ state: committed });
     }).catch(() => {
       // Agent failures are silent during night settlement.
@@ -2548,9 +2651,33 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
     get().finishSleepAction(answer);
   },
 
+  recoverDailyEventSessionAction() {
+    const state = get().state;
+    if (!state?.dailyEventSession) return;
+    if (dailyEventPromptView(state, state.dailyEventSession)) return;
+    // Only use this path when the persisted phase cannot render. Mark the
+    // target post-sleep day as already handled so retrying the sleep session
+    // cannot roll a different night event behind the player's back.
+    const next = cloneGameState(state);
+    next.dailyEventLastRunDay = Math.max(
+      next.dailyEventLastRunDay ?? Number.MIN_SAFE_INTEGER,
+      next.time.dayIndex + 1,
+    );
+    next.dailyEventSession = null;
+    next.eventLog = [
+      ...next.eventLog,
+      { kind: "NARRATION", timestamp: NOW(), text: "夜间事件无法恢复，已安全跳过。" },
+    ];
+    set({ state: next, error: "daily event session recovered without effects" });
+    get().finishSleepAction();
+  },
+
   openEyesAction() {
     const s = get().state;
     if (s === null) return;
+    // The night agent pass is disposable background work. Waking up closes
+    // its observation window, so abort it before starting the new morning.
+    cancelAgentNightCycle();
     // Night settlement dialogue belongs to the night report. Do not let a
     // queued EVENT/DAYEVENT session reappear over the next day's first command.
     // New morning encounter dialogue is enqueued below after this boundary.
@@ -2584,6 +2711,7 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
       if (!pendingDayEventKojo.current) pendingDayEventKojo.current = session;
     });
     const events = openEyes(next, { now: NOW, rng, router: openEyesRouter });
+    const morningDialogue = events.filter((event) => event.kind === "DIALOGUE_LINE");
     let logEvents = [...next.eventLog, ...events];
 
     const capturedDayEventKojo = pendingDayEventKojo.current;
@@ -2673,7 +2801,10 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
           );
           set({
             state: { ...next, eventLog: logEvents },
-            ...enqueueDialoguePatch(get(), "encounter", popup, pendingChoice),
+            ...enqueueDialogueRequestsPatch(get(), [
+              { owner: "event", transcript: morningDialogue },
+              { owner: "encounter", transcript: popup, choice: pendingChoice },
+            ]),
             error: null,
           });
           return;
@@ -2681,7 +2812,11 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
       }
     }
 
-    set({ state: { ...next, eventLog: logEvents }, error: null });
+    set({
+      state: { ...next, eventLog: logEvents },
+      ...enqueueDialoguePatch(get(), "event", morningDialogue, null),
+      error: null,
+    });
   },
 
   buyCatalogItemAction(itemId, qty = 1) {
@@ -2746,10 +2881,13 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
     if (s === null) return;
     const next = cloneGameState(s);
     next.homeLocation = homeLocation;
+    next.master.homeLocation = homeLocation;
+    const homeRoomId = locationToRoomId(homeLocation);
+    if (homeRoomId !== null) next.master.state.CFLAG[CFLAG_ID.初期位置] = homeRoomId;
     // 搬家 while still asleep (起床前菜单): move the sleeping master to the new
     // 私室 so [当前位置] / 睁眼 落点 stay consistent.
     if (next.sleepSession) {
-    setSlotLocation(next.master, homeLocation);
+      setSlotLocation(next.master, homeLocation);
     }
     const event: ObservationEvent = {
       kind: "NARRATION",
@@ -2831,6 +2969,43 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
     set({ state: next, error: null });
   },
 
+  togglePantyGapAutoAction() {
+    const s = get().state;
+    if (s === null) return;
+    const next = cloneGameState(s);
+    next.flagStore[FLAG_ID.C隙間自動仕様] =
+      (next.flagStore[FLAG_ID.C隙間自動仕様] ?? 0) === 0 ? 1 : 0;
+    set({ state: next, error: null });
+  },
+
+  claimPantyCollectionBonusAction(id) {
+    const state = get().state;
+    if (!state) return false;
+    const next = cloneGameState(state);
+    const result = claimPantyCollectionBonus(next, id);
+    if (!result.ok) return false;
+    next.eventLog = [
+      ...next.eventLog,
+      ...result.lines.map((text) => ({ kind: "NARRATION" as const, timestamp: NOW(), text })),
+    ];
+    set({ state: next, error: null });
+    return true;
+  },
+
+  sellPantyDuplicatesAction() {
+    const state = get().state;
+    if (!state) return 0;
+    const next = cloneGameState(state);
+    const sold = spendCollectionDuplicates(next);
+    if (sold <= 0) return 0;
+    next.eventLog = [
+      ...next.eventLog,
+      { kind: "NARRATION" as const, timestamp: NOW(), text: `卖出了${sold}条重复胖次，获得￥${sold * 100}。` },
+    ];
+    set({ state: next, error: null });
+    return sold;
+  },
+
   updateAgentSettingsAction(patch) {
     const state = get().state;
     if (!state) return;
@@ -2861,6 +3036,7 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
   newGame(draft) {
     cancelAgentNightCycle();
     cancelAllRealtimeAiKojo();
+    resetSceneAmbientRuntime();
     cancelVmDialogueContinuations(get().dialogueQueue);
     useAiStore.getState().resetEphemeral();
     set({
@@ -2875,9 +3051,29 @@ export const useGameStateStore = create<GameStateStore>((set, get) => ({
     });
   },
 
+  listNewGameKojoUpdatesAction() {
+    const state = get().state;
+    if (!state) return [];
+    return listNewGameKojoUpdates(state, currentIntentDeps().router);
+  },
+
+  resolveNewGameKojoUpdateAction(charaNum, choices = []) {
+    const state = get().state;
+    if (!state) return null;
+    const result = resolveNewGameKojoUpdate(
+      state,
+      currentIntentDeps().router,
+      charaNum,
+      choices,
+    );
+    if (result.state !== state) set({ state: result.state, error: null });
+    return result;
+  },
+
   reset() {
     cancelAgentNightCycle();
     cancelAllRealtimeAiKojo();
+    resetSceneAmbientRuntime();
     cancelVmDialogueContinuations(get().dialogueQueue);
     useAiStore.getState().resetEphemeral();
     set({

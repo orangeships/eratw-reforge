@@ -309,6 +309,22 @@ function applyIntentCore(
       };
     }
     case "ISSUE_COMMAND": {
+      if (
+        state.training &&
+        (intent.commandNo >= 10000 || intent.commandNo === 400 || intent.commandNo === 405 || intent.commandNo === 604)
+      ) {
+        const message = "调教中不能移动。请先结束调教。";
+        const blocked: StatusMessage = {
+          kind: "STATUS_MESSAGE",
+          timestamp: ts,
+          source: "validator",
+          text: message,
+        };
+        return appendAndReturn(state, [blocked], {
+          ok: false,
+          reason: message,
+        });
+      }
       const evt: ObservationEvent = {
         kind: "COMMAND_ISSUED",
         timestamp: ts,

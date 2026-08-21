@@ -43,11 +43,77 @@
  */
 
 import type { CommandContext, HandlerEntry } from "../types.js";
+import type { GameState } from "../../state/game-state.js";
 import { cloneGameState } from "../../state/game-state.js";
 import { applyKojoEffects } from "../../kojo/effects.js";
 import { CFLAG_ID, FLAG_ID } from "../../state/settlement.js";
 import type { ObservationEvent } from "../../../schemas/types.js";
 import { TFLAG_ID, setTflag } from "../../state/tflag.js";
+
+function releasePantyReactions(ctx: CommandContext, state: GameState): ObservationEvent[] {
+  const events: ObservationEvent[] = [];
+  for (const slot of Object.values(state.charas)) {
+    if (slot.location !== state.master.location) continue;
+    if ((slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) continue;
+    if ((slot.state.CFLAG[CFLAG_ID.没穿内裤] ?? 0) !== 1) continue;
+
+    const name = slot.callName ?? `#${slot.charaNum}`;
+    events.push({
+      kind: "NARRATION",
+      timestamp: ctx.now(),
+      charaNum: slot.charaNum,
+      text: `【不寻常的开放感】${name}不知什么时候内裤被脱掉了，一幅坐立不安的样子。`,
+    });
+
+    if (ctx.dialogueRouter) {
+      const detailed = ctx.dialogueRouter.resolveEventKojoDetailed?.(
+        slot.charaNum,
+        17,
+        state,
+        ctx.rng,
+        [3, 0],
+      );
+      if (detailed) {
+        const safe = detailed.status === "resolved" &&
+          detailed.unsupportedPredicates.length === 0 &&
+          detailed.unsupportedEffects.length === 0;
+        if (safe && detailed.effects.length > 0) Object.assign(state, applyKojoEffects(state, detailed.effects));
+        if (safe) {
+          for (const line of detailed.lines) {
+            events.push({
+              kind: "DIALOGUE_LINE",
+              timestamp: ctx.now(),
+              charaNum: slot.charaNum,
+              text: line.text,
+              form: line.form,
+            });
+          }
+        }
+      } else {
+        for (const line of ctx.dialogueRouter.resolveEventKojo(slot.charaNum, 17, state, ctx.rng, [3, 0])) {
+          events.push({
+            kind: "DIALOGUE_LINE",
+            timestamp: ctx.now(),
+            charaNum: slot.charaNum,
+            text: line.text,
+            form: line.form,
+          });
+        }
+      }
+    }
+
+    // The upstream tail consumes this one-shot notice. The richer SOURCE
+    // relationship settlement is not yet modeled, but retaining the latch
+    // keeps a release from replaying it on a later turn.
+    const current = state.charas[slot.charaNum] ?? slot;
+    if ((current.state.CFLAG[CFLAG_ID.時間停止バレ] ?? 0) !== 0 &&
+        (current.state.CFLAG[CFLAG_ID.ただならぬ開放感ソース追加] ?? 0) === 0) {
+      current.state.CFLAG[CFLAG_ID.ただならぬ開放感ソース追加] = 1;
+    }
+    current.state.CFLAG[CFLAG_ID.没穿内裤] = 3;
+  }
+  return events;
+}
 
 // ---------------------------------------------------------------------------
 // COMF201 — disabled stub (RETURN 0)
@@ -63,11 +129,11 @@ export const comf201HandlerEntry: HandlerEntry = {
         {
           kind: "NARRATION" as const,
           timestamp: ctx.now(),
-          text: "（このコマンドは無効です）",
+          text: "（该指令无效）",
         },
       ],
       outcome: "blocked" as const,
-      failReason: { kind: "precondition", message: "COMF201 は無効化されたコマンドです。" },
+      failReason: { kind: "precondition", message: "COMF201 是已停用的指令。" },
     };
   },
 };
@@ -80,6 +146,14 @@ export const comf999HandlerEntry: HandlerEntry = {
   commandNo: 999,
   handler: (ctx: CommandContext) => {
     let next = cloneGameState(ctx.state);
+
+    if (next.training?.target === ctx.target) {
+      return {
+        state: next,
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "结束了这次幽会。" }],
+        outcome: "ok" as const,
+      };
+    }
 
     // P-16: 999 is the time-stop RELEASE command (USERCOM.ERB:535 intercept
     // `RESULT == 999 && FLAG:70 == 1 && !CFLAG:诶嘿嘿`). When time-stop is
@@ -96,11 +170,13 @@ export const comf999HandlerEntry: HandlerEntry = {
         const slot = next.charas[Number(key)];
         if (slot) slot.state.CFLAG[CFLAG_ID.時間停止行動] = 0;
       }
+      const reactionEvents = releasePantyReactions(ctx, next);
       // The 無自覚絶頂/射精/服装/口上 settlement (EX/TEQUIP) is deferred. No
       // clock advance — time was frozen.
       return {
         state: next,
         events: [
+          ...reactionEvents,
           {
             kind: "NARRATION" as const,
             timestamp: ctx.now(),
@@ -118,7 +194,7 @@ export const comf999HandlerEntry: HandlerEntry = {
         {
           kind: "NARRATION" as const,
           timestamp: ctx.now(),
-          text: "（ダミーコマンド）",
+          text: "（占位指令）",
         },
       ],
       outcome: "noop" as const,
@@ -151,7 +227,7 @@ export const comf270HandlerEntry: HandlerEntry = {
       events.push({
         kind: "NARRATION" as const,
         timestamp: ctx.now(),
-        text: "（口上ディスパッチ）",
+        text: "（口上分派）",
       });
     }
     return { state: next, events, outcome: "ok" as const, kojoHandled: true };

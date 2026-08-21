@@ -11,18 +11,17 @@
  * 追踪(STALKER) / 采集·钓鱼·能力·出现列表 — those either need unmodeled systems
  * or overlap the existing character-info / map / gathering UI panels.
  *
- * Faithful gate (@COM_ABLE422 + @天之声可): !FLAG:70, 诶嘿嘿!=2, and the room
- * carries 場所_天之声 (PLACE_SKY) — 賽銭箱 / 龍神像 / 本堂 etc. (祭壇 item at the
- * own room, upstream's other 天之声可 branch, is deferred — ITEM 祭壇 not
- * modeled.) Info branches consume no turn (upstream RETURN -1 for the locators).
+ * Faithful gate (@COM_ABLE422 + @天之声可): !FLAG:70, 诶嘿嘿!=2, and either a
+ * room carrying 場所_天之声 (PLACE_SKY) or the player's own room after the
+ * panty BONUS2 altar reward. Info branches consume no turn (upstream RETURN -1
+ * for the locators).
  */
 import type { HandlerEntry } from "../types.js";
 import type { GameState } from "../../state/game-state.js";
 import { cloneGameState } from "../../state/game-state.js";
 import { CFLAG_ID, FLAG_ID } from "../../state/settlement.js";
 import { pickOne, requirePickOne, type PromptSpec } from "../prompt.js";
-import { placeFlagsOf, mapKeyOf } from "../../world/location-predicates.js";
-import { hasPlace, PLACE_SKY } from "../../world/place-flags.js";
+import { canHearHeaven, mapKeyOf } from "../../world/location-predicates.js";
 import { findPeopleLines, cleanlinessLines } from "./rukoto-420.js";
 
 function menuPrompt(): PromptSpec {
@@ -64,10 +63,10 @@ export const tennokoe422HandlerEntry: HandlerEntry = {
       return { ok: false, reason: { kind: "precondition", message: "时间停止中，听不到天之声。" } };
     if ((ctx.state.master.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) === 2)
       return { ok: false, reason: { kind: "precondition", message: "现在没有心思倾听。" } };
-    if (!hasPlace(placeFlagsOf(ctx.state.master.location), PLACE_SKY))
+    if (!canHearHeaven(ctx.state))
       return {
         ok: false,
-        reason: { kind: "precondition", message: "这里听不到天之声（需在能通天的地方，如本堂/赛钱箱/龙神像）。" },
+        reason: { kind: "precondition", message: "这里听不到天之声（需在能通天的地方，或拥有祭坛时回到自室）。" },
       };
     return { ok: true };
   },

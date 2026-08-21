@@ -345,14 +345,17 @@ export const cleaningHandlerEntry: HandlerEntry = {
         : severityBefore >= 1
           ? "把房间"
           : "把略显凌乱的房间";
-    const joinText = helperJoined ? "和帮手一起" : "";
+    const joinText = helperJoined ? "和%CALLNAME:TARGET%一起" : "";
     return {
       state: next,
       events: [
         {
           kind: "NARRATION" as const,
           timestamp: ctx.now(),
-          text: `%CALLNAME:MASTER% ${joinText}${tone}打扫了一番，清理掉了 ${removed} 点污渍。`,
+          // Upstream keeps SWEEP_YOGORE as settlement data and does not print
+          // the raw amount. Keep the modern connective narration natural and
+          // identify the actual joined target instead of a generic placeholder.
+          text: `%CALLNAME:MASTER%${joinText}${tone}打扫了一番。`,
         },
         ...sourceEvents,
       ],

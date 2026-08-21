@@ -62,7 +62,7 @@ function timeInRange(tickValue: number, lo: number, hi: number): boolean {
 
 const LOC_DEFER = (spot: string): Blocked => ({
   ok: false,
-  reason: { kind: "precondition", message: `${spot} は未実装の地図（赌场/积石场地未导入）。` },
+  reason: { kind: "precondition", message: `${spot}对应的地图尚未实现（赌场／积石场地未导入）。` },
 });
 
 // ---------------------------------------------------------------------------
@@ -73,7 +73,7 @@ export const comf631HandlerEntry: HandlerEntry = {
   commandNo: 631,
   execCheck: (ctx) => {
     if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0)
-      return { ok: false, reason: { kind: "precondition", message: "時間停止中はできない。" } };
+      return { ok: false, reason: { kind: "precondition", message: "时间停止期间无法执行。" } };
     // CASINO_SPOT(309 红魔館 大廳) — location not built.
     return LOC_DEFER("紅魔館 大廳");
   },
@@ -85,7 +85,7 @@ export const comf631HandlerEntry: HandlerEntry = {
     return {
       state: next,
       events: [
-        { kind: "NARRATION", timestamp: ctx.now(), text: "%CALLNAME:MASTER%は紅魔CASINOへ足を運んだ（カジノ本体は未実装）。" },
+        { kind: "NARRATION", timestamp: ctx.now(), text: "%CALLNAME:MASTER%来到了红魔赌场（赌场主体尚未实现）。" },
       ],
       outcome: "ok",
     };
@@ -100,16 +100,16 @@ export const comf632HandlerEntry: HandlerEntry = {
   commandNo: 632,
   execCheck: (ctx) => {
     if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0)
-      return { ok: false, reason: { kind: "precondition", message: "時間停止中はできない。" } };
+      return { ok: false, reason: { kind: "precondition", message: "时间停止期间无法执行。" } };
     const m = ctx.state.master;
     if ((m.state.CFLAG[CFLAG_ID.行动] ?? 0) === 5)
-      return { ok: false, reason: { kind: "precondition", message: "仕事中はできない。" } };
+      return { ok: false, reason: { kind: "precondition", message: "工作期间无法执行。" } };
     if ((m.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) === 2)
-      return { ok: false, reason: { kind: "precondition", message: "诶嘿嘿中はできない。" } };
+      return { ok: false, reason: { kind: "precondition", message: "诶嘿嘿模式中无法执行。" } };
     if ((m.state.BASE[BASE_ID.気力] ?? 0) <= 0)
-      return { ok: false, reason: { kind: "precondition", message: "気力が足りない。" } };
+      return { ok: false, reason: { kind: "precondition", message: "精力不足。" } };
     // 戦闘訓練可(現在位置) — training-allowed spot not built.
-    return LOC_DEFER("戦闘訓練可スポット");
+    return LOC_DEFER("可进行战斗训练的地点");
   },
   handler: (ctx) => {
     const next = cloneGameState(ctx.state);
@@ -118,7 +118,7 @@ export const comf632HandlerEntry: HandlerEntry = {
     return {
       state: next,
       events: [
-        { kind: "NARRATION", timestamp: ctx.now(), text: "戦闘体験版（BATTLE_SYSTEM は未実装）。" },
+        { kind: "NARRATION", timestamp: ctx.now(), text: "战斗体验版（战斗系统尚未实现）。" },
       ],
       outcome: "ok",
     };
@@ -178,7 +178,7 @@ export const comf634HandlerEntry: HandlerEntry = {
   commandNo: 634,
   execCheck: (ctx) => {
     if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0)
-      return { ok: false, reason: { kind: "precondition", message: "時間停止中はできない。" } };
+      return { ok: false, reason: { kind: "precondition", message: "时间停止期间无法执行。" } };
     // TOBA_PLACE(739 秘天崖) — location not built.
     return LOC_DEFER("秘天崖");
   },
@@ -189,7 +189,7 @@ export const comf634HandlerEntry: HandlerEntry = {
     return {
       state: next,
       events: [
-        { kind: "NARRATION", timestamp: ctx.now(), text: "%CALLNAME:MASTER%は賭場に足を踏み入れた（賭場本体は未実装）。" },
+        { kind: "NARRATION", timestamp: ctx.now(), text: "%CALLNAME:MASTER%走进了赌坊（赌坊主体尚未实现）。" },
       ],
       outcome: "ok",
     };

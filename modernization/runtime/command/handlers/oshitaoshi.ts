@@ -148,7 +148,7 @@ function checkOshitaoshiEligible(
   // Target must be present (5A resolver contract — `ctx.target` defaults to
   // the actor when no explicit target is given).
   if (ctx.target <= 0) {
-    return { ok: false, reason: { kind: "precondition", message: "押し倒す需要目标角色在场。" } };
+    return { ok: false, reason: { kind: "precondition", message: "推倒需要目标角色在场。" } };
   }
   const targetSlot = ctx.state.charas[ctx.target];
   if (!targetSlot) {
@@ -227,7 +227,7 @@ export const oshitaoshiHandlerEntry: HandlerEntry = {
           kojoHandled: true,
           failReason: {
             kind: "precondition",
-            message: `尚未取得合意（合意判定 ${goodwill} < 抱き寄せ必要值 ${resistance}）`,
+            message: `尚未取得同意（同意判定 ${goodwill} < 搂抱所需值 ${resistance}）`,
           },
         };
       }

@@ -179,7 +179,7 @@ function com351Condition(
 
 function check351(ctx: CommandContext): Precond {
   if (ctx.target <= 0 || !targetSlot(ctx)) {
-    return { ok: false, reason: { kind: "precondition", message: "連れ出す需要目标角色在场。" } };
+    return { ok: false, reason: { kind: "precondition", message: "带出去需要目标角色在场。" } };
   }
   // @COM_ABLE351 top-level arms (ERB 243-285). Subsystem-dependent arms
   // (TFLAG:100 帯出去実行判定, GLOBAL_COMABLE, 外出时可以带出去+大地图,
@@ -193,7 +193,7 @@ function check351(ctx: CommandContext): Precond {
   }
   const t = targetSlot(ctx)!;
   if ((t.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "うふふ中。" } };
+    return { ok: false, reason: { kind: "precondition", message: "正在诶嘿嘿模式中。" } };
   }
   if ((ctx.state.master.state.CFLAG[CFLAG_ID.约会中] ?? 0) !== 0) {
     return { ok: false, reason: { kind: "precondition", message: "约会中。" } };
@@ -207,6 +207,12 @@ function check351(ctx: CommandContext): Precond {
 
 export const comf351HandlerEntry: HandlerEntry = {
   commandNo: 351,
+  displayCheck: (ctx) => ({
+    shown: true,
+    labelOverride: (targetSlot(ctx)?.state.CFLAG[CFLAG_ID.同行] ?? 0) !== 0
+      ? "解除同行"
+      : "带出去",
+  }),
   execCheck: (ctx) => {
     const r = check351(ctx);
     return r.ok ? { ok: true } : { ok: false, reason: r.reason };
@@ -289,7 +295,7 @@ export const comf354HandlerEntry: HandlerEntry = {
     const t = targetSlot(ctx);
     if (!t) return { ok: false, reason: { kind: "precondition", message: "需要目标角色在场。" } };
     if ((t.state.CFLAG[CFLAG_ID.睡眠] ?? 0) === 0)
-      return { ok: false, reason: { kind: "precondition", message: "添い寝需要目标睡着。" } };
+      return { ok: false, reason: { kind: "precondition", message: "陪睡需要目标已经睡着。" } };
     if (!hConsentAcquired(t))
       return { ok: false, reason: { kind: "precondition", message: "未取得寝室许可（合意）。" } };
     if (t.location !== ctx.state.master.location)
@@ -506,7 +512,7 @@ export const comf357HandlerEntry: HandlerEntry = {
       state: cloneGameState(ctx.state),
       events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（炮友契约的理性/欲望判定尚未建模。）" }],
       outcome: "blocked",
-      failReason: { kind: "precondition", message: "セフレ契約 reasonwall + ASK_YN deferred (理性/MARK/酒気 economy)" },
+      failReason: { kind: "precondition", message: "炮友契约的理性／刻印／酒意判定与确认流程尚未实现" },
     };
   },
 };
@@ -555,7 +561,7 @@ const comf360Check: ExecCheck = (ctx) => {
   // ERB 61: not おねだり (Counter行動 in 40..49).
   const counter = t.state.TCVAR[TCVAR_ID.Counter行動] ?? 0;
   if (counter >= 40 && counter <= 49)
-    return { ok: false, reason: { kind: "precondition", message: "おねだり中无法任凭摆布。" } };
+    return { ok: false, reason: { kind: "precondition", message: "对方正在央求时无法任其摆布。" } };
   return { ok: true };
 };
 

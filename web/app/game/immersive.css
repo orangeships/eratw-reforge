@@ -40,6 +40,12 @@
   backdrop-filter: none;
 }
 
+.game-client--immersive .scene-view__initiative {
+  right: 12px;
+  bottom: min(36%, 244px);
+  width: min(36%, 350px);
+}
+
 .immersive-hud {
   display: flex;
   align-items: center;
@@ -373,5 +379,315 @@
     width: min(45%, 190px);
     height: min(30%, 132px);
     padding: 7px 8px;
+  }
+
+  .game-client--immersive .scene-view__initiative {
+    right: 7px;
+    bottom: min(34%, 148px);
+    width: min(72%, 280px);
+  }
+}
+
+/* Three-column text-game surface. Legacy ImmersiveHud/ImmersiveActionDock
+   styles above remain for compatibility, but the default immersive shell no
+   longer renders those components. */
+.game-client__scene-slot {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.game-client__scene-slot > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.game-client--immersive {
+  gap: 5px;
+  color: #d5d5d5;
+  background: #090909;
+}
+
+.game-client--immersive .game-client__top {
+  padding: 6px 8px 0;
+}
+
+.game-client--immersive .game-client__top .status-bar {
+  border-color: #363636;
+  border-radius: 0;
+  background: #0d0d0e;
+  box-shadow: none;
+}
+
+.game-client--immersive .game-client__middle {
+  display: grid;
+  grid-template-columns: 286px minmax(510px, 1fr) 300px;
+  gap: 6px;
+  min-height: 0;
+  padding: 0 8px;
+  overflow: hidden;
+}
+
+.game-client--immersive .game-client__scene-slot {
+  overflow: hidden;
+  border: 1px solid #343434;
+  background: #050505;
+}
+
+.text-game-info,
+.text-game-right,
+.text-game-ambient,
+.text-game-history-panel {
+  min-width: 0;
+  border: 1px solid #343434;
+  border-radius: 0;
+  background: #101011;
+}
+
+.text-game-info {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  font-family: var(--era-mono);
+  font-size: 13px;
+}
+
+.text-game-info__section {
+  padding: 8px 9px 10px;
+  border-bottom: 1px solid #303030;
+}
+
+.text-game-info__section:last-child {
+  border-bottom: 0;
+}
+
+.text-game-info__heading,
+.text-game-panel__heading {
+  margin: 0 0 7px;
+  color: #c8c8c8;
+  font-family: var(--era-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.text-game-info__empty,
+.text-game-panel__empty {
+  margin: 0;
+  color: #767676;
+  font-size: 13px;
+}
+
+.text-game-info .status-bar__workline,
+.text-game-info .status-bar__bars,
+.text-game-info .status-bar__relation,
+.text-game-info .status-bar__hbody,
+.text-game-info .status-bar__situation {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.text-game-info .status-bar__workline {
+  align-items: start;
+}
+
+.text-game-info .status-bar__work-target {
+  overflow-wrap: anywhere;
+  color: #e7c978;
+  font-size: 14px;
+}
+
+.text-game-info .status-bar__work-active {
+  color: #7fc993;
+}
+
+.text-game-info .status-bar__who {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #e7c978;
+}
+
+.text-game-info .bar {
+  display: grid;
+  grid-template-columns: 2.8em minmax(52px, 1fr) auto;
+  gap: 4px;
+}
+
+.text-game-info .bar__track {
+  width: auto;
+}
+
+.text-game-info .bar__num {
+  min-width: 0;
+  font-size: 11px;
+}
+
+.text-game-info .status-bar__relation,
+.text-game-info .status-bar__hbody,
+.text-game-info .status-bar__situation,
+.text-game-info .status-bar__sleepiness,
+.text-game-info .status-bar__fortune,
+.text-game-info .status-bar__alcohol-state {
+  margin-top: 6px;
+}
+
+.text-game-info .status-bar__palam {
+  margin: 0;
+}
+
+.text-game-info .status-bar__palam-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: #c7d5e6;
+  background: transparent;
+  font: inherit;
+  letter-spacing: 1px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.text-game-info .status-bar__palam-toggle:hover {
+  color: #8effa0;
+}
+
+.text-game-info .status-bar__palam-head {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.text-game-info .status-bar__ability-btn {
+  align-self: stretch;
+  border-radius: 0;
+}
+
+.text-game-info .status-bar__palam-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  margin-top: 7px;
+}
+
+.text-game-info .status-bar__palam-item {
+  grid-template-columns: 3.4em 1.2em minmax(20px, 1fr) 3.6em;
+}
+
+.text-game-right {
+  display: grid;
+  grid-template-rows: minmax(128px, 0.62fr) minmax(180px, 1fr);
+  gap: 6px;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+}
+
+.text-game-ambient,
+.text-game-history-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 9px 10px;
+  overflow: hidden;
+}
+
+.text-game-ambient__lines,
+.text-game-history {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.text-game-ambient__line,
+.text-game-history .scene-view__line {
+  margin: 0 0 6px;
+  font-family: var(--era-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.text-game-ambient__line--action {
+  color: #a7a7a7;
+}
+
+.text-game-ambient__speaker {
+  font-weight: 700;
+}
+
+.text-game-ambient__streaming {
+  color: #d1b868;
+  font-size: 12px;
+}
+
+.game-client--immersive .game-client__bottom,
+.game-client--immersive .excom-row {
+  border-color: #343434;
+  border-radius: 0;
+  background: #0f0f10;
+  box-shadow: none;
+}
+
+.game-client--immersive .game-client__bottom {
+  order: 1;
+  max-height: 210px;
+  padding: 7px 8px;
+  overflow: auto;
+}
+
+.game-client--immersive .excom-row {
+  order: 2;
+  max-height: 130px;
+  overflow: auto;
+}
+
+@media (max-width: 1080px) {
+  .game-client--immersive {
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .game-client--immersive .game-client__middle {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .game-client--immersive .game-client__scene-slot {
+    min-height: 520px;
+  }
+
+  .text-game-info {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .text-game-right {
+    grid-template-rows: minmax(140px, auto) minmax(240px, auto);
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 720px) {
+  .game-client--immersive .game-client__top,
+  .game-client--immersive .game-client__middle {
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+
+  .game-client--immersive .game-client__scene-slot {
+    min-height: 430px;
+  }
+
+  .text-game-info__section,
+  .text-game-ambient,
+  .text-game-history-panel {
+    padding: 7px;
   }
 }

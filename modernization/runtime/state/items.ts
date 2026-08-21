@@ -85,6 +85,10 @@ export const ITEM_ID = {
   青蛙: 706,
   運動飲料: 251,
   睡眠薬: 252,
+  /** Portable collection gap; upstream ITEM:收藏隙間 = 400. */
+  收藏隙間: 400,
+  /** Shrine altar; awarded by the third panty-collection milestone. */
+  祭壇: 900,
 } as const;
 
 /**

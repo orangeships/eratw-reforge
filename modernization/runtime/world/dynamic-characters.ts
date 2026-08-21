@@ -8,6 +8,7 @@ import {
 import { createRng } from "../command/rng.js";
 import { ABL_ID, BASE_ID, CFLAG_ID, TALENT_ID } from "../state/settlement.js";
 import { mapKeyOf } from "./location-predicates.js";
+import { locationToRoomId } from "./room-id-location.js";
 import { isTimeStopped } from "../command/h-mode.js";
 import { generateMobPortrait } from "./dynamic-portraits.js";
 
@@ -18,6 +19,10 @@ export const STONE_CONTEST_CLERK_HOME = "彼岸:賽の河原";
 export const RINNOSUKE_ROLE = "kourindou-shopkeeper";
 export const RINNOSUKE_HOME = "魔法之森:香霖堂";
 export const ARCHIVED_DYNAMIC_LOCATION = "隙間:路人档案";
+
+/** Exact `@CAN_NANPA` room ids from COMF444. A whole map is not eligible:
+ * private homes such as 大妖精の家 and 稗田邸 share a map with public rooms. */
+const MOB_GIRL_SEARCH_ROOM_IDS = new Set([202, 438, 309, 415, 416, 431, 434, 927, 928, 601, 704, 806]);
 
 interface AuthoredResidentDefinition {
   readonly role: string;
@@ -60,6 +65,8 @@ export function mobGirlSpeciesForLocation(location: string): readonly string[] {
 export function canSearchMobGirls(state: Readonly<GameState>): boolean {
   const minute = ((state.time.tickValue % 1440) + 1440) % 1440;
   if (minute < 540 || minute > 1140) return false;
+  const roomId = locationToRoomId(state.master.location);
+  if (roomId === null || !MOB_GIRL_SEARCH_ROOM_IDS.has(roomId)) return false;
   if (mobGirlSpeciesForLocation(state.master.location).length === 0) return false;
   return !Object.entries(state.dynamicCharacters ?? {}).some(([id, meta]) =>
     meta.origin === "generated" && meta.active && state.charas[Number(id)] !== undefined,

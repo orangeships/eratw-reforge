@@ -101,6 +101,21 @@ export interface LegacyProgressImportResult extends LegacyRelationshipImportResu
   };
 }
 
+export interface ModernSaveSummary {
+  day: number;
+  place: string;
+  name: string;
+}
+
+/** Build the title-screen summary after a legacy overlay has changed the state. */
+export function saveSummaryForState(state: Pick<GameState, "time" | "master">): ModernSaveSummary {
+  return {
+    day: Math.max(1, Math.trunc(state.time.dayIndex) + 1),
+    place: state.master.location,
+    name: state.master.callName,
+  };
+}
+
 function scalarInt(character: LegacyCharacterSnapshot, name: string): bigint | undefined {
   const value = character.variables[name];
   return typeof value === "bigint" ? value : undefined;

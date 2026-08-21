@@ -12,6 +12,7 @@
  *   - `<游泳中>`            TEQUIP:MASTER:SWIMMING (id 900)
  *   - 睡意阶梯              NEMUKE() 两套阈值 (约会中 vs 就寝)
  *   - `<清醒剂・弱/中/强/极>` CFLAG:清醒劑 (id 385) tiers
+ *   - `<酒醉・微醺/醉酒/不省人事>` live BASE:酒气 face
  *
  * The modern runtime reads the same state through the established helpers
  * (`nemuke`, `activeDatePartner`/`isDateActive`, `isEquipped`). Deferred
@@ -25,11 +26,12 @@ import { nemuke } from "./nemuke.js";
 import { CFLAG_ID, FLAG_ID, TEQUIP_ID } from "./settlement.js";
 import { isEquipped } from "./tequip.js";
 import { activeDatePartner, isDateActive } from "../world/date-session.js";
+import { alcoholFace } from "./alcohol.js";
 
 /** Tone for a sleepy tag — maps to a `status-bar__rel--*` color. */
 export type SleepinessTone = "orange" | "yellow" | "pale-yellow" | "red";
 
-export type SituationTagKind = "tease" | "lock" | "date" | "swim" | "sleepy" | "coffee";
+export type SituationTagKind = "tease" | "lock" | "date" | "swim" | "sleepy" | "coffee" | "alcohol";
 
 export interface SituationTag {
   text: string;
@@ -96,5 +98,7 @@ export function situationTags(state: GameState): SituationTag[] {
   if (sleepy) tags.push(sleepy);
   const coffee = coffeeEffectTier(state);
   if (coffee) tags.push({ text: `清醒剂・${coffee}`, kind: "coffee" });
+  const alcohol = alcoholFace(state, 0);
+  if (alcohol !== "清醒") tags.push({ text: `酒醉・${alcohol}`, kind: "alcohol" });
   return tags;
 }

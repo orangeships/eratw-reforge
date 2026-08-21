@@ -108,6 +108,7 @@ export const SHOP_CATALOG: readonly ShopCatalogEntry[] = [
   { id: 84, name: "甜味料", price: 3000, sales: "limited", category: "食材" },
   // Unique 日用品/素質 — buy-once (ITEMDATA "SALES": 0 if !owned, -1 if owned).
   { id: 25, name: "昆虫采集套装", price: 7000, sales: "unique", category: "日用品" },
+  { id: 37, name: "钓鱼竿", price: 3000, sales: "unique", category: "日用品" },
   { id: 63, name: "【技巧UP】", price: 5000, sales: "unique", category: "素質",
     salesGate: (s) => (s.master.state.ABL[ABL_ID.技巧] ?? 0) >= 5 ? -2 : undefined,
     onBuy: (state) => { state.master.state.ABL[ABL_ID.技巧] = (state.master.state.ABL[ABL_ID.技巧] ?? 0) + 1; } },

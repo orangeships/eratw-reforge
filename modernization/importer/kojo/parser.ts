@@ -90,6 +90,7 @@ const STRING_LOCAL_ASSIGN_RE = /^LOCALS(?::(\d+))?\s*(\+=|=)\s*(.*)$/;
 const NAMED_LOCAL_ASSIGN_RE = /^([\p{L}_][\p{L}\p{N}_]*)(?::(.+?))?\s*(\/=|=\/|=|\+=|-=|\+\+|--)\s*(.*)$/u;
 const CALL_RE = /^CALL\s+([^\s(]+)(?:\s*\((.*)\))?\s*$/;
 const ASK_YN_CALL_RE = /^CALL\s+ASK_YN(?:(?:\s*\((.*)\))|(?:\s*,\s*(.*)))?\s*$/i;
+const ASK_M_CALL_RE = /^CALL\s+ASK_M(?:(?:\s*\((.*)\))|(?:\s*,\s*(.*)))?\s*$/i;
 const RESULT_ASSIGN_RE = /^RESULT(?::(\d+))?\s*(=|\+=|-=)\s*(.+)$/;
 const RETURN_RE = /^RETURN(?:\s+(.+))?$/;
 // Emuera accepts both C-like `+=`/`-=` and the compact ERA spelling
@@ -221,7 +222,7 @@ const PRINTBUTTON_RE = /^PRINTBUTTONC?\s+"(.*)"\s*,\s*"?([^",]*?)"?\s*$/;
 const INPUT_RE = /^(INPUTS?|\$INPUT[A-Z]*|INPUTSTR)\b/;
 const WAIT_RE = /^(WAIT|WAITANYKEY|FORCEWAIT)\b/;
 const SELECTCASE_RESULT_RE = /^SELECTCASE\s+RESULTS?\b/;
-const PRINTED_OPTION_RE = /^\s*(PRINT(?:FORM)?L)\s+\[([^\]]+)\]\s*[-－—:：]?\s*(.+)$/;
+const PRINTED_OPTION_RE = /^\s*(PRINT(?:FORM)?D?L)\s+\[([^\]]+)\]\s*[-－—:：]?\s*(.+)$/;
 const LABEL_RE = /^\$[^\s]+$/;
 /** First value of a `CASE "v"[, "w"…]` / `CASE v` line (choice matching). */
 const CASE_VALUE_RE = /^CASE\s+"?([^",]*?)"?\s*(?:,|$)/;
@@ -1897,6 +1898,7 @@ function parseValue(raw: string, symbols: ScopedKojoSymbols): KojoValue | null {
     "SUKIMA",
     "KICKOUT",
     "THINKS_IS_VIRGIN",
+    "MASTER_IS_VIRGIN",
     "K15_DESIRE_INTIMACY",
     "K36_MASTER_LOVER_NUMBER",
     "FESTIVAL",
@@ -1929,6 +1931,68 @@ function parseValue(raw: string, symbols: ScopedKojoSymbols): KojoValue | null {
   if (privateConstant !== null) return { kind: "number", value: privateConstant };
 
   return parseVarRef(value, symbols) ?? parseDynamicVarRef(value, symbols);
+}
+
+/** Parse the static form of COMMON.ERB's ASK_M helper.
+ *
+ * ASK_M receives alternating `(label, enabled)` arguments and returns the
+ * selected argument index in RESULT. The full helper also supports dynamic
+ * disabled/hidden options and redraws them in a different colour. The static
+ * kojo tree has no redraw channel, so only compile-time numeric conditions are
+ * lowered here: negative options are hidden, zero options are not selectable,
+ * and positive options become ordinary choice options. Dynamic conditions
+ * stay outside this static lowering path; unresolved helper calls retain the
+ * parser's existing behavior instead of poisoning an otherwise routable
+ * legacy dialogue route.
+ */
+function buildAskMChoice(
+  rawArgs: readonly string[],
+  line: number,
+  ctx: SubstituteContext,
+  opts: ParseFuncOptions,
+  symbols: ScopedKojoSymbols,
+): KojoNode | null {
+  if (rawArgs.length === 0 || rawArgs.length % 2 !== 0 || rawArgs.length > 20) return null;
+
+  const options: KojoChoiceOption[] = [];
+  for (let argIndex = 0; argIndex < rawArgs.length; argIndex += 2) {
+    const label = parseAskMLabel(rawArgs[argIndex]!, ctx, opts);
+    const condition = parseValue(rawArgs[argIndex + 1]!, symbols);
+    if (label === null || !condition || condition.kind !== "number" || !Number.isFinite(condition.value)) {
+      return null;
+    }
+    const optionIndex = argIndex / 2;
+    if (condition.value < 0 || condition.value === 0) continue;
+    options.push({
+      label,
+      value: String(optionIndex),
+      body: {
+        type: "seq",
+        children: [{
+          type: "result-set",
+          index: 0,
+          op: "set",
+          value: { kind: "number", value: optionIndex },
+          line,
+        }],
+      },
+    });
+  }
+
+  return options.length > 0 ? { type: "choice", options, line } : null;
+}
+
+function parseAskMLabel(
+  raw: string,
+  ctx: SubstituteContext,
+  opts: ParseFuncOptions,
+): string | null {
+  const trimmed = raw.trim();
+  const quoted = parseStaticStringArgument(trimmed);
+  const expression = /^@"((?:[^"]|"")*)"$/.exec(trimmed);
+  const literal = quoted ?? (expression ? expression[1]!.replace(/""/g, '"') : null);
+  if (literal === null) return null;
+  return opts.substitute === false ? literal : substitute(literal, ctx);
 }
 
 /** Parse one static-call argument with the same symbol/local rules as the
@@ -3311,6 +3375,21 @@ export function parseFunc(
       continue;
     }
 
+    const askM = ASK_M_CALL_RE.exec(lineText);
+    if (askM) {
+      const rawArgs = (askM[1] ?? askM[2] ?? "").trim();
+      const args = rawArgs.length === 0 ? [] : splitFunctionArguments(rawArgs);
+      if (args === null) continue;
+      // A number of upstream calls use a trailing comma before the closing
+      // parenthesis. It is syntactic noise, not an additional ASK_M pair.
+      while (args.length > 0 && args[args.length - 1].trim() === "") args.pop();
+      const choice = args.length > 0 ? buildAskMChoice(args, lineNo, ctx, opts, symbols) : null;
+      if (choice) {
+        appendNode(choice);
+      }
+      continue;
+    }
+
     const call = CALL_RE.exec(lineText);
     if (call) {
       const rawArgs = (call[2] ?? "").trim();
@@ -3328,7 +3407,7 @@ export function parseFunc(
       pendingButtons.push({
         label: printedOption[3]!.trim(),
         value: printedOption[2]!.trim(),
-        fallbackLine: buildKojoLine(printedOption[1] as KojoLine["form"], lineText.replace(/^PRINT(?:FORM)?L\s+/, "").trim(), lineNo, ctx, opts),
+        fallbackLine: buildKojoLine(printedOption[1] as KojoLine["form"], lineText.replace(/^PRINT(?:FORM)?D?L\s+/, "").trim(), lineNo, ctx, opts),
       });
       continue;
     }
@@ -3363,10 +3442,15 @@ export function parseFunc(
       // button and before INPUT(S). They do not end the menu; flushing here
       // loses the authored labels and leaves SELECTCASE with numeric fallbacks.
       const menuPresentation = /^(RESETCOLOR|SETCOLOR\b.*)$/.test(lineText);
+      // A menu can be assembled in one arm of an IF and continue with common
+      // options after ENDIF (Parsee's first-meeting menu is the canonical
+      // example). ENDIF closes the prose branch, but it is not the end of the
+      // pending menu; let the following common labels/INPUT decide that.
+      const menuStructuralBoundary = /^ENDIF$/.test(lineText);
       // ROUTE B: keep pending buttons through `IF RESULT` so the IF_RE
       // hook below can lower the IF chain into an `input` node.
       const isInputCandidateIf = IF_RE.test(lineText);
-      if (!bareSpacer && !menuPresentation && !SELECTCASE_RESULT_RE.test(lineText) && !isInputCandidateIf) {
+      if (!bareSpacer && !menuPresentation && !menuStructuralBoundary && !SELECTCASE_RESULT_RE.test(lineText) && !isInputCandidateIf) {
         flushPendingButtons();
       }
       if (menuPresentation) continue;

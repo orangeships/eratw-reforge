@@ -149,7 +149,7 @@ export function makeSanrokuRoomMoveHandlers(): HandlerEntry[] {
     commandNo: m.commandNo,
     execCheck: (ctx) => {
       const gate = mapCanMove(ctx.state, m.toLocation, ctx.state.master);
-      return gate.can ? { ok: true } : { ok: false, reason: { kind: "precondition", message: gate.message ?? "進めない" } };
+      return gate.can ? { ok: true } : { ok: false, reason: { kind: "precondition", message: gate.message ?? "无法继续前进。" } };
     },
     handler: (ctx) => {
       const next = cloneGameState(ctx.state);

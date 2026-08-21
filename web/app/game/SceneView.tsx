@@ -3,9 +3,8 @@
  *
  * Back-to-front layers:
  *   1. scene ASCII art — full-bleed dimmed backdrop (`<pre>`).
- *   2. present立绘 — one portrait per chara at this location (S2).
- *      4.5 renders placeholder boxes; real sprite wiring is a later
- *      cosmetic pass (Phase 2.2 resources manifest).
+ *   2. present立绘 — at most seven portraits at this location (S2); the
+ *      roster strip still exposes every present NPC for target switching.
  *   3. narrative band — the recent eventLog tail, color-coded by kind
  *      (S3). Reuses `formatEvent` from the TextWindow.
  *
@@ -15,13 +14,11 @@
  */
 
 import type { SceneAsset } from "../../../modernization/runtime/scene/index.js";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { CharaSlot } from "../../../modernization/runtime/state/index.js";
 import type { ObservationEvent } from "../../../modernization/schemas/types.js";
-import { formatEvent } from "../components/TextWindow.js";
 import kojoColors from "./kojo-colors.bundle.json";
 import portraits from "./portraits.bundle.json";
-import { isMovementNarration, isPlayerVisibleEvent } from "./player-visible-events.js";
 import SpriteCrop from "./SpriteCrop.js";
 import {
   dimensionForKind,
@@ -34,9 +31,10 @@ import {
 } from "./portrait-expression.js";
 import PortraitCommissionBadge from "./PortraitCommissionBadge.js";
 import type { GameState } from "../../../modernization/runtime/state/game-state.js";
-import { formatGameEvent } from "./event-format.js";
 import { portraitForDynamicCharacter } from "../../../modernization/runtime/world/dynamic-portraits.js";
 import MobPortrait from "./MobPortrait.js";
+import type { SceneAmbientEntry } from "../ai/types.js";
+import { SceneHistoryPanel } from "./SceneSidebar.js";
 
 /** Parity QA P-25 — per-chara dialogue color (charaNum → "#RRGGBB"), built
  *  from each character's `@M_KOJO..._COLOR_K{N}` SETCOLOR by
@@ -54,6 +52,18 @@ export interface SceneViewProps {
   /** The eventLog; the band shows the last `bandMax` entries. */
   bandEvents: ReadonlyArray<ObservationEvent>;
   bandMax?: number;
+  /** Disposable AI scene prose. This is never sourced from eventLog. */
+  ambientEntry?: SceneAmbientEntry | null;
+  /** Classic-compatible inline history. Immersive three-column callers turn
+   * this off and render the same history component in the right column. */
+  showInlineHistory?: boolean;
+  /** Classic-compatible inline scene-interaction presentation. When false it
+   * also hides portrait dialogue unless `showPortraitAmbient` overrides it. */
+  showInlineAmbient?: boolean;
+  /** Character-dialogue presentation above the participating portrait. This
+   * lets the three-column shell keep speech over the character while moving
+   * scene-interaction prose into the right column. */
+  showPortraitAmbient?: boolean;
   /**
    * Phase 8.6 — the currently-selected target charaNum (for interaction).
    * The matching portrait is highlighted. When omitted, no portrait is
@@ -73,7 +83,7 @@ export interface SceneViewProps {
   onTogglePortraitKind?: () => void;
 }
 
-const DEFAULT_BAND_MAX = 20;
+const MAX_STAGE_NPCS = 7;
 
 /**
  * Resolve a chara's display name. Live slots carry `callName` (from
@@ -84,36 +94,50 @@ function charaName(chara: CharaSlot): string {
   return chara.callName ?? `#${chara.charaNum}`;
 }
 
+function hasAuthoredIntro(intro: string): boolean {
+  return intro.trim().length > 0 && !intro.startsWith("[not-authored:");
+}
+
+function stagedNpcOrder(
+  npcsPresent: readonly CharaSlot[],
+  selectedChara: number | undefined,
+  ambientEntry: SceneAmbientEntry | null | undefined,
+): CharaSlot[] {
+  const byId = new Map(npcsPresent.map((chara) => [chara.charaNum, chara]));
+  const requiredIds: number[] = [];
+  if (selectedChara !== undefined && byId.has(selectedChara)) requiredIds.push(selectedChara);
+  for (const participantId of ambientEntry?.participantIds ?? []) {
+    if (byId.has(participantId) && !requiredIds.includes(participantId)) requiredIds.push(participantId);
+  }
+  const displayed = requiredIds
+    .map((charaNum) => byId.get(charaNum))
+    .filter((chara): chara is CharaSlot => chara !== undefined);
+  for (const chara of npcsPresent) {
+    if (displayed.length >= MAX_STAGE_NPCS) break;
+    if (!displayed.some((entry) => entry.charaNum === chara.charaNum)) displayed.push(chara);
+  }
+
+  const selectedNpc = displayed.find((chara) => chara.charaNum === selectedChara);
+  if (!selectedNpc) return displayed;
+  const otherNpcs = displayed.filter((chara) => chara.charaNum !== selectedNpc.charaNum);
+  const selectedInsertAt = Math.floor(otherNpcs.length / 2);
+  return [
+    ...otherNpcs.slice(0, selectedInsertAt),
+    selectedNpc,
+    ...otherNpcs.slice(selectedInsertAt),
+  ];
+}
+
 export default function SceneView(props: SceneViewProps) {
-  const bandRef = useRef<HTMLDivElement | null>(null);
   const [clickedExpressions, setClickedExpressions] = useState<Record<number, PortraitExpression>>({});
   const { scene, present } = props;
   // Parity QA P-30a — the master (charaNum 0) is never drawn on stage. Filter
   // it out so the portrait row only ever shows NPCs.
   const npcsPresent = present.filter((c) => c.charaNum !== 0);
-  const selectedNpc = npcsPresent.find((chara) => chara.charaNum === props.selectedChara);
-  // Keep every present NPC visible. Place the selected target in the middle of
-  // the render order so flex centering keeps it visually central; crowded
-  // scenes deliberately overflow like the original rather than shrinking art.
-  const otherNpcs = selectedNpc
-    ? npcsPresent.filter((chara) => chara.charaNum !== selectedNpc.charaNum)
-    : npcsPresent;
-  const selectedInsertAt = Math.floor(otherNpcs.length / 2);
-  const stagedNpcs = selectedNpc
-    ? [...otherNpcs.slice(0, selectedInsertAt), selectedNpc, ...otherNpcs.slice(selectedInsertAt)]
-    : npcsPresent;
-  const bandMax = props.bandMax ?? DEFAULT_BAND_MAX;
-  const playerVisibleBandEvents = props.bandEvents.filter(isPlayerVisibleEvent);
-  const band =
-    playerVisibleBandEvents.length > bandMax
-      ? playerVisibleBandEvents.slice(playerVisibleBandEvents.length - bandMax)
-      : playerVisibleBandEvents;
-
-  useEffect(() => {
-    const el = bandRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [band.length]);
-
+  // The roster is unbounded, but the stage is deliberately capped at seven
+  // slots. Selection and current ambient participants are reserved first;
+  // remaining slots follow the stable present-roster order.
+  const stagedNpcs = stagedNpcOrder(npcsPresent, props.selectedChara, props.ambientEntry);
   if (!scene) {
     return (
       <div className="scene-view scene-view--empty" data-testid="scene-view">
@@ -124,11 +148,13 @@ export default function SceneView(props: SceneViewProps) {
     );
   }
 
+  const authoredIntro = hasAuthoredIntro(scene.intro);
+
   return (
     <div className="scene-view" data-testid="scene-view" data-scene-id={scene.id}>
       {/* The authored scene intro belongs to the room, not to its current NPC
           occupancy. ASCII art remains hidden per the compact UI policy. */}
-      {scene.intro && (
+      {authoredIntro && (
         <div className="scene-view__ascii" data-testid="scene-ascii">
           <p className="scene-view__intro">{scene.intro}</p>
         </div>
@@ -143,7 +169,7 @@ export default function SceneView(props: SceneViewProps) {
 
       <div className="scene-view__stage" data-testid="scene-stage">
         <div className="scene-view__place">{scene.displayName}</div>
-        {npcsPresent.length > 0 && props.onSelectChara && (
+        {npcsPresent.length > 0 && (
           <div className="scene-view__roster" data-testid="scene-roster" aria-label="在场人物">
             {npcsPresent.map((chara) => (
               <button
@@ -156,6 +182,7 @@ export default function SceneView(props: SceneViewProps) {
                 data-testid="scene-roster-name"
                 data-chara={chara.charaNum}
                 aria-pressed={props.selectedChara === chara.charaNum}
+                disabled={!props.onSelectChara}
                 onClick={() => props.onSelectChara?.(chara.charaNum)}
               >
                 {charaName(chara)}
@@ -189,6 +216,13 @@ export default function SceneView(props: SceneViewProps) {
               const dynamicPortrait = props.state
                 ? portraitForDynamicCharacter(props.state, chara.charaNum)
                 : undefined;
+              const showPortraitAmbient = props.showPortraitAmbient ?? (props.showInlineAmbient !== false);
+              const portraitDialogueLines = showPortraitAmbient &&
+                props.ambientEntry?.mode === "character-dialogue" &&
+                props.ambientEntry.participantIds.includes(chara.charaNum)
+                ? props.ambientEntry.lines.filter((line) => line.participantId === chara.charaNum)
+                : [];
+              const dialogueColor = KOJO_COLORS[String(chara.charaNum)];
               // eraTW USERCOM.ERB:433-436: clicking the CURRENT TARGET's
               // portrait flips 立絵種類; clicking another chara selects it as
               // the target. The old cosmetic click-expression cycle is gone
@@ -222,6 +256,29 @@ export default function SceneView(props: SceneViewProps) {
                   disabled={!selectable}
                   onClick={selectable ? selectPortrait : undefined}
                 >
+                  {portraitDialogueLines.length > 0 && (
+                    <div
+                      className="scene-view__portrait-dialogue"
+                      data-testid="scene-portrait-dialogue"
+                      data-chara={chara.charaNum}
+                      aria-live="polite"
+                    >
+                      <span
+                        className="scene-view__portrait-dialogue-name"
+                        style={dialogueColor ? { color: dialogueColor } : undefined}
+                      >
+                        {charaName(chara)}
+                      </span>
+                      {portraitDialogueLines.map((line, index) => (
+                        <span
+                          className="scene-view__portrait-dialogue-line"
+                          key={`${line.participantId}:${index}`}
+                        >
+                          {line.text}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {/* P-30b — real立绘 when we have one (charaNum → webp from
                       初期立绘), else the P-30a silhouette fallback. The master
                       is filtered out above so this never renders for the player. */}
@@ -264,29 +321,43 @@ export default function SceneView(props: SceneViewProps) {
         </div>
       </div>
 
-      <div className="scene-view__band" data-testid="scene-band" ref={bandRef}>
-        {band.length === 0 ? (
-          <p className="scene-view__band-empty">……</p>
-        ) : (
-          band.map((event, i) => {
-            // P-25 — tint spoken lines by the speaker's color.
-            const color =
-              event.kind === "DIALOGUE_LINE"
-                ? KOJO_COLORS[String(event.charaNum)]
-                : undefined;
+      {props.showInlineAmbient !== false && props.ambientEntry?.mode === "scene-interaction" && props.ambientEntry.lines.length > 0 && (
+        <div
+          className="scene-view__initiative"
+          data-testid="scene-ambient-initiative"
+          data-mode="scene-interaction"
+          data-complete={props.ambientEntry.complete ? "true" : "false"}
+          aria-live="polite"
+        >
+          {props.ambientEntry.lines.map((line, index) => {
+            const speaker = props.state?.charas[line.participantId];
+            const color = line.form === "speech" ? KOJO_COLORS[String(line.participantId)] : undefined;
             return (
               <p
-                key={i}
-                className={`scene-view__line scene-view__line--${event.kind}${isMovementNarration(event) ? " scene-view__line--movement" : ""}`}
-                data-event-kind={event.kind}
+                key={`${line.participantId}:${line.form}:${index}`}
+                className={`scene-view__initiative-line scene-view__initiative-line--${line.form}`}
                 style={color ? { color } : undefined}
               >
-                {props.state ? formatGameEvent(event, props.state) : formatEvent(event)}
+                {line.form === "speech" && (
+                  <span className="scene-view__initiative-speaker">
+                    {speaker ? charaName(speaker) : `#${line.participantId}`}
+                  </span>
+                )}
+                {line.text}
               </p>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
+
+      {props.showInlineHistory !== false && (
+        <SceneHistoryPanel
+          events={props.bandEvents}
+          state={props.state}
+          max={props.bandMax}
+          placement="inline"
+        />
+      )}
     </div>
   );
 }

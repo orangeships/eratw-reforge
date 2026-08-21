@@ -32,7 +32,7 @@
  *   - 玩家主动脱衣命令 (P1-b, optional by user)
  *   - 自动脱衣钩子 in `make-comf-handler.ts` (P1-d, optional by user)
  *   - COUNTER files改造 (Phase 5+)
- *   - PANTS_GET inventory transfer (P4 胖次收集)
+ *   - PANTS_GET inventory transfer is implemented by the P4 collection layer
  *   - CHECK_CLO / CHECK_PANTIES / CURRENT_CLOTHES_SET (read-side, defer)
  *   - UNIQUE_UNDERWARE_* 9 functions (P1+ extension)
  */
@@ -42,7 +42,7 @@ import { cloneGameState } from "./game-state.js";
 import { CFLAG_ID, EQUIP_SLOT, TEQUIP_ID } from "./settlement.js";
 import { charaOutfit } from "./clothing-outfits.js";
 import { clothingIdByName } from "./clothing-catalog.js";
-import { addPantsTemp } from "./panty-collection.js";
+import { acquirePants } from "./panty-collection.js";
 import { readTequip, writeTequip } from "./tequip.js";
 
 // ---------------------------------------------------------------------------
@@ -390,43 +390,35 @@ const BODY_SUIT_HALF_OPEN: ReadonlySet<number> = new Set([2, 10, 11]);
 // ---------------------------------------------------------------------------
 // Panty removal — `@PANTS_GET(ARG, "drop")` from PANTS.ERB:59.
 //
-// Strips EQUIP[下半身内衣２] and sets the "没穿内裤" CFLAG marker.
-// Inventory transfer (P4 胖次收集) is OUT OF SCOPE for P1 — the dropped
-// panties simply disappear for now. Documented in CLOTHES-PLAN.md.
+// Strips EQUIP[下半身内衣２], sets CFLAG:没穿内裤, and optionally places the
+// removed piece in PANTS_TEMP for the P4 collection pipeline.
 // ---------------------------------------------------------------------------
 
-/** CFLAG:206 (没穿内裤 — "not wearing panties today"). */
-
 /**
- * `@PANTS_GET(ARG, "drop"|"collect")` — player removes the chara's
- * bottom-half underwear. Mode "drop" sets the chara on the floor; "collect"
- * means the player picks it up. Modern P1 doesn't model the
- * `CFLAG:9128 FAVORITE_OVERRIDE_UNDERWEAR` collection flag (P4); both
- * modes here just clear EQUIP.
- */
-/**
- * `@PANTS_GET(ARG, "drop"|"collect")` — remove the chara's panties.
- * Mode "drop": just strips EQUIP[下半身内衣２] and sets CFLAG:没穿内裤=1.
- * Mode "collect": also stores the panty piece id in PANTS_TEMP for later
- *   transfer to permanent collection via COMF401.
+ * `@PANTS_GET(ARG, ARGS)` — remove the chara's panties.
+ *
+ * `drop` leaves them behind (`CFLAG:291 = 1`); `stolen` carries them while
+ * keeping the same marker; `gift` mirrors upstream `ARGS == "もらう"`
+ * (`CFLAG:291 = 2`). `collect` is a backwards-compatible alias for `gift`.
  */
 export function pantyGet(
   state: GameState,
   charaNum: number,
-  mode: "drop" | "collect",
+  mode: "drop" | "stolen" | "gift" | "collect",
 ): GameState {
   const next = cloneGameState(state);
   const chara = next.charas[charaNum];
   if (!chara) return state;
   const pieceId = chara.state.EQUIP[EQUIP_SLOT.下半身内衣２] ?? 0;
   chara.state.EQUIP[EQUIP_SLOT.下半身内衣２] = 0;
-  // CFLAG:没穿内裤: 1=removed, 2=received as gift
-  chara.state.CFLAG[CFLAG_ID.NO_PANTIES_TODAY] = mode === "collect" ? 2 : 1;
+  // CFLAG:没穿内裤 (291): 1=removed/stolen, 2=received as a gift.
+  const gifted = mode === "gift" || mode === "collect";
+  chara.state.CFLAG[CFLAG_ID.没穿内裤] = gifted ? 2 : 1;
   recomputeExposure(chara);
-  // P4: store in PANTS_TEMP when collecting
+  // Both theft and gift enter PANTS_TEMP; a plain drop does not.
   const hasAuthoredUnderwear = Boolean(charaOutfit(charaNum)?.lowerUnderwear);
-  if (mode === "collect" && (pieceId > 0 || hasAuthoredUnderwear)) {
-    addPantsTemp(next, charaNum, pieceId);
+  if (mode !== "drop" && (pieceId > 0 || hasAuthoredUnderwear)) {
+    acquirePants(next, charaNum, pieceId);
   }
   return next;
 }

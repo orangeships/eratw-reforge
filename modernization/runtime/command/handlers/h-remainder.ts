@@ -94,7 +94,7 @@ export const comf144HandlerEntry: HandlerEntry = {
     }
     // @COM_ABLE144: FLAG:おもらし有効 == 0 → RETURN 0.
     if ((ctx.state.flagStore[FLAG_ID.おもらし有効] ?? 0) === 0) {
-      return { ok: false, reason: { kind: "precondition", message: "おもらし选项未开启。" } };
+      return { ok: false, reason: { kind: "precondition", message: "失禁选项尚未开启。" } };
     }
     // TCVAR:利尿剤 == 0 && TALENT:漏尿癖 == 0 → RETURN 0.
     const diuretic = target.state.TCVAR[TCVAR_ID.利尿剤] ?? 0;
@@ -193,14 +193,14 @@ export const comf71HandlerEntry: HandlerEntry = {
     // into — and gates on TEQUIP:Ｖセックス/Ａセックス insertion state. The
     // insertion-pose tracker (TEQUIP namespace) is unmodeled → no partner is
     // ever "inserted" → LOCAL:2 == 0 → RETURN 0. Faithful: not executable.
-    return { ok: false, reason: { kind: "precondition", message: "二穴挿し需要已挿入状态（挿入ポーズ / TEQUIP 未建模）。" } };
+    return { ok: false, reason: { kind: "precondition", message: "双穴插入需要已进入插入状态（插入姿势／TEQUIP 尚未建模）。" } };
   },
   handler: (ctx: CommandContext) => {
     return {
       state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（二穴挿し：挿入ポーズ状態机未建模。）" }],
+      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（双穴插入：插入姿势状态机尚未建模。）" }],
       outcome: "blocked",
-      failReason: { kind: "precondition", message: "MASTER_POSE / TEQUIP:Ｖ·Ａセックス insertion-state subsystem deferred" },
+      failReason: { kind: "precondition", message: "MASTER_POSE／TEQUIP 的 V／A 插入状态子系统尚未实现" },
     };
   },
 };
@@ -215,7 +215,7 @@ export const comf122HandlerEntry: HandlerEntry = {
     // @COM_ABLE122: `PLAYER != ASSI → RETURN 0` (player must BE the assistant)
     // + `!(TALENT:ASSI:2 & 1) → RETURN 0` (female assistant). No ASSI slot
     // modeled → never executable. Faithful.
-    return { ok: false, reason: { kind: "precondition", message: "助手を犯させる需要助手（ASSI）子系统。" } };
+    return { ok: false, reason: { kind: "precondition", message: "让助手侵犯需要助手（ASSI）子系统。" } };
   },
   handler: (ctx: CommandContext) => {
     // Body is a COM_ORDER reasonwall (欲望/奉仕精神/快楽刻印/欲情/羞恥心/献身
@@ -224,7 +224,7 @@ export const comf122HandlerEntry: HandlerEntry = {
     // Needs ASSI + COM_ORDER + 体格 + TEQUIP. Blocked — no shell.
     return {
       state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（助手を犯させる：ASSI 子系统 + COM_ORDER reasonwall 未建模。）" }],
+      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（让助手侵犯：ASSI 子系统与 COM_ORDER 判定尚未建模。）" }],
       outcome: "blocked",
       failReason: { kind: "precondition", message: "ASSI subsystem + COM_ORDER reasonwall deferred" },
     };
@@ -240,7 +240,7 @@ export const comf185HandlerEntry: HandlerEntry = {
   execCheck: (_ctx: CommandContext) => {
     // @COM_ABLE185: `ASSI < 1 → RETURN 0` (no assistant). No ASSI slot → never
     // executable. Faithful.
-    return { ok: false, reason: { kind: "precondition", message: "助手を犯す需要助手（ASSI）在场。" } };
+    return { ok: false, reason: { kind: "precondition", message: "侵犯助手需要助手（ASSI）在场。" } };
   },
   handler: (ctx: CommandContext) => {
     // Body is a COM_ORDER reasonwall (欲望/快楽刻印/欲情/助手露出癖/助手恋慕·親愛
@@ -249,7 +249,7 @@ export const comf185HandlerEntry: HandlerEntry = {
     // Needs ASSI + COM_ORDER + TEQUIP. Blocked — no shell.
     return {
       state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（助手を犯す：ASSI 子系统 + COM_ORDER reasonwall 未建模。）" }],
+      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（侵犯助手：ASSI 子系统与 COM_ORDER 判定尚未建模。）" }],
       outcome: "blocked",
       failReason: { kind: "precondition", message: "ASSI subsystem + COM_ORDER reasonwall deferred" },
     };
@@ -267,7 +267,7 @@ export const comf511HandlerEntry: HandlerEntry = {
     // sets 射精部位 on BOTH MASTER and ASSI (`SETBIT TCVAR:MASTER/ASSI:0`,
     // `TCVAR:MASTER/ASSI:2 = 4`). Needs a 助手Ｐ. No ASSI slot → never
     // executable. Faithful.
-    return { ok: false, reason: { kind: "precondition", message: "二本フェラ需要助手（ASSI）在场。" } };
+    return { ok: false, reason: { kind: "precondition", message: "双人侍奉需要助手（ASSI）在场。" } };
   },
   handler: (ctx: CommandContext) => {
     // Body: 射精部位=4 口淫 on MASTER(強度750) + ASSI(強度750); DOWNBASE 80/250;
@@ -277,7 +277,7 @@ export const comf511HandlerEntry: HandlerEntry = {
     // Blocked — no shell.
     return {
       state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（二本フェラ：ASSI 子系统未建模。）" }],
+      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（双人侍奉：ASSI 子系统尚未建模。）" }],
       outcome: "blocked",
       failReason: { kind: "precondition", message: "ASSI subsystem (主人Ｐ+助手Ｐ) deferred" },
     };
@@ -294,7 +294,7 @@ export const comf26HandlerEntry: HandlerEntry = {
     // @COM_ABLE26: `TEQUIP:Ｖセックス != PLAYER && TEQUIP:Ａセックス != PLAYER
     // → RETURN 0` (must be inserted to withdraw). Insertion-pose tracker
     // (TEQUIP namespace) unmodeled → never inserted → RETURN 0. Faithful.
-    return { ok: false, reason: { kind: "precondition", message: "抜く需要已挿入状态（Ｖ·Ａセックス / TEQUIP 未建模）。" } };
+    return { ok: false, reason: { kind: "precondition", message: "拔出需要已进入插入状态（V／A 性交与 TEQUIP 尚未建模）。" } };
   },
   handler: (ctx: CommandContext) => {
     // The 868-line body is the climax/withdrawal state machine:
@@ -310,9 +310,9 @@ export const comf26HandlerEntry: HandlerEntry = {
     // + 充填率 + TFLAG:SELECTCOMの分岐 + condom economy. Blocked — no shell.
     return {
       state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（抜く：挿入ポーズ状态机 + 射精/避孕套经济未建模。）" }],
+      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（拔出：插入姿势状态机与射精／避孕套机制尚未建模。）" }],
       outcome: "blocked",
-      failReason: { kind: "precondition", message: "TEQUIP:Ｖ·Ａセックス insertion-state + climax/condom economy deferred" },
+      failReason: { kind: "precondition", message: "TEQUIP 的 V／A 插入状态、高潮与避孕套机制尚未实现" },
     };
   },
 };

@@ -3,12 +3,14 @@ import type { GameState } from "../../../modernization/runtime/state/index.js";
 import type { ObservationEvent } from "../../../modernization/schemas/types.js";
 import type { PromptAnswer } from "../../../modernization/runtime/command/prompt.js";
 import { formatGameEvent } from "./event-format.js";
+import { EventChoicePanel } from "./EventChoicePanel.js";
 import { dailyEventPromptView } from "../../../modernization/runtime/world/daily-event.js";
 
 interface Props {
   state: GameState;
   onSettleSleep: () => void;
   onResolveDailyEvent?: (answer: boolean | PromptAnswer) => void;
+  onRecoverDailyEvent?: () => void;
   onContinue: () => void;
 }
 
@@ -84,6 +86,7 @@ export default function NightSettlementScreen({
   state,
   onSettleSleep,
   onResolveDailyEvent = () => undefined,
+  onRecoverDailyEvent = () => undefined,
   onContinue,
 }: Props) {
   const streamRef = useRef<HTMLDivElement | null>(null);
@@ -106,6 +109,9 @@ export default function NightSettlementScreen({
   const [revealed, setRevealed] = useState(1);
   const shownCount = Math.min(revealed, Math.max(1, blocks.length));
   const more = !pending && shownCount < blocks.length;
+  // A paused daily event interrupts the night; its choices must never read as
+  // just another row of the subsequent deterministic settlement report.
+  const stage = pending && state.dailyEventSession ? "event" : pending ? "transition" : "settlement";
 
   useEffect(() => {
     setRevealed(1);
@@ -118,6 +124,13 @@ export default function NightSettlementScreen({
       return;
     }
     if (dailyPrompt) {
+      setSettling(false);
+      return;
+    }
+    // A malformed/obsolete persisted phase must be explicitly recovered;
+    // calling the ordinary sleep callback would be rejected by the store and
+    // leave this screen looking permanently busy.
+    if (state.dailyEventSession) {
       setSettling(false);
       return;
     }
@@ -156,34 +169,48 @@ export default function NightSettlementScreen({
   };
 
   return (
-    <section className={`night-settlement${settling ? " night-settlement--settling" : ""}`} data-testid="screen-night-settlement">
+    <section
+      className={`night-settlement night-settlement--${stage}${settling && stage === "transition" ? " night-settlement--settling" : ""}`}
+      data-testid="screen-night-settlement"
+      data-stage={stage}
+    >
       <div className="night-settlement__fade" aria-hidden="true" />
       <div className="night-settlement__panel">
         <p className="night-settlement__eyebrow">
-          第 {state.time.dayIndex + 1} 日 · {clockText(state)} · 当日结算
+          {stage === "event"
+            ? `第 ${state.time.dayIndex + 1} 日 · 夜间事件`
+            : stage === "transition"
+              ? `第 ${state.time.dayIndex + 1} 日 · ${clockText(state)}`
+              : `第 ${state.time.dayIndex + 1} 日 · 清晨前`}
         </p>
-        <h1>{dailyPrompt ? "夜间事件" : pending ? "入睡" : "一天结束"}</h1>
+        <h1>{stage === "event" ? "夜里发生了一件事" : pending ? "夜色落下" : "这一夜"}</h1>
 
         {pending ? (
           <div className="night-settlement__pending" data-testid="night-pending">
             {dailyPrompt ? (
-              <div data-testid="daily-event-prompt">
-                {dailyPrompt.lines.map((text, index) => <p key={index}>{text}</p>)}
-                <p>{dailyPrompt.prompt.question}</p>
+              <EventChoicePanel
+                prompt={dailyPrompt.prompt}
+                testId="daily-event-prompt"
+                fallbackOpening={dailyPrompt.lines}
+                onPick={(value, index) => onResolveDailyEvent(
+                  state.dailyEventSession?.kind === "ev0-fairy-punishment"
+                    ? value === 1 || index === 0
+                    : { kind: "pick_one", value },
+                )}
+                buttonTestId={(value, index) => index === 0
+                  ? "daily-event-yes"
+                  : index === 1
+                    ? "daily-event-no"
+                    : `daily-event-option-${String(value)}`}
+              />
+            ) : state.dailyEventSession ? (
+              <div className="night-settlement__recovery" data-testid="daily-event-recovery">
+                <p>这段夜间事件已经无法从存档恢复。</p>
+                <p>不会套用不确定的效果，可以安全跳过并继续结算。</p>
                 <div className="night-settlement__actions">
-                  {dailyPrompt.prompt.options.map((option, index) => (
-                    <button
-                      key={String(option.id)}
-                      type="button"
-                      disabled={option.disabled}
-                      data-testid={index === 0 ? "daily-event-yes" : index === 1 ? "daily-event-no" : `daily-event-option-${String(option.id)}`}
-                      onClick={() => onResolveDailyEvent(state.dailyEventSession?.kind === "ev0-fairy-punishment"
-                        ? index === 0
-                        : { kind: "pick_one", value: option.id })}
-                    >
-                      {option.label}{option.detail ? `（${option.detail}）` : ""}
-                    </button>
-                  ))}
+                  <button type="button" data-testid="daily-event-recover" onClick={onRecoverDailyEvent}>
+                    安全跳过
+                  </button>
                 </div>
               </div>
             ) : (

@@ -84,3 +84,10 @@ export { KOJO_CATEGORY_ROUTES } from "./category-routes.generated.js";
 export { KojoCache } from "./kojo-cache.js";
 export { resolveActiveKojoVariantCode } from "./variant-selection.js";
 export { resolveDiaryCall } from "./diary-call.js";
+export {
+  listNewGameKojoUpdates,
+  resolveNewGameKojoUpdate,
+  type NewGameKojoUpdateCandidate,
+  type NewGameKojoUpdateResult,
+  type NewGameKojoUpdateStatus,
+} from "./new-game-update.js";

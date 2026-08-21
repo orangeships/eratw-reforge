@@ -47,7 +47,9 @@ export interface MasterConsumable {
   /** One-line UI detail (prompt option + InventoryPanel). */
   detail: string;
   /**
-   * Faithful `@COM490` effect on the master. Mutates the cloned state.
+   * Faithful `@COM490` effect on the effective user slot. Target use aliases
+   * the focused NPC into that slot before invoking the same effect.
+   * Mutates the cloned state.
    * `ok:false` → the item is NOT consumed (upstream `GOTO LOOP`, e.g. 精力剤
    * without a penis).
    */
@@ -94,7 +96,10 @@ function seasonalMultiplier(features: string, season: number | undefined): numbe
  * chara-data (uncollected character) degrades to base.
  */
 function itemTaste(state: Readonly<GameState>, base: number, features: string): number {
-  const data = charaDataOf(0);
+  // During target use the effect runner aliases the focused NPC as the
+  // effective master slot, so taste data follows the recipient as upstream
+  // ITEM_TASTE(対象) does.
+  const data = charaDataOf(state.master.charaNum);
   const good = data?.foodLike ?? "";
   const bad = data?.foodDislike ?? "";
   let value = base + (multiCount(good, features) - multiCount(bad, features)) * 10;
@@ -439,10 +444,76 @@ export const MASTER_CONSUMABLES: Readonly<Record<number, MasterConsumable>> = {
   },
 };
 
+/**
+ * `@使用可能道具` returns 1 for these modeled items: they remain
+ * master-only even when an NPC is focused. The other modeled entries are
+ * target-capable, with item 502 retaining its anatomy check.
+ */
+const MASTER_ONLY_CONSUMABLE_IDS = new Set([121, 122, 123, 215, 500, 510, 514]);
+
+function canUseConsumableOnTarget(
+  state: Readonly<GameState>,
+  itemId: number,
+  targetCharaNum: number,
+): boolean {
+  const item = MASTER_CONSUMABLES[itemId];
+  if (targetCharaNum <= 0 || !item || !state.charas[targetCharaNum]) return false;
+  if (MASTER_ONLY_CONSUMABLE_IDS.has(itemId)) return false;
+  if (itemId === 502) {
+    const target = state.charas[targetCharaNum]!;
+    return ((target.state.TALENT[TALENT_ID.性別] ?? 0) & 2) !== 0;
+  }
+  return true;
+}
+
+/** Apply an existing table entry with an NPC as its effective target slot. */
+function applyWithTargetAlias(
+  state: GameState,
+  item: MasterConsumable,
+  targetCharaNum: number,
+): { ok: boolean; text: string } {
+  const target = state.charas[targetCharaNum];
+  if (!target) return { ok: false, text: "没有找到可以使用道具的角色。" };
+  const originalMaster = state.master;
+  state.master = target;
+  try {
+    return item.apply(state);
+  } finally {
+    state.master = originalMaster;
+  }
+}
+
+/**
+ * Item 213 is authored as a shared dessert: with a focused target the
+ * upstream command restores both the player and that target. Keep that one
+ * special branch while the remaining items affect the selected target only.
+ */
+function applyConsumableEffect(
+  state: GameState,
+  item: MasterConsumable,
+  targetCharaNum: number,
+): { ok: boolean; text: string } {
+  if (targetCharaNum <= 0) return item.apply(state);
+  const masterResult = item.id === 213 ? item.apply(state) : undefined;
+  const targetResult = applyWithTargetAlias(state, item, targetCharaNum);
+  if (masterResult && !masterResult.ok) return masterResult;
+  return targetResult;
+}
+
 /** Held COMF490 items whose deterministic effects are implemented. */
 export function usableMasterConsumables(state: Readonly<GameState>): MasterConsumable[] {
   return Object.values(MASTER_CONSUMABLES)
     .filter((item) => itemCount(state, item.id) > 0)
+    .sort((a, b) => a.id - b.id);
+}
+
+/** Items held by the player that the focused NPC may receive. */
+export function usableTargetConsumables(
+  state: Readonly<GameState>,
+  targetCharaNum: number,
+): MasterConsumable[] {
+  return Object.values(MASTER_CONSUMABLES)
+    .filter((item) => itemCount(state, item.id) > 0 && canUseConsumableOnTarget(state, item.id, targetCharaNum))
     .sort((a, b) => a.id - b.id);
 }
 
@@ -451,7 +522,7 @@ export function usableMasterConsumables(state: Readonly<GameState>): MasterConsu
  * Mutates the supplied cloned state. A successful use consumes one item and
  * advances five minutes, matching the upstream command's common tail.
  */
-export function applyMasterConsumable(state: GameState, itemId: number): {
+export function applyConsumable(state: GameState, itemId: number, targetCharaNum = 0): {
   ok: boolean;
   message: string;
   clockEvents: ReturnType<typeof advanceTimeTicks>;
@@ -463,7 +534,10 @@ export function applyMasterConsumable(state: GameState, itemId: number): {
   if (!item || itemCount(state, itemId) <= 0) {
     return { ok: false, message: "该道具尚未建模为可直接使用，或已经没有库存。", clockEvents: [] };
   }
-  const applied = item.apply(state);
+  if (targetCharaNum > 0 && !canUseConsumableOnTarget(state, itemId, targetCharaNum)) {
+    return { ok: false, message: "该道具不能对当前角色使用。", clockEvents: [] };
+  }
+  const applied = applyConsumableEffect(state, item, targetCharaNum);
   if (!applied.ok) {
     return { ok: false, message: applied.text, clockEvents: [] };
   }
@@ -472,8 +546,20 @@ export function applyMasterConsumable(state: GameState, itemId: number): {
   return { ok: true, message: applied.text, clockEvents };
 }
 
-function promptForItems(state: Readonly<GameState>): PromptSpec | null {
-  const options = usableMasterConsumables(state)
+/** Backward-compatible self-use entry point used by SHOP [104]. */
+export function applyMasterConsumable(state: GameState, itemId: number): {
+  ok: boolean;
+  message: string;
+  clockEvents: ReturnType<typeof advanceTimeTicks>;
+} {
+  return applyConsumable(state, itemId, 0);
+}
+
+function promptForItems(state: Readonly<GameState>, targetCharaNum = 0): PromptSpec | null {
+  const items = targetCharaNum > 0
+    ? usableTargetConsumables(state, targetCharaNum)
+    : usableMasterConsumables(state);
+  const options = items
     .map((item) => ({
       id: `use:${item.id}`,
       label: `${item.name} ×${itemCount(state, item.id)}`,
@@ -482,13 +568,14 @@ function promptForItems(state: Readonly<GameState>): PromptSpec | null {
   return options.length > 0 ? pickOne("要使用什么道具？", options) : null;
 }
 
-function pickedItem(state: Readonly<GameState>, ctx: CommandContext): number | null {
-  const spec = promptForItems(state);
+function pickedItem(state: Readonly<GameState>, ctx: CommandContext, targetCharaNum: number): number | null {
+  const spec = promptForItems(state, targetCharaNum);
   if (!spec) return null;
   const picked = requirePickOne(spec, ctx.promptAnswer);
   if (typeof picked !== "string" || !picked.startsWith("use:")) return null;
   const itemId = Number(picked.slice(4));
-  return Number.isInteger(itemId) && MASTER_CONSUMABLES[itemId] && itemCount(state, itemId) > 0
+  return Number.isInteger(itemId) && MASTER_CONSUMABLES[itemId] && itemCount(state, itemId) > 0 &&
+    (targetCharaNum <= 0 || canUseConsumableOnTarget(state, itemId, targetCharaNum))
     ? itemId
     : null;
 }
@@ -500,10 +587,11 @@ export const itemUse490HandlerEntry: HandlerEntry = {
   execCheck: (ctx) => (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) === 0
     ? { ok: true }
     : { ok: false, reason: { kind: "precondition", message: "时间停止中不能使用道具。" } },
-  prompt: (ctx) => promptForItems(ctx.state),
+  prompt: (ctx) => promptForItems(ctx.state, ctx.target),
   handler: (ctx) => {
     const next = cloneGameState(ctx.state);
-    const itemId = pickedItem(next, ctx);
+    const targetCharaNum = ctx.target > 0 ? ctx.target : 0;
+    const itemId = pickedItem(next, ctx, targetCharaNum);
     if (itemId === null) {
       return {
         state: next,
@@ -511,7 +599,7 @@ export const itemUse490HandlerEntry: HandlerEntry = {
         outcome: "noop" as const,
       };
     }
-    const applied = applyMasterConsumable(next, itemId);
+    const applied = applyConsumable(next, itemId, targetCharaNum);
     return {
       state: next,
       events: [

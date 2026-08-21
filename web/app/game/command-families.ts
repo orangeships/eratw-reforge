@@ -80,6 +80,10 @@ export function familyIdOf(n: number): string {
   // 2) Untagged remainder → upstream force-wrap ranges.
   if (n >= 270 && n <= 299) return "kojo"; // 个人口上 custom commands (剧本)
   if (n === 304) return "daily"; // 仕事を手伝う (before the 300-309 comm range)
+  // 委托 commands are ordinary Act_COM actions. They sit numerically beside
+  // the H-entry cluster in the upstream catalog, but COMABLE2 handles them
+  // before that range and they remain available outside H-mode.
+  if (n === 366 || n === 367) return "daily";
   // Everyday communication / daily activity (300-349 minus tagged sekuhara).
   if (n >= 300 && n <= 309) return "comm"; // 会話/お茶/膝枕/お腹/頬/頭撫…
   if (n >= 330 && n <= 349) return "comm"; // 食事/お酒/酌 等 (untagged daily touch)
@@ -100,7 +104,7 @@ export function familyIdOf(n: number): string {
   // H-cluster号段. (It's already exempt from H-gating via H_MODE_ENTRY_COMMANDS.)
   if (n === 368) return "daily";
   if (n >= 350 && n <= 368) return "hmode"; // H入口/状态机
-  if (n === 233 || n === 270 || n === 511 || n === 850) return "hmode";
+  if (n === 233 || n === 270 || n === 511 || n === 820 || n === 850 || n === 999) return "hmode";
   if (n >= 700 && n <= 751) return "solo"; // 自慰系
   return "other";
 }

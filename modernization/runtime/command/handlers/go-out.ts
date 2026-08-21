@@ -76,7 +76,7 @@ export const goOut405HandlerEntry: HandlerEntry = {
     const next: GameState = cloneGameState(ctx.state);
     const spec = goOutPrompt(ctx);
     if (!ctx.promptAnswer) {
-      return { state: next, events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "行き先が決まっていません。" }], outcome: "noop" as const };
+      return { state: next, events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "还没有决定目的地。" }], outcome: "noop" as const };
     }
     const picked = requirePickOne(spec, ctx.promptAnswer);
     const mapId = typeof picked === "number" ? picked : Number(picked);
@@ -88,7 +88,7 @@ export const goOut405HandlerEntry: HandlerEntry = {
       return {
         state: next,
         events: [
-          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "行き先が決まっていません。" },
+          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "还没有决定目的地。" },
         ],
         outcome: "noop" as const,
       };
@@ -122,8 +122,8 @@ export const goOut405HandlerEntry: HandlerEntry = {
         : null;
     const text =
       partner != null
-        ? `${partner}と一緒に${entered.label}へ出かけた。`
-        : `${entered.label}へ出かけた。`;
+        ? `和${partner}一起去了${entered.label}。`
+        : `去了${entered.label}。`;
 
     return {
       state: outing.state,

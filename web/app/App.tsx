@@ -84,7 +84,7 @@ function buildCallNames(): Record<number, string> {
  * player bootstrap, local Kojo authorization, and save/load effects.
  */
 export default function App() {
-  const presentationMode: GamePresentationMode = "classic";
+  const presentationMode: GamePresentationMode = "immersive";
   const tauriRuntime = hasTauriRuntime();
   const kojoSourceValidation = useKojoSourceStore((s) => s.validation);
   const gameState = useGameStateStore((s) => s.state);
@@ -95,6 +95,7 @@ export default function App() {
   const resolveWalkEncounterAction = useGameStateStore((s) => s.resolveWalkEncounterAction);
   const finishSleepAction = useGameStateStore((s) => s.finishSleepAction);
   const resolveDailyEventPromptAction = useGameStateStore((s) => s.resolveDailyEventPromptAction);
+  const recoverDailyEventSessionAction = useGameStateStore((s) => s.recoverDailyEventSessionAction);
   const openEyesAction = useGameStateStore((s) => s.openEyesAction);
   const buyCatalogItemAction = useGameStateStore((s) => s.buyCatalogItemAction);
   const useInventoryItemAction = useGameStateStore((s) => s.useInventoryItemAction);
@@ -106,10 +107,15 @@ export default function App() {
   const materializeBugAction = useGameStateStore((s) => s.materializeBugAction);
   const toggleFilterAction = useGameStateStore((s) => s.toggleFilterAction);
   const togglePortraitKind = useGameStateStore((s) => s.togglePortraitKindAction);
+  const togglePantyGapAuto = useGameStateStore((s) => s.togglePantyGapAutoAction);
+  const claimPantyCollectionBonus = useGameStateStore((s) => s.claimPantyCollectionBonusAction);
+  const sellPantyDuplicates = useGameStateStore((s) => s.sellPantyDuplicatesAction);
   const lastSavedAt = useGameStateStore((s) => s.lastSavedAt);
   const saveSlots = useGameStateStore((s) => s.saveSlots);
   const refreshSaveSlots = useGameStateStore((s) => s.refreshSaveSlots);
   const newGame = useGameStateStore((s) => s.newGame);
+  const listNewGameKojoUpdatesAction = useGameStateStore((s) => s.listNewGameKojoUpdatesAction);
+  const resolveNewGameKojoUpdateAction = useGameStateStore((s) => s.resolveNewGameKojoUpdateAction);
   const setScreen = useSceneStore((s) => s.setScreen);
   const screen = useSceneStore((s) => s.screen);
 
@@ -238,7 +244,7 @@ export default function App() {
   // 让玩家先看隙间商店/能力/SAVE, 再 [100] 睁眼 → mainGame.
   const handleEnterGame = (): void => {
     newGame(usePreGameStore.getState().draft);
-    setScreen("morningMenu");
+    setScreen("kojoUpdate");
   };
 
   // The main game is the full-screen surface — no app chrome (the "eraTW"
@@ -275,6 +281,7 @@ export default function App() {
         onResolveWalkEncounter={resolveWalkEncounterAction}
         onFinishSleep={handleFinishSleep}
         onResolveDailyEvent={resolveDailyEventPromptAction}
+        onRecoverDailyEvent={recoverDailyEventSessionAction}
         onOpenEyes={handleOpenEyes}
         onSaveSlot={handleSaveSlot}
         onLoadSlot={handleLoadSlot}
@@ -291,8 +298,13 @@ export default function App() {
         lastSavedAt={lastSavedAt}
         onToggleFilter={toggleFilterAction}
         onTogglePortraitKind={togglePortraitKind}
+        onTogglePantyGapAuto={togglePantyGapAuto}
+        onClaimPantyCollectionBonus={claimPantyCollectionBonus}
+        onSellPantyDuplicates={sellPantyDuplicates}
         onStartGame={handleStartGame}
         onEnterGame={handleEnterGame}
+        onListNewGameKojoUpdates={listNewGameKojoUpdatesAction}
+        onResolveNewGameKojoUpdate={resolveNewGameKojoUpdateAction}
         canPlay={canPlay}
       />
     </main>

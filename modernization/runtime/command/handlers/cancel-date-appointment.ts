@@ -6,12 +6,12 @@ import type { DatePlanEvent } from "../../state/game-state.js";
 
 export const cancelDateAppointment19996HandlerEntry: HandlerEntry = {
   commandNo: 19996,
-  prompt: (ctx) => pickOne("どの約束を取り消す？", (ctx.state.worldEvents ?? [])
+  prompt: (ctx) => pickOne("要取消哪一项约定？", (ctx.state.worldEvents ?? [])
     .filter((event): event is DatePlanEvent => event.kind === "date-plan" && ["scheduled", "waiting"].includes(event.phase))
     .map((event) => ({ id: event.id, label: `${ctx.state.charas[event.partner]?.callName ?? `#${event.partner}`} @ ${event.location ?? "未定"}` }))),
   execCheck: (ctx) => (ctx.state.worldEvents ?? []).some((event) => event.kind === "date-plan" && ["scheduled", "waiting"].includes(event.phase))
     ? { ok: true }
-    : { ok: false, reason: { kind: "precondition", message: "取り消せる約束はありません。" } },
+    : { ok: false, reason: { kind: "precondition", message: "没有可以取消的约定。" } },
   handler: (ctx) => {
     const next = cloneGameState(ctx.state);
     const id = String(requirePickOne(cancelDateAppointment19996HandlerEntry.prompt!(ctx)!, ctx.promptAnswer));

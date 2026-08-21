@@ -30,7 +30,7 @@
 
 import type { CharaSlot } from "./game-state.js";
 import { charaOutfit, type CharaOutfit, type SlotName } from "./clothing-outfits.js";
-import { EQUIP_SLOT } from "./settlement.js";
+import { CFLAG_ID, EQUIP_SLOT } from "./settlement.js";
 import { clothingName, type EquipPart } from "./clothing-catalog.js";
 
 // ---------------------------------------------------------------------------
@@ -67,7 +67,14 @@ function slotId(name: SlotName): EquipPart {
  * the source of truth.
  */
 function wearsSlot(chara: CharaSlot, outfit: CharaOutfit, slot: SlotName): boolean {
-  if (slot === LOWER_UNDERWEAR_SLOT) return Boolean(outfit.lowerUnderwear);
+  // The unique underwear slot is stored in the authored outfit, but
+  // CFLAG:291 is the authoritative removal marker.  Without this check a
+  // stolen/removéd unique panty would reappear on every read through the
+  // static outfit fallback.
+  if (slot === LOWER_UNDERWEAR_SLOT) {
+    if ((chara.state.CFLAG[CFLAG_ID.没穿内裤] ?? 0) !== 0) return false;
+    return Boolean(outfit.lowerUnderwear);
+  }
   if (slot === UPPER_UNDERWEAR_SLOT) return Boolean(outfit.upperUnderwear);
   const equipId = chara.state.EQUIP[slotId(slot)];
   if (equipId !== undefined) return equipId !== 0; // 0 = explicitly stripped
@@ -79,7 +86,10 @@ function wearsSlot(chara: CharaSlot, outfit: CharaOutfit, slot: SlotName): boole
  * `wearsSlot` — state first, outfit fallback only when EQUIP is absent.
  */
 function pieceNameInSlot(chara: CharaSlot, outfit: CharaOutfit, slot: SlotName): string {
-  if (slot === LOWER_UNDERWEAR_SLOT) return outfit.lowerUnderwear ?? "";
+  if (slot === LOWER_UNDERWEAR_SLOT) {
+    if ((chara.state.CFLAG[CFLAG_ID.没穿内裤] ?? 0) !== 0) return "";
+    return outfit.lowerUnderwear ?? "";
+  }
   if (slot === UPPER_UNDERWEAR_SLOT) return outfit.upperUnderwear ?? "";
   const equipId = chara.state.EQUIP[slotId(slot)];
   if (equipId !== undefined) {

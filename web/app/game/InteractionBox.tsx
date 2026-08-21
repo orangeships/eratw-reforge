@@ -31,6 +31,8 @@ import { portraitForSpriteName, type PortraitSource } from "./portrait-expressio
 import { kojoColor } from "./kojo-colors.js";
 import { formatGameEvent } from "./event-format.js";
 import RadioBroadcast from "../ai/RadioBroadcast.js";
+import { SceneAmbientPanel } from "./SceneSidebar.js";
+import type { SceneAmbientEntry } from "../ai/types.js";
 import { portraitForDynamicCharacter } from "../../../modernization/runtime/world/dynamic-portraits.js";
 import MobPortrait from "./MobPortrait.js";
 
@@ -56,6 +58,8 @@ export interface InteractionBoxProps {
   aiCharaNum?: number;
   /** AI-enhanced deterministic weather broadcast from COM496. */
   radioBroadcast?: string;
+  /** Latest scene AI entry shown beside the COM496 radio surface. */
+  sceneAmbientEntry?: SceneAmbientEntry | null;
 }
 
 export default function InteractionBox(props: InteractionBoxProps) {
@@ -65,7 +69,19 @@ export default function InteractionBox(props: InteractionBoxProps) {
     return (
       <div className="interaction-box__scrim" data-testid="interaction-box">
         <div className="interaction-box interaction-box--radio" role="dialog" aria-modal="true" aria-label="收音机天气播报">
-          <RadioBroadcast rawBroadcast={props.radioBroadcast} />
+          <div className="interaction-box__radio-layout">
+            <div className="interaction-box__radio-main">
+              <RadioBroadcast rawBroadcast={props.radioBroadcast} />
+            </div>
+            <div className="interaction-box__radio-side" data-testid="radio-scene-dialogue">
+              <SceneAmbientPanel
+                entry={props.sceneAmbientEntry}
+                state={props.state}
+                enabled
+                allowCharacterDialogue
+              />
+            </div>
+          </div>
           <div className="interaction-box__grid" data-testid="interaction-actions">
             <button type="button" className="interaction-box__btn interaction-box__btn--exit" onClick={props.onExit}>[关闭]</button>
           </div>

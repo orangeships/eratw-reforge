@@ -23,6 +23,7 @@ import NewGameSetup from "./game/pre/NewGameSetup.js";
 import ResidenceSelect from "./game/pre/ResidenceSelect.js";
 import KojoSelect from "./game/pre/KojoSelect.js";
 import NewGameOptions from "./game/pre/NewGameOptions.js";
+import NewGameKojoUpdate from "./game/pre/NewGameKojoUpdate.js";
 import NightSettlementScreen from "./game/NightSettlementScreen.js";
 import MorningMenuScreen from "./game/MorningMenuScreen.js";
 import DanmakuBattleScreen from "./game/DanmakuBattleScreen.js";
@@ -34,6 +35,10 @@ import type { ShopBuyResult } from "../../modernization/runtime/state/shop.js";
 import type { WalkChoice } from "../../modernization/runtime/world/skip-move.js";
 import type { AgentIntent } from "../../modernization/schemas/types.js";
 import type { PromptAnswer } from "../../modernization/runtime/command/prompt.js";
+import type {
+  NewGameKojoUpdateCandidate,
+  NewGameKojoUpdateResult,
+} from "../../modernization/runtime/index.js";
 
 export interface ScreenRouterProps {
   gameState: GameState | null;
@@ -46,6 +51,7 @@ export interface ScreenRouterProps {
   onResolveWalkEncounter?: (choice: WalkChoice) => void;
   onFinishSleep?: () => void;
   onResolveDailyEvent?: (answer: boolean | PromptAnswer) => void;
+  onRecoverDailyEvent?: () => void;
   onOpenEyes?: () => void;
   /** SAVE/LOAD 页面 — 3 存档位. Save / load a specific slot; refresh reads all
    *  slots' metadata for the page. */
@@ -64,6 +70,9 @@ export interface ScreenRouterProps {
   onReleaseBug?: (id: string) => boolean;
   onMaterializeBug?: (id: string) => boolean;
   onTogglePortraitKind?: () => void;
+  onTogglePantyGapAuto?: () => void;
+  onClaimPantyCollectionBonus?: (id: number) => boolean;
+  onSellPantyDuplicates?: () => number;
   lastSavedAt?: number | null;
   /** Toggle an Act_COM filter (Parity QA P-1) for the focused target. */
   onToggleFilter?: (toggleId: number, target: number) => void;
@@ -73,6 +82,11 @@ export interface ScreenRouterProps {
   /** Commit the wizard draft into a fresh GameState and enter the main game
    *  (the residence step's 就此开始吧). */
   onEnterGame: () => void;
+  onListNewGameKojoUpdates?: () => NewGameKojoUpdateCandidate[];
+  onResolveNewGameKojoUpdate?: (
+    charaNum: number,
+    choices?: readonly number[],
+  ) => NewGameKojoUpdateResult | null;
   /** A game state is available (gate 继续游戏 / mainGame). */
   canPlay: boolean;
 }
@@ -129,6 +143,18 @@ export default function ScreenRouter(props: ScreenRouterProps) {
         />
       );
 
+    case "kojoUpdate":
+      return props.gameState ? (
+        <NewGameKojoUpdate
+          candidates={props.onListNewGameKojoUpdates?.() ?? []}
+          onResolve={(charaNum, choices) =>
+            props.onResolveNewGameKojoUpdate?.(charaNum, choices) ?? null}
+          onDone={() => setScreen("morningMenu")}
+        />
+      ) : (
+        <p data-testid="kojo-update-loading">正在准备角色剧本初始化…</p>
+      );
+
     case "mainGame":
       return props.gameState ? (
         <GameClient
@@ -171,12 +197,20 @@ export default function ScreenRouter(props: ScreenRouterProps) {
         <p data-testid="farm-loading">正在准备菜园…</p>
       );
 
+    // The public player build has no authoring surface. These states are kept
+    // in the shared scene store for development compatibility, but never
+    // expose the Mod Studio screens in this repository.
+    case "projectSelect":
+    case "developerTools":
+      return <p data-testid="player-tools-unavailable">玩家版不包含开发工具。</p>;
+
     case "nightSettlement":
       return props.gameState ? (
         <NightSettlementScreen
           state={props.gameState}
           onSettleSleep={props.onFinishSleep ?? (() => undefined)}
           onResolveDailyEvent={props.onResolveDailyEvent ?? (() => undefined)}
+          onRecoverDailyEvent={props.onRecoverDailyEvent ?? (() => undefined)}
           onContinue={() => {
             setMorningInitialPanel("gap-shop");
             setScreen("morningMenu");
@@ -204,6 +238,9 @@ export default function ScreenRouter(props: ScreenRouterProps) {
           onReleaseBug={props.onReleaseBug}
           onMaterializeBug={props.onMaterializeBug}
           onTogglePortraitKind={props.onTogglePortraitKind}
+          onTogglePantyGapAuto={props.onTogglePantyGapAuto}
+          onClaimPantyCollectionBonus={props.onClaimPantyCollectionBonus}
+          onSellPantyDuplicates={props.onSellPantyDuplicates}
           initialPanel={morningInitialPanel}
           onOpenEyes={() => {
             setMorningInitialPanel(null);

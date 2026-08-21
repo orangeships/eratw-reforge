@@ -25,6 +25,7 @@ export const moveToHomeHandlerEntry: HandlerEntry = {
     const homeLocation = next.homeLocation ?? "自宅";
     // O4: returning home (MAIN_MAP) ends any in-progress date.
     const endedDate = endOdekakeIfReturningHome(next, homeLocation);
+    next.master.homeLocation = homeLocation;
     setSlotLocation(next.master, homeLocation);
     advanceTimeTicks(next, 5);
     const activityEvents = pitfallArrivalEvents(next, homeLocation, ctx.now());

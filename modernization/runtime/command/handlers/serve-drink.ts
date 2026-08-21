@@ -18,15 +18,13 @@
  *     `RETURN -1`; modeled as a precondition for a clean MVP). (`TFLAG:100` /
  *     `GLOBAL_COMABLE` catalog-reach, `BATHCHECK`, `デート相手`, `AT_HOME` /
  *     `ABL:親密<3` defer — no ROOMDATA/dating layer.)
- *   - **interactive picker** `酒一覧表示(1)` (ERB 10) — B9 deferred; the
- *     handler auto-serves the **first drinkable alcohol** in inventory
- *     (lowest item id) via `firstDrinkableAlcohol`. Faithful for a
- *     single-alcohol trial inventory.
+ *   - **interactive picker** `酒一覧表示(1)` (ERB 10) — staged B9 picker over
+ *     every drinkable inventory item, with a second prompt for the upstream
+ *     说服 arm when a 下戸 target refuses.
  *   - **refusal arms** (ERB 26-85): 烂酔奸==2 && !恋慕, 酒気>2/3, 酒耐性==-2
- *     (the 说服 INPUT arm) — all modeled as **refuse-noop** with a narration
- *     (the 说服 persuade success → TFLAG:193=1 ×2 is deferred; a -2 chara is
- *     simply refused). The 烂酔奸 `SOURCE:反感+=3000` is dead in ERA
- *     (`RETURN -1` aborts before settlement) → not applied.
+ *     (the 说服 INPUT arm) — persuasion success sets TFLAG:193=1 and uses
+ *     the upstream intimacy/talk/emotion score; failed persuasion applies the
+ *     corresponding refusal reaction and does not consume the drink.
  *   - **serve path** (ERB 87-99): `EFFECT_酒データ{酒ID}(TARGET)` →
  *     `DOWNBASE:MASTER:気力+=50 / 体力+=10` → `ITEM--` → `DRUNKEN(MASTER,…)` →
  *     `COM332_1` (which internally `DRUNKEN(TARGET,…)` + SOURCE) → `TIME+=30`.
@@ -36,20 +34,23 @@
  * **DEFERRED (handler layer; mechanism deferrals in alcohol.ts header):**
  *   - `TFLAG:100` / `GLOBAL_COMABLE` reachability gates — catalog reach.
  *   - `BATHCHECK` / `デート相手` / `AT_HOME`+`親密<3` — need ROOMDATA/dating.
- *   - `酒一覧表示` interactive picker (B9) + 说服 INPUT arm (B9).
  *   - `PREVCOM == SELECTCOM` 反感=100 (no PREVCOM tracking).
  *   - `M_TFLAG:时间因子类型 = TimeFactor_话术` — no consumer.
  *   - `TFLAG:信頼度管理` — set in `computeDrinkSources`, no consumer wired.
  */
 import type { GameState } from "../../state/game-state.js";
-import type { HandlerEntry } from "../types.js";
+import type { CommandContext, HandlerEntry } from "../types.js";
+import type { PromptAnswer, PromptSpec } from "../prompt.js";
+import { pickOne } from "../prompt.js";
 import { cloneGameState } from "../../state/game-state.js";
 import { applySourceCheck } from "../source-check.js";
-import { removeItem } from "../../state/items.js";
+import { itemCount, removeItem } from "../../state/items.js";
 import {
+  ABL_ID,
   BASE_ID,
   CFLAG_ID,
   FLAG_ID,
+  SOURCE_ID,
   TALENT_ID,
   advanceTimeTicks,
   getMasterCflag,
@@ -59,11 +60,64 @@ import {
   applyAlcoholEffect,
   computeDrinkSources,
   drunken,
+  drinkableAlcoholIds,
   firstDrinkableAlcohol,
+  isAlcohol,
+  syncDrunkenness,
 } from "../../state/alcohol.js";
 import { TFLAG_ID, setTflag } from "../../state/tflag.js";
 import { collectCommandKojo } from "../command-kojo.js";
 import { applyKojoEffects } from "../../kojo/effects.js";
+
+// ---------------------------------------------------------------------------
+function sequenceValues(answer: PromptAnswer | undefined): readonly (number | string)[] {
+  return answer?.kind === "pick_sequence" ? answer.values : [];
+}
+
+function selectedItemId(answer: PromptAnswer | undefined): number | null {
+  const values = sequenceValues(answer);
+  const raw = values[0] ?? (answer?.kind === "pick_one" ? answer.value : undefined);
+  if (raw === undefined || raw === "cancel") return null;
+  const id = Number(raw);
+  return Number.isInteger(id) ? id : null;
+}
+
+function persuasionNeeded(state: GameState, target: number): boolean {
+  const slot = state.charas[target];
+  if (!slot) return false;
+  const sakeMax = slot.state.MAXBASE[BASE_ID.酒気] ?? 0;
+  const sakeCur = slot.state.BASE[BASE_ID.酒気] ?? 0;
+  if ((slot.state.CFLAG[CFLAG_ID.烂酔奸] ?? 0) === 2 && !(slot.state.TALENT[TALENT_ID.恋慕] ?? 0)) {
+    return false;
+  }
+  if (sakeMax > 0 && sakeCur > Math.trunc((sakeMax * 2) / 3)) return false;
+  return (slot.state.TALENT[TALENT_ID.酒耐性] ?? 0) === -2 &&
+    (slot.state.CFLAG[CFLAG_ID.不會喝酒] ?? 0) < 5;
+}
+
+export function serveDrinkPrompt(ctx: CommandContext): PromptSpec | null {
+  const values = sequenceValues(ctx.promptAnswer);
+  const itemId = selectedItemId(ctx.promptAnswer);
+  if (values.length === 0 && ctx.promptAnswer?.kind !== "pick_one") {
+    const options = drinkableAlcoholIds(ctx.state).map((id) => ({
+      id,
+      label: alcoholName(id),
+      detail: `库存 ${itemCount(ctx.state, id)}`,
+    }));
+    return options.length > 0
+      ? pickOne("要敬什么酒？", [...options, { id: "cancel", label: "放弃" }])
+      : null;
+  }
+  if (itemId === null || !isAlcohol(itemId) || itemCount(ctx.state, itemId) < 1) return null;
+  if (values.length <= 1 && persuasionNeeded(ctx.state, ctx.target)) {
+    const targetName = ctx.state.charas[ctx.target]?.callName ?? `#${ctx.target}`;
+    return pickOne(`${targetName}推托说自己不能喝酒。怎么办？`, [
+      { id: 0, label: "放弃" },
+      { id: 1, label: "说服" },
+    ]);
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // execCheck — `@COM_ABLE332` core (ERB 211-246)
@@ -105,7 +159,7 @@ function checkServeDrinkEligible(
   // The picker returns -1 when no drinkable alcohol exists. Fail closed at
   // the command gate so the UI cannot advertise an action that can only
   // become a no-op after opening the picker.
-  if (firstDrinkableAlcohol(state) === null) {
+  if (drinkableAlcoholIds(state).length === 0) {
     return { ok: false, reason: { kind: "precondition", message: "没有可饮用的酒。" } };
   }
   return { ok: true };
@@ -117,6 +171,8 @@ function checkServeDrinkEligible(
 
 export const serveDrinkHandlerEntry: HandlerEntry = {
   commandNo: 332,
+  stagedPrompt: true,
+  prompt: serveDrinkPrompt,
   execCheck: (ctx) => {
     const r = checkServeDrinkEligible(ctx.state, ctx.target);
     return r.ok ? { ok: true } : { ok: false, reason: r.reason };
@@ -131,11 +187,19 @@ export const serveDrinkHandlerEntry: HandlerEntry = {
         outcome: "noop" as const,
       };
     }
-    const itemId = firstDrinkableAlcohol(next);
+    const hasPromptSelection = sequenceValues(ctx.promptAnswer).length > 0 || ctx.promptAnswer?.kind === "pick_one";
+    const itemId = selectedItemId(ctx.promptAnswer) ?? (hasPromptSelection ? null : firstDrinkableAlcohol(next));
     if (itemId === null) {
       return {
         state: next,
         events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "没有酒可以劝。" }],
+        outcome: "noop" as const,
+      };
+    }
+    if (!isAlcohol(itemId) || itemCount(next, itemId) < 1) {
+      return {
+        state: next,
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "选择的酒已经不在库存中了。" }],
         outcome: "noop" as const,
       };
     }
@@ -174,18 +238,56 @@ export const serveDrinkHandlerEntry: HandlerEntry = {
         outcome: "noop" as const,
       };
     }
-    // ERB 38: (酒耐性==-2 && 不會喝酒<5) → 说服 INPUT arm. B9 deferred → refuse.
+    // ERB 38-85: 下戸 can choose to give up or try to persuade the target.
     const tol = tSlot.state.TALENT[TALENT_ID.酒耐性] ?? 0;
     const wontDrink = tSlot.state.CFLAG[CFLAG_ID.不會喝酒] ?? 0;
+    let persuasionText = "";
     if (tol === -2 && wontDrink < 5) {
-      setTflag(next, TFLAG_ID.SELECTCOM的分岐, -5); // ERB 59 (放弃 branch).
-      return {
-        state: next,
-        events: [
-          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "对方推托说自己不能喝酒，只好放弃了。" },
-        ],
-        outcome: "noop" as const,
-      };
+      const values = sequenceValues(ctx.promptAnswer);
+      const persuasion = values[1];
+      if (persuasion !== 1 || target === 55) {
+        setTflag(next, TFLAG_ID.SELECTCOM的分岐, -5);
+        return {
+          state: next,
+          events: [
+            { kind: "NARRATION" as const, timestamp: ctx.now(), text: "因为对方完全没有要喝酒的意思，所以放弃了。" },
+          ],
+          outcome: "noop" as const,
+        };
+      }
+
+      const intimacy = tSlot.state.ABL[ABL_ID.親密] ?? 0;
+      const talk = next.master.state.ABL[ABL_ID.話術技能] ?? 0;
+      const emotion = tSlot.state.BASE[BASE_ID.情緒] ?? 0;
+      const maxEmotion = tSlot.state.MAXBASE[BASE_ID.情緒] ?? 0;
+      const persuasionScore = (intimacy * 200 + talk * 100 + Math.min(3, wontDrink) * 300) * emotion;
+      const persuaded = maxEmotion > 0 && persuasionScore / maxEmotion >= 1500;
+      if (persuaded) {
+        tSlot.state.CFLAG[CFLAG_ID.不會喝酒] = wontDrink + 1;
+        setTflag(next, TFLAG_ID.SELECTCOM的分岐, 1);
+        persuasionText = "由于你的劝说，对方开始怯生生地喝起酒来。";
+      } else if (wontDrink < -10) {
+        applySourceCheck(next, target, { [SOURCE_ID.反感]: 3000 });
+        tSlot.state.BASE[BASE_ID.情緒] = 0;
+        tSlot.state.BASE[BASE_ID.憤怒] = 1500;
+        setTflag(next, TFLAG_ID.好感度减少, 5);
+        setTflag(next, TFLAG_ID.SELECTCOM的分岐, -2);
+        return {
+          state: next,
+          events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "对方终于被惹火了。" }],
+          outcome: "noop" as const,
+        };
+      } else {
+        applySourceCheck(next, target, { [SOURCE_ID.反感]: 500 });
+        tSlot.state.BASE[BASE_ID.情緒] = Math.trunc((tSlot.state.BASE[BASE_ID.情緒] ?? 0) / 2);
+        setTflag(next, TFLAG_ID.好感度减少, 1);
+        setTflag(next, TFLAG_ID.SELECTCOM的分岐, -1);
+        return {
+          state: next,
+          events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "不管你怎么劝说，对方还是不肯喝酒。" }],
+          outcome: "noop" as const,
+        };
+      }
     }
 
     // --- serve path (ERB 87-99) ---
@@ -206,6 +308,7 @@ export const serveDrinkHandlerEntry: HandlerEntry = {
 
     // CALL COM332_1 (ERB 95) — internally DRUNKEN(TARGET) (ERB 109) + SOURCE.
     drunken(next, target, itemId, ctx.rng);
+    const drunkenness = syncDrunkenness(next, target);
     const { sources, taste, favorBias } = computeDrinkSources(
       next,
       target,
@@ -230,11 +333,20 @@ export const serveDrinkHandlerEntry: HandlerEntry = {
           ? "对方喝得很中意。"
           : "";
     const text = `向对方劝了${drinkName}。${flavor}（经过 30 分钟）`;
+    const drunkEvents = drunkenness.map((transition) => ({
+      kind: "NARRATION" as const,
+      timestamp: ctx.now(),
+      text: transition.kind === "became-drunk"
+        ? "对方喝得酩酊大醉的样子。"
+        : "对方酒醒了。",
+    }));
     const kojo = collectCommandKojo({ ...ctx, state: next }, target, 332);
     return {
       state: kojo.effects.length > 0 ? applyKojoEffects(next, kojo.effects) : next,
       events: [
+        ...(persuasionText ? [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: persuasionText }] : []),
         { kind: "NARRATION" as const, timestamp: ctx.now(), text },
+        ...drunkEvents,
         ...kojo.events,
       ],
       outcome: "ok" as const,

@@ -5,10 +5,12 @@ const MAX_LINE_LENGTH = 180;
 const ALLOWED_FORMS = new Set(["PRINTFORML", "PRINTFORMDL"]);
 const META_TEXT = /(?:作为(?:一个)?AI|语言模型|system prompt|系统提示|```)/i;
 const LEGACY_LIKE_IDENTIFIER = /\b[A-Z][A-Z0-9_]{3,}\b/;
+const PROVIDER_ERROR_TEXT = /^(?:error|错误)\s*:|\bnew_sensitive\b|\binput\s+[a-z_]+\s*\(\d+\)/i;
 
 function isSafeLineText(text: string): boolean {
   return Boolean(text) && text.length <= MAX_LINE_LENGTH &&
-    !/^[#>*-]\s/.test(text) && !META_TEXT.test(text) && !LEGACY_LIKE_IDENTIFIER.test(text);
+    !/^[#>*-]\s/.test(text) && !META_TEXT.test(text) &&
+    !LEGACY_LIKE_IDENTIFIER.test(text) && !PROVIDER_ERROR_TEXT.test(text);
 }
 
 function decodePartialJsonString(raw: string): string {

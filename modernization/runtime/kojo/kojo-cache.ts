@@ -523,7 +523,12 @@ export class KojoCache implements DialogueRouter {
     // 2. Parse + resolve the first-meeting greeting body (KOJO_MESSAGE.ERB:63,
     //    dispatched from @SYOTAIMEN when 面識==0). No arm/args — one func.
     const node = this.getOrParseEncounter(charaNum, variantCode, variant.encounter);
-    return node ? resolveKojoNode(node, charaNum, state, rng) : [];
+    return node
+      ? resolveKojoNode(node, charaNum, state, rng, [], {
+          nameResolver: (reference) =>
+            typeof reference === "number" ? this.nameResolver?.(reference) : undefined,
+        })
+      : [];
   }
 
   resolveEncounterKojoDetailed(charaNum: number, state: Readonly<GameState>, rng: Rng) {
@@ -534,7 +539,10 @@ export class KojoCache implements DialogueRouter {
       ? this.getOrParseEncounter(charaNum, variantCode, variant.encounter)
       : null;
     return node
-      ? resolveKojoNodeDetailed(node, charaNum, state, rng)
+      ? resolveKojoNodeDetailed(node, charaNum, state, rng, [], {
+          nameResolver: (reference) =>
+            typeof reference === "number" ? this.nameResolver?.(reference) : undefined,
+        })
       : emptyKojoResolution("not-authored");
   }
 
@@ -560,6 +568,10 @@ export class KojoCache implements DialogueRouter {
           rng,
           [],
           choices,
+          {
+            nameResolver: (reference) =>
+              typeof reference === "number" ? this.nameResolver?.(reference) : undefined,
+          },
         )
       : emptyInteractiveKojoResolution("not-authored");
   }
@@ -622,6 +634,12 @@ export class KojoCache implements DialogueRouter {
           choices,
         )
       : emptyInteractiveKojoResolution("not-authored");
+  }
+
+  hasUpdateKojo(charaNum: number, state: Readonly<GameState>): boolean {
+    if (!this.kojoEnabledForTarget(state, charaNum)) return false;
+    const variantCode = this.resolveVariant(charaNum, state);
+    return Boolean(this.findVariant(charaNum, variantCode)?.update);
   }
 
   resolveMarkKojo(

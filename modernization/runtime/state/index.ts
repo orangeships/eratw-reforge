@@ -13,6 +13,8 @@ export type {
   CharaSlotState,
   SleepSession,
   DailyEventSession,
+  EventPromptLine,
+  EventPromptSpec,
   MobMealSession,
   DynamicCharacterMeta,
   DynamicCharacterPortrait,

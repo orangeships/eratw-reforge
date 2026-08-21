@@ -142,21 +142,21 @@ export function computeMamemakiPlan(
 function checkMamemakiEligible(ctx: CommandContext): { ok: true } | Blocked {
   // ERB l.63: 時間停止 (FLAG:70).
   if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "時間停止中はできない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "时间停止期间无法执行。" } };
   }
   const target = ctx.state.charas[ctx.target];
   if (!target) {
-    return { ok: false, reason: { kind: "precondition", message: "対象がいない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "没有目标。" } };
   }
   // ERB l.71: 睡眠中 (TARGET's).
   if ((target.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "相手は睡眠中だ。" } };
+    return { ok: false, reason: { kind: "precondition", message: "对方正在睡觉。" } };
   }
   // ERB l.76: 節分 festival gate (calendar deferred) → always blocked live.
   // ERB l.79-84: 鬼族 race gate (race deferred) → also always blocked live.
   return {
     ok: false,
-    reason: { kind: "precondition", message: "豆まきは節分の日に鬼族へしかできない（历法・鬼族未実装）。" },
+    reason: { kind: "precondition", message: "撒豆只能在节分之日对鬼族进行（历法与鬼族判定尚未实现）。" },
   };
 }
 
@@ -250,7 +250,7 @@ export const comf364HandlerEntry: HandlerEntry = {
     events.unshift({
       kind: "NARRATION",
       timestamp: ctx.now(),
-      text: `豆をまいた（${eligible.length}人）；好感度 ${favorDelta >= 0 ? "+" : ""}${favorDelta}。`,
+      text: `向${eligible.length}人撒了豆；好感度 ${favorDelta >= 0 ? "+" : ""}${favorDelta}。`,
     });
 
     return { state: next, events, outcome: "ok" };

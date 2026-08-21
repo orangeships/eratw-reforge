@@ -138,7 +138,7 @@ export const sansaku604HandlerEntry: HandlerEntry = {
       return {
         state: next,
         events: [
-          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "行き先が決まっていません。" },
+          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "尚未决定目的地。" },
         ],
         outcome: "noop" as const,
       };

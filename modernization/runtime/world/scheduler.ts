@@ -35,6 +35,7 @@ import { roomIdToLocation, setSlotLocation } from "./room-id-location.js";
 import { applyNaturalDrift } from "../state/base-natural-drift.js";
 import { atOwnHome, atPlayerBase } from "./location-predicates.js";
 import { applyWeatherExposure } from "../weather/effects.js";
+import { syncDrunkenness } from "../state/alcohol.js";
 import {
   JOB_ID,
   JOB_LABEL,
@@ -670,6 +671,22 @@ function reprojectScheduleInterval(
     applyNaturalDrift(slot, here, lapse, { ordinaryRest: !state.sleepSession });
     applyWeatherExposure(state, slot, lapse);
     slot.state.CFLAG[CFLAG_ID.行动] = currentAction;
+  }
+
+  // `@CHARA_ACTION_DRUNK` runs after movement in the upstream pass. Keep the
+  // transient TCVAR gate synchronized with the live 酒气 gauge here so NPCs
+  // who cross 80% become immobile on the next interval and recover below 40%.
+  for (const transition of syncDrunkenness(state)) {
+    const slot = state.charas[transition.charaNum];
+    if (!slot || slot.location !== here) continue;
+    events.push({
+      kind: "NARRATION",
+      timestamp: now(),
+      text: transition.kind === "became-drunk"
+        ? `${charaName(slot)}喝得酩酊大醉的样子。`
+        : `烂醉的${charaName(slot)}酒醒了的样子。`,
+      presentation: "ambient",
+    });
   }
 
   if (lapse > 0) {

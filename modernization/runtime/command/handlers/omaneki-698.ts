@@ -200,7 +200,7 @@ export const omaneki698HandlerEntry: HandlerEntry = {
           {
             kind: "NARRATION" as const,
             timestamp: ctx.now(),
-            text: "入室する対象がいません。",
+            text: "没有可以进入其房间的对象。",
           },
         ],
         outcome: "noop" as const,
@@ -219,7 +219,7 @@ export const omaneki698HandlerEntry: HandlerEntry = {
           {
             kind: "NARRATION" as const,
             timestamp: ctx.now(),
-            text: `${tSlot.callName ?? `#${target}`}の部屋に入ろうとしたら、${actorName}に止められた。`,
+            text: `试图进入${tSlot.callName ?? `#${target}`}的房间时，被${actorName}阻止了。`,
           },
         ],
         outcome: "noop" as const,
@@ -234,7 +234,7 @@ export const omaneki698HandlerEntry: HandlerEntry = {
           {
             kind: "NARRATION" as const,
             timestamp: ctx.now(),
-            text: r.reason ?? "入室に失敗しました。",
+            text: r.reason ?? "进入房间失败。",
           },
         ],
         outcome: "noop" as const,
@@ -248,7 +248,7 @@ export const omaneki698HandlerEntry: HandlerEntry = {
         {
           kind: "NARRATION" as const,
           timestamp: ctx.now(),
-          text: `${tSlot.callName ?? `#${target}`}の部屋に上がった。`,
+          text: `进入了${tSlot.callName ?? `#${target}`}的房间。`,
         },
       ],
       outcome: "ok" as const,

@@ -33,13 +33,8 @@
  *     `@KIGEN_CHANGE(40,1)`), TFLAG:信頼度管理.
  *
  * **DEFERRED (documented; off in this slice):**
- *   - `@酒一覧表示` interactive picker (B9) — handler auto-serves the first
- *     drinkable alcohol in inventory (lowest item id).
- *   - 说服 (persuade) INPUT arm (ERB 38-85) + 烂酔奸 refusal + 酒気>2/3
- *     "too drunk" refusal + 酒耐性==-2 refusal — all modeled as handler-level
- *     refuse-noop; the 说服 success (TFLAG:193=1 ×2) and the 味補正 /=2 arm
- *     (gated on 酒耐性==-2) are therefore dead in the MVP (a -2 chara is
- *     refused before `computeDrinkSources` runs).
+ *   - The COM332 handler owns the interactive picker and 说服 INPUT flow;
+ *     this state module remains the deterministic alcohol calculation layer.
  *   - `PREVCOM == SELECTCOM` 反感=100 (no PREVCOM tracking).
  *   - 鬼 race (`CHECK_CHARA"鬼"`) — `isOni` returns false pending a race map;
  *     鬼杀酒's ×3 / TASTE=30 鬼 arms are structural-but-inert. 神霊/調合知識/
@@ -57,6 +52,7 @@ import {
   BASE_ID,
   CFLAG_ID,
   SOURCE_ID,
+  TCVAR_ID,
   TALENT_ID,
   recoverBase,
   times,
@@ -310,22 +306,22 @@ export function alcoholName(itemId: number): string {
   return ALCOHOL[itemId]?.name ?? "";
 }
 
+/** Return every drinkable alcohol currently available, in stable item order. */
+export function drinkableAlcoholIds(state: GameState): number[] {
+  const items = state.items;
+  if (!items) return [];
+  return Object.keys(items)
+    .map(Number)
+    .filter((id) => isAlcohol(id) && (items[id] ?? 0) >= 1)
+    .sort((a, b) => a - b);
+}
+
 /**
- * `酒一覧表示` auto-pick: the lowest item id in the master's inventory that
- * is a drinkable alcohol with count ≥ 1. Returns `null` if none (the ERB
- * picker returns 0 → `RETURN -1`; the handler blocks this in execCheck).
+ * Compatibility helper for callers that only need the first available item.
+ * COM332 now exposes the full `drinkableAlcoholIds` list through its prompt.
  */
 export function firstDrinkableAlcohol(state: GameState): number | null {
-  const items = state.items;
-  if (!items) return null;
-  let best: number | null = null;
-  for (const idStr of Object.keys(items)) {
-    const id = Number(idStr);
-    if (!isAlcohol(id)) continue;
-    if ((items[id] ?? 0) < 1) continue;
-    if (best === null || id < best) best = id;
-  }
-  return best;
+  return drinkableAlcoholIds(state)[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -394,6 +390,51 @@ export function drunken(
   // matches the ERB which only caps when MAXBASE is a real ceiling. To be safe
   // and faithful (MAXBASE:酒気 is a real stat), cap only when max>0.
   slot.state.BASE[BASE_ID.酒気] = max > 0 ? Math.min(max, cur + gain) : cur + gain;
+}
+
+export interface DrunkennessTransition {
+  charaNum: number;
+  kind: "became-drunk" | "recovered";
+}
+
+/**
+ * Mirror `@CHARA_ACTION_DRUNK` for NPCs. `BASE:酒気` is the continuously
+ * visible gauge; `TCVAR:泥酔` is the gameplay lock used by movement and
+ * command gates. Keeping the two in sync is what makes crossing the 80%
+ * threshold actually affect the next turn, and lets the 40% recovery branch
+ * release the character again.
+ */
+export function syncDrunkenness(
+  state: GameState,
+  charaNum?: number,
+): DrunkennessTransition[] {
+  const slots = charaNum === undefined
+    ? Object.values(state.charas)
+    : state.charas[charaNum]
+      ? [state.charas[charaNum]!]
+    : [];
+  const transitions: DrunkennessTransition[] = [];
+  for (const slot of slots) {
+    const max = slot.state.MAXBASE[BASE_ID.酒気] ?? 0;
+    const current = slot.state.BASE[BASE_ID.酒気] ?? 0;
+    const drunk = (slot.state.TCVAR[TCVAR_ID.泥酔] ?? 0) !== 0;
+    if (!drunk && current > Math.trunc(max / 10) * 8) {
+      slot.state.TCVAR[TCVAR_ID.泥酔] = 1;
+      if (talent(slot, TALENT_ID.酒耐性) === -2) {
+        const wontDrink = slot.state.CFLAG[CFLAG_ID.不會喝酒] ?? 0;
+        slot.state.CFLAG[CFLAG_ID.不會喝酒] = wontDrink - 3;
+      }
+      transitions.push({ charaNum: slot.charaNum, kind: "became-drunk" });
+    } else if (
+      drunk &&
+      current < Math.trunc(max / 10) * 4 &&
+      (slot.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) === 0
+    ) {
+      slot.state.TCVAR[TCVAR_ID.泥酔] = 0;
+      transitions.push({ charaNum: slot.charaNum, kind: "recovered" });
+    }
+  }
+  return transitions;
 }
 
 // ---------------------------------------------------------------------------
@@ -514,9 +555,8 @@ export interface DrinkSources {
  * TALENT:心情 + CFLAG:不會喝酒 + flagStore).
  *
  * `tflag193` is read from `flagStore` (ERB sets it 0 at COM332:24, then the
- * 说服 arm may set 1; MVP never reaches 说服 → stays 0 → ×1.00). The
- * 酒耐性==-2 味補正 /=2 arm (ERB 160-170) is dead in the MVP (a -2 chara is
- * refused before this fn runs) — documented.
+ * 说服 arm may set 1). The 下戸 taste correction at ERB 160-170 is applied
+ * before the SOURCE scaling so persuaded drinkers still follow upstream.
  */
 export function computeDrinkSources(
   state: GameState,
@@ -558,9 +598,15 @@ export function computeDrinkSources(
     judou = times(judou, 2);
   }
 
-  // 味補正 = ALCOHOL_TASTE (ERB 159). 酒耐性==-2 && taste<15 /=2 arm (ERB
-  // 160-170) — dead in MVP (酒耐性==-2 refused before this fn). Skipped.
-  const taste = alcoholTaste(state, charaNum, itemId);
+  // 味補正 = ALCOHOL_TASTE (ERB 159-170). 下戸 who has been persuaded still
+  // gets the upstream small-sip correction; the counter value is read after
+  // the persuasion success increment from COM332.
+  let taste = alcoholTaste(state, charaNum, itemId);
+  if (talent(slot, TALENT_ID.酒耐性) === -2 && taste < 15) {
+    const wontDrink = slot.state.CFLAG[CFLAG_ID.不會喝酒] ?? 0;
+    if (wontDrink < 3) taste = Math.trunc(taste / 2);
+    else if (wontDrink < 5) taste = Math.trunc(taste / 3) * 2;
+  }
 
   // SOURCE *= 味補正/10 (ERB 172-174, int division).
   karaku = Math.trunc((karaku * taste) / 10);

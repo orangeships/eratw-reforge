@@ -1,10 +1,18 @@
 import type { ObservationEvent } from "../../../modernization/schemas/types.js";
+import type {
+  AmbientInitiativeKind,
+  AmbientInitiativeMode,
+  AmbientInitiativeOpportunity,
+  AmbientInitiativeTrigger,
+} from "../../../modernization/runtime/world/ambient-initiative.js";
 
 export interface AiSettings {
   /** Master switch for every optional AI presentation feature. */
   enabled: boolean;
   /** AI-generated dialogue for otherwise silent everyday kojo routes. */
   kojoEnabled: boolean;
+  /** Disposable initiative prose shown directly on the current scene. */
+  ambientEnabled: boolean;
   /** Which command families AI is allowed to complete. */
   kojoFamilies: string[];
   /** AI-authored connective prose for the deterministic radio forecast. */
@@ -65,24 +73,47 @@ export interface AiGeneratedLine {
 /** The route provenance recorded for an AI completion. */
 export type AiRouteStatus = "not-authored" | "unsupported" | "authored-empty";
 
-export interface AiCommandHistoryEntry {
+interface AiInteractionHistoryBase {
   id: string;
+  source: "command" | "ambient";
+  timestamp: number;
+  location: string;
+  sceneEpoch: number;
+  gameTick: number;
+  participantIds: number[];
+  witnessIds: number[];
+  visibleLines: string[];
+}
+
+export interface AiCommandHistoryEntry extends AiInteractionHistoryBase {
+  source: "command";
   target: number;
   targetName: string;
   commandNo: number;
   commandLabel: string;
-  timestamp: number;
-  location: string;
   outcome: "ok" | "blocked" | "noop";
   visibleEvents: string[];
   aiLines: string[];
 }
 
+export interface AiAmbientHistoryEntry extends AiInteractionHistoryBase {
+  source: "ambient";
+  mode: AmbientInitiativeMode;
+  trigger: AmbientInitiativeTrigger;
+  initiativeKind: AmbientInitiativeKind;
+}
+
+export type AiInteractionHistoryEntry = AiCommandHistoryEntry | AiAmbientHistoryEntry;
+
 export interface AiDebugEntry {
   requestId: string;
   createdAt: number;
-  target: number;
-  commandNo: number;
+  feature: "command-kojo" | "ambient-initiative";
+  target?: number;
+  commandNo?: number;
+  participants?: number[];
+  mode?: AmbientInitiativeMode;
+  trigger?: AmbientInitiativeTrigger;
   routeStatus?: AiRouteStatus;
   status: "pending" | "success" | "error" | "cancelled";
   durationMs?: number;
@@ -98,6 +129,43 @@ export interface PreparedAiKojoRequest {
   commandNo: number;
   routeStatus: AiRouteStatus;
   historyEntryId: string;
+  completion: AiCompletionRequest;
+  settings: AiSettings;
+}
+
+export type SceneAmbientForm = "speech" | "action";
+
+export interface SceneAmbientLine {
+  participantId: number;
+  form: SceneAmbientForm;
+  text: string;
+}
+
+export interface SceneAmbientEntry {
+  requestId: string;
+  trigger: AmbientInitiativeTrigger;
+  mode: AmbientInitiativeMode;
+  kind: AmbientInitiativeKind;
+  participantIds: number[];
+  lines: SceneAmbientLine[];
+  complete: boolean;
+}
+
+export interface SceneAmbientSession {
+  location: string;
+  sceneEpoch: number;
+  entry: SceneAmbientEntry | null;
+  requestId: string | null;
+  hidden: boolean;
+  publishedCount: number;
+  locationCooldownUntil: number;
+  characterCooldownUntil: Record<number, number>;
+}
+
+export interface PreparedSceneAmbientRequest {
+  requestId: string;
+  sceneEpoch: number;
+  opportunity: AmbientInitiativeOpportunity;
   completion: AiCompletionRequest;
   settings: AiSettings;
 }

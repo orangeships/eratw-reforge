@@ -29,8 +29,9 @@
  *   - 8 IKENIE 胖次 options (16/20/21/30/35/40/50/60/66/300) — 胖次子系统.
  *   - 黄金律 +30% (MAGIC_DLC) on `GET_MONEY_YEN` — N/A (this command only
  *     spends, never grants).
- *   - `天之声可(loc)` / `守矢神社本殿` 赛銭箱 predicate — modeled as a
- *     coarse "loc 含 神社" until the map-replacement helper lands.
+ *   - `天之声可(loc)` / `守矢神社本殿` 赛銭箱 predicate — uses the shared
+ *     place-flag helper, including the player's exact home room after the
+ *     panty-collection altar reward.
  *   - `TFLAG:100` menu-reach gate — not modeled (handlers are only invoked
  *     when reachable via the catalog).
  */
@@ -46,8 +47,7 @@ import {
   setMasterBase,
 } from "../../state/settlement.js";
 import { canAfford, formatMoney, pay } from "../../state/money.js";
-import { hasPlace, PLACE_SKY } from "../../world/place-flags.js";
-import { placeFlagsOf } from "../../world/location-predicates.js";
+import { canHearHeaven } from "../../world/location-predicates.js";
 
 // ---------------------------------------------------------------------------
 // Constants — COMF421 option 2 (心の平安)
@@ -82,9 +82,10 @@ function checkPrayerEligible(
     return { ok: false, reason: { kind: "precondition", message: "今天已经祈过愿了。" } };
   }
   // ERB 177: 賽銭箱 — `天之声可(現在位置) || 現在位置 == 守矢神社本殿`.
-  // `天之声可` is the room's PLACE_SKY bit in our narrowed map model.
-  if (!hasPlace(placeFlagsOf(master.location), PLACE_SKY) && master.location !== "守矢神社本殿") {
-    return { ok: false, reason: { kind: "precondition", message: "只有在神社的赛钱箱前才能祈愿。" } };
+  // `天之声可` also opens the player's own room after ITEM:祭壇 (the
+  // third panty-collection milestone) is awarded.
+  if (!canHearHeaven(ctx.state) && master.location !== "守矢神社本殿") {
+    return { ok: false, reason: { kind: "precondition", message: "只有在能听见天之声的地方才能祈愿（或拥有祭坛时回到自室）。" } };
   }
   // ERB 180: 気力0では不可 (`BASE:MASTER:気力 <= 0`).
   if ((getMasterBase(ctx.state, BASE_ID.気力) ?? 0) <= 0) {
@@ -118,7 +119,7 @@ export const prayerHandlerEntry: HandlerEntry = {
           {
             kind: "NARRATION" as const,
             timestamp: ctx.now(),
-            text: `金钱不足。心の平安需要 ${formatMoney(COST_PEACE)}。`,
+            text: `金钱不足。“内心安宁”需要 ${formatMoney(COST_PEACE)}。`,
           },
         ],
         outcome: "noop" as const,

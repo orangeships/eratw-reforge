@@ -30,7 +30,7 @@ import { MUL_NEGATIVE, MUL_PLEASURE, MUL_POSITIVE, type ComfDef } from "../comf/
 
 const headpatDef: ComfDef = {
   commandNo: 309,
-  label: "頭を撫でる",
+  label: "摸头",
   timeCost: 10,
   maxRoll: 110,
   greatThreshold: 10, // roll <= 9 → 大成功

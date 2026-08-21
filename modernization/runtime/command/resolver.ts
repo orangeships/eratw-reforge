@@ -77,7 +77,7 @@ import {
 import { clearTrainingMode, finishTrainingSession, withTrainingSessionLifecycle } from "./training-session.js";
 import { applyDailyBlessingExpBonus } from "../world/daily-event.js";
 import { collectCommandKojo } from "./command-kojo.js";
-import { applyKojoEffects } from "../kojo/effects.js";
+import { applyKojoEffects, resolveEventKojoAndApply } from "../kojo/effects.js";
 import { collectCommandPalamCng } from "../kojo/palam-dispatch.js";
 import {
   hModeBlockReason,
@@ -87,7 +87,7 @@ import {
 } from "./h-mode.js";
 import { extractedGateAuditFor } from "./comf/comable-gate-audit.generated.js";
 import { advanceDateTravel, endDate, followDatePartner, syncDateMirrors, tryStartAppointmentOnArrival } from "../world/date-session.js";
-import { advanceDateAppointments, offerDateIntentionsOnEncounter } from "../world/date-appointments.js";
+import { advanceDateAppointments, offeredDateInvitations, offerDateIntentionsOnEncounter } from "../world/date-appointments.js";
 import { mapIdOfLocation } from "../world/location-predicates.js";
 import {
   accrueMobDirt,
@@ -309,6 +309,23 @@ export function resolveCommand(
     };
   }
 
+  // Upstream JOB end EVENT 27 uses a blocking ASK_YN. Once an invitation is
+  // offered, no unrelated command may silently walk past it; only the two
+  // synthetic response commands can resolve the persisted choice.
+  const pendingDateInvitation = offeredDateInvitations(state)[0];
+  if (pendingDateInvitation && intent.commandNo !== 19989 && intent.commandNo !== 19988) {
+    const name = state.charas[pendingDateInvitation.partner]?.callName ?? `#${pendingDateInvitation.partner}`;
+    const message = `请先回应${name}的约会邀约。`;
+    const failReason: FailReason = { kind: "precondition", message };
+    return {
+      state: state as GameState,
+      events: [{ kind: "STATUS_MESSAGE", timestamp: now(), source: "system", text: message }],
+      outcome: "blocked",
+      failReason,
+      transitions: [],
+    };
+  }
+
   // Build the context. `target` carries the intent's focused chara for
   // target-directed COMF commands (5D); absent ⇒ actor is the implicit
   // target (e.g. 移動 acts on the player). See header note.
@@ -499,7 +516,37 @@ export function resolveCommand(
       tryStartAppointmentOnArrival(settled.state);
     }
     advanceDateAppointments(settled.state);
-    offerDateIntentionsOnEncounter(settled.state);
+    const offeredInvitations = offerDateIntentionsOnEncounter(settled.state);
+    if (offeredInvitations.length > 0) {
+      const invitationEvents: ObservationEvent[] = [];
+      for (const invitation of offeredInvitations) {
+        const name = settled.state.charas[invitation.partner]?.callName ?? `#${invitation.partner}`;
+        invitationEvents.push({
+          kind: "NARRATION",
+          timestamp: now(),
+          text: `${name}似乎想和你约个时间一起出门。`,
+        });
+        if (deps.dialogueRouter) {
+          for (const line of resolveEventKojoAndApply(
+            deps.dialogueRouter,
+            settled.state,
+            invitation.partner,
+            27,
+            ctx.rng,
+            [0, 0],
+          )) {
+            invitationEvents.push({
+              kind: "DIALOGUE_LINE",
+              timestamp: now(),
+              charaNum: invitation.partner,
+              text: line.text,
+              form: line.form,
+            });
+          }
+        }
+      }
+      settled = { ...settled, events: [...settled.events, ...invitationEvents] };
+    }
   }
   if (settled.outcome === "ok") {
     const bonus = applyDailyBlessingExpBonus(settled.state, blessingExpBefore, true);

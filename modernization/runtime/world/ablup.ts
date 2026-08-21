@@ -223,15 +223,20 @@ export function runAblupAutoSelect(
       if (abl(st, ablId) >= 99) continue;
       const levels = upgradeLoop(st, ablId, isMaster, flags);
       for (let i = 0; i < levels.length; i++) {
-        const beforeRank = ablRankLabelMax99(abl(st, ablId) - 1);
-        const afterRank = ablRankLabelMax99(abl(st, ablId));
+        // `upgradeLoop` has already applied the whole cascade. Reconstruct
+        // the per-level transition from the level at the end of the loop so
+        // each line mirrors upstream's one-level-at-a-time output.
+        const afterLevel = abl(st, ablId) - levels.length + i + 1;
+        const beforeLevel = afterLevel - 1;
+        const beforeRank = ablRankLabelMax99(beforeLevel);
+        const afterRank = ablRankLabelMax99(afterLevel);
         events.push({
           kind: "NARRATION",
           timestamp: deps.now(),
           charaNum: num,
           text: firstPrinted
-            ? `         ${ablName(ablId)} LVUP (${beforeRank} ${abl(st, ablId) - 1} → ${afterRank} ${abl(st, ablId)})`
-            : `${name.padEnd(14, " ")} … ${ablName(ablId)} LVUP (${beforeRank} ${abl(st, ablId) - 1} → ${afterRank} ${abl(st, ablId)})`,
+            ? `         ${ablName(ablId)} LVUP (${beforeRank} ${beforeLevel} → ${afterRank} ${afterLevel})`
+            : `${name.padEnd(14, " ")} … ${ablName(ablId)} LVUP (${beforeRank} ${beforeLevel} → ${afterRank} ${afterLevel})`,
         });
         firstPrinted = true;
       }

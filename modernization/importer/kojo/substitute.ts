@@ -81,6 +81,7 @@ const STRING_LOCAL_TOKEN_RE = /%(?:LOCALS|LOCAL|RESULTS|RESULT)(?::\d+)?%/;
 /** Mutable string slots are resolved against the active GameState, after
  * authored effects have been staged. Keep them verbatim through bundle time. */
 const STRING_STATE_TOKEN_RE = /%(?:CSTR:\d+:\d+|NICKNAME:\d+)%/;
+const DIARY_NUMERIC_LOCAL_TOKEN_RE = /%(?:PAGENUM|PAGECOUNT)%/i;
 
 /**
  * Apply a context's substitutions to a single line of kojo text.
@@ -115,6 +116,7 @@ export function substitute(text: string, ctx: SubstituteContext): string {
     if (RUNTIME_FORMATTER_TOKEN_RE.test(m)) return m;
     if (STRING_LOCAL_TOKEN_RE.test(m)) return m;
     if (STRING_STATE_TOKEN_RE.test(m)) return m;
+    if (DIARY_NUMERIC_LOCAL_TOKEN_RE.test(m)) return m;
     const callName = /^CALLNAME:([^%\r\n]+)$/.exec(body);
     if (callName && ctx.deferredCallNameAliases?.includes(callName[1]!.trim())) {
       return m;

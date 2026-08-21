@@ -82,6 +82,7 @@ export function compileKojoVoiceSlice(input: {
   selectedVariant: string;
   variantLabel?: string;
   relationship: AiRelationshipLens | null;
+  includeRelationshipGradient?: boolean;
   masterName: string;
   targetName: string;
 }): CharacterVoiceSlice | null {
@@ -93,7 +94,7 @@ export function compileKojoVoiceSlice(input: {
   const angryGradient = input.relationship?.tension === "angry"
     ? card.relationshipGradients.angry
     : null;
-  const relationshipLines = [
+  const relationshipLines = input.includeRelationshipGradient === false ? [] : [
     `本角色在当前关系阶段的表达：${render(baseGradient.attitude)}`,
     `当前关系下的行为边界：${render(baseGradient.boundaries)}`,
     ...renderList(baseGradient.behaviors, input.masterName, input.targetName, 2)

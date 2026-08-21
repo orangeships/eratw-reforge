@@ -44,6 +44,8 @@ export interface BrowserKojoVariant {
   /** Authored IRAI_BLOCKED return hook for this character/variant. */
   byIraiBlocked?: KojoNode;
   byEncounter?: KojoNode;
+  /** Per-character opening/update body (`@M_KOJO_UPDATE_K{n}`). */
+  byUpdate?: KojoNode;
   /** Private-room description tree (`@K{n}{infix}_ROOM_DESCRIPTION`). */
   byRoomDescription?: KojoNode;
   byMark?: KojoNode;
@@ -156,6 +158,13 @@ function commandNodeFor(
 }
 
 export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRouter {
+  const encounterContext = (state: Readonly<GameState>) => ({
+    nameResolver: (reference: number | string) =>
+      typeof reference === "number"
+        ? state.charas[reference]?.callName ?? bundle.byChara[String(reference)]?.callName
+        : undefined,
+  });
+
   const resolveCommandDetailed = (
     charaNum: number,
     commandNo: number,
@@ -175,6 +184,20 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
   };
 
   return {
+    hasUpdateKojo(charaNum, state) {
+      if (!roleplayEnabledForTarget(state, charaNum)) return false;
+      const chara = bundle.byChara[String(charaNum)];
+      return Boolean(activeKojoVariant(chara, state, charaNum)?.byUpdate);
+    },
+    resolveUpdateKojoInteractive(charaNum, state, rng, choices) {
+      if (!roleplayEnabledForTarget(state, charaNum)) {
+        return emptyInteractiveKojoResolution("gated");
+      }
+      const chara = bundle.byChara[String(charaNum)];
+      const node = activeKojoVariant(chara, state, charaNum)?.byUpdate;
+      if (!node) return emptyInteractiveKojoResolution("not-authored");
+      return resolveKojoNodeWithChoices(node, charaNum, state, rng, [], choices);
+    },
     collect(charaNum: number, commandNo: number, state: Readonly<GameState>, rng: Rng): KojoLine[] {
       return resolveCommandDetailed(charaNum, commandNo, state, rng).lines;
     },
@@ -304,7 +327,7 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
       const variant = activeKojoVariant(chara, state, charaNum);
       const node = variant?.byEncounter;
       if (!node) return [];
-      return resolveKojoNode(node, charaNum, state, rng);
+      return resolveKojoNode(node, charaNum, state, rng, [], encounterContext(state));
     },
     resolveEncounterKojoDetailed(charaNum, state, rng) {
       if (!roleplayEnabledForTarget(state, charaNum)) {
@@ -316,7 +339,7 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
       if (!node) {
         return emptyKojoResolution("not-authored");
       }
-      return resolveKojoNodeDetailed(node, charaNum, state, rng);
+      return resolveKojoNodeDetailed(node, charaNum, state, rng, [], encounterContext(state));
     },
     resolveEncounterKojoInteractive(
       charaNum: number,
@@ -331,7 +354,15 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
       const variant = activeKojoVariant(chara, state, charaNum);
       const node = variant?.byEncounter;
       if (!node) return emptyInteractiveKojoResolution("not-authored");
-      return resolveKojoNodeWithChoices(node, charaNum, state, rng, [], choices);
+      return resolveKojoNodeWithChoices(
+        node,
+        charaNum,
+        state,
+        rng,
+        [],
+        choices,
+        encounterContext(state),
+      );
     },
     resolveRoomDescriptionKojo(
       charaNum: number,

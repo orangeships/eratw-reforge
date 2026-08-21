@@ -404,7 +404,7 @@ function drugPrompt(state: Readonly<GameState>, helper: number): PromptSpec {
       });
     }
   }
-  return pickOne("选择仕込み（下药）", options);
+  return pickOne("选择预处理（下药）", options);
 }
 
 function additivePrompt(state: Readonly<GameState>, dish: DishEntry): PromptSpec {

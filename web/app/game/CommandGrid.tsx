@@ -34,6 +34,7 @@ export interface CommandGridAction {
 
 /** A labeled group of actions (one command family). */
 export interface CommandGridGroup {
+  id?: string;
   label: string;
   items: ReadonlyArray<CommandGridAction>;
 }
@@ -107,7 +108,12 @@ export default function CommandGrid(props: CommandGridProps) {
   return (
     <div className="command-grid" data-testid="command-grid">
       {groups.map((g) => (
-        <div className="command-grid__group" data-testid="command-actions" key={g.label}>
+        <div
+          className="command-grid__group"
+          data-testid="command-actions"
+          data-family-id={g.id}
+          key={g.id ?? g.label}
+        >
           <span className="command-grid__label">{g.label}</span>
           <ActionButtons items={g.items} onAction={props.onAction} />
         </div>

@@ -10,15 +10,18 @@ import { isHMode, requiresHMode } from "./h-mode.js";
 const H_MODE_CFLAG_ID = 317;
 const TIME_STOP_FLAG_ID = 70;
 const RECENT_LIMIT = 16;
+const V_POSITION_COMMANDS = new Set([60, 61, 65, 67, 68]);
+const A_POSITION_COMMANDS = new Set([62, 63, 66, 69, 70]);
 
 const TRAINING_ENTRY_COMMANDS = new Set<number>([350, 356]);
 const TRAINING_SESSION_COMMANDS = new Set<number>([360, 361, 850]);
-const TRAINING_EXIT_COMMANDS = new Set<number>([127, 850]);
+const TRAINING_EXIT_COMMANDS = new Set<number>([850, 999]);
 
 export function isTrainingCommand(commandNo: number): boolean {
   return (
     TRAINING_ENTRY_COMMANDS.has(commandNo) ||
     TRAINING_SESSION_COMMANDS.has(commandNo) ||
+    TRAINING_EXIT_COMMANDS.has(commandNo) ||
     requiresHMode(commandNo)
   );
 }
@@ -100,6 +103,10 @@ export function finishTrainingSession(
     return;
   }
 
+  state.master.state.CFLAG[H_MODE_CFLAG_ID] = 0;
+  const target = state.charas[session.target];
+  if (target) target.state.CFLAG[H_MODE_CFLAG_ID] = 0;
+
   state.lastTrainingSummary = {
     target: session.target,
     startedAtTick: session.startedAtTick,
@@ -150,6 +157,16 @@ export function withTrainingSessionLifecycle(
       outcome: result.outcome,
     },
   ].slice(-RECENT_LIMIT);
+
+  if (V_POSITION_COMMANDS.has(ctx.commandNo)) {
+    session.vInserted = true;
+    session.aInserted = false;
+    session.currentPositionCommandNo = ctx.commandNo;
+  } else if (A_POSITION_COMMANDS.has(ctx.commandNo)) {
+    session.vInserted = false;
+    session.aInserted = true;
+    session.currentPositionCommandNo = ctx.commandNo;
+  }
 
   if (TRAINING_EXIT_COMMANDS.has(ctx.commandNo)) {
     clearTrainingMode(state, ctx.target);

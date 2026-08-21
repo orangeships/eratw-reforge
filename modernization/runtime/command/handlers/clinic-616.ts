@@ -71,31 +71,31 @@ function check616(ctx: CommandContext): { ok: true } | {
 } {
   const state = ctx.state;
   if ((state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "時間停止中は診察を受けられない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "时间停止期间无法接受诊察。" } };
   }
   if (state.master.location !== CLINIC_LOCATION) {
-    return { ok: false, reason: { kind: "precondition", message: "診察室にいない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "你不在诊察室。" } };
   }
   if ((state.master.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "睡眠中は診察を受けられない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "睡眠中无法接受诊察。" } };
   }
   if ((state.master.state.CFLAG[CFLAG_ID.约会中] ?? 0) !== 0) {
-    return { ok: false, reason: { kind: "precondition", message: "約会中は診察を受けられない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "约会中无法接受诊察。" } };
   }
   if (hasOncePerDay(state)) {
-    return { ok: false, reason: { kind: "precondition", message: "今日はもう診察を受けた。" } };
+    return { ok: false, reason: { kind: "precondition", message: "今天已经接受过诊察了。" } };
   }
   const eirin = state.charas[EIRIN];
   if (!eirin || eirin.location !== state.master.location) {
-    return { ok: false, reason: { kind: "precondition", message: "永琳が診察室にいない。" } };
+    return { ok: false, reason: { kind: "precondition", message: "永琳不在诊察室。" } };
   }
   return { ok: true };
 }
 
 function buildPrompt(ctx: CommandContext): PromptSpec {
   const options: PromptOption[] = [
-    { id: 0, label: "体力を診てもらう", detail: `${TREATMENT_COST} 円` },
-    { id: 1, label: "気力を診てもらう", detail: `${TREATMENT_COST} 円` },
+    { id: 0, label: "请她诊治体力", detail: `${TREATMENT_COST} 円` },
+    { id: 1, label: "请她诊治精力", detail: `${TREATMENT_COST} 円` },
   ];
 
   for (const item of CLINIC_SHOP_ITEMS) {
@@ -113,14 +113,14 @@ function buildPrompt(ctx: CommandContext): PromptSpec {
     const price = count === 0 ? 0 : count * 10000;
     options.push({
       id: 4,
-      label: "清掃中毒を治療する",
+      label: "治疗清扫中毒",
       detail: price === 0 ? "初回無料" : `${price} 円`,
       disabled: price > 0 && !canAfford(ctx.state, price),
     });
   }
 
-  options.push({ id: 100, label: "やめる" });
-  return pickOne("永琳の診察を受ける。", options);
+  options.push({ id: 100, label: "取消" });
+  return pickOne("接受永琳的诊察。", options);
 }
 
 function clampRecover(slot: CharaSlot, statId: number, amount: number): void {
@@ -184,7 +184,7 @@ export const clinic616HandlerEntry: HandlerEntry = {
     if (picked === null) {
       return {
         state: cloneGameState(ctx.state),
-        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "診察内容をまだ選んでいない。" }],
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "尚未选择诊察内容。" }],
         outcome: "blocked" as const,
       };
     }
@@ -193,7 +193,7 @@ export const clinic616HandlerEntry: HandlerEntry = {
     if (picked === 100) {
       return {
         state: next,
-        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "診察を受けずに戻った。" }],
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "没有接受诊察便离开了。" }],
         outcome: "noop" as const,
       };
     }
@@ -212,7 +212,7 @@ export const clinic616HandlerEntry: HandlerEntry = {
       finishClinicVisit(next);
       return {
         state: next,
-        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "永琳の診察を受けた。" }],
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "接受了永琳的诊察。" }],
         outcome: "ok" as const,
       };
     }
@@ -233,7 +233,7 @@ export const clinic616HandlerEntry: HandlerEntry = {
         events: [{
           kind: "NARRATION" as const,
           timestamp: ctx.now(),
-          text: cured ? "清掃中毒の治療を受けた。" : "治療費が足りなかった。",
+          text: cured ? "接受了清扫中毒的治疗。" : "治疗费不足。",
         }],
         outcome: cured ? "ok" as const : "noop" as const,
       };
@@ -245,7 +245,7 @@ export const clinic616HandlerEntry: HandlerEntry = {
       if (!item || itemCount(next, item.id) > 0 || !canAfford(next, item.price)) {
         return {
           state: next,
-          events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "購入できなかった。" }],
+          events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "未能购买。" }],
           outcome: "noop" as const,
         };
       }
@@ -254,14 +254,14 @@ export const clinic616HandlerEntry: HandlerEntry = {
       finishClinicVisit(next);
       return {
         state: next,
-        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: `${item.name}を購入した。` }],
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: `购买了${item.name}。` }],
         outcome: "ok" as const,
       };
     }
 
     return {
       state: next,
-      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "診察内容を選び直した。" }],
+      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "重新选择了诊察内容。" }],
       outcome: "blocked" as const,
     };
   },

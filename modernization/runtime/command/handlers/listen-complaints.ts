@@ -64,7 +64,7 @@ function checkListenEligible(
   ctx: CommandContext,
 ): { ok: true } | { ok: false; reason: { kind: "precondition"; message: string } } {
   if (ctx.target <= 0) {
-    return { ok: false, reason: { kind: "precondition", message: "愚痴を聞く需要目标角色在场。" } };
+    return { ok: false, reason: { kind: "precondition", message: "倾听牢骚需要目标角色在场。" } };
   }
   const target = ctx.state.charas[ctx.target];
   if (!target) {

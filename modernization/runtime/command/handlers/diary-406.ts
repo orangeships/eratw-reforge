@@ -312,7 +312,7 @@ export const diary406HandlerEntry: HandlerEntry = {
     const masterInitial = ctx.state.master.state.CFLAG[CFLAG_ID.初期位置] ?? 0;
     const masterCurrent = ctx.state.master.state.CFLAG[CFLAG_ID.現在位置] ?? 0;
     if (ctx.target <= 0 && masterInitial > 0 && masterCurrent === masterInitial) return { ok: true };
-    if (ctx.target > 0 && checkOwner(ctx.state, ctx.target) > 0) return { ok: true };
+    if (checkOwner(ctx.state, ctx.target) > 0) return { ok: true };
     return { ok: false, reason: { kind: "precondition", message: "这里没有可读的日记。" } };
   },
   handler: (ctx) => {
@@ -395,14 +395,9 @@ export const diary406HandlerEntry: HandlerEntry = {
     // "TARGET reads yours" (2) or "read OWNER's diary" (3) path, faithful
     // to upstream's $SKIP block that runs only after an actual diary read
     // (not on write / noop / file paths).
-    if (choice === 2 || choice === 3) {
-      const { source, outcome } = computeSources(next, ctx.target, ctx.rng);
-      // Emit each non-zero SOURCE as its own NARRATION line for the UI.
-      for (const [k, v] of Object.entries(source)) {
-        if (v === 0) continue;
-        lines.push(`  +SOURCE:${k} ${v}（${outcome === -1 ? "失败" : outcome === 0 ? "通常" : "大成功"}）`);
-      }
-    }
+    // SOURCE is deterministic settlement state, not player-facing narration.
+    // The previous debug dump (`+SOURCE:20 ...`) leaked implementation data.
+    if (choice === 2 || choice === 3) computeSources(next, ctx.target, ctx.rng);
 
     return {
       state: next,

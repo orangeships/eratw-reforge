@@ -589,7 +589,12 @@ function applyAndClearCup(slot: CharaSlot): void {
  * (`TRACHECK_好感度上昇処理.ERB` 153-191) + the ABL base term (line 24)
  * + the MARK==0 floor (lines 319-321). Returns the 好感度 delta.
  */
-function favorCalc(t: CharaSlot, s: Record<number, number>, bias: number): number {
+function favorCalc(
+  t: CharaSlot,
+  s: Record<number, number>,
+  bias: number,
+  suppressDailyAnger = false,
+): number {
   // `bias` = the command's own `TFLAG:97 += …` pre-seed (e.g. COMF309's
   // 親密/好感 penalty). 0 for 会話.
   let tflag97 = bias + Math.trunc((abl(t, ABL_ID.従順) + abl(t, ABL_ID.親密)) / 2);
@@ -684,7 +689,7 @@ function favorCalc(t: CharaSlot, s: Record<number, number>, bias: number): numbe
   // CSV always has MAXBASE seeded; tests that don't seed it opt out faithfully).
   const angerMax = maxbase(t, BASE_ID.憤怒);
   const hankanSrc = src(s, SOURCE_ID.反感);
-  if (hankanSrc > 0 && angerMax > 0) {
+  if (!suppressDailyAnger && hankanSrc > 0 && angerMax > 0) {
     // ERB 247: 憤怒上昇値 = 反感 * 3 * (2000-情緒) * (500+理性) /
     //                      ((2000+情緒) * (500+MAXBASE:理性)).
     const joucho = base(t, BASE_ID.情緒);
@@ -711,7 +716,7 @@ function favorCalc(t: CharaSlot, s: Record<number, number>, bias: number): numbe
   }
   // ERB 281-284: 心情不快 (反発刻印 earned this/earlier) → always angry. Only
   // when a cap is known (see above); otherwise leave seeded 憤怒 untouched.
-  if (angerMax > 0 && (t.state.CFLAG[CFLAG_ID.不機嫌] ?? 0) !== 0) {
+  if (!suppressDailyAnger && angerMax > 0 && (t.state.CFLAG[CFLAG_ID.不機嫌] ?? 0) !== 0) {
     t.state.BASE[BASE_ID.憤怒] = angerMax;
     t.state.CFLAG[CFLAG_ID.勃然大怒] = 1;
   }
@@ -1062,7 +1067,8 @@ export function applySourceCheck(
     };
   }
 
-  const favorDelta = mobGirlGrowthBonus(t, favorCalc(t, s, favorBias));
+  const activeTraining = next.training?.target === target;
+  const favorDelta = mobGirlGrowthBonus(t, favorCalc(t, s, favorBias, activeTraining));
   const favorBefore = cflag(t, CFLAG_ID.好感度);
   t.state.CFLAG[CFLAG_ID.好感度] = Math.max(
     0,

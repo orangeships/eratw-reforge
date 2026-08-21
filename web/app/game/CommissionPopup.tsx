@@ -1,9 +1,11 @@
 /**
  * CommissionPopup — dedicated UI for character commissions.
  *
- * Replaces the [366]/[367] commands in the ActCom grid. The SceneView
- * portrait surfaces a "?" badge when the chara has any commission-related
- * state; clicking the badge opens THIS popup for that chara.
+ * Supplements the [366]/[367] ActCom commands with a richer report/accept
+ * panel. The SceneView portrait surfaces a "?" badge when the chara has
+ * commission-related state; clicking the badge opens THIS popup for that
+ * chara. The command grid remains the canonical execution surface, which is
+ * important for delivery commissions whose recipient is not the client.
  *
  * Lifecycle:
  *   - 玩家点 [接受/拒绝/确认/破弃/执行委托/报告]
@@ -33,8 +35,10 @@ import {
   commissionStatus,
   commissionTitleForTarget,
   describeCommission,
+  findSlotByClient,
   searchActiveCommissionSlot,
 } from "../../../modernization/runtime/state/commission.js";
+import { liveAvailableCommands } from "../../../modernization/runtime/intent/apply-intent.js";
 import { pickOneAnswer } from "../../../modernization/runtime/command/prompt.js";
 import kojoColors from "./kojo-colors.bundle.json";
 
@@ -48,11 +52,12 @@ export interface CommissionPopupProps {
 }
 
 type Mode = "view" | "done";
+type CommissionActionKind = "accept" | "decline" | "confirm" | "abandon" | "execute" | "report" | "take-along";
 
 function buildIntent(
   commandNo: number,
   charaNum: number,
-  answerKind: "accept" | "decline" | "confirm" | "abandon" | "execute" | "report" | null,
+  answerKind: CommissionActionKind | null,
 ): IssueCommandIntent {
   const intent: IssueCommandIntent = {
     kind: "ISSUE_COMMAND",
@@ -60,7 +65,7 @@ function buildIntent(
     commandNo,
     target: charaNum,
   };
-  if (answerKind !== null) intent.promptAnswer = pickOneAnswer(answerKind);
+  if (answerKind !== null && answerKind !== "take-along") intent.promptAnswer = pickOneAnswer(answerKind);
   return intent;
 }
 
@@ -72,7 +77,8 @@ function charaCallName(state: Readonly<GameState>, charaNum: number): string {
 function statusToButtons(
   status: CommissionProgress | 0,
   hasActiveSlot: boolean,
-): { primary: { kind: "accept" | "confirm" | "execute" | "report"; label: string } | null;
+  canTakeAlong: boolean,
+): { primary: { kind: "accept" | "confirm" | "execute" | "report" | "take-along"; label: string } | null;
      secondary: { kind: "decline" | "abandon"; label: string } | null;
      noAction: boolean } {
   if (status === COMMISSION_PROGRESS.Offered) {
@@ -81,6 +87,9 @@ function statusToButtons(
   if (status === COMMISSION_PROGRESS.Active) {
     if (hasActiveSlot) {
       return { primary: { kind: "execute", label: "执行委托" }, secondary: { kind: "abandon", label: "破弃" }, noAction: false };
+    }
+    if (canTakeAlong) {
+      return { primary: { kind: "take-along", label: "带出去" }, secondary: { kind: "abandon", label: "破弃" }, noAction: false };
     }
     return { primary: { kind: "confirm", label: "确认" }, secondary: { kind: "abandon", label: "破弃" }, noAction: false };
   }
@@ -111,7 +120,13 @@ export default function CommissionPopup(props: CommissionPopupProps): JSX.Elemen
   const { state, charaNum, onIntent, onClose } = props;
   const status = commissionStatus(state, charaNum);
   const hasActiveSlot = !!searchActiveCommissionSlot(state, charaNum);
-  const buttons = statusToButtons(status, hasActiveSlot);
+  const activeSlot = findSlotByClient(state, charaNum);
+  const canTakeAlong = status === COMMISSION_PROGRESS.Active &&
+    activeSlot?.task === "work" &&
+    activeSlot.localId === 4 &&
+    !hasActiveSlot &&
+    liveAvailableCommands(state, charaNum).some((entry) => entry.commandNo === 351 && entry.usable);
+  const buttons = statusToButtons(status, hasActiveSlot, canTakeAlong);
   const title = statusToTitle(status);
   const popupTitle = commissionTitleForTarget(state, charaNum);
   const actName = hasActiveSlot ? commissionActName(state, charaNum) : null;
@@ -133,9 +148,9 @@ export default function CommissionPopup(props: CommissionPopupProps): JSX.Elemen
       ? acceptBlockDescription(state, charaNum)
       : null;
 
-  const handleAction = (kind: "accept" | "decline" | "confirm" | "abandon" | "execute" | "report"): void => {
+  const handleAction = (kind: CommissionActionKind): void => {
     // 366 handles accept/decline/confirm/abandon/report; 367 only handles execute.
-    const commandNo = kind === "execute" ? 367 : 366;
+    const commandNo = kind === "execute" ? 367 : kind === "take-along" ? 351 : 366;
     const intent = buildIntent(commandNo, charaNum, kind);
     const result = applyIntent(state, intent);
     setEvents(result.appended);

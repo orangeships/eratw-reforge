@@ -123,7 +123,7 @@ async function processAgentNightCycle(
     diagnostics.push(`provider failed: ${String(err)}`);
     return {
       charaNum,
-      events: [statusEvent(`${slot.callName ?? `#${charaNum}`} 的记忆整理未完成（服务不可用）。`)],
+      events: [],
       diagnostics,
     };
   } finally {
@@ -138,7 +138,7 @@ async function processAgentNightCycle(
     diagnostics.push(`validation failed: ${String(err)}`);
     return {
       charaNum,
-      events: [statusEvent(`${slot.callName ?? `#${charaNum}`} 的记忆整理结果无法解析。`)],
+      events: [],
       diagnostics,
     };
   }
@@ -150,7 +150,7 @@ async function processAgentNightCycle(
     diagnostics.push("validation failed: stale or mismatched response envelope");
     return {
       charaNum,
-      events: [statusEvent(`${slot.callName ?? `#${charaNum}`} 的记忆整理结果已经过期。`)],
+      events: [],
       diagnostics,
     };
   }
@@ -224,6 +224,7 @@ async function processAgentNightCycle(
     diagnostics.push(`wrote ${response.goalUpdates.length} goals`);
   }
 
+  let diaryWritten = false;
   if (response.diary) {
     const validDiarySources = response.diary.sourceObservationIds.filter((id) => validObsIds.has(id));
     if (validDiarySources.length !== response.diary.sourceObservationIds.length) {
@@ -236,6 +237,7 @@ async function processAgentNightCycle(
       text: response.diary.text,
       sourceObservationIds: validDiarySources,
     });
+    diaryWritten = true;
     diagnostics.push("wrote diary");
     }
   }
@@ -298,7 +300,7 @@ async function processAgentNightCycle(
   if (response.memoryDrafts?.length)
     parts.push(`整理了 ${response.memoryDrafts.length} 条记忆`);
   if (response.reflection) parts.push("写下了反思");
-  if (response.diary) parts.push("写了日记");
+  if (diaryWritten) parts.push("写了日记");
   const summary = parts.length > 0
     ? `${name} 在入睡前${parts.join("，")}。`
     : `${name} 安静地入睡了。`;
@@ -411,27 +413,21 @@ export async function runMultiAgentNightCycle(
       } else if (r.status === "rejected") {
         const target = batch[j];
         diagnostics.push(`#${target.charaNum} failed: ${String(r.reason)}`);
-        // Emit a silent-failure event so the player sees a note.
-        const slot = state.charas[target.charaNum];
-        const name = slot?.callName ?? `#${target.charaNum}`;
+        // Optional AI failure is diagnostic-only; it must not leak into the
+        // player's night report or next-morning history.
         results.push({
           charaNum: target.charaNum,
-          events: [statusEvent(`${name} 的记忆整理未完成。`)],
+          events: [],
           diagnostics: [`failed: ${String(r.reason)}`],
         });
       }
     }
   }
 
-  // Attach orchestration diagnostics to the first result (or create a
-  // synthetic status message if there are no results).
+  // Attach orchestration diagnostics to the first result.
   if (results.length > 0) {
     results[0].diagnostics = [...diagnostics, ...results[0].diagnostics];
   }
 
   return results;
-}
-
-function statusEvent(text: string): AgentNightResult["events"][number] {
-  return { kind: "STATUS_MESSAGE", text };
 }

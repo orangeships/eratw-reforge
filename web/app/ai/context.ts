@@ -15,7 +15,8 @@ import { currentAiCharacterProfile, useAiStore } from "./store.js";
 import { buildAiRelationshipLens, describeAiRelationshipChange } from "./relationship-lens.js";
 import { buildAgentL1Context } from "../../../modernization/runtime/agent/index.js";
 import { isTimeStopped } from "../../../modernization/runtime/command/h-mode.js";
-import type { AiCompletionRequest, AiRouteStatus, AiSettings } from "./types.js";
+import type { AiCommandHistoryEntry, AiCompletionRequest, AiRouteStatus, AiSettings } from "./types.js";
+import { formatInteractionHistoryEntry, relevantInteractionHistory } from "./interaction-history.js";
 
 type CharaBundleEntry = {
   id?: number;
@@ -81,7 +82,7 @@ function emotionBlock(state: Readonly<GameState>, target: number): string[] {
   });
 }
 
-interface PersonaPromptContext {
+export interface PersonaPromptContext {
   lines: string[];
   referenceLines: readonly string[];
 }
@@ -125,7 +126,11 @@ function timeStopOutputConstraint(input: Pick<BuildAiKojoPromptInput, "requestId
   return TIME_STOP_OUTPUT_CONSTRAINTS[(hash ^ (hash >>> 16)) % TIME_STOP_OUTPUT_CONSTRAINTS.length];
 }
 
-function personaBlock(state: Readonly<GameState>, target: number): PersonaPromptContext {
+export function compileAiCharacterSemanticContext(
+  state: Readonly<GameState>,
+  target: number,
+  visibility: "player" | "npc-public" = "player",
+): PersonaPromptContext {
   const live = state.charas[target];
   const data = CHARAS[String(target)] ?? {};
   const cstr = data.CSTR ?? {};
@@ -146,13 +151,18 @@ function personaBlock(state: Readonly<GameState>, target: number): PersonaPrompt
     target,
     selectedVariant: selected,
     variantLabel: variant?.label,
-    relationship: buildAiRelationshipLens(state, target),
+    // NPC-to-NPC ambient prompts must not receive this character's private
+    // relationship toward the player. A null lens keeps only stable voice.
+    relationship: visibility === "player" ? buildAiRelationshipLens(state, target) : null,
+    includeRelationshipGradient: visibility === "player",
     masterName,
     targetName,
   });
   const fallbackProfile = [
     `人物介绍：${intro.join(" ") || "无资料"}`,
-    `精神的特征（弱参考；只描述长期倾向，不要求在本次互动中表现）：${mentalTraits?.join("、") || "无"}`,
+    ...(visibility === "player"
+      ? [`精神的特征（弱参考；只描述长期倾向，不要求在本次互动中表现）：${mentalTraits?.join("、") || "无"}`]
+      : []),
   ];
   const dynamicProfile = mobGirlProfileForCharacter(state, target);
   const generatedPersona = dynamicProfile
@@ -165,13 +175,13 @@ function personaBlock(state: Readonly<GameState>, target: number): PersonaPrompt
     `角色：${data.name ?? live?.callName ?? `#${target}`}；称呼：${live?.callName ?? data.callName ?? `#${target}`}`,
     `当前口上变体：${variant?.label ?? selected}`,
     ...(voiceSlice?.lines ?? fallbackProfile),
-    ...(mentalTraits && mentalTraits.length > 0
+    ...(visibility === "player" && mentalTraits && mentalTraits.length > 0
       ? [`精神的特征（弱参考；只描述长期倾向，不要求在本次互动中表现）：${mentalTraits.join("、")}`]
       : []),
     ...(generatedPersona
       ? [`动态路人基础画像（低于用户维护设定）：${generatedPersona}`]
       : []),
-    ...(profile.lore.trim()
+    ...(visibility === "player" && profile.lore.trim()
       ? [`用户维护的补充设定（高于默认画像）：${profile.lore.trim()}`]
       : []),
     ...(profile.styleGuide.trim()
@@ -223,22 +233,25 @@ export interface BuildAiKojoPromptInput {
 
 export function buildAiKojoCompletion(input: BuildAiKojoPromptInput): AiCompletionRequest {
   const { target, commandNo, beforeState, afterState } = input;
-  const command = COMMANDS[String(commandNo)];
+  const command = COMMANDS[String(commandNo)] ?? (commandNo === 19987
+    ? { label: "主动提出约会邀请", family: "事件" }
+    : undefined);
   const targetSlot = afterState.charas[target];
-  const persona = personaBlock(afterState, target);
+  const persona = compileAiCharacterSemanticContext(afterState, target);
   const present = Object.values(afterState.charas)
     .filter((slot) => slot.location === afterState.master.location && slot.charaNum !== target)
     .map((slot) => slot.callName ?? `#${slot.charaNum}`)
     .slice(0, 8);
-  const recentHistory = useAiStore.getState().commandHistory
-    .filter((entry) => entry.target === target && entry.id !== input.historyEntryId)
-    .slice(-6);
+  const recentHistory = relevantInteractionHistory(
+    useAiStore.getState().interactionHistory,
+    [target],
+    input.historyEntryId,
+    6,
+  );
   const previous = recentHistory
-    .map((entry, index) => {
-      const output = [...entry.visibleEvents, ...entry.aiLines.map((line) => `${entry.targetName}（AI补写）：${line}`)];
-      return `${index + 1}. [${entry.commandNo}]${entry.commandLabel}：${output.join(" / ") || "没有可见对白"}`;
-    });
-  const lastHistoryEntry = recentHistory[recentHistory.length - 1];
+    .map((entry, index) => `${index + 1}. ${formatInteractionHistoryEntry(entry)}`);
+  const lastHistoryEntry = [...recentHistory].reverse()
+    .find((entry): entry is AiCommandHistoryEntry => entry.source === "command" && entry.aiLines.length > 0);
   const previousLineHint = lastHistoryEntry && lastHistoryEntry.aiLines.length > 0
     ? `上一段 AI 补写为 ${lastHistoryEntry.aiLines.length} 行；本段优先换一种篇幅和起手方式，只有当前互动确实需要时才重复。`
     : "没有可用的上一段 AI 行数；篇幅由当前互动自然决定。";
@@ -342,6 +355,7 @@ export function buildAiKojoCompletion(input: BuildAiKojoPromptInput): AiCompleti
 }
 
 export function commandLabel(commandNo: number): string {
+  if (commandNo === 19987) return "主动提出约会邀请";
   return COMMANDS[String(commandNo)]?.label ?? `#${commandNo}`;
 }
 

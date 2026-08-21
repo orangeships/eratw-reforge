@@ -5,6 +5,7 @@ import type {
   AiCharacterProfile,
   AiCommandHistoryEntry,
   AiDebugEntry,
+  AiInteractionHistoryEntry,
   AiSettings,
 } from "./types.js";
 
@@ -32,6 +33,7 @@ const SHIPPED_DEFAULT_MODEL = "MiniMax-M3";
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   enabled: false,
   kojoEnabled: true,
+  ambientEnabled: false,
   kojoFamilies: ["comm", "daily", "kaji", "sekuhara"],
   radioEnabled: true,
   reasoningEffort: "low",
@@ -87,6 +89,9 @@ function clampSettings(value: Partial<AiSettings>): AiSettings {
     ...value,
     enabled: value.enabled === true,
     kojoEnabled: value.kojoEnabled !== false,
+    // This is a new, independently consented feature. Old settings that do
+    // not carry the field must remain off even when the master switch is on.
+    ambientEnabled: value.ambientEnabled === true,
     radioEnabled: value.radioEnabled !== false,
     reasoningEffort: value.reasoningEffort === "high" || value.reasoningEffort === "medium"
       ? value.reasoningEffort
@@ -130,13 +135,16 @@ function persistSettings(settings: AiSettings): void {
 interface AiState {
   settings: AiSettings;
   debugEntries: AiDebugEntry[];
-  commandHistory: AiCommandHistoryEntry[];
+  interactionHistory: AiInteractionHistoryEntry[];
   updateSettings: (patch: Partial<AiSettings>) => void;
   updateCharacterProfile: (charaNum: number, patch: Partial<AiCharacterProfile>) => void;
   addDebugEntry: (entry: AiDebugEntry) => void;
   patchDebugEntry: (requestId: string, patch: Partial<AiDebugEntry>) => void;
-  addCommandHistory: (entry: AiCommandHistoryEntry) => void;
-  patchCommandHistory: (id: string, patch: Partial<AiCommandHistoryEntry>) => void;
+  addInteractionHistory: (entry: AiInteractionHistoryEntry) => void;
+  patchCommandHistory: (
+    id: string,
+    patch: Partial<Pick<AiCommandHistoryEntry, "aiLines" | "visibleLines">>,
+  ) => void;
   clearDebug: () => void;
   resetEphemeral: () => void;
 }
@@ -144,7 +152,7 @@ interface AiState {
 export const useAiStore = create<AiState>((set) => ({
   settings: loadSettings(),
   debugEntries: [],
-  commandHistory: [],
+  interactionHistory: [],
   updateSettings(patch) {
     set((state) => {
       const settings = clampSettings({ ...state.settings, ...patch });
@@ -179,20 +187,20 @@ export const useAiStore = create<AiState>((set) => ({
         entry.requestId === requestId ? { ...entry, ...patch } : entry),
     }));
   },
-  addCommandHistory(entry) {
-    set((state) => ({ commandHistory: [...state.commandHistory, entry].slice(-HISTORY_LIMIT) }));
+  addInteractionHistory(entry) {
+    set((state) => ({ interactionHistory: [...state.interactionHistory, entry].slice(-HISTORY_LIMIT) }));
   },
   patchCommandHistory(id, patch) {
     set((state) => ({
-      commandHistory: state.commandHistory.map((entry) =>
-        entry.id === id ? { ...entry, ...patch } : entry),
+      interactionHistory: state.interactionHistory.map((entry) =>
+        entry.id === id && entry.source === "command" ? { ...entry, ...patch } : entry),
     }));
   },
   clearDebug() {
     set({ debugEntries: [] });
   },
   resetEphemeral() {
-    set({ debugEntries: [], commandHistory: [] });
+    set({ debugEntries: [], interactionHistory: [] });
   },
 }));
 

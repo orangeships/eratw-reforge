@@ -38,14 +38,13 @@ interface DisabledStubDef {
 }
 
 const DISABLED_STUBS: readonly DisabledStubDef[] = [
-  { commandNo: 423, label: "道具を買う", deferredBody: "ITEMSALES shop picker (B9) — upstream RETURN 0" },
-  { commandNo: 424, label: "薬を買う", deferredBody: "薬 shop picker (B9) — upstream RETURN 0" },
-  { commandNo: 426, label: "危ない薬を買う", deferredBody: "危ない薬 shop picker (B9) — upstream RETURN 0" },
-  { commandNo: 429, label: "着せ替え", deferredBody: "costume 着せ替え picker (EQUIP) — upstream RETURN 0" },
-  { commandNo: 430, label: "着替える", deferredBody: "costume 着替える picker (EQUIP) — upstream RETURN 0" },
-  { commandNo: 446, label: "調合する", deferredBody: "recipe 調合 picker (RECIPE_DATA) — upstream RETURN 0" },
+  { commandNo: 423, label: "购买道具", deferredBody: "ITEMSALES shop picker (B9) — upstream RETURN 0" },
+  { commandNo: 424, label: "购买药品", deferredBody: "药品 shop picker (B9) — upstream RETURN 0" },
+  { commandNo: 426, label: "购买危险药品", deferredBody: "危险药品 shop picker (B9) — upstream RETURN 0" },
+  { commandNo: 429, label: "替对方换装", deferredBody: "costume picker (EQUIP) — upstream RETURN 0" },
+  { commandNo: 446, label: "调合", deferredBody: "recipe picker (RECIPE_DATA) — upstream RETURN 0" },
   { commandNo: 365, label: "素材購入", deferredBody: "reverse-buy 素材 from NPC (B9) — upstream RETURN 0" },
-  { commandNo: 613, label: "お金稼ぎする", deferredBody: "date part-time 金策 (DATE_PARTTIME location) — upstream RETURN 0" },
+  { commandNo: 613, label: "打工赚钱", deferredBody: "date part-time 金策 (DATE_PARTTIME location) — upstream RETURN 0" },
 ];
 
 /**
@@ -61,7 +60,7 @@ function makeDisabledStub(def: DisabledStubDef): HandlerEntry {
       ok: false,
       reason: {
         kind: "precondition",
-        message: `${def.label}は一時停止中（upstream @COM_ABLE RETURN 0）。`,
+        message: `${def.label}暂时停用（上游 @COM_ABLE RETURN 0）。`,
       },
     }),
     handler: (ctx: CommandContext) => ({
@@ -70,11 +69,11 @@ function makeDisabledStub(def: DisabledStubDef): HandlerEntry {
         {
           kind: "NARRATION" as const,
           timestamp: ctx.now(),
-          text: `（${def.label}は現在無効化されている）`,
+          text: `（${def.label}当前已停用）`,
         },
       ],
       outcome: "blocked" as const,
-      failReason: { kind: "precondition" as const, message: `${def.label}は一時停止中。` },
+      failReason: { kind: "precondition" as const, message: `${def.label}暂时停用。` },
     }),
   };
 }
@@ -86,7 +85,6 @@ export const comf423HandlerEntry = disabledStubEntries[0]!;
 export const comf424HandlerEntry = disabledStubEntries[1]!;
 export const comf426HandlerEntry = disabledStubEntries[2]!;
 export const comf429HandlerEntry = disabledStubEntries.find((e) => e.commandNo === 429)!;
-export const comf430HandlerEntry = disabledStubEntries.find((e) => e.commandNo === 430)!;
 export const comf446HandlerEntry = disabledStubEntries.find((e) => e.commandNo === 446)!;
 export const comf365HandlerEntry = disabledStubEntries.find((e) => e.commandNo === 365)!;
 export const comf613HandlerEntry = disabledStubEntries.find((e) => e.commandNo === 613)!;
