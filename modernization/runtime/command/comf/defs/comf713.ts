@@ -48,6 +48,7 @@ export const comf713Def: ComfDef = {
 
   // Master-only self-pleasure — no target.
   requiresTarget: false,
+  settleSourcesOnMaster: true,
 
   // DOWNBASE: master 体力 50 / 気力 90.
   downbase: { [BASE_ID.体力]: 50, [BASE_ID.気力]: 90 },

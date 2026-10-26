@@ -111,6 +111,7 @@ export const comf63Def: ComfDef = {
 
   // ERB 48-49: master's own BASE drain.
   downbase: { [BASE_ID.体力]: 40, [BASE_ID.気力]: 40 },
+  targetDownbase: { [BASE_ID.体力]: 80, [BASE_ID.気力]: 80 },
 
   buildSources: (c): Record<number, number> => {
     const sources: Record<number, number> = {
@@ -135,10 +136,6 @@ export const comf63Def: ComfDef = {
   }),
 
   body: (c) => {
-    // ERB 62-63: target shares a BASE drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 80;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 80;
-
     // EXP grants (ERB 95-115, normal branch).
     const grant = (
       slot: { state: { EXP: Record<number, number> } },
@@ -155,7 +152,7 @@ export const comf63Def: ComfDef = {
   },
 
   narration: (_c, favorDelta) =>
-    `%CALLNAME:MASTER%与%CALLNAME:TARGET% — 後背位アナル；好感度 ${
+    `%CALLNAME:MASTER%与%CALLNAME:TARGET%维持肛门后背位；好感度 ${
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };

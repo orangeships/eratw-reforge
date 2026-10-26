@@ -43,6 +43,7 @@
 
 import type { GameState } from "../../state/game-state.js";
 import type { HandlerEntry, CommandContext } from "../types.js";
+import { createRng } from "../rng.js";
 import { cloneGameState } from "../../state/game-state.js";
 import {
   BASE_ID,
@@ -146,23 +147,28 @@ export const stallHandlerEntry: HandlerEntry = {
     // Lineup = all sellable inventory (MVP; interactive picker = B9).
     const lineup = buildLineup(next);
 
-    // Run the 来客 sale loop + settlement (ERB 360-671).
-    const result = runStall(next, lineup, spot, ctx.rng);
+    // Run the 来客 sale loop + settlement (ERB 360-671). The 来客演出 text
+    // rolls run on a dedicated performance RNG seeded from the tick — they
+    // are presentation-only and must not perturb the settlement stream
+    // (stall.test.ts pins the hand-traced economy trace).
+    const result = runStall(next, lineup, spot, ctx.rng, createRng(next.time.tickValue * 100003 + 447));
 
-    // Narration — the ERB "成果" summary (ERB 593-624), condensed.
-    const soldLines = result.slots
-      .filter((s) => s.sold > 0)
-      .map((s) => `  售出 ${s.sold}/${s.putUp}`);
-    const text =
-      result.totalYen > 0
-        ? `摆摊结束。来客 ${result.visitors} 人，售出 ${soldLines.length} 种，合计 ${result.totalYen} 元。`
-        : lineup.length === 0
-          ? "摆摊结束，但没有可卖的东西。"
-          : `摆摊结束。来客 ${result.visitors} 人，可惜什么都没卖出去。`;
+    // Narration — the ERB 360-624 beats verbatim (greeting / no-sale /
+    // customer line / sold / closing / 成果 summary). 成交行 carries the
+    // auspicious tone the upstream SETCOLOR 0x00FF00 marks.
+    const events = result.performance.map((beat) => ({
+      kind: "NARRATION" as const,
+      timestamp: ctx.now(),
+      text: beat.text,
+      surface: "stall" as const,
+      tone: (beat.kind === "sold" || beat.kind === "soldOut" ? "auspicious" : "plain") as
+        | "auspicious"
+        | "plain",
+    }));
 
     return {
       state: next,
-      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text }],
+      events,
       outcome: "ok" as const,
     };
   },

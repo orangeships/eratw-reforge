@@ -95,6 +95,7 @@ export const comf20Def: ComfDef = {
   failThreshold: 101,
 
   timeCost: 0,
+  targetDownbase: { [BASE_ID.気力]: 50 },
 
   buildSources: (c) => {
     // ERB 33: 快Ｍ = ABL:PLAYER:舌 * 3 + 20.
@@ -189,9 +190,6 @@ export const comf20Def: ComfDef = {
   },
 
   body: (c) => {
-    // ERB 31: DOWNBASE target 気力 50 (体力 drain is 0 — ERB 30).
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 50;
-
     // ---- KISS_EXP normal mode (COMF19 177-188) ----
 
     // EXP:キス経験 ++ (target).

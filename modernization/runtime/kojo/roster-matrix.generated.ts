@@ -1986,6 +1986,60 @@ export const KOJO_ROSTER_MATRIX = [
             "choiceNodes": 2
           },
           {
+            "category": "COMMAND",
+            "commandNo": 304,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 334,
+            "commandKind": "COM",
+            "choiceNodes": 2
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 360,
+            "commandKind": "COM",
+            "choiceNodes": 2
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 403,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 413,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 415,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 421,
+            "commandKind": "COM",
+            "choiceNodes": 4
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 432,
+            "commandKind": "COM",
+            "choiceNodes": 2
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 626,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
             "category": "ENCOUNTER",
             "choiceNodes": 5
           }
@@ -2377,6 +2431,12 @@ export const KOJO_ROSTER_MATRIX = [
           },
           {
             "category": "COMMAND",
+            "commandNo": 302,
+            "commandKind": "COM",
+            "choiceNodes": 3
+          },
+          {
+            "category": "COMMAND",
             "commandNo": 363,
             "commandKind": "COM",
             "choiceNodes": 1
@@ -2391,13 +2451,13 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 412,
             "commandKind": "COM",
-            "choiceNodes": 1
+            "choiceNodes": 2
           },
           {
             "category": "COMMAND",
             "commandNo": 414,
             "commandKind": "COM",
-            "choiceNodes": 1
+            "choiceNodes": 2
           },
           {
             "category": "COMMAND",
@@ -2419,6 +2479,11 @@ export const KOJO_ROSTER_MATRIX = [
           },
           {
             "category": "EVENT",
+            "arm": 2,
+            "choiceNodes": 1
+          },
+          {
+            "category": "EVENT",
             "arm": 22,
             "choiceNodes": 1
           },
@@ -2430,6 +2495,11 @@ export const KOJO_ROSTER_MATRIX = [
           {
             "category": "EVENT",
             "arm": 25,
+            "choiceNodes": 2
+          },
+          {
+            "category": "EVENT",
+            "arm": 28,
             "choiceNodes": 2
           },
           {
@@ -3156,7 +3226,7 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 302,
             "commandKind": "COM",
-            "choiceNodes": 3
+            "choiceNodes": 4
           },
           {
             "category": "COMMAND",
@@ -4434,6 +4504,12 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 302,
             "commandKind": "COM",
+            "choiceNodes": 2
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 311,
+            "commandKind": "COM",
             "choiceNodes": 1
           },
           {
@@ -4613,6 +4689,18 @@ export const KOJO_ROSTER_MATRIX = [
           }
         ],
         "choiceRoutes": [
+          {
+            "category": "COMMAND",
+            "commandNo": 3,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 60,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
           {
             "category": "COMMAND",
             "commandNo": 300,
@@ -4899,7 +4987,7 @@ export const KOJO_ROSTER_MATRIX = [
           },
           {
             "category": "ENCOUNTER",
-            "choiceNodes": 8
+            "choiceNodes": 14
           },
           {
             "category": "COUNTER",
@@ -4909,7 +4997,7 @@ export const KOJO_ROSTER_MATRIX = [
         "choiceRoutes": [
           {
             "category": "ENCOUNTER",
-            "choiceNodes": 8
+            "choiceNodes": 14
           }
         ]
       },
@@ -5995,7 +6083,7 @@ export const KOJO_ROSTER_MATRIX = [
           {
             "category": "EVENT",
             "arm": 1,
-            "choiceNodes": 14
+            "choiceNodes": 17
           },
           {
             "category": "SP_EVENT",
@@ -6050,7 +6138,7 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 331,
             "commandKind": "COM",
-            "choiceNodes": 3
+            "choiceNodes": 5
           },
           {
             "category": "COMMAND",
@@ -6079,7 +6167,7 @@ export const KOJO_ROSTER_MATRIX = [
           {
             "category": "EVENT",
             "arm": 1,
-            "choiceNodes": 14
+            "choiceNodes": 17
           },
           {
             "category": "SP_EVENT",
@@ -7230,7 +7318,8 @@ export const KOJO_ROSTER_MATRIX = [
           {
             "category": "COMMAND",
             "commandNo": 0,
-            "commandKind": "COM"
+            "commandKind": "COM",
+            "choiceNodes": 1
           },
           {
             "category": "COMMAND",
@@ -7240,14 +7329,16 @@ export const KOJO_ROSTER_MATRIX = [
           {
             "category": "EVENT",
             "arm": 1,
-            "choiceNodes": 1
+            "choiceNodes": 8
           },
           {
             "category": "SP_EVENT",
-            "subid": 1
+            "subid": 1,
+            "choiceNodes": 5
           },
           {
-            "category": "ENCOUNTER"
+            "category": "ENCOUNTER",
+            "choiceNodes": 3
           },
           {
             "category": "PALAM",
@@ -7258,15 +7349,69 @@ export const KOJO_ROSTER_MATRIX = [
         "choiceRoutes": [
           {
             "category": "COMMAND",
+            "commandNo": 0,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 6,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 20,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 60,
+            "commandKind": "COM",
+            "choiceNodes": 2
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 61,
+            "commandKind": "COM",
+            "choiceNodes": 2
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 65,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 81,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 82,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
             "commandNo": 300,
             "commandKind": "COM",
-            "choiceNodes": 8
+            "choiceNodes": 14
           },
           {
             "category": "COMMAND",
             "commandNo": 302,
             "commandKind": "COM",
-            "choiceNodes": 2
+            "choiceNodes": 3
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 303,
+            "commandKind": "COM",
+            "choiceNodes": 3
           },
           {
             "category": "COMMAND",
@@ -7276,7 +7421,61 @@ export const KOJO_ROSTER_MATRIX = [
           },
           {
             "category": "COMMAND",
+            "commandNo": 332,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 333,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 334,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 336,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 350,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 352,
+            "commandKind": "COM",
+            "choiceNodes": 4
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 360,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
             "commandNo": 368,
+            "commandKind": "COM",
+            "choiceNodes": 25
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 402,
+            "commandKind": "COM",
+            "choiceNodes": 3
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 403,
             "commandKind": "COM",
             "choiceNodes": 3
           },
@@ -7284,22 +7483,123 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 411,
             "commandKind": "COM",
+            "choiceNodes": 6
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 413,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 414,
+            "commandKind": "COM",
+            "choiceNodes": 2
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 415,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 416,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 417,
+            "commandKind": "COM",
             "choiceNodes": 3
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 431,
+            "commandKind": "COM",
+            "choiceNodes": 8
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 432,
+            "commandKind": "COM",
+            "choiceNodes": 8
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 610,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 615,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 617,
+            "commandKind": "COM",
+            "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 626,
+            "commandKind": "COM",
+            "choiceNodes": 1
           },
           {
             "category": "EVENT",
             "arm": 1,
+            "choiceNodes": 8
+          },
+          {
+            "category": "EVENT",
+            "arm": 2,
             "choiceNodes": 1
+          },
+          {
+            "category": "EVENT",
+            "arm": 5,
+            "choiceNodes": 1
+          },
+          {
+            "category": "EVENT",
+            "arm": 6,
+            "choiceNodes": 6
+          },
+          {
+            "category": "EVENT",
+            "arm": 9,
+            "choiceNodes": 4
+          },
+          {
+            "category": "EVENT",
+            "arm": 10,
+            "choiceNodes": 2
+          },
+          {
+            "category": "EVENT",
+            "arm": 11,
+            "choiceNodes": 15
+          },
+          {
+            "category": "EVENT",
+            "arm": 12,
+            "choiceNodes": 19
           },
           {
             "category": "EVENT",
             "arm": 13,
-            "choiceNodes": 3
+            "choiceNodes": 8
           },
           {
             "category": "EVENT",
             "arm": 15,
-            "choiceNodes": 1
+            "choiceNodes": 2
           },
           {
             "category": "EVENT",
@@ -7308,8 +7608,87 @@ export const KOJO_ROSTER_MATRIX = [
           },
           {
             "category": "EVENT",
-            "arm": 28,
+            "arm": 18,
+            "choiceNodes": 3
+          },
+          {
+            "category": "EVENT",
+            "arm": 19,
+            "choiceNodes": 2
+          },
+          {
+            "category": "EVENT",
+            "arm": 20,
+            "choiceNodes": 9
+          },
+          {
+            "category": "EVENT",
+            "arm": 21,
+            "choiceNodes": 3
+          },
+          {
+            "category": "EVENT",
+            "arm": 22,
+            "choiceNodes": 7
+          },
+          {
+            "category": "EVENT",
+            "arm": 23,
+            "choiceNodes": 7
+          },
+          {
+            "category": "EVENT",
+            "arm": 24,
+            "choiceNodes": 6
+          },
+          {
+            "category": "EVENT",
+            "arm": 25,
+            "choiceNodes": 7
+          },
+          {
+            "category": "EVENT",
+            "arm": 26,
+            "choiceNodes": 28
+          },
+          {
+            "category": "EVENT",
+            "arm": 27,
             "choiceNodes": 1
+          },
+          {
+            "category": "EVENT",
+            "arm": 28,
+            "choiceNodes": 32
+          },
+          {
+            "category": "EVENT",
+            "arm": 30,
+            "choiceNodes": 5
+          },
+          {
+            "category": "EVENT",
+            "arm": 31,
+            "choiceNodes": 5
+          },
+          {
+            "category": "EVENT",
+            "arm": 32,
+            "choiceNodes": 3
+          },
+          {
+            "category": "SP_EVENT",
+            "subid": 1,
+            "choiceNodes": 5
+          },
+          {
+            "category": "SP_EVENT",
+            "subid": 2,
+            "choiceNodes": 9
+          },
+          {
+            "category": "ENCOUNTER",
+            "choiceNodes": 3
           },
           {
             "category": "PALAM",
@@ -7409,7 +7788,7 @@ export const KOJO_ROSTER_MATRIX = [
           {
             "category": "SP_EVENT",
             "subid": 1,
-            "choiceNodes": 1
+            "choiceNodes": 4
           },
           {
             "category": "ENCOUNTER",
@@ -7427,7 +7806,7 @@ export const KOJO_ROSTER_MATRIX = [
           {
             "category": "SP_EVENT",
             "subid": 1,
-            "choiceNodes": 1
+            "choiceNodes": 4
           },
           {
             "category": "ENCOUNTER",
@@ -7553,6 +7932,12 @@ export const KOJO_ROSTER_MATRIX = [
             "commandNo": 89,
             "commandKind": "COM",
             "choiceNodes": 1
+          },
+          {
+            "category": "COMMAND",
+            "commandNo": 300,
+            "commandKind": "COM",
+            "choiceNodes": 16
           },
           {
             "category": "EVENT",
@@ -7997,7 +8382,7 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 412,
             "commandKind": "COM",
-            "choiceNodes": 2
+            "choiceNodes": 3
           },
           {
             "category": "COMMAND",
@@ -12049,7 +12434,8 @@ export const KOJO_ROSTER_MATRIX = [
             "choiceNodes": 1
           },
           {
-            "category": "ENCOUNTER"
+            "category": "ENCOUNTER",
+            "choiceNodes": 4
           },
           {
             "category": "MARK",
@@ -12135,6 +12521,10 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "SP_EVENT",
             "subid": 2,
             "choiceNodes": 1
+          },
+          {
+            "category": "ENCOUNTER",
+            "choiceNodes": 4
           },
           {
             "category": "PALAM",
@@ -13913,7 +14303,7 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 330,
             "commandKind": "COM",
-            "choiceNodes": 5
+            "choiceNodes": 7
           },
           {
             "category": "COMMAND",
@@ -14206,7 +14596,7 @@ export const KOJO_ROSTER_MATRIX = [
             "category": "COMMAND",
             "commandNo": 330,
             "commandKind": "COM",
-            "choiceNodes": 5
+            "choiceNodes": 7
           },
           {
             "category": "COMMAND",
@@ -15082,6 +15472,6 @@ export const KOJO_ROSTER_MATRIX_SUMMARY = {
   "bundledVariants": 182,
   "routableVariants": 182,
   "routeSamples": 1587,
-  "choiceRoutes": 751,
-  "choiceNodes": 1596
+  "choiceRoutes": 820,
+  "choiceNodes": 1947
 } as const satisfies KojoRosterMatrixSummary;

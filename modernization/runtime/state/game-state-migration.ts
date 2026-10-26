@@ -1,3 +1,7 @@
+import { normalizeMemoryArchive } from "../agent/memory-archive.js";
+import { backfillStoryBackgrounds } from "../story/background.js";
+import { normalizeNarrativeHooks } from "../story/dialogue-hook.js";
+import { normalizeStorylets } from "../story/storylet-runtime.js";
 import {
   cloneGameState,
   emptyCharaSlotState,
@@ -8,8 +12,11 @@ import {
   type FreeActionMetaState,
   type CommissionSlot,
   type CommissionState,
+  type CommissionOffer,
+  type CommissionSearchReveal,
   type GameState,
   type DailyEventSession,
+  type FestivalEventSession,
   type EventPromptLine,
   type EventPromptSpec,
   type MobMealSession,
@@ -28,6 +35,8 @@ import {
   type OutingChoiceValue,
   type WorldEventInstance,
   type FirstKissRecord,
+  type HSettlementEvent,
+  type HSettlementReceipt,
   type KojoMemory,
   type SleepSession,
   type TrainingCommandRecord,
@@ -40,6 +49,12 @@ import {
   type WorkRuntimeEntry,
   type WorkRuntimeState,
 } from "./game-state.js";
+import type { StoryProgram } from "../story/types.js";
+import { normalizeParkedStoryProgram, reconcileNarrativeState } from "../story/reconciliation.js";
+import { recoverPrematurelyMissedNarrativeWindows } from "../story/legacy-window-recovery.js";
+import type { StoryProgramV2 } from "../story/types.js";
+import { isStoryProgram } from "../story/validator.js";
+import { normalizeNarrativeEvents, normalizeNarrativeSituationSession, normalizeStoryArcs, normalizeStoryTemplateFavorites } from "../story/persistence.js";
 import { isObservationEvent } from "../../schemas/validator.js";
 import type { BattleInput, DanmakuBattleSession } from "./danmaku-game.js";
 import type { FishingGameSession } from "./fishing-game.js";
@@ -63,19 +78,84 @@ import {
   TFLAG_ID,
   tflagLifecycle,
 } from "./tflag.js";
-import { BASE_ID, CFLAG_ID, FLAG_ID, TALENT_ID, TEQUIP_ID } from "./settlement.js";
+import { BASE_ID, CFLAG_ID, FLAG_ID, TALENT_ID, TCVAR_ID, TEQUIP_ID } from "./settlement.js";
+import { restoreLegacyHInsertionSession } from "./h-interaction-state.js";
 import { MAXPANTS, PANTS_MGMT_OFFSET } from "./panty-collection.js";
+import { repairOrphanStealthSummary } from "./stealth.js";
 import { JOB_ID } from "../world/work/work-manifest.js";
-import { AGENT_RUNTIME_VERSION, createAgentRuntimeState } from "../agent/init.js";
+import {
+  AGENT_RUNTIME_VERSION,
+  COGNITIVE_CAPS,
+  MAX_LAZY_REQUESTS_PER_DAY,
+  createAgentMaterializationState,
+  createAgentRuntimeState,
+  pruneMaterializationTicks,
+} from "../agent/init.js";
+import {
+  MAX_DAILY_ACTIVITIES,
+  MAX_DAILY_ENCOUNTERS,
+  MAX_DAILY_LOCATIONS,
+  MAX_LEDGER_DAYS,
+  createAgentDailyLedger,
+  ensureCurrentAgentLedgerDay,
+} from "../agent/daily-ledger.js";
+import {
+  createAgentMindState,
+  normalizeAgentMindState,
+  normalizeAgentPendingEpisodes,
+} from "../agent/mind.js";
+import {
+  isAcceptedExperience,
+  pruneAcceptedExperiences,
+  type AcceptedExperience,
+} from "../experience.js";
 import { ensureRinnosuke } from "../world/dynamic-characters.js";
 
+function normalizeAcceptedExperiences(value: unknown): AcceptedExperience[] {
+  if (!Array.isArray(value)) return [];
+  const ids = new Set<string>();
+  const sourceIds = new Set<string>();
+  const accepted: AcceptedExperience[] = [];
+  for (const candidate of value) {
+    if (!isAcceptedExperience(candidate)
+      || ids.has(candidate.id)
+      || candidate.sourceIds.some((sourceId) => sourceIds.has(sourceId))) continue;
+    ids.add(candidate.id);
+    for (const sourceId of candidate.sourceIds) sourceIds.add(sourceId);
+    accepted.push(candidate);
+  }
+  return pruneAcceptedExperiences(accepted);
+}
+
 /**
- * Version 17 validates resumable walk/training continuations and makes load a
- * hard command boundary for turn-local state. Earlier migrations also repair
- * the legacy EQUIP/TEQUIP namespace collision, so the upgrade remains safe for
- * saves that predate either state shape.
+ * Version 27 adds the bounded L2 Agent mind and player-anchored pending
+ * episodes. Version 26 adds the bounded deterministic Agent daily ledger.
+ * Version 24 persists the resumable public-festival prompt and the
+ * 大晦日 schedule restoration snapshot. Version 23 persists bounded
+ * AcceptedExperience and Lazy materialization
+ * bookkeeping. Earlier migrations also validate resumable continuations and
+ * repair the legacy EQUIP/TEQUIP namespace collision, so the upgrade remains
+ * safe for saves that predate any of these state shapes.
  */
-export const GAME_STATE_SCHEMA_VERSION = 19;
+import { normalizeRelationshipLedger } from "../ai-state/relationship.js";
+
+// Version 31 adds the per-Arc cross-day maintenance record (StoryArcMaintenanceV1).
+// Version 32 keeps missed opportunities alive and clears the known slot-2
+// orphan residue instead of reviving it during reconciliation.
+// Version 33 adds a separate named store for upstream #DIM SAVEDATA values.
+// Version 34 repairs untouched narrative windows cancelled before their deadline.
+// Version 35 retires the date road phase: `traveling` / `returning` sessions
+// normalize to `active` and the leftover `travelRemainingMinutes` counter is
+// dropped (upstream travel time is still charged, the road itself is not
+// modeled).
+// Version 41 admits L3 dialogue-hook nodes and optional actual L1 expression
+// lines. Older programs keep their validated legacy nodes; absent hook lines
+// stay absent, never reconstructed from a planned objective or fallback.
+// Version 42 adds the optional diary trigger "jev"; existing command/cadence
+// entries remain historical records and never schedule another diary.
+// Version 43 adds published story-interaction evidence and optional Arc progress.
+// Older saves start without inferred dialogue outcomes or reconstructed evidence.
+export const GAME_STATE_SCHEMA_VERSION = 43;
 
 const LEGACY_HAKUREI_HOME = "神社:自室";
 const DEFAULT_HAKUREI_HOME = "神社:倉庫";
@@ -91,6 +171,25 @@ export interface GameStateMigrationResult {
 }
 
 type UnknownRecord = Record<string, unknown>;
+
+const KNOWN_SLOT2_ARC_ID = "arc:free-story:14";
+const KNOWN_SLOT2_EVENT_ID = "proposal-close-work-relationship-001";
+
+/** Remove only the exact orphan shape observed in slot 2. This is deliberately
+ * narrow: other expired events linked to a valid cast are migrated to `missed`
+ * by narrative reconciliation and must not be erased. */
+function clearKnownSlot2NarrativeResidue(state: GameState, warnings: string[]): void {
+  const arc = state.storyArcs?.find((entry) => entry.id === KNOWN_SLOT2_ARC_ID);
+  const event = state.narrativeEvents?.find((entry) => entry.id === KNOWN_SLOT2_EVENT_ID);
+  if (!arc || !event || state.storyProgram || event.arcId !== KNOWN_SLOT2_ARC_ID
+    || event.status !== "expired" || arc.status !== "active"
+    || arc.participantRoles.some((role) => role.characterId !== 0)) return;
+  state.storyArcs = (state.storyArcs ?? []).filter((entry) => entry.id !== KNOWN_SLOT2_ARC_ID);
+  state.narrativeEvents = (state.narrativeEvents ?? []).filter((entry) => entry.id !== KNOWN_SLOT2_EVENT_ID && entry.arcId !== KNOWN_SLOT2_ARC_ID);
+  state.narrativeSituationSession = null;
+  if (state.activeEventContext?.arcId === KNOWN_SLOT2_ARC_ID) state.activeEventContext = null;
+  warnings.push("cleared known slot-2 narrative orphan residue");
+}
 
 const CHARA_NAMESPACES = Object.keys(
   emptyCharaSlotState(),
@@ -273,12 +372,17 @@ function normalizeDailyEventSession(value: unknown): DailyEventSession | undefin
     "ev20-head-visit": ["visit-choice"],
     "ev5-oppai": ["oppai-choice", "oppai-futanari-choice", "oppai-target", "oppai-correction"],
     "ev23-visit-sales": ["sales-appearance", "sales-listen", "sales-offer", "sales-bargain", "sales-use", "sales-return", "sales-intimate", "sales-intimate-payment"],
+    "daily-kojo": ["kojo-choice"],
   };
   if (typeof value.kind !== "string" || !phaseByKind[value.kind]?.includes(String(value.phase)) ||
     typeof value.eventDay !== "number" || !Number.isFinite(value.eventDay) ||
     typeof value.sleepSeed !== "number" || !Number.isFinite(value.sleepSeed)) return undefined;
   const kind = value.kind as DailyEventSession["kind"];
-  const eventId = kind === "ev20-head-visit" ? 20 : kind === "ev5-oppai" ? 5 : kind === "ev23-visit-sales" ? 23 : 0;
+  const eventId = kind === "ev20-head-visit" ? 20
+    : kind === "ev5-oppai" ? 5
+      : kind === "ev23-visit-sales" ? 23
+        : kind === "daily-kojo" && (value.eventId === 2 || value.eventId === 4) ? value.eventId
+          : 0;
   const phase = value.phase as DailyEventSession["phase"];
   const data = isRecord(value.data)
     ? Object.fromEntries(Object.entries(value.data).filter(([, v]) => typeof v === "number" || typeof v === "string" || typeof v === "boolean")) as Record<string, number | string | boolean>
@@ -319,6 +423,39 @@ function normalizeDailyEventPrompt(value: unknown): EventPromptSpec | undefined 
     options,
     ...(opening.length > 0 ? { opening } : {}),
   };
+}
+
+function normalizeFestivalEventSession(value: unknown): FestivalEventSession | undefined {
+  if (!isRecord(value) || value.kind !== "new-year") return undefined;
+  if (typeof value.dayIndex !== "number" || !Number.isFinite(value.dayIndex)) return undefined;
+  const prompt = normalizeDailyEventPrompt(value.prompt);
+  if (!prompt || prompt.kind !== "pick_one" || prompt.options.length !== 6) return undefined;
+  const ids = prompt.options.map((option) => option.id);
+  if (ids.some((id) => typeof id !== "number" || !Number.isInteger(id) || id < 1 || id > 6)
+    || new Set(ids).size !== 6) return undefined;
+  return {
+    kind: "new-year",
+    dayIndex: Math.trunc(value.dayIndex),
+    prompt,
+  };
+}
+
+function normalizeFestivalScheduleSnapshots(
+  value: unknown,
+): Record<number, { returnTime: number; sleepTime: number }> {
+  if (!isRecord(value)) return {};
+  const out: Record<number, { returnTime: number; sleepTime: number }> = {};
+  for (const [rawCharaNum, rawSnapshot] of Object.entries(value)) {
+    const charaNum = Number(rawCharaNum);
+    if (!Number.isSafeInteger(charaNum) || charaNum < 0 || !isRecord(rawSnapshot)) continue;
+    if (typeof rawSnapshot.returnTime !== "number" || !Number.isFinite(rawSnapshot.returnTime)
+      || typeof rawSnapshot.sleepTime !== "number" || !Number.isFinite(rawSnapshot.sleepTime)) continue;
+    out[charaNum] = {
+      returnTime: Math.trunc(rawSnapshot.returnTime),
+      sleepTime: Math.trunc(rawSnapshot.sleepTime),
+    };
+  }
+  return out;
 }
 
 function normalizeEventPromptOpening(value: unknown): EventPromptLine[] {
@@ -555,6 +692,160 @@ function normalizeTrainingSummary(value: unknown, state: Readonly<GameState>): T
   };
 }
 
+const H_SETTLEMENT_CHANNELS = new Set(["Ｃ", "Ｖ", "Ａ", "Ｂ", "Ｍ"]);
+
+function normalizeHSettlementEvent(value: unknown): HSettlementEvent | undefined {
+  if (!isRecord(value)) return undefined;
+  const subject = nonnegativeInteger(value.subject);
+  if (subject === undefined || typeof value.amount !== "number" || !Number.isFinite(value.amount)) {
+    return undefined;
+  }
+  if (value.kind !== "orgasm" && value.kind !== "unaware-orgasm" && value.kind !== "ejaculation") {
+    return undefined;
+  }
+  const channel = value.channel;
+  if (channel !== undefined && (typeof channel !== "string" || !H_SETTLEMENT_CHANNELS.has(channel))) {
+    return undefined;
+  }
+  let site: HSettlementEvent["site"];
+  if (value.site !== undefined) {
+    if (!isRecord(value.site)) return undefined;
+    const code = nonnegativeInteger(value.site.code);
+    const kind = value.site.kind;
+    if (
+      code === undefined ||
+      (kind !== "ejaculation-site" && kind !== "stimulated-side") ||
+      typeof value.site.label !== "string"
+    ) return undefined;
+    site = { code, kind, label: value.site.label };
+  }
+  let markerLabels: string[] | undefined;
+  if (value.markerLabels !== undefined) {
+    if (!Array.isArray(value.markerLabels) || !value.markerLabels.every((label) => typeof label === "string")) {
+      return undefined;
+    }
+    markerLabels = [...value.markerLabels];
+  }
+  return {
+    subject,
+    kind: value.kind,
+    ...(channel === undefined ? {} : { channel: channel as HSettlementEvent["channel"] }),
+    amount: value.amount,
+    ...(site === undefined ? {} : { site }),
+    ...(markerLabels === undefined ? {} : { markerLabels }),
+  };
+}
+
+/**
+ * The receipt is a shortcut for the L1 scene projection, not gameplay truth.
+ * A malformed one is dropped **whole** rather than partially trusted: a
+ * half-valid receipt would present invented events as settled ones. Dropping
+ * degrades every consumer to "unknown", which they must already handle.
+ */
+function normalizeHSettlementReceipt(value: unknown): HSettlementReceipt | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (!isRecord(value) || value.version !== 1) return undefined;
+
+  const tick = nonnegativeInteger(value.tick);
+  const day = nonnegativeInteger(value.day);
+  const commandNo = nonnegativeInteger(value.commandNo);
+  const actor = nonnegativeInteger(value.actor);
+  if (tick === undefined || day === undefined || commandNo === undefined || actor === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value.events)) return undefined;
+  const events: HSettlementEvent[] = [];
+  for (const candidate of value.events) {
+    const event = normalizeHSettlementEvent(candidate);
+    if (!event) return undefined;
+    events.push(event);
+  }
+
+  let deposits: HSettlementReceipt["deposits"];
+  if (value.deposits !== undefined) {
+    if (!Array.isArray(value.deposits)) return undefined;
+    deposits = [];
+    for (const candidate of value.deposits) {
+      if (!isRecord(candidate)) return undefined;
+      const subject = nonnegativeInteger(candidate.subject);
+      const amount = finiteNumber(candidate.amount, Number.NaN);
+      if (subject === undefined || !Number.isFinite(amount) || amount <= 0 || (candidate.site !== "v" && candidate.site !== "a")) return undefined;
+      deposits.push({ subject, site: candidate.site, amount });
+    }
+  }
+
+  let session: HSettlementReceipt["session"] = null;
+  if (value.session !== null && value.session !== undefined) {
+    if (!isRecord(value.session) || !isTrainingMode(value.session.mode)) return undefined;
+    const target = nonnegativeInteger(value.session.target);
+    if (target === undefined || target <= 0 || !Array.isArray(value.session.participants)) return undefined;
+    const participants: number[] = [];
+    for (const raw of value.session.participants) {
+      const id = nonnegativeInteger(raw);
+      if (id === undefined) return undefined;
+      participants.push(id);
+    }
+    if (typeof value.session.exited !== "boolean" || typeof value.session.started !== "boolean") return undefined;
+    const reason = value.session.exitReason;
+    if (
+      reason !== null &&
+      reason !== "exit-command" && reason !== "target-changed" && reason !== "manual"
+    ) return undefined;
+    session = {
+      target,
+      mode: value.session.mode,
+      participants,
+      exited: value.session.exited,
+      exitReason: reason,
+      started: value.session.started,
+    };
+  }
+
+  if (!isRecord(value.edging)) return undefined;
+  const gained = finiteNumber(value.edging.gained, Number.NaN);
+  const cleared = finiteNumber(value.edging.cleared, Number.NaN);
+  if (!Number.isFinite(gained) || !Number.isFinite(cleared)) return undefined;
+
+  if (!Array.isArray(value.marks) || !value.marks.every((mark) => typeof mark === "string")) {
+    return undefined;
+  }
+
+  if (!isRecord(value.insertion)) return undefined;
+  if (typeof value.insertion.v !== "boolean" || typeof value.insertion.a !== "boolean") return undefined;
+  if (!isRecord(value.insertionBefore)) return undefined;
+  if (typeof value.insertionBefore.v !== "boolean" || typeof value.insertionBefore.a !== "boolean") {
+    return undefined;
+  }
+
+  if (!Array.isArray(value.vitality)) return undefined;
+  const vitality: HSettlementReceipt["vitality"] = [];
+  for (const candidate of value.vitality) {
+    if (!isRecord(candidate)) return undefined;
+    const subject = nonnegativeInteger(candidate.subject);
+    const stamina = finiteNumber(candidate.stamina, Number.NaN);
+    const will = finiteNumber(candidate.will, Number.NaN);
+    if (subject === undefined || !Number.isFinite(stamina) || !Number.isFinite(will)) return undefined;
+    vitality.push({ subject, stamina, will });
+  }
+
+  return {
+    version: 1,
+    tick,
+    day,
+    commandNo,
+    actor,
+    session,
+    events,
+    ...(deposits === undefined ? {} : { deposits }),
+    edging: { gained, cleared },
+    marks: [...value.marks] as string[],
+    insertion: { v: value.insertion.v, a: value.insertion.a },
+    insertionBefore: { v: value.insertionBefore.v, a: value.insertionBefore.a },
+    vitality,
+  };
+}
+
 function normalizeDynamicCharacters(
   value: unknown,
   charas: Readonly<Record<number, CharaSlot>>,
@@ -605,6 +896,12 @@ function normalizeDynamicCharacters(
       ? Math.trunc(rawMeta.rememberedSlot as number)
       : undefined;
     const portrait = normalizeDynamicCharacterPortrait(rawMeta.portrait);
+    const raceBuffBattleBonus = Number.isFinite(rawMeta.raceBuffBattleBonus)
+      ? Math.max(0, Math.trunc(rawMeta.raceBuffBattleBonus as number))
+      : undefined;
+    const raceBuffHandicapMultiplier = Number.isFinite(rawMeta.raceBuffHandicapMultiplier)
+      ? Math.max(1, Number(rawMeta.raceBuffHandicapMultiplier))
+      : undefined;
     out[id] = {
       origin: "generated",
       lifecycle: rawMeta.lifecycle,
@@ -616,6 +913,8 @@ function normalizeDynamicCharacters(
       createdDay: Math.trunc(rawMeta.createdDay as number),
       ...(portrait ? { portrait } : {}),
       ...(rememberedSlot !== undefined ? { rememberedSlot } : {}),
+      ...(raceBuffBattleBonus !== undefined ? { raceBuffBattleBonus } : {}),
+      ...(raceBuffHandicapMultiplier !== undefined ? { raceBuffHandicapMultiplier } : {}),
     };
   }
   return out;
@@ -741,7 +1040,7 @@ function normalizeOutingChoiceOpening(value: unknown): OutingChoicePromptLine[] 
 
 function normalizeAcceptedEventRankings(value: unknown, warnings: string[] = []): AcceptedEventRanking[] {
   if (!Array.isArray(value)) return [];
-  const channels = ["daily", "outing-departure", "outing-return", "banquet"] as const;
+  const channels = ["daily", "outing-departure", "outing-return", "banquet", "story"] as const;
   const out: AcceptedEventRanking[] = [];
   for (const item of value) {
     if (!isRecord(item) || typeof item.setId !== "string" || typeof item.contextHash !== "string") { warnings.push("discarded invalid event ranking"); continue; }
@@ -825,6 +1124,7 @@ function normalizeWorldEvents(value: unknown, warnings: string[]): WorldEventIns
         arrivalTick: Number.isFinite(item.arrivalTick) ? Math.trunc(item.arrivalTick as number) : undefined,
         waitUntilTick: Number.isFinite(item.waitUntilTick) ? Math.trunc(item.waitUntilTick as number) : undefined,
         resolvedAtTick: Number.isFinite(item.resolvedAtTick) ? Math.trunc(item.resolvedAtTick as number) : undefined,
+        controller: item.controller === "partner" ? "partner" : item.controller === "player" ? "player" : undefined,
       });
       continue;
     }
@@ -855,8 +1155,14 @@ function normalizeWorldEvents(value: unknown, warnings: string[]): WorldEventIns
 }
 
 function normalizeDateSession(value: unknown, state: GameState, sourceVersion: number, warnings: string[]): DateSession | null {
+  // `traveling` / `returning` are retired phases (upstream `TFLAG:约会道中` road
+  // stage is not modeled). Legacy saves that still carry them are normalized to
+  // `active` so the date simply resumes at its destination.
   const phases = ["traveling", "active", "returning"] as const;
   if (isRecord(value) && Number.isInteger(value.partner) && state.charas[value.partner as number] && phases.includes(value.phase as typeof phases[number])) {
+    if (value.phase !== "active") {
+      warnings.push("normalized retired date phase (traveling/returning) to active");
+    }
     return {
       partner: Math.trunc(value.partner as number),
       source: ["player-405", "local-992", "appointment", "legacy"].includes(String(value.source)) ? value.source as DateSession["source"] : "legacy",
@@ -864,9 +1170,27 @@ function normalizeDateSession(value: unknown, state: GameState, sourceVersion: n
       startedAtTick: Math.trunc(finiteNumber(value.startedAtTick, state.time.tickValue)),
       mapId: Math.max(0, Math.trunc(finiteNumber(value.mapId, 0))),
       forcedEndTick: Number.isFinite(value.forcedEndTick) ? Math.trunc(value.forcedEndTick as number) : undefined,
-      phase: value.phase as DateSession["phase"],
+      phase: "active",
       destination: typeof value.destination === "string" ? value.destination : undefined,
-      travelRemainingMinutes: Number.isFinite(value.travelRemainingMinutes) ? Math.max(0, Math.trunc(value.travelRemainingMinutes as number)) : undefined,
+      controller: value.controller === "partner" ? "partner" : "player",
+      leaderId: Number.isInteger(value.leaderId) ? Math.trunc(value.leaderId as number) : undefined,
+      eventId: boundedNonemptyString(value.eventId),
+      autoAdvance: value.controller === "partner" && value.autoAdvance === true,
+      itinerary: Array.isArray(value.itinerary) ? value.itinerary.slice(0, 8).flatMap((step, index) => {
+        if (!isRecord(step) || typeof step.location !== "string" || typeof step.label !== "string") return [];
+        const status = ["pending", "completed", "skipped"].includes(String(step.status)) ? step.status as "pending" | "completed" | "skipped" : "pending";
+        return [{
+          id: boundedNonemptyString(step.id) ?? `legacy-date-step:${index}`,
+          location: step.location.slice(0, 256),
+          label: step.label.slice(0, 120),
+          travelMinutes: Math.max(1, Math.min(240, Math.trunc(finiteNumber(step.travelMinutes, 30)))),
+          status,
+        }];
+      }) : undefined,
+      itineraryCursor: Number.isFinite(value.itineraryCursor) ? Math.max(0, Math.trunc(value.itineraryCursor as number)) : undefined,
+      executedActionIds: Array.isArray(value.executedActionIds)
+        ? [...new Set(value.executedActionIds.filter((id): id is string => typeof id === "string" && id.length > 0).map((id) => id.slice(0, 256)))].slice(-32)
+        : undefined,
     };
   }
   if (value != null) warnings.push("discarded invalid date session");
@@ -890,7 +1214,9 @@ function reprojectDateMirrors(state: GameState): void {
   state.flagStore[FLAG_ID.デート相手] = session?.partner ?? 0;
   state.tflagStore ??= {};
   state.tflagStore[215] = session?.initialFavor ?? 0;
-  state.tflagStore[229] = session?.phase === "traveling" || session?.phase === "returning" ? Math.max(1, session.travelRemainingMinutes ?? 1) : 0;
+  // `TFLAG:约会道中` — the road stage is retired, so the upstream road marker
+  // always reprojects to 0 (the party is never between two places).
+  state.tflagStore[229] = 0;
   for (const [idText, slot] of Object.entries(state.charas)) {
     slot.state.CFLAG[CFLAG_ID.约会中] = Number(idText) === session?.partner ? mapId : 0;
   }
@@ -914,18 +1240,82 @@ function reprojectBanquetMirrors(state: GameState): void {
   }
   for (const instance of state.worldEvents ?? []) {
     if (instance.kind !== "banquet" || ["resolved", "cancelled"].includes(instance.phase)) continue;
-    const prep = instance.phase === "preparing";
+    const preparationStart = instance.scheduledStartTick - Math.floor(instance.initialScale / 30) - 15;
+    const prep = instance.phase === "preparing" || (instance.phase === "scheduled" && state.time.tickValue >= preparationStart);
     const cleanup = instance.phase === "cleanup" || instance.phase === "closing";
+    // A scheduled event is an agenda entry, not a movement command. Only
+    // re-project a legacy save once its preparation window has actually begun.
+    const beforePreparation = instance.phase === "scheduled" && state.time.tickValue < preparationStart;
+    const clearStaleProjection = (slot: CharaSlot, restoreAwakeLocation = true): void => {
+      const job = slot.state.CFLAG[CFLAG_ID.职种] ?? 0;
+      const workplace = slot.state.CFLAG[CFLAG_ID.职场] ?? 0;
+      const action = slot.state.CFLAG[CFLAG_ID.行动] ?? 0;
+      const hasBanquetProjection =
+        job === JOB_ID.宴会準備 || job === JOB_ID.宴会参加 || job === JOB_ID.宴会片づけ ||
+        (workplace === venueRoomId(instance.venue) && action === 5) ||
+        (slot.state.CFLAG[CFLAG_ID.宴会参加] ?? 0) !== 0;
+      if (!hasBanquetProjection) return;
+      const sleeping = (slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0;
+      const originLocation = instance.originLocations?.[slot.charaNum];
+      if (!sleeping && restoreAwakeLocation && originLocation !== undefined) {
+        slot.location = originLocation;
+      } else if (sleeping && slot.location === instance.venue && slot.homeLocation) {
+        // Legacy saves created by the old implementation could have a sleeper
+        // already teleported to the venue without an origin snapshot. Sleep
+        // owns the home location, so repair that specific stale projection.
+        slot.location = slot.homeLocation;
+      }
+      const originRoomId = instance.originRoomIds?.[slot.charaNum];
+      if (!sleeping && restoreAwakeLocation && originRoomId !== undefined) {
+        slot.state.CFLAG[CFLAG_ID.現在位置] = originRoomId;
+      } else if (sleeping && slot.homeLocation) {
+        const homeRoomId = slot.state.CFLAG[CFLAG_ID.初期位置] ?? 0;
+        if (homeRoomId > 0) slot.state.CFLAG[CFLAG_ID.現在位置] = homeRoomId;
+      }
+      slot.state.CFLAG[CFLAG_ID.宴会参加] = 0;
+      slot.state.CFLAG[CFLAG_ID.职种] = 0;
+      slot.state.CFLAG[CFLAG_ID.职场] = 0;
+      slot.state.CFLAG[CFLAG_ID.行动] = 0;
+      slot.state.BASE[BASE_ID.仕事量] = 0;
+      slot.state.MAXBASE[BASE_ID.仕事量] = 0;
+    };
+    if (beforePreparation) {
+      for (const id of instance.participants) {
+        const slot = state.charas[id];
+        if (slot) clearStaleProjection(slot);
+      }
+      continue;
+    }
     for (const id of instance.participants) {
       const slot = state.charas[id];
       if (!slot) continue;
-      slot.location = instance.venue;
-      slot.state.CFLAG[CFLAG_ID.宴会参加] = instance.hosts.includes(id) ? 2 : 1;
+      const host = instance.hosts.includes(id);
+      if (prep && !host) {
+        clearStaleProjection(slot);
+        continue;
+      }
+      if (cleanup && !host) {
+        // Runtime cleanup clears the guest's job immediately but leaves the
+        // room until the closing transition; preserve that visible timing on
+        // migration while still repairing a sleeping guest at the venue.
+        clearStaleProjection(slot, false);
+        continue;
+      }
+      const sleeping = (slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0;
+      if (sleeping && !prep && !cleanup) clearStaleProjection(slot);
+      slot.state.CFLAG[CFLAG_ID.宴会参加] = sleeping ? 0 : host ? 2 : 1;
       slot.state.CFLAG[CFLAG_ID.职种] = cleanup ? JOB_ID.宴会片づけ : prep ? JOB_ID.宴会準備 : JOB_ID.宴会参加;
-      slot.state.CFLAG[326] = venueRoomId(instance.venue);
+      slot.state.CFLAG[CFLAG_ID.职场] = venueRoomId(instance.venue);
       slot.state.CFLAG[CFLAG_ID.行动] = 5;
       slot.state.BASE[BASE_ID.仕事量] = cleanup ? (instance.cleanupRemaining[id] ?? 0) : prep ? (instance.workRemaining[id] ?? 0) : (instance.workRemaining[id] ?? 0);
       slot.state.MAXBASE[BASE_ID.仕事量] = cleanup ? Math.max(...Object.values(instance.cleanupRemaining), 0) : Math.max(...Object.values(instance.workRemaining), 0);
+      instance.originLocations ??= {};
+      instance.originRoomIds ??= {};
+      if (!(id in instance.originLocations)) instance.originLocations[id] = slot.location;
+      if (!(id in instance.originRoomIds)) instance.originRoomIds[id] = slot.state.CFLAG[CFLAG_ID.現在位置] ?? 0;
+      if (sleeping) continue;
+      slot.location = instance.venue;
+      slot.state.CFLAG[CFLAG_ID.現在位置] = venueRoomId(instance.venue);
     }
   }
 }
@@ -1056,7 +1446,7 @@ function normalizeFreeActionMeta(value: unknown): FreeActionMetaState | undefine
 
 function normalizeCommissionState(value: unknown): CommissionState | undefined {
   if (value === undefined) return undefined;
-  if (!isRecord(value)) return { slots: [] };
+  if (!isRecord(value)) return { slots: [], offers: {} };
   const slots: CommissionSlot[] = [];
   if (Array.isArray(value.slots)) {
     for (const rawSlot of value.slots) {
@@ -1083,6 +1473,13 @@ function normalizeCommissionState(value: unknown): CommissionState | undefined {
         slot.targetCharaNum = Math.trunc(rawSlot.targetCharaNum);
       }
       if (typeof rawSlot.targetLocation === "string") slot.targetLocation = rawSlot.targetLocation;
+      if (typeof rawSlot.sub === "number" && Number.isFinite(rawSlot.sub)) slot.sub = Math.trunc(rawSlot.sub);
+      if (["hidden", "person", "map", "place"].includes(String(rawSlot.searchReveal))) {
+        slot.searchReveal = rawSlot.searchReveal as CommissionSearchReveal;
+      }
+      if (typeof rawSlot.revealedLocation === "string" && rawSlot.revealedLocation.length > 0) {
+        slot.revealedLocation = rawSlot.revealedLocation;
+      }
       if (typeof rawSlot.itemId === "number" && Number.isFinite(rawSlot.itemId)) slot.itemId = Math.trunc(rawSlot.itemId);
       if (typeof rawSlot.itemQty === "number" && Number.isFinite(rawSlot.itemQty)) slot.itemQty = Math.max(0, Math.trunc(rawSlot.itemQty));
       slots.push(slot);
@@ -1091,7 +1488,61 @@ function normalizeCommissionState(value: unknown): CommissionState | undefined {
   const lastMorningDay = typeof value.lastMorningDay === "number" && Number.isFinite(value.lastMorningDay)
     ? Math.trunc(value.lastMorningDay)
     : undefined;
-  return { slots, lastMorningDay };
+  const offers: Record<number, CommissionOffer> = {};
+  if (isRecord(value.offers)) {
+    for (const [rawClientId, rawOffer] of Object.entries(value.offers)) {
+      const clientId = Math.trunc(Number(rawClientId));
+      if (!Number.isInteger(clientId) || clientId <= 0 || !isRecord(rawOffer)) continue;
+      const offer: CommissionOffer = {};
+      if (typeof rawOffer.targetCharaNum === "number" && Number.isFinite(rawOffer.targetCharaNum)) {
+        offer.targetCharaNum = Math.trunc(rawOffer.targetCharaNum);
+      }
+      if (typeof rawOffer.targetLocation === "string" && rawOffer.targetLocation.length > 0) {
+        offer.targetLocation = rawOffer.targetLocation;
+      }
+      if (typeof rawOffer.sub === "number" && Number.isFinite(rawOffer.sub)) offer.sub = Math.trunc(rawOffer.sub);
+      if (["hidden", "person", "map", "place"].includes(String(rawOffer.searchReveal))) {
+        offer.searchReveal = rawOffer.searchReveal as CommissionSearchReveal;
+      }
+      if (typeof rawOffer.revealedLocation === "string" && rawOffer.revealedLocation.length > 0) {
+        offer.revealedLocation = rawOffer.revealedLocation;
+      }
+      offers[clientId] = offer;
+    }
+  }
+  return { slots, offers, lastMorningDay };
+}
+
+function normalizeInsectForagingContract(value: unknown): GameState["insectForaging"] {
+  if (!isRecord(value)) return undefined;
+  const region = Math.trunc(finiteNumber(value.region, NaN));
+  const fee = Math.trunc(finiteNumber(value.fee, NaN));
+  const startedDay = Math.trunc(finiteNumber(value.startedDay, NaN));
+  const expiresDay = Math.trunc(finiteNumber(value.expiresDay, 0));
+  const nextCollectionDay = Math.trunc(finiteNumber(value.nextCollectionDay, NaN));
+  if (![region, fee, startedDay, nextCollectionDay].every(Number.isFinite)) return undefined;
+  if (region < 0 || region > 10 || region === 2) return undefined;
+  const contract: NonNullable<GameState["insectForaging"]> = {
+    region,
+    fee: Math.max(0, fee),
+    startedDay,
+    expiresDay: Math.max(0, expiresDay),
+    nextCollectionDay,
+  };
+  if (isRecord(value.lastCollection)) {
+    const day = Math.trunc(finiteNumber(value.lastCollection.day, NaN));
+    const quantity = Math.max(0, Math.trunc(finiteNumber(value.lastCollection.quantity, NaN)));
+    if (Number.isFinite(day) && Number.isFinite(quantity)) {
+      const itemId = Math.trunc(finiteNumber(value.lastCollection.itemId, NaN));
+      contract.lastCollection = {
+        day,
+        quantity,
+        failed: value.lastCollection.failed === true,
+        ...(Number.isFinite(itemId) ? { itemId } : {}),
+      };
+    }
+  }
+  return contract;
 }
 
 /**
@@ -1119,7 +1570,7 @@ function repairLegacyTequipWrites(
   sourceVersion: number,
   warnings: string[],
 ): void {
-  if (sourceVersion >= GAME_STATE_SCHEMA_VERSION) return;
+  if (sourceVersion >= 33) return;
   const moved: number[] = [];
   for (const id of UNAMBIGUOUS_LEGACY_TEQUIP_IDS) {
     const legacy = slot.state.EQUIP[id];
@@ -1131,6 +1582,95 @@ function repairLegacyTequipWrites(
   if (moved.length > 0) {
     warnings.push(`migrated legacy TEQUIP writes for chara ${slot.charaNum}: ${moved.join(",")}`);
   }
+}
+
+function normalizeActiveEventContext(value: unknown, state: GameState): GameState["activeEventContext"] {
+  if (!isRecord(value) || value.version !== 1) return null;
+  const eventId = boundedNonemptyString(value.eventId);
+  const beatId = boundedNonemptyString(value.beatId);
+  const objective = boundedNonemptyString(value.objective, 600);
+  const actorRole = boundedNonemptyString(value.actorRole, 120);
+  if (!eventId || !beatId || !objective || !actorRole) return null;
+  const strings = (input: unknown, limit: number) => Array.isArray(input)
+    ? [...new Set(input.filter((entry): entry is string => typeof entry === "string" && entry.length > 0).map((entry) => entry.slice(0, 256)))].slice(0, limit)
+    : [];
+  const participantIds = Array.isArray(value.participantIds)
+    ? [...new Set(value.participantIds.filter((id): id is number => Number.isInteger(id) && (id === 0 || Boolean(state.charas[id]))))].slice(0, 4)
+    : [];
+  if (participantIds.length === 0) return null;
+  return {
+    version: 1,
+    eventId,
+    arcId: boundedNonemptyString(value.arcId),
+    beatId,
+    participantIds,
+    objective,
+    actorRole,
+    visibleFactIds: strings(value.visibleFactIds, 32),
+    revealableFactIds: strings(value.revealableFactIds, 32),
+    forbiddenClaims: strings(value.forbiddenClaims, 24),
+    allowedIntentIds: strings(value.allowedIntentIds, 16),
+    completionFactIds: strings(value.completionFactIds, 16),
+    openedAtTick: Math.trunc(finiteNumber(value.openedAtTick, state.time.tickValue)),
+    expiresAtTick: Math.trunc(finiteNumber(value.expiresAtTick, state.time.tickValue)),
+  };
+}
+
+function normalizeScheduledWeatherIncidents(value: unknown): NonNullable<GameState["scheduledWeatherIncidents"]> {
+  if (!Array.isArray(value)) return [];
+  const statuses = ["scheduled", "active", "completed", "cancelled"] as const;
+  return value.slice(-32).flatMap((entry) => {
+    if (!isRecord(entry) || entry.version !== 1 || !statuses.includes(entry.status as typeof statuses[number])) return [];
+    const id = boundedNonemptyString(entry.id);
+    const optionId = boundedNonemptyString(entry.optionId);
+    const label = boundedNonemptyString(entry.label, 120);
+    const idempotencyKey = boundedNonemptyString(entry.idempotencyKey);
+    const startTick = Math.trunc(finiteNumber(entry.startTick, -1));
+    const endTick = Math.trunc(finiteNumber(entry.endTick, -1));
+    const weatherId = Math.trunc(finiteNumber(entry.weatherId, -1));
+    const windId = Math.trunc(finiteNumber(entry.windId, -1));
+    if (!id || !optionId || !label || !idempotencyKey || startTick < 0 || endTick <= startTick || weatherId < 0 || windId < 0) return [];
+    return [{
+      version: 1 as const, id, optionId, label, startTick, endTick, weatherId, windId,
+      status: entry.status as typeof statuses[number],
+      sourceEventId: boundedNonemptyString(entry.sourceEventId),
+      idempotencyKey,
+    }];
+  });
+}
+
+function normalizeStoryProgram(value: unknown): StoryProgram | undefined {
+  const copy = structuredClone(value);
+  if (isRecord(copy) && copy.version === 2) normalizeParkedStoryProgram(copy as unknown as StoryProgramV2);
+  return isStoryProgram(copy) ? copy : undefined;
+}
+
+const H_INSERTION_TEQUIP_IDS = [TEQUIP_ID.Ｖ性交, TEQUIP_ID.Ａ性交] as const;
+const H_INSERTION_TCVAR_IDS = [TCVAR_ID.V挿入管理, TCVAR_ID.A挿入管理] as const;
+
+/**
+ * A save without a resumable TrainingSession cannot safely continue an
+ * insertion pose. Do not let its sparse TEQUIP/TCVAR links turn the next
+ * ordinary command into an invisible H continuation.
+ */
+function clearUnresumableHInsertionLinks(state: GameState, warnings: string[]): void {
+  let cleared = 0;
+  const slots = [state.master, ...Object.values(state.charas)];
+  for (const slot of slots) {
+    for (const id of H_INSERTION_TEQUIP_IDS) {
+      if (slot.state.TEQUIP[id] !== undefined) {
+        delete slot.state.TEQUIP[id];
+        cleared += 1;
+      }
+    }
+    for (const id of H_INSERTION_TCVAR_IDS) {
+      if (slot.state.TCVAR[id] !== undefined && slot.state.TCVAR[id] !== -1) {
+        slot.state.TCVAR[id] = -1;
+        cleared += 1;
+      }
+    }
+  }
+  if (cleared > 0) warnings.push(`cleared ${cleared} unresumable H insertion links`);
 }
 
 function nestedNumberRecord(value: unknown): Record<number, Record<number, number>> {
@@ -1441,6 +1981,150 @@ function normalizeStoneSession(value: unknown, state: Readonly<GameState>, warni
   return session;
 }
 
+function normalizeAgentRelationshipSnapshot(value: unknown): import("../agent/types.js").AgentRelationshipEvidenceSnapshot | undefined {
+  if (!isRecord(value) || !isRecord(value.traits)) return undefined;
+  const stage = value.stage;
+  const attitude = finiteNumber(value.attitude, -1);
+  if (!(stage === "ordinary" || stage === "affection" || stage === "love" || stage === "lover")
+    || ![0, 1, 2, 3].includes(attitude)) return undefined;
+  return {
+    tick: Math.max(0, Math.trunc(finiteNumber(value.tick, 0))),
+    favor: Math.trunc(finiteNumber(value.favor, 0)),
+    trust: Math.trunc(finiteNumber(value.trust, 0)),
+    intimacy: Math.trunc(finiteNumber(value.intimacy, 0)),
+    attitude: attitude as 0 | 1 | 2 | 3,
+    stage,
+    traits: {
+      affection: value.traits.affection === true,
+      love: value.traits.love === true,
+      lover: value.traits.lover === true,
+      desire: value.traits.desire === true,
+      sexFriend: value.traits.sexFriend === true,
+    },
+  };
+}
+
+function normalizeAgentDailyLedger(value: unknown): import("../agent/types.js").AgentDailyLedgerV1 {
+  if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.days)) {
+    return createAgentDailyLedger();
+  }
+  const days = value.days.filter(isRecord)
+    .filter((day) => Number.isSafeInteger(day.dayIndex) && isRecord(day.characters))
+    .sort((a, b) => Number(a.dayIndex) - Number(b.dayIndex))
+    .slice(-MAX_LEDGER_DAYS)
+    .map((day) => {
+      const dayIndex = Number(day.dayIndex);
+      const rawCharacters = isRecord(day.characters) ? day.characters : {};
+      const characters: Record<number, import("../agent/types.js").AgentDailyCharacterRecord> = {};
+      for (const [rawId, candidate] of Object.entries(rawCharacters)) {
+        const charaNum = Number(rawId);
+        if (!Number.isSafeInteger(charaNum) || charaNum <= 0 || !isRecord(candidate)) continue;
+        const relationshipStart = normalizeAgentRelationshipSnapshot(candidate.relationshipStart);
+        if (!relationshipStart || typeof candidate.initialLocation !== "string"
+          || typeof candidate.lastKnownLocation !== "string") continue;
+        const activities = Array.isArray(candidate.activities) ? candidate.activities
+          .filter((entry): entry is UnknownRecord => isRecord(entry)
+            && typeof entry.id === "string"
+            && (entry.kind === "work" || entry.kind === "roam" || entry.kind === "player-command-dialogue")
+            && Number.isSafeInteger(entry.startTick) && Number.isSafeInteger(entry.endTick)
+            && Number(entry.endTick) >= Number(entry.startTick)
+            && typeof entry.location === "string" && typeof entry.label === "string"
+            && Array.isArray(entry.participants))
+          .slice(0, MAX_DAILY_ACTIVITIES) as unknown as import("../agent/types.js").AgentDailyActivity[] : [];
+        const visitedLocations = Array.isArray(candidate.visitedLocations) ? candidate.visitedLocations
+          .filter((entry): entry is UnknownRecord => isRecord(entry) && typeof entry.id === "string"
+            && typeof entry.location === "string" && Number.isSafeInteger(entry.arrivedAtTick)
+            && (entry.leftAtTick === undefined || Number.isSafeInteger(entry.leftAtTick)))
+          .slice(0, MAX_DAILY_LOCATIONS) as unknown as import("../agent/types.js").AgentDailyVisitedLocation[] : [];
+        const encounters = Array.isArray(candidate.encounters) ? candidate.encounters
+          .filter((entry): entry is UnknownRecord => isRecord(entry) && typeof entry.id === "string"
+            && Number.isSafeInteger(entry.startTick) && Number.isSafeInteger(entry.endTick)
+            && Number(entry.endTick) > Number(entry.startTick) && typeof entry.location === "string"
+            && Array.isArray(entry.participants))
+          .slice(0, MAX_DAILY_ENCOUNTERS) as unknown as import("../agent/types.js").AgentDailyEncounter[] : [];
+        const relationshipEnd = normalizeAgentRelationshipSnapshot(candidate.relationshipEnd);
+        const relationshipChanges = Array.isArray(candidate.relationshipChanges)
+          ? candidate.relationshipChanges.filter((entry): boolean => isRecord(entry)
+            && typeof entry.field === "string" && "before" in entry && "after" in entry)
+            .slice(0, 10) as import("../agent/types.js").AgentRelationshipChangeEvidence[]
+          : [];
+        characters[charaNum] = {
+          charaNum,
+          dayIndex,
+          startedAtTick: Math.max(dayIndex * 1440, Math.trunc(finiteNumber(candidate.startedAtTick, dayIndex * 1440))),
+          ...(Number.isSafeInteger(candidate.closedAtTick) ? { closedAtTick: Number(candidate.closedAtTick) } : {}),
+          initialLocation: candidate.initialLocation,
+          lastKnownLocation: candidate.lastKnownLocation,
+          activities,
+          visitedLocations,
+          encounters,
+          relationshipStart,
+          ...(relationshipEnd ? { relationshipEnd } : {}),
+          relationshipChanges,
+          sequence: Math.max(0, Math.trunc(finiteNumber(candidate.sequence, 0))),
+        };
+      }
+      return { dayIndex, characters };
+    });
+  return { version: 1, days };
+}
+
+function normalizeMigratedAgentMind(rawCog: UnknownRecord): import("../agent/types.js").AgentMindStateV1 {
+  if (rawCog.mind !== undefined) return normalizeAgentMindState(rawCog.mind);
+  const mind = createAgentMindState();
+  const reflections = Array.isArray(rawCog.reflections) ? rawCog.reflections : [];
+  const latest = reflections.slice().reverse().find((entry): entry is UnknownRecord => isRecord(entry));
+  const parts = latest && isRecord(latest.parts) ? latest.parts : undefined;
+  if (parts) {
+    if (typeof parts.attitudeToPlayer === "string") mind.relationshipToPlayer = parts.attitudeToPlayer.slice(0, 300);
+    if (typeof parts.nextTendency === "string") mind.currentTendency = parts.nextTendency.slice(0, 300);
+  }
+  const oldGoals = Array.isArray(rawCog.goals) ? rawCog.goals : [];
+  mind.goals = oldGoals
+    .filter((entry): entry is UnknownRecord => isRecord(entry)
+      && typeof entry.id === "string" && entry.id.trim().length > 0
+      && typeof entry.text === "string" && entry.text.trim().length > 0)
+    .filter((entry) => entry.status === undefined || entry.status === "active")
+    .slice(-3)
+    .map((entry, index) => ({
+      id: `legacy-goal:${String(entry.id).slice(0, 120)}`,
+      topic: "relationship" as const,
+      text: String(entry.text).slice(0, 180),
+      createdTick: Math.max(0, finiteNumber(entry.createdTick, index)),
+      updatedTick: Math.max(0, finiteNumber(entry.createdTick, index)),
+      evidenceIds: [],
+      status: "active" as const,
+    }));
+  return mind;
+}
+
+function normalizeMigratedDaytimeSync(
+  rawCog: UnknownRecord,
+): import("../agent/types.js").AgentDaytimeSyncState {
+  const raw = isRecord(rawCog.daytimeSync) ? rawCog.daytimeSync : {};
+  const ids = (value: unknown): string[] => Array.isArray(value)
+    ? [...new Set(value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+      .map((entry) => entry.trim().slice(0, 180)))]
+    : [];
+  const revision = Number.isSafeInteger(raw.revision) && Number(raw.revision) >= 0
+    ? Number(raw.revision)
+    : 0;
+  const lastProjectedTick = Number.isSafeInteger(raw.lastProjectedTick) && Number(raw.lastProjectedTick) >= 0
+    ? Number(raw.lastProjectedTick)
+    : 0;
+  const lastReactionTick = Number.isSafeInteger(raw.lastReactionTick) && Number(raw.lastReactionTick) >= 0
+    ? Number(raw.lastReactionTick)
+    : undefined;
+  return {
+    version: 1,
+    pendingObservationIds: ids(raw.pendingObservationIds).slice(-COGNITIVE_CAPS.daytimePendingObservations),
+    consumedObservationIds: ids(raw.consumedObservationIds).slice(-COGNITIVE_CAPS.daytimeConsumedObservations),
+    revision,
+    lastProjectedTick,
+    ...(lastReactionTick === undefined ? {} : { lastReactionTick }),
+  };
+}
+
 /**
  * Validate and repair an unknown `agentRuntime` payload.  Returns `undefined`
  * for absent or irreparably broken data, letting the migration fall back to
@@ -1458,7 +2142,7 @@ function normalizeAgentRuntime(value: unknown): import("../agent/types.js").Agen
   const rawSettings = value.settings as UnknownRecord;
   const settings = {
     masterEnabled: rawSettings.masterEnabled === true,
-    maxActiveAgents: Math.max(1, Math.min(10, Math.trunc(finiteNumber(rawSettings.maxActiveAgents, 10)))),
+    maxActiveAgents: Math.max(1, Math.min(20, Math.trunc(finiteNumber(rawSettings.maxActiveAgents, 10)))),
     pinnedCharaNums: Array.isArray(rawSettings.pinnedCharaNums)
       ? [...new Set((rawSettings.pinnedCharaNums as unknown[]).filter((n): boolean => typeof n === "number" && Number.isInteger(n as number) && (n as number) > 0) as number[])]
       : [],
@@ -1516,6 +2200,9 @@ function normalizeAgentRuntime(value: unknown): import("../agent/types.js").Agen
       goals: Array.isArray(rawCog.goals)
         ? (rawCog.goals as unknown[]).filter((g): boolean => isRecord(g) && typeof (g as Record<string,unknown>).id === "string").slice(-8)
         : [],
+      mind: normalizeMigratedAgentMind(rawCog),
+      pendingEpisodes: normalizeAgentPendingEpisodes(rawCog.pendingEpisodes),
+      daytimeSync: normalizeMigratedDaytimeSync(rawCog),
       diaries: Array.isArray(rawCog.diaries)
         ? (rawCog.diaries as unknown[]).filter((d): boolean => isRecord(d) && typeof (d as Record<string,unknown>).id === "string").slice(-30)
         : [],
@@ -1545,6 +2232,41 @@ function normalizeAgentRuntime(value: unknown): import("../agent/types.js").Agen
   }
 
   const raw = value as UnknownRecord;
+  const rawMaterialization = isRecord(raw.materialization) ? raw.materialization : {};
+  const defaultMaterialization = createAgentMaterializationState();
+  const normalizeTickRecord = (candidate: unknown): Record<number, number> =>
+    pruneMaterializationTicks(isRecord(candidate)
+      ? Object.fromEntries(Object.entries(candidate)
+          .filter(([key, tick]) => Number.isSafeInteger(Number(key)) && Number(key) > 0
+            && Number.isSafeInteger(tick) && Number(tick) >= 0)
+          .map(([key, tick]) => [Number(key), Number(tick)]))
+      : {});
+  const materialization = {
+    lastSeenTicks: normalizeTickRecord(
+      rawMaterialization.lastSeenTicks ?? defaultMaterialization.lastSeenTicks,
+    ),
+    materializedThroughTicks: normalizeTickRecord(
+      rawMaterialization.materializedThroughTicks ?? defaultMaterialization.materializedThroughTicks,
+    ),
+    budgetDay: Number.isSafeInteger(rawMaterialization.budgetDay)
+      ? Number(rawMaterialization.budgetDay)
+      : -1,
+    requestCount: Math.max(0, Math.min(
+      MAX_LAZY_REQUESTS_PER_DAY,
+      Math.trunc(finiteNumber(rawMaterialization.requestCount, 0)),
+    )),
+    requestedCharaNums: Array.isArray(rawMaterialization.requestedCharaNums)
+      ? [...new Set(rawMaterialization.requestedCharaNums
+          .filter((id): id is number => Number.isSafeInteger(id) && Number(id) > 0))]
+          .slice(0, MAX_LAZY_REQUESTS_PER_DAY)
+      : [],
+    requestKeys: Array.isArray(rawMaterialization.requestKeys)
+      ? [...new Set(rawMaterialization.requestKeys
+          .filter((key): key is string => typeof key === "string" && key.length > 0 && key.length <= 240))]
+          .slice(0, MAX_LAZY_REQUESTS_PER_DAY)
+      : [],
+  };
+  const dailyLedger = normalizeAgentDailyLedger(raw.dailyLedger);
   return {
     version: AGENT_RUNTIME_VERSION,
     cognitions,
@@ -1561,6 +2283,9 @@ function normalizeAgentRuntime(value: unknown): import("../agent/types.js").Agen
       ? (raw.acceptedDecisions as unknown[]).filter((d): boolean => isRecord(d) && typeof (d as UnknownRecord).id === "string").slice(-30) as import("../agent/types.js").AcceptedAgentDecision[]
       : [],
     decisionSeq: finiteNumber(raw.decisionSeq, 0),
+    materialization,
+    dailyLedger,
+    memoryArchive: normalizeMemoryArchive(raw.memoryArchive),
   } as import("../agent/types.js").AgentRuntimeState;
 }
 
@@ -1577,9 +2302,11 @@ export function migrateGameState(
   baseline: GameState,
 ): GameStateMigrationResult {
   const base = cloneGameState(baseline);
+  base.acceptedExperiences = normalizeAcceptedExperiences(base.acceptedExperiences);
   base.casinoChips ??= 0;
   base.childSexPreg ??= {};
   base.children ??= {};
+  base.dlcSavedata = stringNumberRecord(base.dlcSavedata);
   const warnings: string[] = [];
   if (!isRecord(raw) || !isRecord(raw.master) || !isRecord(raw.charas)) {
     base.schemaVersion = GAME_STATE_SCHEMA_VERSION;
@@ -1596,6 +2323,9 @@ export function migrateGameState(
   const sourceVersion = Math.max(0, Math.trunc(finiteNumber(raw.schemaVersion, 0)));
   const next = { ...base, ...raw } as unknown as GameState;
   next.schemaVersion = GAME_STATE_SCHEMA_VERSION;
+  next.aiRelationshipLedger = normalizeRelationshipLedger(raw.aiRelationshipLedger);
+  // A dialogue agreement belongs to the live session, never to a loaded save.
+  delete next.aiDialogueAccompany;
 
   const sourceTime = isRecord(raw.time) ? raw.time : {};
   next.time = {
@@ -1630,7 +2360,12 @@ export function migrateGameState(
   if (next.master.location === LEGACY_HAKUREI_HOME) {
     next.master.location = next.homeLocation ?? DEFAULT_HAKUREI_HOME;
   }
-  next.sleepSession = normalizeSleepSession(raw.sleepSession) ?? base.sleepSession ?? null;
+  // A save's sleep state is authoritative; do NOT fall back to the baseline.
+  // `buildInitialState` seeds `sleepSession` for the new-game first morning
+  // (主角睡在自宅卧室), and inheriting that phantom "still asleep" session into
+  // every load made it re-enter night settlement on boot / 读档 / dev-tools
+  // return even from an awake morning-menu save. Absent/malformed → awake (null).
+  next.sleepSession = normalizeSleepSession(raw.sleepSession) ?? null;
   next.dailyEventLastRunDay = typeof raw.dailyEventLastRunDay === "number" && Number.isFinite(raw.dailyEventLastRunDay)
     ? Math.trunc(raw.dailyEventLastRunDay)
     : base.dailyEventLastRunDay;
@@ -1641,6 +2376,11 @@ export function migrateGameState(
   if (raw.dailyEventSession != null && !normalizedDailyEventSession) {
     warnings.push("discarded invalid daily-event session");
   }
+  const normalizedFestivalEventSession = normalizeFestivalEventSession(raw.festivalEventSession);
+  next.festivalEventSession = normalizedFestivalEventSession ?? null;
+  if (raw.festivalEventSession != null && !normalizedFestivalEventSession) {
+    warnings.push("discarded invalid festival-event session");
+  }
   const normalizedMobMealSession = normalizeMobMealSession(raw.mobMealSession);
   next.mobMealSession = normalizedMobMealSession ?? null;
   if (raw.mobMealSession != null && !normalizedMobMealSession) {
@@ -1650,7 +2390,38 @@ export function migrateGameState(
   if (raw.acceptedEventRankings != null && !Array.isArray(raw.acceptedEventRankings)) {
     warnings.push("discarded invalid event rankings");
   }
+  const normalizedStoryProgram = normalizeStoryProgram(raw.storyProgram);
+  next.storyProgram = normalizedStoryProgram ?? null;
+  if (raw.storyProgram != null && !normalizedStoryProgram) {
+    warnings.push("discarded invalid story program");
+  }
+  next.narrativeEvents = normalizeNarrativeEvents(raw.narrativeEvents, warnings);
+  try { next.narrativeHooks = normalizeNarrativeHooks(raw.narrativeHooks); }
+  catch { next.narrativeHooks = []; warnings.push("discarded invalid narrative dialogue hooks"); }
+  try { next.storylets = normalizeStorylets(raw.storylets); }
+  catch { next.storylets = []; warnings.push("discarded invalid storylet instances"); }
+  const storyletSerial = finiteNumber(raw.nextStoryletSerial, 0);
+  next.nextStoryletSerial = Math.max(Number.isSafeInteger(storyletSerial) && storyletSerial >= 0 ? storyletSerial : 0,
+    ...(next.storylets ?? []).map(s => Number(s.id.split(":").at(-1)) + 1).filter(Number.isSafeInteger));
+  next.narrativeSituationSession = normalizeNarrativeSituationSession(raw.narrativeSituationSession);
+  if (raw.narrativeSituationSession != null && !next.narrativeSituationSession) {
+    warnings.push("discarded invalid narrative situation session");
+  }
+  if (next.narrativeSituationSession?.autoSelect) {
+    // Its provider owner was lost on reload, and no player can answer this
+    // automatic menu. Re-author from the Arc promise through normal pacing.
+    next.narrativeSituationSession = null;
+    warnings.push("cleared interrupted automatic narrative situation session");
+  }
+  next.storyArcs = normalizeStoryArcs(raw.storyArcs, warnings);
+  next.storyTemplateFavorites = normalizeStoryTemplateFavorites(raw.storyTemplateFavorites, warnings);
+  clearKnownSlot2NarrativeResidue(next, warnings);
   next.worldEvents = normalizeWorldEvents(raw.worldEvents, warnings);
+  next.activeEventContext = normalizeActiveEventContext(raw.activeEventContext, next);
+  next.scheduledWeatherIncidents = normalizeScheduledWeatherIncidents(raw.scheduledWeatherIncidents);
+  next.acceptedAgentActionIds = Array.isArray(raw.acceptedAgentActionIds)
+    ? [...new Set(raw.acceptedAgentActionIds.filter((id): id is string => typeof id === "string" && id.length > 0).map((id) => id.slice(0, 256)))].slice(-128)
+    : [];
   next.outing = isRecord(raw.outing) && Number.isInteger(raw.outing.mapId)
     ? { startedAtTick: Math.trunc(finiteNumber(raw.outing.startedAtTick, next.time.tickValue)), mapId: Math.max(0, Math.trunc(raw.outing.mapId as number)) }
     : null;
@@ -1694,6 +2465,7 @@ export function migrateGameState(
   next.freeActions = normalizeFreeActions(raw.freeActions) ?? base.freeActions;
   next.freeActionMeta = normalizeFreeActionMeta(raw.freeActionMeta) ?? base.freeActionMeta;
   next.commissions = normalizeCommissionState(raw.commissions) ?? base.commissions;
+  next.insectForaging = normalizeInsectForagingContract(raw.insectForaging);
   next.encounterMorningDay = typeof raw.encounterMorningDay === "number" && Number.isFinite(raw.encounterMorningDay)
     ? Math.trunc(raw.encounterMorningDay)
     : base.encounterMorningDay;
@@ -1764,11 +2536,17 @@ export function migrateGameState(
   reprojectBanquetMirrors(next);
 
   next.flagStore = numberRecord(raw.flagStore);
+  next.dlcSavedata = stringNumberRecord(raw.dlcSavedata);
   if (!(3 in next.flagStore)) next.flagStore[3] = 1;
+  if (repairOrphanStealthSummary(next)) {
+    warnings.push("cleared orphan global stealth bit");
+  }
   // PANTS_TEMP and the two collection counters are a persisted state boundary:
   // normalize carried buckets and rebuild their derived FLAG mirrors instead
   // of trusting a stale/hand-edited save value.
   next.pantsTemp = nestedNumberRecord(raw.pantsTemp);
+  next.festivalOutfitSnapshots = nestedNumberRecord(raw.festivalOutfitSnapshots);
+  next.festivalScheduleSnapshots = normalizeFestivalScheduleSnapshots(raw.festivalScheduleSnapshots);
   let pantySpecies = 0;
   for (const slot of Object.values(next.charas)) {
     for (let pieceId = 0; pieceId < MAXPANTS; pieceId++) {
@@ -1803,7 +2581,9 @@ export function migrateGameState(
   if (!next.training) {
     next.master.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
     for (const slot of Object.values(next.charas)) slot.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
+    clearUnresumableHInsertionLinks(next, warnings);
   } else {
+    restoreLegacyHInsertionSession(next);
     for (const slot of Object.values(next.charas)) {
       if (slot.charaNum !== next.training.target) slot.state.CFLAG[CFLAG_ID.诶嘿嘿] = 0;
     }
@@ -1812,6 +2592,22 @@ export function migrateGameState(
   next.lastTrainingSummary = normalizedTrainingSummary ?? null;
   if (raw.lastTrainingSummary != null && !normalizedTrainingSummary) {
     warnings.push("discarded invalid training summary");
+  }
+  // Left absent when there is nothing valid to carry: the L1 scene projection
+  // reads a missing receipt as "unknown", which is the honest answer for a
+  // save that predates this field. Never seed it with an empty receipt.
+  //
+  // `next` was built as `{ ...base, ...raw }`, so an unvalidated receipt is
+  // already sitting on it — the invalid branch has to *remove* it, not just
+  // skip the assignment.
+  const normalizedHSettlement = normalizeHSettlementReceipt(raw.lastHSettlement);
+  if (normalizedHSettlement) {
+    next.lastHSettlement = normalizedHSettlement;
+  } else {
+    delete next.lastHSettlement;
+    if (raw.lastHSettlement != null) {
+      warnings.push("discarded invalid H settlement receipt");
+    }
   }
 
   const sourceTurnContext = isRecord(raw.turnContext) ? raw.turnContext : {};
@@ -1843,13 +2639,8 @@ export function migrateGameState(
   next.flagStore[FLAG_ID.デート相手] = next.dateSession?.partner ?? 0;
   if (next.dateSession) {
     setTflag(next, TFLAG_ID.约会前好感度, next.dateSession.initialFavor);
-    setTflag(
-      next,
-      TFLAG_ID.约会道中,
-      next.dateSession.phase === "traveling" || next.dateSession.phase === "returning"
-        ? Math.max(1, next.dateSession.travelRemainingMinutes ?? 1)
-        : 0,
-    );
+    // `TFLAG:约会道中` — the road stage is retired; always 0.
+    setTflag(next, TFLAG_ID.约会道中, 0);
   } else {
     clearTflag(next, TFLAG_ID.约会前好感度);
     clearTflag(next, TFLAG_ID.约会道中);
@@ -1936,13 +2727,25 @@ export function migrateGameState(
   // Agent Runtime v2 is the only supported persisted shape. Older or invalid
   // agent payloads are intentionally reset while the deterministic save loads.
   next.agentRuntime = normalizeAgentRuntime(raw.agentRuntime) ?? createAgentRuntimeState();
+  // Schema 25 (and older) saves have no daily ledger. If Agent Runtime was
+  // already enabled, begin the current record at the load tick only; never
+  // invent movements or encounters from earlier in the day.
+  ensureCurrentAgentLedgerDay(next);
+  next.acceptedExperiences = normalizeAcceptedExperiences(raw.acceptedExperiences);
+  if (sourceVersion < 34) warnings.push(...recoverPrematurelyMissedNarrativeWindows(next));
+  // Schema 39 binds only surviving evidence for old Arcs; lost player input cannot be invented.
+  backfillStoryBackgrounds(next);
+  // Schema 40 accepts optional bounded continuation receipt text. Older receipts
+  // remain valid without it: never invent missing player words during migration.
+  const narrative = reconcileNarrativeState(next);
+  warnings.push(...narrative.diagnostics);
 
   if (sourceVersion < GAME_STATE_SCHEMA_VERSION) {
     warnings.push(`migrated state schema ${sourceVersion} -> ${GAME_STATE_SCHEMA_VERSION}`);
   }
 
   return {
-    state: next,
+    state: narrative.state,
     valid: true,
     sourceVersion,
     warnings,

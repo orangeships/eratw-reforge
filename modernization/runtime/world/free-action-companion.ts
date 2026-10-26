@@ -664,7 +664,7 @@ export function runCompanionSettle(
     case 0: {
       const r = settleThink(next, target, co);
       trustSeed = r.trustSeed;
-      text = r.outcome === "understood" ? "一起度过了安静思考的时光。" : "没能跟上对方的思路。";
+      text = r.outcome === "understood" ? "两人就这个话题安静地聊了一会儿。" : `${t.callName ?? "对方"}只是随口敷衍了过去。`;
       break;
     }
     case 1: {
@@ -800,14 +800,18 @@ export function runCompanionSettle(
   // Suppress unused-var warnings for trustSeed (applySourceCheck already
   // accepted it per-arm; we keep the field for future TRUST_CALC hook).
   void trustSeed;
-  // NARRATION text uses the faithful `FreeAct_Name` (e.g. "在思考什么")
-  // — the player clicked the command labelled that way, so the reply
-  // should reference the same name. The per-type `text` we built above
-  // stays as a richer detail line for the same event.
+  // `FreeAct_Name` is a button label, not a grammatical verb phrase.  The
+  // upstream type-0 companion arm explicitly says the player asked what the
+  // target was thinking; concatenating the label produced the broken phrase
+  // “陪灵梦在思考什么”. Keep the label for UI/debug metadata while using an
+  // authored per-arm sentence for player narration.
   const actionName = companionActionName(fa.type, fa.remainingMinutes, t);
   const label = actionName ?? "这种自由行动";
+  const targetName = t.callName ?? "目标";
   return {
-    text: `陪${t.callName ?? "目标"}${label}。${text}`,
+    text: fa.type === 0
+      ? `你询问了${targetName}正在思考的事情。${text}`
+      : `陪${targetName}${label}。${text}`,
     ok,
     completed,
     remainingAfter,

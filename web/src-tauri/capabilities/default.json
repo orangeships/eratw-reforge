@@ -1,11 +1,26 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Player capability set: app core, local folder dialog, and settings store.",
+  "description": "Phase 1 + 2.2 + 2.4 capability set: app core + dialog + store + shell.",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "dialog:default",
-    "store:default"
+    "store:default",
+    "shell:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "node",
+          "side": "host",
+          "args": [
+            { "validator": "^.*modernization[\\\\/]scripts[\\\\/]build-manifests\\.mjs$" },
+            { "validator": "^--project-root$" },
+            { "validator": "^[A-Za-z]:[\\\\/].+$" }
+          ]
+        }
+      ]
+    }
   ]
 }

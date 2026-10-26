@@ -106,7 +106,7 @@ export const comf148Def: ComfDef = {
   },
 
   narration: (_c, favorDelta) =>
-    `%CALLNAME:MASTER% 对%CALLNAME:TARGET%使用了アナル電極；好感度 ${
+    `%CALLNAME:MASTER% 对%CALLNAME:TARGET%使用了肛门电极；好感度 ${
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };

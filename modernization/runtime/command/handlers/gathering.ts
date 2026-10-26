@@ -27,6 +27,10 @@
  *   - **EXP** (ERB 142-152): `EXP:採集経験 += 1` always; `+= 2` extra when
  *     nothing found (so found=+1, nothing=+3); `EXP:学習経験 += 1` when
  *     `ABL:教養 <= 2`.
+ *   - **Result 地文** (`@MESSAGE_COM445`, `EVENT_MESSAGE_COM400.ERB:1155-1176`):
+ *     the green `%ITEMNAME_TR%共{N}个找到了！（旧→新）` count-delta line (`只`
+ *     for 青蛙), then the item's 说明文 via `ITEM_DESCRIPTION` (see
+ *     `state/item-explanation.ts`), or `什么都没有找到……` on a miss.
  *
  * **Deferred (mod-layer / subsystem, same posture as cleaning.ts):**
  *   - **QOL draw patch** (`QOL_Gathering_Drawing`, a 魔改 mod-layer
@@ -52,6 +56,7 @@
  */
 
 import type { GameState } from "../../state/game-state.js";
+import type { ObservationEvent } from "../../../schemas/types.js";
 import type { HandlerEntry, CommandContext } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
 import {
@@ -63,7 +68,8 @@ import {
   getMasterBase,
   setMasterBase,
 } from "../../state/settlement.js";
-import { addItem } from "../../state/items.js";
+import { addItem, itemCount, ITEM_ID } from "../../state/items.js";
+import { itemExplanation } from "../../state/item-explanation.js";
 import { gatherDraw, gatheringPower, gatheringSpot } from "../../state/gathering.js";
 
 // ---------------------------------------------------------------------------
@@ -146,10 +152,14 @@ export const gatheringHandlerEntry: HandlerEntry = {
       }
     }
 
-    // ERB 134-138: grant via GET_ITEM (999 hold cap, addItem).
+    // ERB 134-138: grant via GET_ITEM (999 hold cap, addItem). Capture the
+    // before/after counts so the result card can print the upstream
+    // `（旧→新）` delta (`@MESSAGE_COM445`, EVENT_MESSAGE_COM400.ERB:1170).
+    const heldBefore = foundId !== 0 ? itemCount(next, foundId) : 0;
     if (foundId !== 0) {
       addItem(next, foundId, foundQty);
     }
+    const heldAfter = foundId !== 0 ? itemCount(next, foundId) : 0;
 
     // ERB 188: 時間経過 (non-treasure-chest, non-time-stop) → TIME += 60.
     advanceTimeTicks(next, 60);
@@ -178,16 +188,59 @@ export const gatheringHandlerEntry: HandlerEntry = {
         (next.master.state.EXP[EXP_ID.学習経験] ?? 0) + 1;
     }
 
+    // Result presentation — `@MESSAGE_COM445`
+    // (EVENT_MESSAGE_COM400.ERB:1155-1176). Upstream prints, in order:
+    //   1. `%ITEMNAME_TR%共{TFLAG:194}个找到了！（旧→新）` in green (0x00FF00),
+    //   2. `DRAWLINE`,
+    //   3. `CALL ITEM_DESCRIPTION(TFLAG:193)` — the item's 说明文 地文.
+    // The count-delta and the 说明文 become separate NARRATION lines so the
+    // interaction box reveals them one click apart (the DRAWLINE beat), and
+    // the find line carries `surface: "gather"` so the UI can color it the way
+    // SETCOLOR 0x00FF00 does upstream. `共…个` uses 只 for 青蛙 (706), matching
+    // the upstream `GROUPMATCH(TFLAG:193, 706)? 只# 个` inline ternary.
     const power = gatheringPower(next);
-    const text =
-      foundId !== 0
-        ? `%CALLNAME:MASTER% 采集到了 ${foundQty} 个${foundName}。`
-        : power < MIN_SPOT1_POWER
-          ? `%CALLNAME:MASTER% 采集了一番，但采集能力还不足，什么也没找到。\n采集经验增加了。`
-          : `%CALLNAME:MASTER% 采集了一番，但什么也没找到。\n采集经验增加了。`;
+    const events: ObservationEvent[] = [];
+    if (foundId !== 0) {
+      const unit = foundId === ITEM_ID.青蛙 ? "只" : "个";
+      events.push({
+        kind: "NARRATION" as const,
+        timestamp: ctx.now(),
+        text: `${foundName}共 ${foundQty} ${unit}找到了！（${heldBefore}→${heldAfter}）`,
+        surface: "gather" as const,
+        tone: "auspicious" as const,
+      });
+      // Upstream's `"??????"` no-explanation fallback is omitted rather than
+      // printed — a result card reading "薬草:??????" is worse than no line.
+      const explanation = itemExplanation(next, foundId);
+      if (explanation !== null) {
+        events.push({
+          kind: "NARRATION" as const,
+          timestamp: ctx.now(),
+          text: `${foundName}：${explanation}`,
+          surface: "gather" as const,
+          tone: "plain" as const,
+        });
+      }
+    } else {
+      // ERB 1159: `什么都没有找到……`. The trailing hints are a modern
+      // addition — upstream leaves the player to work out that 採集Lv/教養
+      // gate the spot's cheapest material (SQRT(10+1000) = 31). 採集経験 rises
+      // on a miss either way (ERB 143-144: +1 then +2 more), so the EXP line
+      // is printed in both arms.
+      events.push({
+        kind: "NARRATION" as const,
+        timestamp: ctx.now(),
+        text:
+          power < MIN_SPOT1_POWER
+            ? "什么都没有找到……\n采集能力还不足，不过采集经验增加了。"
+            : "什么都没有找到……\n采集经验增加了。",
+        surface: "gather" as const,
+        tone: "plain" as const,
+      });
+    }
     return {
       state: next,
-      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text }],
+      events,
       outcome: "ok" as const,
     };
   },

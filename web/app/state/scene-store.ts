@@ -26,6 +26,7 @@ import type { SceneAsset } from "../../../modernization/runtime/scene/index.js";
 export type GameScreen =
   | "title"
   | "projectSelect"
+  | "minimalNewGame"
   | "newGameSetup"
   | "residenceSelect"
   | "kojoSelect"

@@ -1,7 +1,7 @@
 [package]
-name = "eratw-modern-player"
-version = "0.2.0-alpha.1"
-description = "eraTW Modern Player Preview"
+name = "eratw-mod-studio"
+version = "0.3.0"
+description = "GensoEra"
 authors = ["eraTW Modernization Team"]
 edition = "2021"
 rust-version = "1.77"
@@ -9,8 +9,12 @@ rust-version = "1.77"
 # The `_lib` suffix may seem redundant but is necessary to make the lib name unique
 # and not collide with the bin name. This seems to be only an issue on Windows.
 [lib]
-name = "eratw_modern_player_lib"
+name = "eratw_mod_studio_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+# Production builds embed the frontend and use Tauri's local asset protocol.
+custom-protocol = ["tauri/custom-protocol"]
 
 [build-dependencies]
 tauri-build = { version = "2.0", features = [] }
@@ -19,6 +23,9 @@ tauri-build = { version = "2.0", features = [] }
 tauri = { version = "2.1", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2.0"
 tauri-plugin-store = "2.1"
+tauri-plugin-shell = "2.0"
+notify = "6"
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

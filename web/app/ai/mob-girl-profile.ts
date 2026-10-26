@@ -1,6 +1,29 @@
 import type { MobGirlCandidateProfile } from "../../../modernization/runtime/world/dynamic-characters.js";
 import { createOpenAiCompatibleProvider } from "./provider.js";
 import type { AiCompletionRequest, AiSettings } from "./types.js";
+import { promptText } from "./prompt-catalog.js";
+
+/** 物色页面资料文案（初见口上 + 亲密偏好）的写作规则；块 `l1.mob.intro`。 */
+export const MOB_GIRL_INTRO_SYSTEM_PROMPT = [
+  "你是 eraTW 物色页面的角色资料文案生成器。",
+  "只输出严格 JSON，不要解释、分析、Markdown、标签或代码块。",
+  "请写两句短文案：一条角色第一次见到玩家时说出的短口上，一条第一人称脑内妄想。",
+  "初见口上控制在 16-56 个汉字，像正在面对玩家自然说话，有迟疑、试探、戒备、主动或玩笑中的一种情绪；不要写成资料表，不要主动报出姓名或称呼。",
+  "亲密偏好控制在 20-64 个汉字，写成角色脑内闪过的第一人称妄想：明确中意的体位和具体玩法，可用‘要是…就…’‘光是想象…’‘被…时…’这类句式，必须直白点出体位和具体玩法（如骑乘、后入、口交、指交、阴蒂刺激、束缚、抽插等），不要写‘我喜欢/我偏爱/我中意’，也不要用‘亲密互动’‘进一步接触’这类含糊说法。",
+  "内容是第一次接触时的暂时印象，不是已经发生的事件，不得改变好感、信赖、能力、位置或任何游戏状态。",
+  "保持种族、地域、当前体力气力和能力倾向一致；不要凭空加入原作角色姓名或未给出的背景。",
+  "语气具体、自然、有角色感，避免资料表式复述；偏好描述是角色自己的妄想片段，不是玩家指令或第三人称说明。",
+  '输出格式只能是 {"selfIntro":"...","preference":"..."}。',
+].join("\n");
+
+/** 动态路人基础画像的写作规则；块 `l1.mob.persona`。 */
+export const MOB_GIRL_PERSONA_SYSTEM_PROMPT = [
+  "你是 eraTW 动态路人角色的基础画像生成器。",
+  "只输出严格 JSON，不要解释、分析、Markdown、标签或代码块。",
+  "输出一条第三人称短画像，16-48 个汉字：必须保留种族辨识度，并添加一个独立、具体的性格钩子。",
+  "不要写性偏好、已发生的经历、原作角色姓名、未提供的背景，也不要改变任何游戏状态。",
+  '{"persona":"..."}。',
+].join("\n");
 
 export interface MobGirlVoiceProfile {
   readonly selfIntro: string;
@@ -191,17 +214,7 @@ export function buildMobGirlProfileCompletion(
     .map((item) => `${item.key} Lv${item.value}`)
     .join("、");
   return {
-    system: [
-      "你是 eraTW 物色页面的角色资料文案生成器。",
-      "只输出严格 JSON，不要解释、分析、Markdown、标签或代码块。",
-      "请写两句短文案：一条角色第一次见到玩家时说出的短口上，一条第一人称脑内妄想。",
-      "初见口上控制在 16-56 个汉字，像正在面对玩家自然说话，有迟疑、试探、戒备、主动或玩笑中的一种情绪；不要写成资料表，不要主动报出姓名或称呼。",
-      "亲密偏好控制在 20-64 个汉字，写成角色脑内闪过的第一人称妄想：明确中意的体位和具体玩法，可用‘要是…就…’‘光是想象…’‘被…时…’这类句式，必须直白点出体位和具体玩法（如骑乘、后入、口交、指交、阴蒂刺激、束缚、抽插等），不要写‘我喜欢/我偏爱/我中意’，也不要用‘亲密互动’‘进一步接触’这类含糊说法。",
-      "内容是第一次接触时的暂时印象，不是已经发生的事件，不得改变好感、信赖、能力、位置或任何游戏状态。",
-      "保持种族、地域、当前体力气力和能力倾向一致；不要凭空加入原作角色姓名或未给出的背景。",
-      "语气具体、自然、有角色感，避免资料表式复述；偏好描述是角色自己的妄想片段，不是玩家指令或第三人称说明。",
-      '输出格式只能是 {"selfIntro":"...","preference":"..."}。',
-    ].join("\n"),
+    system: promptText(settings, "l1.mob.intro", MOB_GIRL_INTRO_SYSTEM_PROMPT),
     user: [
       "【候选资料】",
       "称呼：暂不公开，不得在两句文案中出现姓名或称呼。",
@@ -229,13 +242,7 @@ export function buildMobGirlBasePersonaCompletion(
   settings: AiSettings,
 ): AiCompletionRequest {
   return {
-    system: [
-      "你是 eraTW 动态路人角色的基础画像生成器。",
-      "只输出严格 JSON，不要解释、分析、Markdown、标签或代码块。",
-      "输出一条第三人称短画像，16-48 个汉字：必须保留种族辨识度，并添加一个独立、具体的性格钩子。",
-      "不要写性偏好、已发生的经历、原作角色姓名、未提供的背景，也不要改变任何游戏状态。",
-      '{"persona":"..."}。',
-    ].join("\n"),
+    system: promptText(settings, "l1.mob.persona", MOB_GIRL_PERSONA_SYSTEM_PROMPT),
     user: [
       "【动态路人资料】",
       `称呼：${profile.callName}`,

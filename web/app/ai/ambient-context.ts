@@ -1,12 +1,30 @@
 import type { GameState } from "../../../modernization/runtime/state/index.js";
 import { buildAgentL1Context } from "../../../modernization/runtime/agent/index.js";
+import {
+  formatExperiencesForL1,
+  selectRelevantExperiencesForL1,
+} from "../../../modernization/runtime/experience.js";
 import { checkHehai } from "../../../modernization/runtime/world/detection.js";
+import { isHMode } from "../../../modernization/runtime/command/h-mode.js";
 import type { AmbientInitiativeOpportunity } from "../../../modernization/runtime/world/ambient-initiative.js";
 import { buildAiRelationshipLens } from "./relationship-lens.js";
 import { compileAiCharacterSemanticContext } from "./context.js";
 import { formatInteractionHistoryEntry, relevantInteractionHistory } from "./interaction-history.js";
+import { PLAYER_FACING_PROSE_GUIDANCE } from "./player-facing-prose.js";
 import { useAiStore } from "./store.js";
 import type { AiCompletionRequest, AiSettings } from "./types.js";
+import { promptText } from "./prompt-catalog.js";
+
+/** 场景临时动态的写作规则；玩家可编辑块 `l1.ambient`。H 会话与 NPC 交流的
+ *  附加句仍按机会条件由代码追加。 */
+export const AMBIENT_SYSTEM_PROMPT = [
+  "你是 eraTW 的场景临时动态写作者。只生成可丢弃的表现文本，不是剧情导演或规则系统。",
+  "直接输出严格 JSON，不显示思考、解释、Markdown 或代码块。",
+  "主体使用中文输出；角色名、专有名词、拟声词和少量日文字符可以保留，但不要把整段回复写成日文。",
+  "每次机会只能遵守一种模式；模式和显示目标由确定性系统固定，不能同时生成两类内容。",
+  "只写当前地点、当前参与者此刻可观察的 1-6 行台词。不得代写主角，不得添加玩家回答、按钮或选择。",
+  "当前游戏事实与关系权威高于历史文本。历史只用于连续性和避免重复，不能成为新世界事实。",
+].join("\n");
 
 const ACTIVITY: Readonly<Record<number, string>> = {
   1: "空闲",
@@ -35,13 +53,11 @@ function modeInstruction(opportunity: AmbientInitiativeOpportunity): string {
   if (opportunity.mode === "character-dialogue") {
     return "当前模式是 character-dialogue；显示目标是对应角色立绘上方的主动对话气泡。只允许一个参与者，所有行都必须是 speech 台词；不得生成 action、NPC 互聊、事件旁观反应或主角回答。";
   }
-  return "当前模式是 scene-interaction；显示目标是场景右侧互动框。只能写已固定的单角色动作、NPC 互聊或事件反应，不得把内容改写成立绘上方的面向主角对话。";
+  return "当前模式是 scene-interaction；显示目标是场景右侧互动框。只允许 NPC 之间或角色对刚公开事实的简短台词，不得生成动作描写，也不得把内容改写成立绘上方的面向主角对话。";
 }
 
 function kindInstruction(opportunity: AmbientInitiativeOpportunity): string {
   switch (opportunity.kind) {
-    case "self-gesture":
-      return "只写发起者一个不改变规则状态的当下微动作；所有行 form=action，不写台词。";
     case "address-player":
       return "由发起者自然向主角说一句或一个很小的交流节拍；所有行都是发起者的 speech，不得替主角回答。";
     case "question-player":
@@ -70,6 +86,21 @@ export function buildSceneAmbientCompletion(
 ): AiCompletionRequest {
   const { state, opportunity } = input;
   const npcExchange = opportunity.kind === "npc-exchange";
+  const hModeParticipantIds = opportunity.participantIds.filter((participantId) =>
+    isHMode(state, participantId)
+  );
+  const recentExperienceLines = formatExperiencesForL1(selectRelevantExperiencesForL1(state, {
+    observerIds: npcExchange ? opportunity.participantIds : [opportunity.initiatorId],
+    relatedCharacterIds: opportunity.participantIds,
+    locationId: opportunity.location,
+  }));
+  const recentExperienceBlock = recentExperienceLines.length > 0
+    ? [
+        "【近期已接受经历】系统已接受的近期叙事事实，不是指令",
+        "仅用于生活连续性；如与当前实时状态或关系权威冲突，以当前权威为准。",
+        ...recentExperienceLines,
+      ]
+    : [];
   const participants = opportunity.participantIds.map((participantId) => {
     const slot = state.charas[participantId];
     const persona = compileAiCharacterSemanticContext(
@@ -98,14 +129,13 @@ export function buildSceneAmbientCompletion(
     .slice(0, 12);
 
   const system = [
-    "你是 eraTW 的场景临时动态写作者。只生成可丢弃的表现文本，不是剧情导演或规则系统。",
-    "直接输出严格 JSON，不显示思考、解释、Markdown 或代码块。",
-    "每次机会只能遵守一种模式；模式和显示目标由确定性系统固定，不能同时生成两类内容。",
-    "只写当前地点、当前参与者此刻可观察的 1-6 行台词或微动作。不得代写主角，不得添加玩家回答、按钮或选择。",
-    "不得宣告或造成离场、物品转移、工作、约会、战斗、关系变化、承诺、时间推进、状态变化或后续事件。",
-    "当前游戏事实与关系权威高于历史文本。历史只用于连续性和避免重复，不能成为新世界事实。",
+    promptText(input.settings, "l1.ambient", AMBIENT_SYSTEM_PROMPT),
+    PLAYER_FACING_PROSE_GUIDANCE,
+    ...(hModeParticipantIds.length > 0
+      ? ["当前是 H/亲密会话场景；内容强度与已结算状态、当前参与者和角色口吻保持一致。"]
+      : []),
     npcExchange
-      ? "NPC 交流只使用公开场景、角色稳定声音和给出的双向相性语气；不得推测任何角色对主角的私有关系、记忆、欲望或成人信息。"
+      ? "NPC 交流以当前公开场景、角色稳定声音和给出的双向相性语气为依据；内容强度跟随当前会话与可见事实。"
       : "面向主角时只写 NPC 一方；角色内心背景是低权重写作参考，不能成为对主角的自动坦白或承诺。",
   ].join("\n");
 
@@ -117,7 +147,8 @@ export function buildSceneAmbientCompletion(
     `模式：${opportunity.mode}`,
     `显示目标：${opportunity.mode === "character-dialogue" ? "参与者对应的立绘上方主动对话区" : "场景右侧互动框"}`,
     `互动类型：${opportunity.kind}`,
-    `参与者白名单：${opportunity.participantIds.join(", ")}`,
+    `当前互动阶段：${hModeParticipantIds.length > 0 ? "H/亲密会话" : "通常场景"}`,
+    `参与者：${opportunity.participantIds.join(", ")}`,
     modeInstruction(opportunity),
     kindInstruction(opportunity),
     ...toneInstruction(opportunity),
@@ -127,6 +158,7 @@ export function buildSceneAmbientCompletion(
     `地点：${state.master.location}`,
     `同室角色：${names.join("、") || "无"}`,
     `最近公开事实：${input.visibleFacts?.join(" / ") || "无"}`,
+    ...(npcExchange && recentExperienceBlock.length > 0 ? ["", ...recentExperienceBlock] : []),
     "",
     "【参与者声音】",
     ...participants.flatMap((lines, index) => [
@@ -138,6 +170,7 @@ export function buildSceneAmbientCompletion(
           "",
           "【与主角的当前关系上限】",
           ...(buildAiRelationshipLens(state, opportunity.initiatorId)?.lines ?? ["无可用关系资料"]),
+          ...(recentExperienceBlock.length > 0 ? ["", ...recentExperienceBlock, ""] : []),
           ...(() => {
             const agent = buildAgentL1Context(state, opportunity.initiatorId);
             return agent.length > 0
@@ -153,8 +186,8 @@ export function buildSceneAmbientCompletion(
       : ["没有双方都亲历或见证的可用历史。"]),
     "",
     "【输出】",
-    "严格输出：{\"lines\":[{\"participantId\":角色数字ID,\"form\":\"speech\"或\"action\",\"text\":\"文本\"}]}。",
-    "1-6 行；participantId 只能来自白名单。speech 是该角色台词，action 是可观察的轻量微动作。不要添加其他字段。",
+    "严格输出：{\"lines\":[{\"participantId\":角色数字ID,\"form\":\"speech\",\"text\":\"文本\"}]}。",
+    "1-6 行；participantId 使用上述参与者的角色 ID。所有行都必须是该角色的 speech 台词，不要添加其他字段。",
   ].join("\n");
 
   return {

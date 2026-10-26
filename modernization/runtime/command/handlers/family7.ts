@@ -53,20 +53,18 @@
  *   TIME+5. RETURN 1. execCheck: !時停, not 诶嘿嘿, 合意_うふふ OR 泥酔,
  *   not 睡眠/添い寝, not already 潜伏, 気力>0, !甲斐性無, TARGET≥1.
  *
- * - **COMF357 セフレ契約** (192 lines): 理性 vs 欲望 reasonwall + ASK_YN.
- *   The whole body is a 欲望判定値/理性判定値 build over ~15 TALENT/MARK/
- *   BASE arms + KOJO reasonwall (`SHOW_REASONWALL`) then ASK_YN confirm.
- *   Faithful port needs the 理性 economy + MARK + 酒気 ratio subsystems
- *   (only partially modeled). DEFER to a faithful blocked stub: execCheck
- *   passes (so the resolver registers it reachable upstream-faithfully),
- *   the body returns blocked with the real reason — no empty shell. (ASK_YN
- *   + reasonwall would also need the B9 prompt + a 理性/欲望 model first.)
+ * - **COMF357 セフレ契約** (192 lines): ASK_YN, 欲望/理性判定, then a
+ *   success contract or failed-proposal 反感 settlement. The common score
+ *   formula and the audited Eiki/Kagerou mechanical route hooks are modeled;
+ *   route dialogue and diary insertion remain outside this handler. Target
+ *   139 is intentionally hidden: its authored route contains sexualized
+ *   minor content and is not imported into the modern game.
  *
  * - **COMF358 他者変身** (112 lines): shape-shift picker (B9 INPUT over
- *   SHOW_CHALALIST) gated on `TALENT:変化 && (恋慕||愛欲)`. The @COM body
- *   ends `RETURN 0` (a pure UI toggle that re-renders; no SOURCE). We model
- *   the faithful no-op (RETURN 0) — the picker itself (B9) + 挿入不可 body
- *   gate defer. execCheck: !時停(unless 344), TALENT:変化, 恋慕||愛欲.
+ *   SHOW_CHALALIST) gated on action phase, `TALENT:変化 && (恋慕||愛欲)`,
+ *   and time-stop CFLAG:344 exception. Non-insertion choices update 変化先 /
+ *   変化元 and re-render the portrait without SOURCE or time. The detailed
+ *   挿入不可 body gate is not modeled, so inserted use fails closed.
  *
  * - **COMF360 身を任せる** (63 lines): partner-led (诶嘿嘿==2) "give in".
  *   Nudges `COUNTER_SIKOU:指令番号` by ±1 (±3 if reversed/extreme, ×2 if
@@ -92,27 +90,36 @@
  *   arms + 性格傾向 display + 童貞/処女 なだめ arms defer. Core exit:
  *   情緒/=2 + 理性+300 cap + TIME+5, RETURN 1.
  *
- * **DEFERRED (cluster-common):** the multi-target B9 pickers (351 CASE
- * 97-100, 358 SHOW_CHALALIST); SET_PRANK/SET_TOGETHER/SET_SLEEP/SET_DERAY
+ * **DEFERRED (cluster-common):** the multi-target B9 picker (351 CASE
+ * 97-100); COMF358 per-character kojo route and inserted body-size gate;
+ * SET_PRANK/SET_TOGETHER/SET_SLEEP/SET_DERAY
  * helper bodies (we write the flag they ultimately set); 相合伞雨 gate;
- * KOJO reasonwalls (SHOW_REASONWALL/SF_REASON_MOD); COUNTER_SIKOU/
+ * Non-COMF357 KOJO reasonwalls (SHOW_REASONWALL/SF_REASON_MOD); COUNTER_SIKOU/
  * Counter行動/COUNTER_派生时记录 arrays (360/361); complex Activity_* source
  * arms (368); 性格傾向/童貞/処女 なだめ display arms (850); UFUFU_START_*
  * session envelope (Phase 8); MAGIC_DLC 神性 arms.
  */
 
-import type { CommandContext, ExecCheck, HandlerEntry } from "../types.js";
+import type { CommandContext, CommandResult, ExecCheck, HandlerEntry } from "../types.js";
+import { blocksDialogueAccompany, carryDialogueConsentToOuting, clearDialogueAccompanyPermit, hasDialogueAccompanyPermit } from "../../ai-state/dialogue-action.js";
 import {
   cloneGameState,
   type CharaSlot,
   type GameState,
 } from "../../state/game-state.js";
 import { selectPresentCharas } from "../../scene/presence.js";
+import { canBringCommissionClient } from "../../state/commission.js";
 import { isHMode } from "../h-mode.js";
+import { applyOneMinuteHCommandTimeCorrection, applySourceCheck } from "../source-check.js";
 import {
+  ABL_ID,
   BASE_ID,
   CFLAG_ID,
+  EXP_ID,
   FLAG_ID,
+  MARK_ID,
+  PALAM_ID,
+  SOURCE_ID,
   TCVAR_ID,
   TALENT_ID,
   advanceTimeTicks,
@@ -127,9 +134,18 @@ import {
   computeAttitude,
   computeShinchitsu,
   hConsentAcquired,
+  isOtokoGirai,
 } from "../../state/attitude.js";
-import { TFLAG_ID, getTflag, setTflag } from "../../state/tflag.js";
+import { TFLAG_ID, getTflag, isCommandActionPhase, setTflag } from "../../state/tflag.js";
+import { getPalamLv } from "../../state/palam-level.js";
+import { pickOne, requirePickOne } from "../prompt.js";
 import { setSleep } from "../../world/set-sleep.js";
+import {
+  activeHInsertionSites,
+  clearHInteractionState,
+  clearTrainingMode,
+  settleHInsertionHistory,
+} from "../training-session.js";
 
 type Precond = { ok: true } | { ok: false; reason: { kind: "precondition"; message: string } };
 
@@ -143,32 +159,38 @@ function targetSlot(ctx: CommandContext) {
 
 /**
  * Faithful port of `@COM_351_CONDITION` (COMF351:293-313). Return ladder:
- *   3 = まとめて連れ出せる (態度>0 && !睡眠 && 行動!=5)
+ *   3 = まとめて連れ出せる ((態度>0 || 委托可带出) && !睡眠 && 行動!=5)
  *   2 = 个別選択で連れ出せる (already 同行 → release allowed; or default)
- *   1 = 連れ出せない・取り込み中 (行動==5 && 態度>0 → busy message, no toggle)
- *   0 = 連れ出せない (態度<1, or 睡眠/陪睡中)
+ *   1 = 連れ出せない・取り込み中 (行動==5 → busy message, no toggle)
+ *   0 = 連れ出せない (態度<1 && !委托可带出, or 睡眠/陪睡中)
  *
- * Unmodeled subsystems collapse to ERA defaults: `CAN_IRAI_CHARA_GO_TOGATHER`
- * (依頼) → false, `TCVAR:烂醉` → 0, `CFLAG:败犬` → 0. The `態度>0` core arm
- * (Parity QA P-6) is what the user-reported "无条件能带人" bug was missing.
+ * `CAN_IRAI_CHARA_GO_TOGATHER` (FUNC_IRAI.ERB:227-256) is now modeled: the
+ * client of an ACTIVE canTakeAlong commission passes both the 298 arm and the
+ * 306 arm independently of 態度 (问题4). `TCVAR:烂醉` → 0, `CFLAG:败犬` → 0
+ * remain unmodeled ERA-default collapses. The `態度>0` core arm (Parity QA
+ * P-6) is what the user-reported "无条件能带人" bug was missing.
  */
 function com351Condition(
   state: Readonly<GameState>,
   slot: CharaSlot,
 ): number {
   const cflag = slot.state.CFLAG;
+  if (!(cflag[CFLAG_ID.同行] ?? 0) && blocksDialogueAccompany(state, slot.charaNum)) return 0;
   const 態度 = computeAttitude(slot, state.master, state);
+  const iraiBringable = canBringCommissionClient(state, slot.charaNum);
+  // Explicit opt-in deviation: accepted dialogue consent substitutes only the attitude gate.
+  const dialogueConsent = hasDialogueAccompanyPermit(state, slot.charaNum);
   const 睡眠 = cflag[CFLAG_ID.睡眠] ?? 0;
   const 陪睡 = cflag[CFLAG_ID.陪睡中] ?? 0;
   const 行動 = cflag[CFLAG_ID.行动] ?? 0;
   const 同行 = cflag[CFLAG_ID.同行] ?? 0;
-  // ERB 296-297: 態度>0 && !睡眠 && 行動!=5 → 3 (bulk-bringable).
-  if (態度 > 0 && 睡眠 === 0 && 行動 !== 5) return 3;
+  // ERB 296-297: (態度>0 || CAN_IRAI) && !睡眠 && 行動!=5 → 3 (bulk-bringable).
+  if ((態度 > 0 || iraiBringable || dialogueConsent) && 睡眠 === 0 && 行動 !== 5) return 3;
   // ERB 300-301: already 同行 → 2 (allow manual release even if condition lapsed).
   if (同行 !== 0) return 2;
   // (ERB 302-303: 败犬 → 2 — unmodeled, skipped.)
   // ERB 304-305: 態度<1 && !烂醉 && !CAN_IRAI → 0 (the core "can't bring" gate).
-  if (態度 < 1) return 0;
+  if (態度 < 1 && !iraiBringable && !dialogueConsent) return 0;
   // ERB 306-307: 睡眠 || 陪睡中 → 0.
   if (睡眠 !== 0 || 陪睡 !== 0) return 0;
   // ERB 308-309: 行動==5 && !烂醉 → 1 (取り込み中 busy message).
@@ -199,6 +221,11 @@ function check351(ctx: CommandContext): Precond {
     return { ok: false, reason: { kind: "precondition", message: "约会中。" } };
   }
   // ERB 267: COM_351_CONDITION == 0 → RETURN 0 (the core 態度>0 gate).
+  if (!(t.state.CFLAG[CFLAG_ID.同行] ?? 0) && blocksDialogueAccompany(ctx.state, t.charaNum)) {
+    const phase = ctx.state.aiDialogueAccompany?.[t.charaNum]?.phase;
+    return { ok: false, reason: { kind: "precondition", message: phase === "invited" ? "对方在等你的回应。"
+      : phase === "rejected" ? "对方这次不愿意一起出门。" : "这次的同行约定已经取消。" } };
+  }
   if (com351Condition(ctx.state, t) === 0) {
     return { ok: false, reason: { kind: "precondition", message: "对方态度不够，无法带走。" } };
   }
@@ -231,6 +258,8 @@ export const comf351HandlerEntry: HandlerEntry = {
     const next = cloneGameState(ctx.state);
     const t = next.charas[ctx.target]!;
     const wasDoko = (t.state.CFLAG[CFLAG_ID.同行] ?? 0) !== 0;
+    if (wasDoko) clearDialogueAccompanyPermit(next, ctx.target);
+    else carryDialogueConsentToOuting(next, ctx.target);
     let text: string;
     if (wasDoko) {
       // ERB 42-44: release.
@@ -441,8 +470,11 @@ export const comf356HandlerEntry: HandlerEntry = {
     next.flagStore[FLAG_ID.潜伏] = (next.flagStore[FLAG_ID.潜伏] ?? 0) | 1;
     // ERB 53: BASE:潜伏率 = 100.
     setMasterBase(next, BASE_ID.潜伏率, 100);
-    // ERB 55-56: TIME += 5 (unless 時停; not 時停 here).
-    advanceTimeTicks(next, 5);
+    // ERB 55-56: TIME += 5, then the command's H post-check may subtract 4.
+    // The target's うふふ flag is already set, matching TRACHECK_TIME's
+    // post-command CFLAG:TARGET:诶嘿嘿 check.
+    const timeCost = applyOneMinuteHCommandTimeCorrection(next, 356, ctx.target, 5);
+    advanceTimeTicks(next, timeCost);
     return {
       state: next,
       events: [{ kind: "NARRATION", timestamp: ctx.now(), text: `把 %CALLNAME:TARGET% 邀进了阴暗处……` }],
@@ -452,19 +484,158 @@ export const comf356HandlerEntry: HandlerEntry = {
 };
 
 // ===========================================================================
-// COMF357 セフレ契約 (理性/欲望 reasonwall — faithful blocked stub)
+// COMF357 セフレ契約 (reasonwall + success/failure settlement)
 // ===========================================================================
+
+const SEX_FRIEND_SENSITIVE_ROUTE_TARGET = 139;
+
+function sexFriendContractPrompt(ctx: CommandContext) {
+  const name = ctx.state.charas[ctx.target]?.callName ?? "对方";
+  // The upstream ASK_YN returns button index (0/1), and this command orders
+  // its buttons as 放弃 then 告白. A pick-one prompt preserves that exact
+  // order and those return values without reversing the player's choice.
+  return pickOne(
+    `向${name}提议成为炮友。每天只能进行一次，成功后【思慕】将会消失。可以吗？`,
+    [
+      { id: 0, label: "放弃" },
+      { id: 1, label: "告白" },
+    ],
+  );
+}
+
+export interface SexFriendContractJudgement {
+  desireValue: number;
+  reasonValue: number;
+  personalReasonModifier: number;
+  resentmentSource: number;
+  /** Eiki's authored TFLAG:193 route result, when this command sets it. */
+  commandBranch?: number;
+}
+
+/**
+ * Build the COMF357 `欲望判定値` and `理性判定値` from COMF357.ERB.
+ * The route additions are limited to active, mechanically meaningful
+ * `SEX_FRIEND` hooks: Eiki's refusal/experience branches and Kagerou's
+ * resentment + reasonwall. Target 139 is rejected before this function runs.
+ */
+export function calculateSexFriendContractJudgement(
+  state: Readonly<GameState>,
+  target: CharaSlot,
+): SexFriendContractJudgement {
+  const targetState = target.state;
+  const targetAbl = targetState.ABL;
+  const targetExp = targetState.EXP;
+  const targetTalent = targetState.TALENT;
+  const targetMark = targetState.MARK;
+  const targetTvar = targetState.TCVAR;
+
+  let desireValue =
+    Math.min(targetAbl[ABL_ID.欲望] ?? 0, 10) * 50 +
+    Math.min(targetAbl[ABL_ID.従順] ?? 0, 10) * 20 +
+    Math.trunc(Math.min(targetExp[EXP_ID.絶頂経験] ?? 0, 5000) / 10) +
+    getPalamLv(targetState.PALAM[PALAM_ID.欲情] ?? 0, 15) *
+      (30 + (targetTalent[TALENT_ID.快感応答] ?? 0) * 10) +
+    Math.max(targetMark[MARK_ID.快楽刻印] ?? 0, targetMark[MARK_ID.時姦刻印] ?? 0) * 200;
+  if ((targetTvar[TCVAR_ID.発情] ?? 0) !== 0 || (targetTvar[TCVAR_ID.媚薬] ?? 0) !== 0) {
+    desireValue += 300;
+  }
+
+  const master = state.master;
+  const masterBase = master.state.BASE;
+  const alcoholMax = master.state.MAXBASE[BASE_ID.酒気] ?? 0;
+  let drunkenness = alcoholMax > 0
+    ? Math.trunc(((masterBase[BASE_ID.酒気] ?? 0) * 100) / alcoholMax)
+    : 0;
+  if (drunkenness > 70) drunkenness *= 2;
+
+  const consensualH = 1 << 1; // DIM_als.ERH: 合意_诶嘿嘿
+  let reasonValue =
+    1000 + Math.trunc((targetState.BASE[BASE_ID.理性] ?? 0) / 2) - drunkenness;
+  if (((targetState.CFLAG[CFLAG_ID.既成事実] ?? 0) & consensualH) === 0) reasonValue += 300;
+  if ((targetTalent[TALENT_ID.無知] ?? 0) !== 0) reasonValue -= 500;
+  if ((targetTalent[TALENT_ID.自尊心] ?? 0) !== 0) {
+    reasonValue += (targetTalent[TALENT_ID.自尊心] ?? 0) * 150;
+  }
+  if ((targetTalent[TALENT_ID.貞操] ?? 0) > 0) reasonValue += 200;
+  if ((targetTalent[TALENT_ID.貞操] ?? 0) < 0) reasonValue -= 200;
+  reasonValue += (targetMark[MARK_ID.反発刻印] ?? 0) * 100;
+  if ((targetTalent[TALENT_ID.心情] ?? 0) < 0) reasonValue += 300;
+  if ((targetTalent[TALENT_ID.処女] ?? 0) !== 0) reasonValue += 300;
+  if ((targetTalent[TALENT_ID.倒錯的] ?? 0) !== 0) reasonValue -= 200;
+  if ((master.state.TALENT[TALENT_ID.謎之魅力] ?? 0) !== 0) reasonValue -= 150;
+  if ((master.state.TALENT[TALENT_ID.魅力] ?? 0) !== 0) reasonValue -= 150;
+  if ((targetTalent[TALENT_ID.一線越えない] ?? 0) !== 0) reasonValue += 200;
+  if (isOtokoGirai(target, master)) reasonValue += 300;
+  if ((targetState.CFLAG[CFLAG_ID.体目当て] ?? 0) !== 0) reasonValue -= 400;
+
+  let personalReasonModifier = 0;
+  let resentmentSource = 0;
+  let commandBranch: number | undefined;
+  if (target.charaNum === 30) {
+    // K30_CHECK_HEN_T(): DAY % 7 == 5, global fashion 62, or temporary outfit 62.
+    const unusualTshirt =
+      state.time.dayIndex % 7 === 5 ||
+      (state.flagStore[FLAG_ID.ファッション] ?? 0) === 62 ||
+      (targetState.CFLAG[CFLAG_ID.衣装一時変更] ?? 0) === 62;
+    if (unusualTshirt) {
+      personalReasonModifier = 9999;
+      commandBranch = -1;
+    } else if (
+      (targetTalent[TALENT_ID.風騷] ?? 0) !== 0 ||
+      (targetTalent[TALENT_ID.容易高潮] ?? 0) !== 0
+    ) {
+      personalReasonModifier = -5000;
+      commandBranch = 3;
+    } else if ((targetExp[EXP_ID.Ａ経験] ?? 0) >= 50) {
+      personalReasonModifier = -200;
+      commandBranch = 2;
+    } else if ((targetExp[EXP_ID.無自覚Ａ経験] ?? 0) >= 50) {
+      personalReasonModifier = -100;
+      commandBranch = 1;
+    } else {
+      personalReasonModifier = 9999;
+      commandBranch = -2;
+    }
+  } else if (target.charaNum === 63) {
+    // Kagerou's authored correction also adds SOURCE:反感 += 5000.
+    personalReasonModifier = 5000;
+    resentmentSource = 5000;
+  }
+
+  if (personalReasonModifier !== 0) {
+    reasonValue = Math.max(reasonValue + personalReasonModifier, 0);
+  }
+  return {
+    desireValue,
+    reasonValue,
+    personalReasonModifier,
+    resentmentSource,
+    ...(commandBranch === undefined ? {} : { commandBranch }),
+  };
+}
 
 export const comf357HandlerEntry: HandlerEntry = {
   commandNo: 357,
-  // Parity QA P-7 — @COM_ABLE passes (faithfully usable upstream) but the
-  // @COM body is a deferred reasonwall stub (理性/欲望 economy + MARK + 酒気
-  // + B9 ASK_YN unmodeled). Mark `deferred` so the UI greys + labels it
-  // 「未实现」 instead of presenting a clickable-but-ineffective button.
-  deferred: true,
+  displayCheck: (ctx) => ctx.target === SEX_FRIEND_SENSITIVE_ROUTE_TARGET
+    ? { shown: false, tone: "hidden" }
+    : { shown: true },
+  prompt: sexFriendContractPrompt,
   execCheck: (ctx) => {
     if (ctx.target <= 0 || !targetSlot(ctx))
       return { ok: false, reason: { kind: "precondition", message: "需要目标角色在场。" } };
+    if (!isCommandActionPhase(ctx.state))
+      return { ok: false, reason: { kind: "precondition", message: "当前不在命令选择阶段。" } };
+    const menuMode = getTflag(ctx.state, TFLAG_ID.COMABLE管理);
+    if (menuMode !== 0 && menuMode !== 1)
+      return { ok: false, reason: { kind: "precondition", message: "该命令只在日常命令页可用。" } };
+    if (isHMode(ctx.state, ctx.target))
+      return { ok: false, reason: { kind: "precondition", message: "调教中无法提出这项日常提议。" } };
+    if ((ctx.state.flagStore[FLAG_ID.潜伏] ?? 0) !== 0)
+      return { ok: false, reason: { kind: "precondition", message: "潜伏中无法提出这项公开命令。" } };
+    // The authored target-139 route contains sexualized minor content; keep
+    // that character fail-closed instead of importing the route.
+    if (ctx.target === SEX_FRIEND_SENSITIVE_ROUTE_TARGET)
+      return { ok: false, reason: { kind: "precondition", message: "该角色的专属路线暂不支持此契约。" } };
     if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0)
       return { ok: false, reason: { kind: "precondition", message: "时间停止中无法提出。" } };
     // @COM_ABLE357 line 148 — 妄想中は不可 (Parity QA P-23: was missing).
@@ -503,30 +674,109 @@ export const comf357HandlerEntry: HandlerEntry = {
     return { ok: true };
   },
   handler: (ctx) => {
-    // FAITHFUL DEFER: the @COM body is a 理性判定値/欲望判定値 reasonwall over
-    // ~15 TALENT/MARK/BASE arms + KOJO SHOW_REASONWALL + ASK_YN confirm, then
-    // sets TALENT:炮友 (and clears 思慕) on success / SOURCE:反感 += 1000 on
-    // fail, TIME+10. Needs the 理性 economy + MARK + 酒気-ratio subsystems
-    // (only partially modeled) + B9 ASK_YN. Blocked — no empty shell.
-    return {
-      state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（炮友契约的理性/欲望判定尚未建模。）" }],
-      outcome: "blocked",
-      failReason: { kind: "precondition", message: "炮友契约的理性／刻印／酒意判定与确认流程尚未实现" },
-    };
+    const next = cloneGameState(ctx.state);
+    const target = next.charas[ctx.target];
+    if (!target || ctx.target === SEX_FRIEND_SENSITIVE_ROUTE_TARGET) {
+      const message = target
+        ? "该角色的专属路线暂不支持此契约。"
+        : "需要目标角色在场。";
+      return {
+        state: next,
+        events: [{ kind: "NARRATION", timestamp: ctx.now(), text: message }],
+        outcome: "blocked",
+        failReason: { kind: "precondition", message },
+      };
+    }
+    const answer = requirePickOne(sexFriendContractPrompt(ctx), ctx.promptAnswer);
+    if (answer === null) {
+      const message = "需要先确认是否提出炮友契约。";
+      return {
+        state: next,
+        events: [{ kind: "NARRATION", timestamp: ctx.now(), text: message }],
+        outcome: "blocked",
+        failReason: { kind: "precondition", message },
+      };
+    }
+    if (answer !== 1) return { state: next, events: [], outcome: "noop" };
+
+    const judgement = calculateSexFriendContractJudgement(next, target);
+    if (judgement.commandBranch !== undefined) {
+      setTflag(next, TFLAG_ID.SELECTCOM的分岐, judgement.commandBranch);
+    }
+    const accepted = judgement.desireValue > judgement.reasonValue;
+    const events: CommandResult["events"][number][] = [];
+    if (judgement.personalReasonModifier !== 0) {
+      events.push({
+        kind: "NARRATION",
+        timestamp: ctx.now(),
+        text: `评估结果：欲望 ${judgement.desireValue}，理性 ${judgement.reasonValue}。`,
+      });
+    }
+
+    if (accepted) {
+      target.state.TALENT[TALENT_ID.炮友] = 1;
+      if ((next.flagStore[FLAG_ID.陥落路線変化] ?? 0) === 0) {
+        target.state.TALENT[TALENT_ID.思慕] = 0;
+      }
+      events.push({
+        kind: "NARRATION",
+        timestamp: ctx.now(),
+        text: `${target.callName ?? "对方"}接受了这份炮友契约。`,
+      });
+    } else {
+      events.push({
+        kind: "NARRATION",
+        timestamp: ctx.now(),
+        text: `${target.callName ?? "对方"}拒绝了这份提议……`,
+      });
+    }
+
+    const resentment = judgement.resentmentSource + (accepted ? 0 : 1000);
+    if (resentment > 0) {
+      const settled = applySourceCheck(next, ctx.target, { [SOURCE_ID.反感]: resentment });
+      events.push(...settled.events.map((event) => ({ ...event, timestamp: ctx.now() })));
+    }
+    // TRACHECK_TIME's −4 is folded into the COMF357 +10 before advancing, so
+    // the clock sees one net movement and cannot emit a false day transition.
+    advanceTimeTicks(next, applyOneMinuteHCommandTimeCorrection(next, 357, ctx.target, 10));
+    return { state: next, events, outcome: "ok" };
   },
 };
 
 // ===========================================================================
-// COMF358 他者変身 (shape-shift picker — faithful RETURN 0 noop)
+// COMF358 他者変身 (shape-shift picker — RETURN 0 portrait toggle)
 // ===========================================================================
+
+function shapeShiftPrompt(ctx: CommandContext) {
+  const target = targetSlot(ctx);
+  const current = target?.state.CFLAG[CFLAG_ID.変化先] ?? 0;
+  const currentName = current === 0
+    ? "原来的样子"
+    : ctx.state.charas[current]?.callName ?? `#${current}`;
+  const characterOptions = Object.values(ctx.state.charas)
+    .filter((chara) => Number.isInteger(chara.charaNum) && chara.charaNum > 0)
+    .sort((a, b) => a.charaNum - b.charaNum)
+    .map((chara) => ({ id: chara.charaNum, label: chara.callName ?? chara.name ?? `#${chara.charaNum}` }));
+  return pickOne(
+    `要变成谁？（现在：${currentName}）`,
+    [
+      ...characterOptions,
+      { id: 998, label: "变回原样" },
+      { id: 999, label: "果然还是算了" },
+    ],
+  );
+}
 
 export const comf358HandlerEntry: HandlerEntry = {
   commandNo: 358,
+  prompt: shapeShiftPrompt,
   execCheck: (ctx) => {
     const t = targetSlot(ctx);
     if (!t) return { ok: false, reason: { kind: "precondition", message: "需要目标角色在场。" } };
-    if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0)
+    if (!isCommandActionPhase(ctx.state))
+      return { ok: false, reason: { kind: "precondition", message: "当前不是指令选择阶段。" } };
+    if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) === 1 &&
+      (t.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0)
       return { ok: false, reason: { kind: "precondition", message: "时间停止中无法变身。" } };
     if ((t.state.TALENT[TALENT_ID.変化] ?? 0) === 0)
       return { ok: false, reason: { kind: "precondition", message: "目标没有变身能力。" } };
@@ -535,12 +785,95 @@ export const comf358HandlerEntry: HandlerEntry = {
     return { ok: true };
   },
   handler: (ctx) => {
-    // ERB @COM358 ends `RETURN 0` — a pure UI shape-shift picker (B9 INPUT
-    // over SHOW_CHALALIST) that re-renders; no SOURCE. The picker + 挿入不可
-    // body gate defer. Faithful no-op.
+    const next = cloneGameState(ctx.state);
+    const selection = requirePickOne(shapeShiftPrompt(ctx), ctx.promptAnswer);
+    if (selection === null) {
+      const message = "需要先选择变身对象或取消。";
+      return {
+        state: next,
+        events: [{ kind: "NARRATION", timestamp: ctx.now(), text: message }],
+        outcome: "blocked",
+        failReason: { kind: "precondition", message },
+      };
+    }
+    if (typeof selection !== "number") {
+      const message = "变身对象编号无效。";
+      return {
+        state: next,
+        events: [{ kind: "NARRATION", timestamp: ctx.now(), text: message }],
+        outcome: "blocked",
+        failReason: { kind: "precondition", message },
+      };
+    }
+
+    const target = next.charas[ctx.target];
+    if (!target) {
+      const message = "需要目标角色在场。";
+      return {
+        state: next,
+        events: [{ kind: "NARRATION", timestamp: ctx.now(), text: message }],
+        outcome: "blocked",
+        failReason: { kind: "precondition", message },
+      };
+    }
+
+    const playerTcvar = next.master.state.TCVAR;
+    const inserted = playerTcvar[TCVAR_ID.V挿入管理] === ctx.target ||
+      playerTcvar[TCVAR_ID.A挿入管理] === ctx.target;
+    if (inserted) {
+      // Upstream calls 挿入不可(TARGET) before applying any selection. Its
+      // size/knowledge formula is not modeled yet; fail closed so this picker
+      // cannot bypass a real body-compatibility rejection.
+      setTflag(next, TFLAG_ID.SELECTCOM的分岐, -1);
+      const message = "插入状态下的体格差判断尚未移植，暂不执行变身。";
+      return {
+        state: next,
+        events: [{ kind: "NARRATION", timestamp: ctx.now(), text: message }],
+        outcome: "blocked",
+        failReason: { kind: "precondition", message },
+      };
+    }
+
+    const current = target.state.CFLAG[CFLAG_ID.変化先] ?? 0;
+    const cancel = () => ({
+      state: next,
+      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "取消了。" }],
+      outcome: "noop" as const,
+    });
+
+    if (selection === 999) {
+      return cancel();
+    }
+
+    if (selection === 998 || selection === ctx.target) {
+      if (current === 0) return cancel();
+      target.state.CFLAG[CFLAG_ID.変化元] = current;
+      target.state.CFLAG[CFLAG_ID.変化先] = 0;
+      setTflag(next, TFLAG_ID.COMABLE管理, 0);
+      return {
+        state: next,
+        events: [{
+          kind: "NARRATION",
+          timestamp: ctx.now(),
+          text: `${target.callName ?? "目标角色"}恢复了原本的样貌。`,
+        }],
+        outcome: "noop",
+      };
+    }
+
+    if (current === selection) return cancel();
+    const newShape = next.charas[selection];
+    if (!newShape || selection >= 998) return cancel();
+    target.state.CFLAG[CFLAG_ID.変化元] = current;
+    target.state.CFLAG[CFLAG_ID.変化先] = selection;
+    setTflag(next, TFLAG_ID.COMABLE管理, 0);
     return {
-      state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（变身对象选择尚未建模。）" }],
+      state: next,
+      events: [{
+        kind: "NARRATION",
+        timestamp: ctx.now(),
+        text: `${target.callName ?? "目标角色"}化身为${newShape.callName ?? newShape.name ?? `#${selection}`}！`,
+      }],
       outcome: "noop", // RETURN 0
     };
   },
@@ -573,7 +906,8 @@ export const comf360HandlerEntry: HandlerEntry = {
   hModeMenuCheck: comf360Check,
   handler: (ctx) => {
     const next = cloneGameState(ctx.state);
-    advanceTimeTicks(next, 5); // ERB 14.
+    const timeCost = applyOneMinuteHCommandTimeCorrection(next, 360, ctx.target, 5);
+    advanceTimeTicks(next, timeCost); // ERB 14, then TRACHECK_TIME's −4.
     // ERB 16-17: 気力==0 → RETURN 1 (no change). COUNTER_SIKOU nudge deferred.
     if ((getMasterBase(next, BASE_ID.気力) ?? 0) <= 0) {
       return { state: next, events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "任凭摆布。" }], outcome: "ok" };
@@ -608,7 +942,8 @@ export const comf361HandlerEntry: HandlerEntry = {
   hModeMenuCheck: comf361Check,
   handler: (ctx) => {
     const next = cloneGameState(ctx.state);
-    advanceTimeTicks(next, 10); // ERB 7.
+    const timeCost = applyOneMinuteHCommandTimeCorrection(next, 361, ctx.target, 10);
+    advanceTimeTicks(next, timeCost); // ERB 7, then TRACHECK_TIME's −9.
     // COUNTER_SIKOU nudge (mirror of 360) deferred.
     return {
       state: next,
@@ -744,12 +1079,28 @@ export const comf850HandlerEntry: HandlerEntry = {
         affected.push(slot.charaNum);
       }
     }
+    // COM26/317/318 own the active insertion links, but 850 is the explicit
+    // reverse-push exit. Settle history before removing those links, then
+    // clear all transient H pose/clothing markers so 850 cannot leave a
+    // hidden session behind for the next command.
+    for (const slot of Object.values(next.charas)) {
+      for (const site of activeHInsertionSites(next, slot.charaNum)) {
+        settleHInsertionHistory(next, slot.charaNum, site);
+      }
+    }
+    const clearedEdging = clearHInteractionState(next);
+    clearTrainingMode(next);
     // ERB 123: TIME += 5.
     advanceTimeTicks(next, 5);
     const who = affected.length > 1 ? "她们" : "%CALLNAME:TARGET%";
     return {
       state: next,
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: `一边抚慰着${who}一边拔了出来。` }],
+      events: [
+        { kind: "NARRATION", timestamp: ctx.now(), text: `一边抚慰着${who}一边拔了出来。` },
+        ...(clearedEdging > 0
+          ? [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "训练结束，未吸收的寸止积累已清除。" }]
+          : []),
+      ],
       outcome: "ok", // RETURN 1
     };
   },

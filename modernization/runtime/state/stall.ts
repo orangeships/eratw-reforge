@@ -86,13 +86,25 @@
  *     persisted. KOJO wiring (Phase 6 extension) will read them when the
  *     stall gets a target-directed arm.
  *   - **擺攤拓展 mod-layer** (`CHECK_ITEM_BONUS_PRICE` 当地热门 highlight,
- *     `SHOPPER_COME` 来客对话 flavor, `上架少量优化`) — cosmetic/QoL
- *     mod-layer; the pricing core is ported without the highlight flags.
+ *     `上架少量优化`) — cosmetic/QoL mod-layer; the pricing core is ported
+ *     without the highlight flags. The `SHOPPER_COME` customer lines ARE
+ *     ported (`stall-performance.ts`), but on a dedicated performance RNG:
+ *     upstream interleaves the flavor rolls in the settlement RAND stream
+ *     while this port never has (the hand-traced `stall.test.ts` fixtures
+ *     are the current contract) — a documented RNG-sequence divergence.
+ *   - **`数え方`** per-item unit counter — collapsed to 个 (stall-performance).
  */
 
 import type { GameState } from "./game-state.js";
 import { ABL_ID } from "./settlement.js";
 import { removeItem } from "./items.js";
+import {
+  formatStallSoldText,
+  stallGreetingText,
+  stallItemName,
+  stallNoSaleText,
+  stallShopperComeText,
+} from "./stall-performance.js";
 
 /** The eraBASIC `RNG` surface this module needs — a slice of `CommandContext.rng`. */
 export interface StallRng {
@@ -306,6 +318,16 @@ export interface StallSlotResult {
   sold: number;
 }
 
+/** One player-facing 来客/summary beat (COMF447 ERB 360-624). */
+export interface StallPerformanceEvent {
+  kind: "greeting" | "noSale" | "shopperCome" | "sold" | "soldOut" | "closing" | "summary";
+  text: string;
+  /** The goods slot the beat refers to (sold/summary beats). */
+  itemId?: number;
+  qty?: number;
+  yen?: number;
+}
+
 export interface StallResult {
   /** 来客数 this session (ERB 69, base only — IN_ROOM_NUMBER deferred). */
   visitors: number;
@@ -317,6 +339,12 @@ export interface StallResult {
   success: 0 | 1;
   /** TFLAG:194 (ERB 622) — 合計売却値 (mirrored for KOJO wiring). */
   yenFlag: number;
+  /**
+   * Player-facing 来客演出 beats (ERB 360-624), in print order. Empty
+   * unless a `performanceRng` was supplied — the flavor rolls are
+   * presentation-only and never consume the settlement stream.
+   */
+  performance: StallPerformanceEvent[];
 }
 
 /**
@@ -343,9 +371,15 @@ export function runStall(
   lineup: readonly StallLineupEntry[],
   spot: number,
   rng: StallRng,
+  performanceRng?: StallRng,
 ): StallResult {
   const power = merchantPower(state);
   const visitors = stallShopperBase(spot, rng);
+
+  // 来客演出 beats (ERB 360-624). Only generated with a dedicated
+  // performance RNG — see stall-performance.ts for the RNG posture.
+  const performance: StallPerformanceEvent[] = [];
+  const flavor = performanceRng;
 
   // Goods slots (ERB GoodsID/GoodsQty/GoodsSold, 1-9). Filter zero-qty.
   const slots = lineup
@@ -362,11 +396,17 @@ export function runStall(
     for (let v = 0; v < visitors; v++) {
       if (allSoldOut()) break; // ERB 575-579: 全部売りつくしたら抜ける
 
+      // ERB 362-375: per-visitor greeting (presentation-only roll).
+      if (flavor) performance.push({ kind: "greeting", text: stallGreetingText(flavor) });
+
       // $SARCH_START — pick a goods slot (ERB 380-406).
       let local = pickSlot(slotCount, rng);
 
       // ERB 408: LOCAL == 0 → no sale this visitor, GOTO SARCH_END.
-      if (local === 0) continue;
+      if (local === 0) {
+        if (flavor) performance.push({ kind: "noSale", text: stallNoSaleText(flavor) });
+        continue;
+      }
       // ERB 432: sold-out slot → re-pick (GOTO SARCH_START). Bound the
       // retry so a pathological all-sold-out-except-LOCAL==0 case can't
       // spin (allSoldOut above already breaks the outer loop).
@@ -375,7 +415,10 @@ export function runStall(
         local = pickSlot(slotCount, rng);
         if (local === 0) break;
       }
-      if (local === 0) continue;
+      if (local === 0) {
+        if (flavor) performance.push({ kind: "noSale", text: stallNoSaleText(flavor) });
+        continue;
+      }
       const slot = slots[local - 1]!;
 
       // 売る个数 by stock band (ERB 437-443).
@@ -396,9 +439,46 @@ export function runStall(
       // ERB 448: 売却値 = STALL_PRICE_SET(商人パワー, GoodsID, batch).
       const price = stallPriceSet(power, slot.id, batch, spot, rng);
 
+      // ERB 551-555: the customer line (rate-tiered SHOPPER_COME) prints
+      // before the sold beat (ERB 559-561).
+      if (flavor) {
+        performance.push({ kind: "shopperCome", text: stallShopperComeText(flavor, price.rate) });
+        performance.push({
+          kind: "sold",
+          text: formatStallSoldText(slot.id, batch, price.total),
+          itemId: slot.id,
+          qty: batch,
+          yen: price.total,
+        });
+      }
+
       // ERB 568-569: GoodsSold += batch; 合計売却値 += 売却値.
       slot.sold += batch;
       totalYen += price.total;
+
+      if (allSoldOut() && flavor) performance.push({ kind: "soldOut", text: "恭喜完售！" }); // ERB 577
+    }
+  }
+
+  // ERB 591: closing beat, then the ERB 593-624 成果 summary.
+  if (flavor) {
+    performance.push({ kind: "closing", text: "差不多也该收摊了" });
+    performance.push({ kind: "summary", text: "这次摆摊的成果…" });
+    for (const s of slots) {
+      performance.push({
+        kind: "summary",
+        itemId: s.id,
+        qty: s.sold,
+        text: s.sold > 0
+          ? `　${stallItemName(s.id)}售出了${s.sold}个`
+          : `　${stallItemName(s.id)}完全卖不出去…`,
+      });
+    }
+    if (totalYen > 0) {
+      performance.push({ kind: "summary", text: `合计${totalYen}元！`, yen: totalYen });
+      performance.push({ kind: "summary", text: `今天来客数${visitors}人` });
+    } else {
+      performance.push({ kind: "summary", text: "完全没赚到钱…" });
     }
   }
 
@@ -431,7 +511,7 @@ export function runStall(
   // TFLAG:193/194 (ERB 621-622 / 625) — surfaced, not persisted (header).
   const success: 0 | 1 = totalYen > 0 ? 1 : 0;
 
-  return { visitors, totalYen, slots, success, yenFlag: totalYen };
+  return { visitors, totalYen, slots, success, yenFlag: totalYen, performance };
 }
 
 /**

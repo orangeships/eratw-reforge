@@ -188,6 +188,12 @@ export interface KickoutResult {
   finalMasterLocation: string;
   /** True when a kick actually fired. */
   kicked: boolean;
+  /** Shell-layer hint: when true, no authored EVENT 3 kojo was found and L1
+   * AI completion is eligible (if AI is enabled). */
+  needsAiKojo?: boolean;
+  /** When needsAiKojo is true, provides the EVENT arm and sub for AI prompt. */
+  eventArm?: number;
+  eventSub?: number[];
 }
 
 export interface KickoutKojoDeps {
@@ -366,15 +372,21 @@ export function kickOutOfBedroom(
   // PRINTFORMW 被犯困的%CALLNAME:ARG%赶出来了… — narrative fires
   // BEFORE the KOJO so the player sees the "you've been found" beat.
   events.push(narr(now, `被犯困的${name}赶出来了…`));
+
   // おやすみ口上,7-1,部屋から逐出て寝た → EVENT 3 sub 7,1
-  events.push(...event3(
+  const kojoEvents = event3(
     state,
     owner,
     EVENT_KICKOUT_SUB_KICKED_FROM_BED,
     EVENT_KICKOUT_SUB_BED_KICKED,
     now,
     deps,
-  ));
+  );
+  events.push(...kojoEvents);
+
+  // Check if authored kojo was produced
+  const hasAuthoredKojo = kojoEvents.length > 0;
+  const needsAiKojo = !hasAuthoredKojo && deps?.dialogueRouter !== undefined;
 
   // Track the kick-out. Upstream writes
   // `TCVAR:MASTER:追い出され時刻 = TIME` (a per-save "how long ago was
@@ -399,5 +411,8 @@ export function kickOutOfBedroom(
     events,
     finalMasterLocation: state.master.location,
     kicked: true,
+    needsAiKojo,
+    eventArm: needsAiKojo ? EVENT_KICKOUT_3 : undefined,
+    eventSub: needsAiKojo ? [EVENT_KICKOUT_SUB_KICKED_FROM_BED, EVENT_KICKOUT_SUB_BED_KICKED] : undefined,
   };
 }

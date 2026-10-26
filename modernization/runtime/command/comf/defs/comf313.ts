@@ -58,15 +58,15 @@ export const comf313Def: ComfDef = {
   commandNo: 313,
   label: "胸愛撫",
   // @COM_ABLE313 (Slice 7): unconditional modelable gates — not co-sleeping,
-  // target not working, master 気力>0. The 亲热<2/睡眠 gates are conditional
-  // on !FLAG:70 (skipped during time-stop) and the 睡眠 arm allows 恶作剧, so
-  // they're deferred rather than mis-modeled.
+  // @COM_ABLE313 enforces 亲热<2 in the ordinary awake/visible context;
+  // minIntimacyOutsideBypassStates models its time-stop/sleep/stealth bypasses.
   gate: {
+    minIntimacyOutsideBypassStates: 2,
     notWhileCoSleeping: true,
     notWhileTargetWorking: true,
     requiresMasterStamina: true,
     deferredGates:
-      "亲热<2 / 睡眠 (!FLAG:70-conditional, 睡眠 allows 恶作剧); FLAG:甲斐性無; 約會; TFLAG:61 MASTER_POSE; GETBIT(TCVAR:26,3)",
+      "睡眠/prank interaction; FLAG:甲斐性無; 約會; TFLAG:61 MASTER_POSE; GETBIT(TCVAR:26,3)",
   },
   timeCost: 5,
 

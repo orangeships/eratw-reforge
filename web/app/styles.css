@@ -55,6 +55,18 @@ body {
 .container--fullscreen .game-client {
   height: 100vh;
 }
+.container--opening {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  background: #000;
+}
+.container--opening .pre-screen {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  background: #000;
+}
 /* Pre-game / dev screens read better constrained; the game goes full-bleed. */
 .pre-screen,
 .dev-tools {
@@ -578,6 +590,42 @@ button.secondary:hover:not(:disabled) {
   color: var(--era-blue);
   margin-right: 8px;
 }
+.status-bar__h-session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 3px 0;
+  padding: 4px 8px;
+  border: 1px solid rgba(226, 129, 155, .55);
+  background: linear-gradient(90deg, rgba(91, 24, 43, .42), rgba(38, 21, 31, .18));
+  color: #f0d6df;
+  font-size: calc(var(--era-fs) - 2px);
+}
+.status-bar__h-session-title {
+  color: #ffadc4;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.status-bar__h-session-gauges {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 4px 14px;
+  flex: 1 1 520px;
+  min-width: 0;
+}
+.status-bar__h-session-gauges .status-bar__hbody {
+  min-width: 0;
+  margin: 0;
+  padding: 2px 4px;
+  border-left: 1px solid rgba(226, 129, 155, .35);
+}
+@media (max-width: 760px) {
+  .status-bar__h-session-gauges {
+    grid-template-columns: minmax(0, 1fr);
+    flex-basis: 100%;
+  }
+}
 /* Body of an expandable Status/Param section. */
 .status-bar__section {
   margin: 2px 0 4px;
@@ -682,6 +730,99 @@ button.secondary:hover:not(:disabled) {
 .status-bar__timestop--active:hover {
   background: linear-gradient(#de5436, #af2424);
 }
+/* Story badge — sits immediately right of the time-stop control. A quiet
+   outline when the story is already over (missed), a warm glow when the
+   player can still walk into it or is in the middle of it. */
+.status-bar__narrative-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  padding: 2px 8px 2px 4px;
+  max-width: 22ch;
+  font-size: 12px;
+  color: #cbd6e4;
+  background: rgba(30, 37, 48, 0.9);
+  border: 1px solid rgba(140, 156, 178, 0.55);
+  border-radius: 11px;
+  cursor: pointer;
+}
+.status-bar__narrative-toggle:hover { border-color: rgba(180, 200, 226, 0.85); }
+.status-bar__narrative-toggle:disabled { cursor: default; }
+.status-bar__narrative-toggle-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.status-bar__narrative-toggle-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-bar__narrative-toggle-count {
+  flex: none;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 10px;
+}
+.status-bar__narrative-toggle--active {
+  color: #ffe89a;
+  border-color: rgba(255, 211, 72, 0.7);
+  background: linear-gradient(180deg, rgba(75, 52, 8, 0.95), rgba(30, 22, 6, 0.95));
+}
+.status-bar__narrative-toggle--active:hover { border-color: rgba(255, 226, 130, 0.95); }
+/* Half-floating dropdown, like the Status/Param bodies: it overlays the scene
+   below the bar instead of growing the top zone. */
+.status-bar__narrative-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 8px;
+  z-index: 40;
+  width: min(92vw, 420px);
+  max-height: min(50vh, 320px);
+  overflow-y: auto;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 211, 72, 0.55);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(28, 24, 12, 0.98), rgba(12, 11, 8, 0.99));
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+  color: #ffe89a;
+  font-family: var(--era-mono);
+  text-align: left;
+}
+.status-bar__narrative-panel-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.status-bar__narrative-panel-head strong { color: #fff4c2; }
+.status-bar__narrative-panel-head span { color: #d8c689; font-size: 12px; }
+.status-bar__narrative-panel-opening {
+  margin: 7px 0 0;
+  color: #f0e2b6;
+  line-height: 1.55;
+}
+.status-bar__narrative-panel-objective {
+  margin: 6px 0 0;
+  color: #c9bd93;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.status-bar__narrative-panel-location {
+  margin-top: 7px;
+  color: #a8b6c8;
+  font-size: 12px;
+}
 .status-bar__bars {
   display: flex;
   flex-wrap: wrap;
@@ -744,6 +885,12 @@ button.secondary:hover:not(:disabled) {
   color: #513139;
   opacity: 0.7;
 }
+/* @INFO_EMOTION: the whole 情緒 line turns pink at MAXBASE (upstream also
+   swaps in OverDrive!! during a date — that text needs a namespace-free
+   约会中 accessor and is deferred). */
+.status-bar__gauge--full .status-bar__gauge-symbol--filled {
+  filter: brightness(1.25) saturate(1.3);
+}
 .status-bar__rel--fury {
   color: #ff6b6b;
 }
@@ -760,6 +907,29 @@ button.secondary:hover:not(:disabled) {
 }
 .status-bar__hbody-line {
   white-space: nowrap;
+}
+.status-bar__hbody [data-testid="hbody-frustration"] {
+  transition: color 180ms ease, text-shadow 180ms ease;
+}
+.status-bar__hbody [data-testid="hbody-frustration"][data-desire-high="true"] {
+  animation: desire-glow 1.6s ease-in-out infinite alternate;
+}
+@keyframes desire-glow {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.28) drop-shadow(0 0 5px rgba(255, 78, 168, 0.9)); }
+}
+.night-settlement__block {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 16px;
+}
+.night-settlement__portrait {
+  align-self: end;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
+}
+.night-settlement__block-lines {
+  min-width: 0;
 }
 .status-bar__sleepiness {
   white-space: nowrap;
@@ -968,7 +1138,78 @@ button.secondary:hover:not(:disabled) {
 .scene-view__ambient p {
   margin: 0;
 }
-/* Reserved stage: scene字符画 slot (not shown yet) + present立绘, centered. */
+/* Scene backdrop layer (S2): a full-bleed字符画 or real image behind the
+   prose and the portrait stage. Both are edge-blurred/faded (radial mask +
+   vignette scrim) so they melt into the black UI instead of reading as a
+   pasted rectangle. Presentation-only; `.scene-view--has-bg` gates the
+   immersive header blend below. */
+.scene-view__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #000;
+}
+.scene-view__bg-img {
+  /* Fill the container edge-to-edge (cover-fit, may crop). Both `--feather`
+     and `--core` images use the same source and same dimensions; the masks
+     carve them into a center-sharp / edge-blurred composite. */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scene-view__bg-img--feather {
+  /* Outer 5% per side is opaque, inner 90% is fully transparent so the
+     sharp core shows through unchanged. Blur here is what gives the
+     feathered edge. */
+  filter: blur(14px) brightness(0.55) saturate(1.05);
+  transform: scale(1.04);
+  -webkit-mask-image: linear-gradient(to right, #000 0, transparent 5%, transparent 95%, #000 100%),
+    linear-gradient(to bottom, #000 0, transparent 5%, transparent 95%, #000 100%);
+  -webkit-mask-composite: add;
+  mask-image: linear-gradient(to right, #000 0, transparent 5%, transparent 95%, #000 100%),
+    linear-gradient(to bottom, #000 0, transparent 5%, transparent 95%, #000 100%);
+  mask-composite: add;
+}
+.scene-view__bg-img--core {
+  /* Sharp image, but transparent at the outer 5% so the feather ring
+     bleeds in there. */
+  filter: brightness(0.82) saturate(1.05);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+  -webkit-mask-composite: intersect;
+  mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+.scene-view__bg-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    130% 100% at 50% 50%,
+    rgba(0, 0, 0, 0) 65%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+/* Layering: the backdrop sits at z0; prose, roster and portraits paint above
+   it so the scene stays readable and the characters overlay the image. */
+.scene-view__intro,
+.scene-view__ambient {
+  position: relative;
+  z-index: 2;
+}
+.scene-view__stage {
+  z-index: 1;
+}
+.scene-view__roster,
+.scene-view__place {
+  z-index: 3;
+}
+/* Reserved stage: present立绘, centered. `padding-bottom` is the breathing room
+   between the portrait row's lower edge and the stage's bottom — it is
+   intentionally not 0 so the cast never reads as "stuck to the frame". */
 .scene-view__stage {
   position: absolute;
   inset: 0 0 0 0;
@@ -976,7 +1217,7 @@ button.secondary:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: 148px;
+  padding-bottom: 88px;
 }
 .scene-view__place {
   position: absolute;
@@ -1117,6 +1358,9 @@ button.secondary:hover:not(:disabled) {
   align-items: flex-end;
   justify-content: center;
   overflow: hidden;
+  /* P-30b over a photo backdrop: a soft under-glow lifts the sprite off the
+     scene image so it reads as "standing in front of", not "printed on". */
+  filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.65));
 }
 .sprite-crop__viewport {
   position: relative;
@@ -1148,10 +1392,42 @@ button.secondary:hover:not(:disabled) {
   border-radius: 0;
 }
 .scene-view__portrait--selected .scene-view__portrait-img--real {
-  filter: drop-shadow(0 0 9px rgba(255, 216, 112, 0.42));
+  filter:
+    drop-shadow(0 3px 12px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 0 9px rgba(255, 216, 112, 0.42));
+}
+.scene-view__portrait--h-target {
+  border-radius: 6px;
+  outline: 1px solid rgba(255, 129, 166, .78);
+  outline-offset: -2px;
+  background: linear-gradient(180deg, rgba(105, 24, 52, .16), rgba(42, 16, 29, .48));
+}
+.scene-view__portrait--h-target .scene-view__portrait-img--real {
+  filter:
+    drop-shadow(0 3px 12px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 0 12px rgba(255, 109, 151, .58));
+}
+.scene-view__roster-name--h-target {
+  border-color: rgba(255, 129, 166, .82);
+  color: #ffd6e1;
 }
 .scene-view__portrait--selectable {
   cursor: pointer;
+}
+.scene-view__h-target-badge {
+  position: absolute;
+  z-index: 3;
+  top: 7px;
+  right: 7px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 159, 187, .72);
+  border-radius: 3px;
+  color: #ffe6ed;
+  background: rgba(86, 18, 42, .82);
+  font-size: calc(var(--era-fs) - 3px);
+  letter-spacing: .04em;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
 }
 .scene-view__portrait-name {
   position: relative;
@@ -1522,6 +1798,41 @@ button.secondary:hover:not(:disabled) {
   text-decoration: line-through;
 }
 
+/* H-mode exits stay pinned above the scrollable Act_COM grid. This mirrors
+   the original mode-control row and keeps 999/850 reachable after long
+   insertion/SM command lists have filled the viewport. */
+.h-exit-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 4px;
+  padding: 4px 6px;
+  border: 1px solid rgba(226, 129, 155, .45);
+  background: linear-gradient(90deg, rgba(91, 24, 43, .38), rgba(38, 21, 31, .2));
+}
+.h-exit-controls__label {
+  color: #ff9fbb;
+  font-size: calc(var(--era-fs) - 2px);
+  letter-spacing: .08em;
+}
+.h-exit-controls__button {
+  padding: 3px 10px;
+  color: #ffe6ed;
+  border: 1px solid rgba(255, 159, 187, .62);
+  border-radius: 3px;
+  background: rgba(110, 31, 56, .45);
+  font: inherit;
+  cursor: pointer;
+}
+.h-exit-controls__button:hover,
+.h-exit-controls__button:focus-visible {
+  color: #fff;
+  border-color: #ffd1df;
+  background: rgba(158, 46, 79, .62);
+  box-shadow: 0 0 9px rgba(255, 125, 164, .25);
+}
+
 /* Parity QA P-1 — Ex_COM utility row (`▼[－] Ex_COM`). The collapse button +
    a strip of tool buttons (移动/变更对象/…), distinct from settlement commands. */
 .excom-row {
@@ -1593,6 +1904,13 @@ button.secondary:hover:not(:disabled) {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.dialogue-accompany-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0;
+}
 .date-invitation-card__actions button {
   padding: 4px 10px;
   border: 1px solid #4b9a6b;
@@ -1635,6 +1953,10 @@ button.secondary:hover:not(:disabled) {
   box-shadow: 0 18px 54px rgba(0, 0, 0, 0.72), inset 0 1px rgba(255, 255, 255, 0.03);
   font-family: var(--era-mono);
 }
+.excom-panel--calendar {
+  width: min(980px, calc(100vw - 32px));
+  max-width: 96%;
+}
 .excom-panel__head {
   display: flex;
   align-items: center;
@@ -1669,6 +1991,8 @@ button.secondary:hover:not(:disabled) {
   font-weight: bold;
   margin-bottom: 6px;
 }
+.excom-panel__ability-levels { margin: 8px 0 12px; }
+.excom-panel__ability-levels .excom-panel__subtitle { margin-top: 0; }
 .excom-panel__statline {
   display: flex;
   align-items: baseline;
@@ -1852,6 +2176,18 @@ button.secondary:hover:not(:disabled) {
   color: #ffe57a;
   background: linear-gradient(90deg, rgba(255, 211, 72, 0.20), transparent);
   box-shadow: inset 2px 0 #ffd348;
+}
+.command-grid__btn--narrative-opening {
+  color: #fff0a6;
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(255, 205, 55, 0.9);
+  background: linear-gradient(90deg, rgba(255, 196, 32, 0.34), rgba(255, 211, 72, 0.08));
+  box-shadow: inset 3px 0 #ffd348, 0 0 12px rgba(255, 196, 32, 0.22);
+}
+.command-grid__btn--narrative-opening:hover {
+  color: #fff8d8;
+  background: linear-gradient(90deg, rgba(255, 196, 32, 0.5), rgba(255, 211, 72, 0.12));
+  box-shadow: inset 3px 0 #ffe37c, 0 0 16px rgba(255, 196, 32, 0.38);
 }
 /* Slice 6 — a command whose @COM_ABLE/execCheck gate currently blocks it. */
 .command-grid__btn--blocked {
@@ -2362,6 +2698,7 @@ button.secondary:hover:not(:disabled) {
 .world-map { position: fixed; inset: 0; z-index: 24; box-sizing: border-box; height: 100%; overflow: auto; padding: 24px; background: #000; }
 .world-map__header { max-width: 760px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: space-between; }
 .world-map__header h2 { margin: 0; font-size: 22px; }
+.world-map__field { width: max-content; max-width: 100%; margin: 10px auto 14px; }
 .world-map__close { padding: 4px 10px; color: #d1a85a; background: #171d22; border: 1px solid #39444d; border-radius: 4px; cursor: pointer; }
 .world-map__close:hover { border-color: #d1a85a; background: #20272d; }
 .world-map__hint { max-width: 760px; margin: 0 auto 16px; color: #8f9aa5; }
@@ -2448,16 +2785,40 @@ button.secondary:hover:not(:disabled) {
   min-height: 156px;
   text-align: center;
 }
-.excom-panel__calendar-wrap { margin-top: 6px; overflow-x: auto; border: 1px solid #303b45; }
-.excom-panel__calendar-table { width: 100%; min-width: 680px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.excom-panel__calendar-wrap { margin-top: 6px; overflow-x: auto; border: 1px solid #555; background: #050505; }
+.excom-panel__calendar-table { width: 100%; min-width: 620px; border-collapse: collapse; font-family: "MS Gothic", "Noto Sans Mono CJK SC", monospace; font-variant-numeric: tabular-nums; }
 .excom-panel__calendar-table th,
-.excom-panel__calendar-table td { padding: 8px 10px; border-right: 1px solid #303b45; border-bottom: 1px solid #303b45; text-align: left; vertical-align: top; }
-.excom-panel__calendar-table thead th { position: sticky; top: 0; color: #9ee8ad; background: #111a20; letter-spacing: .08em; }
-.excom-panel__calendar-table tbody th { width: 11em; color: #e7d49d; font-weight: 600; white-space: nowrap; }
-.excom-panel__calendar-table tbody th small { color: #929da8; font-weight: 400; }
-.excom-panel__calendar-table td:nth-child(2) { width: 9em; color: #e5bd78; }
-.excom-panel__calendar-table td:last-child { line-height: 1.55; }
-.excom-panel__calendar-table tr.is-today { background: rgba(69, 125, 83, .16); box-shadow: inset 3px 0 #67e47e; }
+.excom-panel__calendar-table td { padding: 6px 9px; border-right: 1px solid #555; border-bottom: 1px solid #555; text-align: left; vertical-align: top; }
+.excom-panel__calendar-table thead th { position: sticky; top: 0; padding: 6px 9px; color: #eee; background: #111; border-right: 1px solid #666; border-bottom: 1px solid #777; letter-spacing: .04em; text-align: left; }
+.excom-panel__calendar-table thead th:first-child,
+.excom-panel__calendar-table tbody th { width: 5.25em; padding: 6px 5px; border-right: 1px solid #555; border-bottom: 1px solid #555; color: #f0f0f0; font-weight: 400; vertical-align: top; }
+.excom-panel__calendar-table tbody th strong { font-size: 1.08em; font-weight: 700; }
+.excom-panel__calendar-table tbody th strong,
+.excom-panel__calendar-table tbody th small { display: block; white-space: nowrap; }
+.excom-panel__calendar-table tbody th small { color: #aaa; font-weight: 400; }
+.excom-panel__calendar-table tbody td { line-height: 1.45; }
+.excom-panel__calendar-table tr.is-today { background: rgba(255, 255, 255, .08); box-shadow: inset 3px 0 #ddd; }
+.excom-panel__calendar-item {
+  display: grid;
+  grid-template-columns: minmax(6.5em, max-content) minmax(0, 1fr) max-content max-content;
+  align-items: baseline;
+  gap: 2px 8px;
+  line-height: 1.45;
+}
+.excom-panel__calendar-item + .excom-panel__calendar-item { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, .08); }
+.excom-panel__calendar-item > span { min-width: 0; overflow-wrap: anywhere; }
+.excom-panel__calendar-label { grid-column: 1; }
+.excom-panel__calendar-participants { grid-column: 2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.excom-panel__calendar-person { white-space: nowrap; text-decoration: underline dotted rgba(153, 153, 153, .55); text-underline-offset: 2px; cursor: help; }
+.excom-panel__calendar-meta { grid-column: 3; }
+.excom-panel__calendar-label { color: #eee; font-weight: 700; }
+.excom-panel__calendar-item--festival .excom-panel__calendar-label { color: #ffd26f; }
+.excom-panel__calendar-item--banquet .excom-panel__calendar-label { color: #f2b6d6; }
+.excom-panel__calendar-item--date .excom-panel__calendar-label { color: #bcd9ff; }
+.excom-panel__calendar-item--work .excom-panel__calendar-label { color: #d3d3d3; }
+.excom-panel__calendar-empty { color: #999; }
+.excom-panel__calendar-distant { margin: 7px 0 0; color: #f2b6d6; white-space: normal; }
+.excom-panel__calendar-item button { grid-column: 4; justify-self: end; border: 0; padding: 0 2px; background: transparent; color: #bbb; font: inherit; white-space: nowrap; }
 .night-settlement__block {
   padding: 8px 0;
 }
@@ -2771,6 +3132,26 @@ button.secondary:hover:not(:disabled) {
 .morning-menu__message {
   color: #8effa0;
 }
+/* 睁眼等待门 — agent-night sidecar progress (少女祈祷中 + per-chara lines).
+   A single left-aligned line list, no spinner (same rationale as
+   GatheringProgress: the dot animation lives in React state so the text
+   stays test-observable). */
+.morning-menu__night-status {
+  margin: 10px 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid #f3d777;
+  background: rgba(243, 215, 119, 0.07);
+  color: #e8e2c8;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  line-height: 1.9;
+}
+.morning-menu__night-status p {
+  margin: 0;
+}
+.morning-menu__night-skip {
+  margin-top: 6px;
+}
 .morning-menu__save-info {
   margin: 6px 0 10px;
   padding: 6px 10px;
@@ -2781,23 +3162,26 @@ button.secondary:hover:not(:disabled) {
   letter-spacing: 0.3px;
 }
 .morning-menu__section {
-  margin-top: 10px;
+  margin-top: 16px;
 }
 .morning-menu__section h2 {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   color: var(--era-green);
   font-size: calc(var(--era-fs) + 1px);
   letter-spacing: 1px;
 }
+/* auto-fit keeps every section on the same column grid so the button edges
+   line up across the groups; 260px is the width at which the longest label
+   (手动触发故事（L3）) still fits on one line. */
 .morning-menu__commands {
   display: grid;
-  grid-template-columns: repeat(3, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 6px 14px;
   max-width: none;
 }
 .morning-menu__command {
   display: grid;
-  grid-template-columns: 4.6em 1.1em 1fr;
+  grid-template-columns: 4.2em 1.1em 1fr;
   align-items: baseline;
   padding: 4px 8px;
   color: #e8f0f7;
@@ -2851,6 +3235,9 @@ button.secondary:hover:not(:disabled) {
   background: linear-gradient(180deg, #101822, #080b0f);
   border: 1px solid rgba(132, 162, 186, 0.42);
   box-shadow: 0 18px 54px rgba(0, 0, 0, 0.72), inset 0 1px rgba(255, 255, 255, 0.04);
+}
+.morning-menu__modal--calendar {
+  width: min(980px, calc(100vw - 32px));
 }
 .morning-menu__modal-head {
   display: flex;
@@ -3204,6 +3591,219 @@ button.secondary:hover:not(:disabled) {
  * would silently swallow clicks. */
 .interaction-box__scrim--prompt {
   z-index: 11;
+}
+
+/* COM406 — dedicated diary reader. Keep the two-column reading flow, but use
+ * the same restrained console surface as the rest of the character UI. */
+.diary-book__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(2px);
+}
+.diary-book {
+  width: min(960px, calc(100vw - 24px));
+  max-height: min(720px, calc(100dvh - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--era-text);
+  font-family: var(--era-mono);
+  background: linear-gradient(180deg, var(--era-panel-raised), var(--era-panel));
+  border: 1px solid var(--era-line);
+  border-radius: 4px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.72), inset 0 1px rgba(255, 255, 255, 0.025);
+}
+.diary-book__header {
+  min-height: 60px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px 8px 15px;
+  border-bottom: 1px solid var(--era-line);
+  background: var(--era-panel);
+}
+.diary-book__header h2 {
+  margin: 2px 0 0;
+  color: var(--era-gold);
+  font-size: calc(var(--era-fs) + 3px);
+  letter-spacing: 0.04em;
+}
+.diary-book__eyebrow {
+  color: var(--era-muted);
+  font-size: calc(var(--era-fs) - 5px);
+  letter-spacing: 0.05em;
+}
+.diary-book__counter {
+  color: var(--era-muted);
+  font-size: calc(var(--era-fs) - 2px);
+  font-variant-numeric: tabular-nums;
+}
+.diary-book__close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--era-line);
+  border-radius: 3px;
+  color: var(--era-muted);
+  background: transparent;
+  font: 20px/1 var(--era-mono);
+  cursor: pointer;
+}
+.diary-book__close:hover,
+.diary-book__close:focus-visible { color: var(--era-green); border-color: rgba(98, 235, 160, 0.58); outline: none; }
+.diary-book__spread {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.34fr) minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  padding: 10px;
+  gap: 8px;
+}
+.diary-book__index {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 8px;
+  border: 1px solid var(--era-line);
+  border-radius: 3px;
+  background: #070a0e;
+}
+.diary-book__index-title {
+  padding: 0 8px 7px;
+  color: var(--era-green);
+  font-size: calc(var(--era-fs) - 2px);
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--era-line-soft);
+}
+.diary-book__index-list {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+  scrollbar-color: var(--era-line) transparent;
+}
+.diary-book__index-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  padding: 7px 8px 6px 9px;
+  text-align: left;
+  color: var(--era-muted);
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  font-family: var(--era-mono);
+  cursor: pointer;
+}
+.diary-book__index-entry span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(var(--era-fs) - 2px);
+}
+.diary-book__index-entry small { color: var(--era-muted); font-size: calc(var(--era-fs) - 4px); }
+.diary-book__index-entry i {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  min-width: 20px;
+  padding: 1px 3px;
+  color: #06100b;
+  background: var(--era-green);
+  border-radius: 2px;
+  font-size: calc(var(--era-fs) - 5px);
+  font-style: normal;
+  text-align: center;
+}
+.diary-book__index-entry:hover { color: var(--era-text); background: rgba(98, 235, 160, 0.08); }
+.diary-book__index-entry:focus-visible { outline: 1px solid rgba(98, 235, 160, 0.58); outline-offset: -2px; }
+.diary-book__index-entry.is-active {
+  color: var(--era-green);
+  border-left-color: var(--era-green);
+  background: rgba(98, 235, 160, 0.1);
+}
+.diary-book__index-entry.is-active small { color: var(--era-gold); }
+.diary-book__page {
+  position: relative;
+  min-width: 0;
+  min-height: 380px;
+  overflow-y: auto;
+  padding: 26px clamp(20px, 4vw, 48px) 30px;
+  color: var(--era-text);
+  background: var(--era-panel-raised);
+  border: 1px solid var(--era-line);
+  border-radius: 3px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+}
+.diary-book__date { display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap; }
+.diary-book__date span { color: var(--era-muted); font-size: calc(var(--era-fs) - 1px); letter-spacing: 0.04em; }
+.diary-book__date strong { color: var(--era-gold); font-size: calc(var(--era-fs) + 2px); font-weight: 600; }
+.diary-book__rule { width: 100%; height: 1px; margin: 11px 0 18px; background: var(--era-line-soft); opacity: 1; }
+.diary-book__prose { font-family: var(--era-mono); font-size: var(--era-fs); line-height: 1.8; letter-spacing: 0; color: #dbe4ec; }
+.diary-book__prose p { margin: 0 0 0.72em; white-space: pre-wrap; }
+.diary-book__stamp {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  padding: 2px 5px;
+  color: var(--era-green);
+  border: 1px solid rgba(98, 235, 160, 0.48);
+  transform: none;
+  font-size: calc(var(--era-fs) - 4px);
+  letter-spacing: 0.04em;
+}
+.diary-book__page-footer { position: absolute; right: 0; bottom: 9px; left: 0; text-align: center; color: var(--era-muted); font-size: calc(var(--era-fs) - 4px); }
+.diary-book__controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--era-line);
+  background: var(--era-panel);
+}
+.diary-book__controls button {
+  min-height: 30px;
+  padding: 4px 10px;
+  color: var(--era-text);
+  background: transparent;
+  border: 1px solid var(--era-line);
+  border-radius: 3px;
+  font-family: var(--era-mono);
+  cursor: pointer;
+}
+.diary-book__controls button:hover:not(:disabled),
+.diary-book__controls button:focus-visible { color: var(--era-green); border-color: rgba(98, 235, 160, 0.58); outline: none; }
+.diary-book__controls button:disabled { opacity: 0.32; cursor: default; }
+.diary-book__controls .diary-book__shut { margin-left: 5px; color: var(--era-gold); background: rgba(255, 215, 130, 0.05); border-color: rgba(255, 215, 130, 0.35); }
+.diary-book__aside-note { margin-right: auto; display: flex; flex-direction: column; color: var(--era-muted); font-size: calc(var(--era-fs) - 4px); }
+
+@media (max-width: 680px) {
+  .diary-book__scrim { padding: 8px; }
+  .diary-book { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+  .diary-book__header { min-height: 60px; padding: 9px 11px 8px 14px; gap: 9px; }
+  .diary-book__eyebrow { display: none; }
+  .diary-book__spread { grid-template-columns: 1fr; padding: 8px; gap: 8px; }
+  .diary-book__index { max-height: 130px; padding: 8px; border-right: 1px solid var(--era-line); border-radius: 3px; }
+  .diary-book__index-title { display: none; }
+  .diary-book__index-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0; }
+  .diary-book__index-entry { min-width: 154px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 2px; }
+  .diary-book__index-entry.is-active { border-left-color: transparent; border-bottom-color: var(--era-green); }
+  .diary-book__page { min-height: 0; padding: 24px 22px 30px; border-radius: 3px; }
+  .diary-book__stamp { top: 16px; right: 14px; }
+  .diary-book__controls { padding: 8px; flex-wrap: wrap; }
+  .diary-book__aside-note { width: 100%; }
+  .diary-book__controls button { flex: 1; min-width: 88px; }
 }
 /* Outing event result frame — full-viewport black overlay surfaced when the
  * player commits a choice on a paused `outing-choice` session (EV2/3/5/6/7).
@@ -3755,6 +4355,38 @@ button.secondary:hover:not(:disabled) {
   font-weight: 500;
   letter-spacing: 0.04em;
 }
+/* 体力/気力 BASE_BAR counterpart (upstream BASIC_STATE 緑/青). */
+.mob-girl-profile__stat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+.mob-girl-profile__stat-track {
+  display: block;
+  height: 9px;
+  background: #1a2330;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.mob-girl-profile__stat-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.mob-girl-profile__stat--stamina .mob-girl-profile__stat-fill {
+  background: linear-gradient(90deg, #2f8f63, #52c98a);
+}
+.mob-girl-profile__stat--will .mob-girl-profile__stat-fill {
+  background: linear-gradient(90deg, #3a6fb0, #6ba8e8);
+}
+.mob-girl-profile__stat em {
+  color: #9db3a6;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  font-size: calc(var(--era-fs) - 4px);
+}
 .mob-girl-profile__abilities {
   display: flex;
   align-items: baseline;
@@ -3994,6 +4626,7 @@ button.secondary:hover:not(:disabled) {
 
 .interaction-box--radio { width: min(1040px, calc(100vw - 28px)); }
 .interaction-box__radio-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); gap: 14px; align-items: stretch; }
+.interaction-box__radio-layout--solo { grid-template-columns: minmax(0, 1fr); }
 .interaction-box__radio-main,
 .interaction-box__radio-side { min-width: 0; }
 .interaction-box__radio-side { display: flex; min-height: 0; border-left: 1px solid #354148; padding-left: 14px; }
@@ -4074,7 +4707,7 @@ button.secondary:hover:not(:disabled) {
   top: 43px;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   background: #0d0f12;
   border-bottom: 1px solid #252c35;
 }
@@ -4109,6 +4742,7 @@ button.secondary:hover:not(:disabled) {
 }
 .ai-settings__body textarea { resize: vertical; line-height: 1.55; }
 .ai-settings__toggle { grid-template-columns: auto 1fr; align-items: center; }
+.ai-settings__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ai-settings__enable { border-color: #638d9b !important; background: #1c2a30 !important; color: #d4f0eb !important; }
 .ai-settings__master-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid #252c35; }
 .ai-settings__master-row > div { display: grid; gap: 3px; }
@@ -4118,6 +4752,19 @@ button.secondary:hover:not(:disabled) {
 .ai-settings__section { display: grid; gap: 10px; padding: 4px 0 14px; border-bottom: 1px dashed #323840; }
 .ai-settings__section:last-child { border-bottom: 0; }
 .ai-settings__section h3 { margin: 0; color: #d9dde2; font-size: 14px; }
+.ai-settings__prompt-editor { display: grid; gap: 14px; }
+.ai-settings__prompt-mode-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ai-settings__prompt-mode-switch button { min-height: 36px; border: 1px solid #323840; }
+.ai-settings__prompt-mode-switch button[aria-pressed="true"] { color: #d8eee8; background: #18211f; border-color: #6f9f92; }
+.ai-settings__prompt-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ai-settings__prompt-head > div { display: grid; gap: 4px; }
+.ai-settings__prompt-head button { flex: 0 0 auto; }
+.ai-settings__prompt-editor textarea { min-height: 150px; font-family: Consolas, "SFMono-Regular", monospace; }
+.ai-settings__prompt-group { display: grid; gap: 8px; }
+.ai-settings__prompt-group > strong { color: #aeb5bd; font-size: 13px; }
+.ai-settings__prompt-group summary { display: flex; align-items: center; gap: 8px; }
+.ai-settings__prompt-badge { padding: 1px 6px; border-radius: 3px; background: #2f4a41; color: #9fc5ba; font-size: 11px; }
+.ai-settings__prompt-badge--warn { background: #4a3a2f; color: #d8b48a; }
 .ai-settings__details { color: #aeb5bd; }
 .ai-settings__details summary { cursor: pointer; font-size: 12px; }
 .ai-settings__details-body { display: grid; gap: 8px; padding: 10px 0 0 4px; }
@@ -4128,6 +4775,17 @@ button.secondary:hover:not(:disabled) {
 .ai-settings__roster output { float: right; color: #9fc5ba; }
 .ai-settings__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ai-settings__note { margin: 0; color: #9299a2; font-size: 12px; line-height: 1.6; }
+/* One StoryArc per block: title/status, then the lifecycle reason on its own
+   line, then the controls. Inlined, the trailing reason and the 暂停/放弃
+   buttons read as a single run-on status string. */
+.ai-settings__arc-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 0;
+}
+.ai-settings__arc-row + .ai-settings__arc-row { border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.ai-settings__arc-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .ai-settings__models-status { margin: -4px 0 0; color: #9ab5ca; font-size: 12px; }
 .ai-settings__models-status--error { color: #f19fa8; }
 .ai-settings__samples {
@@ -4142,6 +4800,13 @@ button.secondary:hover:not(:disabled) {
 .ai-settings__samples ol { display: grid; gap: 5px; margin: 0; padding-left: 24px; }
 .ai-settings__debug { display: grid; gap: 8px; }
 .ai-settings__debug-head { display: flex; justify-content: space-between; }
+.ai-settings__debug-actions { display: flex; align-items: center; gap: 8px; }
+.ai-settings__debug-filter { display: inline-flex; align-items: center; gap: 4px; color: #9299a2; font-size: 11px; }
+.ai-settings__debug-list { display: grid; gap: 3px; max-height: 220px; overflow: auto; padding: 4px; background: #08090b; border: 1px solid #292e35; }
+.ai-settings__debug-item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 7px; align-items: center; width: 100%; padding: 6px 7px; color: #c7ccd2; background: transparent; border: 1px solid transparent; text-align: left; font-size: 11px; }
+.ai-settings__debug-item:hover,
+.ai-settings__debug-item.is-selected { background: #14181d; border-color: #3a4652; }
+.ai-settings__debug-item .ai-settings__status { font-size: 10px; }
 .ai-settings__status { color: #c7ccd2; }
 .ai-settings__status--success { color: #9ab5ca; }
 .ai-settings__status--error,
@@ -4157,11 +4822,74 @@ button.secondary:hover:not(:disabled) {
   border: 1px solid #282d35;
   font-size: 11px;
 }
+.ai-card-editor { display: grid; gap: 8px; border-top: 1px dashed #282d35; padding-top: 10px; }
+.ai-card-editor__error { margin: 0; color: #e7a08f; font-size: 11px; }
+.ai-card-editor__diff { list-style: none; margin: 0; padding: 9px; display: grid; gap: 6px; color: #c2c7ce; background: #060708; border: 1px solid #282d35; font-size: 11px; }
+.ai-card-editor__diff strong { color: #9ab5ca; font-weight: normal; }
+.ai-card-editor__scalar div:first-child { color: #e7a08f; }
+.ai-card-editor__scalar div:last-child { color: #9abf9a; }
+
+.ai-perf { display: grid; gap: 14px; }
+.ai-perf__section { border: 1px solid #282d35; padding: 10px 12px; display: grid; gap: 8px; }
+.ai-perf__section h4 { margin: 0; font-size: 13px; color: #9ab5ca; }
+.ai-perf__section h5 { margin: 4px 0 0; font-size: 12px; font-weight: normal; color: #c7ccd2; }
+.ai-perf__headline { margin: 0; font-size: 12px; color: #c7ccd2; }
+.ai-perf__note, .ai-perf__empty { margin: 0; font-size: 11px; color: #8a929b; }
+.ai-perf__donut { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.ai-perf__donut-total { fill: #e6e9ec; font-size: 20px; }
+.ai-perf__donut-unit { fill: #8a929b; font-size: 9px; }
+.ai-perf__legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 11px; color: #c2c7ce; }
+.ai-perf__legend li { display: flex; align-items: center; gap: 6px; }
+.ai-perf__legend strong { margin-left: 4px; color: #e6e9ec; }
+.ai-perf__share { color: #8a929b; }
+.ai-perf__swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.ai-perf__table { width: 100%; border-collapse: collapse; font-size: 11px; color: #c2c7ce; }
+.ai-perf__table th, .ai-perf__table td { padding: 3px 6px; border: 1px solid #282d35; text-align: left; }
+.ai-perf__table th { color: #9ab5ca; font-weight: normal; }
+.ai-perf__route + .ai-perf__route { border-top: 1px dashed #282d35; padding-top: 8px; }
+
 .interaction-box__ai-pending {
   margin: 8px 0;
   color: #91d6a4;
   letter-spacing: 0.08em;
   animation: ai-kojo-pulse 1.2s ease-in-out infinite;
+}
+.interaction-box__ai-chat-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+  padding: 10px 12px;
+  background: #080b0f;
+  border-bottom: 1px solid #252c35;
+}
+.interaction-box__ai-chat-input textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 78px;
+  max-height: 180px;
+  resize: vertical;
+  padding: 9px 10px;
+  color: #e8edf0;
+  background: #050709;
+  border: 1px solid #35414c;
+  font: inherit;
+  line-height: 1.55;
+}
+.interaction-box__ai-chat-input textarea:focus {
+  outline: 1px solid #6c9681;
+  border-color: #6c9681;
+}
+.interaction-box__btn--ai-chat-send {
+  min-width: 86px;
+  min-height: 42px;
+  color: #b9dfc6;
+  border-color: #466451;
+}
+.interaction-box__btn--ai-chat-send:disabled {
+  color: #606a64;
+  border-color: #292f2c;
+  cursor: default;
 }
 .interaction-box__ai-badge,
 .text-window__ai-badge {
@@ -4187,7 +4915,10 @@ button.secondary:hover:not(:disabled) {
 }
 @keyframes ai-kojo-pulse { 50% { opacity: 0.45; } }
 @media (max-width: 620px) {
+  .ai-settings__tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ai-settings__row { grid-template-columns: 1fr; }
+  .interaction-box__ai-chat-input { grid-template-columns: 1fr; }
+  .interaction-box__btn--ai-chat-send { justify-self: end; }
 }
 .interaction-box__grid {
   display: grid;
@@ -4250,7 +4981,7 @@ button.secondary:hover:not(:disabled) {
   backdrop-filter: blur(3px);
 }
 .ci-panel {
-  width: 820px; max-width: 95%; max-height: 90vh;
+  width: 820px; max-width: 95%; height: min(760px, 90dvh); max-height: 90vh;
   background:
     radial-gradient(120% 80% at 100% 0%, rgba(255, 216, 112, 0.06), transparent 60%),
     linear-gradient(180deg, #0f151c, #080b0f);
@@ -4308,6 +5039,7 @@ button.secondary:hover:not(:disabled) {
 /* Tab nav */
 .ci-panel__tabs {
   display: flex; flex-wrap: wrap; gap: 4px;
+  flex-shrink: 0;
   padding: 10px 14px 0;
   border-bottom: 1px solid rgba(100, 129, 153, 0.2);
   background: rgba(0, 0, 0, 0.28);
@@ -4333,6 +5065,7 @@ button.secondary:hover:not(:disabled) {
 /* Page body */
 .ci-panel__pagebody {
   flex: 1; overflow-y: auto; padding: 14px 18px;
+  scrollbar-gutter: stable;
   min-height: 0;
 }
 .ci-panel__page {
@@ -4398,15 +5131,16 @@ button.secondary:hover:not(:disabled) {
   color: #aeb8c2;
 }
 .ci-panel__bar {
-  flex: 1; height: 8px;
-  background: #10161d;
-  border-radius: 4px;
+  flex: 1; height: 10px;
+  background: #1b2431;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
   overflow: hidden;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .ci-panel__barfill {
   height: 100%;
-  background: linear-gradient(90deg, #2a7d57, var(--era-green));
+  background: linear-gradient(90deg, #2f8f63, #5fd494);
   border-radius: 4px;
 }
 .ci-panel__statnum {
@@ -4761,7 +5495,9 @@ button.secondary:hover:not(:disabled) {
 .pre-screen--title,
 .pre-screen--setup,
 .pre-screen--kojo,
-.pre-screen--residence {
+.pre-screen--residence,
+.pre-screen--options,
+.pre-screen--kojo-update {
   background: #000;
   min-height: 70vh;
   justify-content: center;
@@ -5517,12 +6253,21 @@ button.secondary:hover:not(:disabled) {
   cursor: not-allowed;
 }
 
-/* ANATA 素质(性格档位) chip selector. */
-.pre-screen__talent-list {
+/* Compact player-facing TALENT selector shared by both opening modes. */
+.pre-screen__field--talents {
+  width: min(840px, 96%);
+}
+.player-talent-editor {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: min(620px, 94%);
+  gap: 10px;
+  width: 100%;
+}
+.pre-screen__talent-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 7px 10px;
+  width: 100%;
 }
 .talent-row {
   display: grid;
@@ -5559,6 +6304,32 @@ button.secondary:hover:not(:disabled) {
   border-color: #67e47e;
 }
 .talent-chip--active {
+  color: #0a0a0a;
+  background: #ffd36e;
+  border-color: #ffd36e;
+  font-weight: 700;
+}
+.pre-screen__talent-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+}
+.talent-toggle {
+  padding: 4px 11px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: #97a3ab;
+  background: #151519;
+  border: 1px solid #33372f;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.talent-toggle:hover {
+  border-color: #67e47e;
+}
+.talent-toggle--active {
   color: #0a0a0a;
   background: #ffd36e;
   border-color: #ffd36e;
@@ -5990,6 +6761,7 @@ button.secondary:hover:not(:disabled) {
 .stone-contest__scoreboard { z-index:6; top:14px; width:min(720px,76vw); min-width:0; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:18px; border:1px solid rgba(119,246,223,.19); padding:10px 17px; box-sizing:border-box; color:#9ab9b3; background:rgba(0,8,7,.82); box-shadow:none; backdrop-filter:blur(9px); font-size:11px; letter-spacing:.12em; }.stone-contest__scoreboard>:last-child { text-align:right; }.stone-contest__scoreboard strong { color:var(--stone-cyan); font-size:25px; font-weight:500; }.stone-contest__scoreboard strong.is-danger { color:#ff667d; text-shadow:0 0 18px rgba(255,70,95,.65); animation:stone-timer-pulse .5s ease-in-out infinite alternate; }.stone-contest__scoreboard b { color:#eafffb; font-size:15px; }
 .stone-contest__count-in { position:absolute; z-index:8; inset:34% 0 auto; color:rgba(223,255,249,.72); text-align:center; letter-spacing:.42em; pointer-events:none; animation:stone-count-in .68s ease-out both; }.stone-contest__count-in strong { color:var(--stone-cyan); font-size:clamp(28px,5vw,56px); font-weight:400; text-shadow:0 0 30px rgba(119,246,223,.28); }
 .stone-contest__candidate-rack { position:absolute; z-index:7; left:18px; top:88px; width:min(174px,20vw); display:grid; gap:7px; }.stone-contest__candidate-rack button { height:84px; display:grid; grid-template-columns:25px 1fr; grid-template-rows:1fr auto; align-items:center; padding:5px 8px; text-align:left; }.stone-contest__candidate-rack small { grid-row:1/3; color:var(--stone-cyan); opacity:.65; }.stone-contest__candidate-rack svg { width:100%; height:55px; filter:drop-shadow(0 0 5px rgba(119,246,223,.12)); }.stone-contest__candidate-rack polygon { fill:rgba(119,246,223,.17); stroke:rgba(183,255,244,.7); stroke-width:1.2; }.stone-contest__candidate-rack span { color:#69847f; font-size:8px; letter-spacing:.08em; }
+.stone-contest__candidate-rack { max-height:calc(100% - 180px); overflow-y:auto; overscroll-behavior:contain; }
 .stone-contest__controls { z-index:7; bottom:calc(15px + env(safe-area-inset-bottom)); padding:7px; border:1px solid rgba(119,246,223,.12); border-radius:0; background:rgba(0,9,8,.88); }.stone-contest__controls .stone-contest__drop { min-width:160px; font-weight:700; }
 .stone-contest__subtitles { z-index:6; right:20px; left:auto; bottom:82px; width:min(420px,42vw); min-height:68px; max-height:none; padding:13px 16px; box-sizing:border-box; color:#b7d0cb; background:linear-gradient(90deg,transparent,rgba(0,9,8,.82) 18%); border:0; border-right:2px solid rgba(119,246,223,.5); text-align:right; text-shadow:none; }.stone-contest__subtitles p { margin:6px 0 0; line-height:1.55; }
 .stone-contest__modal { background:rgba(0,4,4,.9); color:#dff8f3; backdrop-filter:blur(12px); animation:stone-modal-enter .52s cubic-bezier(.2,.8,.2,1) both; }.stone-contest__modal::before { content:""; position:absolute; width:min(760px,86vw); height:min(420px,72vh); border:1px solid rgba(119,246,223,.18); box-shadow:0 0 100px rgba(74,210,188,.07); pointer-events:none; }.stone-contest__modal h2,.stone-contest__modal p,.stone-contest__modal>small,.stone-contest__versus { position:relative; flex-basis:100%; }.stone-contest__modal h2 { font-weight:400; letter-spacing:.16em; }
@@ -6062,7 +6834,7 @@ button.secondary:hover:not(:disabled) {
     overflow: hidden;
   }
   .scene-view { min-height: 0; }
-  .scene-view__stage { padding-bottom: 112px; }
+  .scene-view__stage { padding-bottom: 60px; }
   .scene-view__place {
     top: 8px;
     max-width: calc(100% - 20px);
@@ -6421,4 +7193,483 @@ button.secondary:hover:not(:disabled) {
   .farm-screen__grid { grid-template-columns: 1fr 1fr; }
   .farm-screen__footer { grid-template-columns: 1fr; gap: 8px; }
   .farm-screen__harvestall { justify-self: start; }
+}
+
+/* Shared neutral surface palette. The game keeps semantic accent colours for
+   names, gauges and warnings, while cards, dialogs and shop surfaces stay in
+   one readable charcoal family instead of mixing blue and grey panels. */
+:root {
+  --era-bg: #090909;
+  --era-panel: #121212;
+  --era-panel-raised: #1a1a1a;
+  --era-line: #383838;
+  --era-line-soft: #292929;
+  --era-text: #e6e6e6;
+  --era-muted: #999999;
+}
+
+.commission-popup,
+.interaction-box,
+.prompt-menu,
+.excom-panel,
+.ci-panel,
+.ai-settings,
+.kojo-debug,
+.morning-menu__modal {
+  background: linear-gradient(180deg, #1b1b1b, #111111);
+}
+
+.status-bar,
+.status-bar__dropdown {
+  background: #171717;
+}
+
+.commission-popup__header,
+.commission-popup__footer,
+.morning-menu__modal-head,
+.ai-settings__head,
+.kojo-debug__head {
+  background: #202020;
+}
+
+.commission-popup__detail,
+.commission-popup__kojo,
+.interaction-box__controls,
+.interaction-box__portrait,
+.ai-settings__tabs,
+.kojo-debug__gates {
+  background: #151515;
+}
+
+.prompt-menu__intro,
+.interaction-box__choice,
+.ci-panel__head,
+.ci-panel__tabs,
+.text-game-ambient,
+.text-game-history-panel {
+  background: #181818;
+}
+
+.world-map,
+.colored-map {
+  background: #111111;
+}
+
+.world-map__close,
+.world-map__region,
+.colored-map__roombtn,
+.colored-map__open-world {
+  background: #202020;
+}
+
+.world-map__region:hover:not(:disabled),
+.world-map__close:hover,
+.colored-map__open-world:hover {
+  background: #2c2c2c;
+}
+
+.morning-menu {
+  background: linear-gradient(180deg, #171717, #0b0b0b);
+}
+
+.morning-menu__panel {
+  background: linear-gradient(180deg, #202020, #121212);
+  backdrop-filter: none;
+}
+
+.morning-menu__panel::before {
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px);
+}
+
+.morning-menu__command,
+.morning-menu__shop-row,
+.morning-menu__choice {
+  background: #242424;
+}
+
+.morning-menu__shop-row {
+  background: linear-gradient(145deg, #2a2a2a, #181818);
+}
+
+.morning-menu__modal {
+  background: linear-gradient(180deg, #1d1d1d, #111111);
+}
+
+.outing-event-dialog,
+.tackle-shop {
+  background: linear-gradient(180deg, #202020, #111111);
+}
+
+.outing-event-dialog__stage {
+  background: radial-gradient(circle at 50% 45%, rgba(120, 120, 120, 0.28), rgba(12, 12, 12, 0.96) 70%);
+}
+
+.tackle-shop__columns button,
+.tackle-shop__message {
+  background: #181818;
+}
+
+/* 2026-08 player report: keep opening utilities and event prompts on the
+   same neutral paper-white/charcoal language as the main game surface. */
+.morning-menu__message,
+.morning-menu__section h2,
+.morning-menu__modal-head,
+.prompt-menu__question,
+.prompt-menu__intro-speaker {
+  color: #f0f0f0;
+}
+.morning-menu__command:hover:not(:disabled),
+.prompt-menu__btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.025));
+  box-shadow: inset 2px 0 #e8e8e8;
+  text-shadow: none;
+}
+.prompt-menu__btn:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.62);
+  box-shadow: inset 2px 0 #fff, 0 0 12px rgba(255, 255, 255, 0.08);
+}
+.prompt-menu__btn:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.morning-menu__shop-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 10px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+}
+.morning-menu__shop-tabs button {
+  flex: 0 0 auto;
+  padding: 5px 11px;
+  border: 1px solid #444;
+  border-radius: 999px;
+  color: #bbb;
+  background: #1b1b1b;
+  cursor: pointer;
+}
+.morning-menu__shop-tabs button.is-active {
+  color: #111;
+  border-color: #fff;
+  background: #f2f2f2;
+}
+.morning-menu__shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 620px;
+}
+.morning-menu__shop-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.5fr) minmax(90px, .8fr) minmax(90px, .8fr) 90px auto;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+.morning-menu__shop-name {
+  padding: 0 0 0 7px;
+  font-size: var(--era-fs);
+  background: none;
+  border-left-color: #b7b7b7;
+}
+.morning-menu__shop-price { text-align: right; }
+.morning-menu__shop-row button { justify-self: end; align-self: center; }
+
+.excom-panel__calendar-table { min-width: 520px; table-layout: fixed; }
+.excom-panel__calendar-table thead th:first-child,
+.excom-panel__calendar-table tbody th { width: 5.25em; }
+
+.prompt-menu--cooking {
+  min-height: 0;
+  height: min(620px, calc(100dvh - 40px));
+  max-height: calc(100dvh - 40px);
+  grid-template-columns: 132px minmax(0, 1fr) 160px;
+}
+.prompt-menu--cooking .cooking-workbench__main { min-height: 0; overflow: hidden; }
+.prompt-menu--cooking .prompt-menu__options {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+.prompt-menu--cooking .prompt-menu__btn {
+  flex: 0 0 auto;
+  padding-block: 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+
+.ci-panel__close {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 28px;
+}
+
+.farm-screen__footer {
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+.farm-screen__resources { flex-wrap: nowrap; white-space: nowrap; }
+.farm-screen__log {
+  min-width: 0;
+  max-height: none;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 12px;
+  white-space: nowrap;
+}
+.farm-screen__log li { min-width: 0; max-width: 34ch; }
+
+@media (max-width: 720px) {
+  .prompt-menu--cooking { height: auto; grid-template-columns: 1fr; }
+  .morning-menu__shop-list { min-width: 520px; }
+}
+@media (max-width: 640px) {
+  .farm-screen__footer { grid-template-columns: 1fr; }
+  .farm-screen__resources { overflow-x: auto; }
+  .farm-screen__log { justify-content: flex-start; overflow: hidden; }
+}
+
+.scene-view__line--omikuji,
+.interaction-box__line--omikuji {
+  white-space: pre-line;
+  line-height: 1.8;
+}
+.interaction-box__line--omikuji {
+  margin: 0;
+  padding: 3px 12px;
+  border-inline: 1px solid rgba(226, 211, 172, .24);
+  background: #f1ead8;
+  color: #24211b;
+  font-family: "Microsoft YaHei", sans-serif;
+  text-align: center;
+}
+.interaction-box__line--omikuji:first-child {
+  padding-top: 14px;
+  border-top: 1px solid #bba66c;
+  border-radius: 6px 6px 0 0;
+}
+.interaction-box__line--omikuji:last-of-type {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #bba66c;
+  border-radius: 0 0 6px 6px;
+}
+.interaction-box__line--omikuji-auspicious { color: #9d1d24; }
+.interaction-box__line--omikuji-ominous { color: #57416f; }
+.interaction-box__line--omikuji-notice { color: #805f18; font-size: .9em; }
+.interaction-box__ai-choice { display: grid; gap: 7px; width: 100%; }
+.interaction-box__ai-choice p { margin: 0 0 3px; color: #eee; }
+.interaction-box__ai-choice .interaction-box__btn--choice,
+.minimal-choice-bar__option {
+  min-width: 0;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-align: left;
+  line-height: 1.5;
+}
+.minimal-choice-bar__ai { display: grid; gap: .4em; width: 100%; }
+.story-session-header {
+  position: fixed;
+  z-index: 1001;
+  left: 50%;
+  top: 1rem;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  min-width: min(42rem, calc(100vw - 2rem));
+  padding: 0.55rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent, #b78d59) 55%, #555);
+  background: color-mix(in srgb, var(--surface, #181818) 94%, transparent);
+  box-shadow: 0 0.45rem 1.2rem rgb(0 0 0 / 35%);
+}
+
+.story-session-header > div {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+/* 极简/标准 presentation-mode toggle (GameStatusBar date line). Shared by
+   the immersive and minimal top bands. */
+.status-bar__mode-toggle {
+  appearance: none;
+  border: 1px solid var(--era-line, #555);
+  background: none;
+  color: var(--era-text, #ddd);
+  font-size: 0.95em;
+  padding: 0 6px;
+  margin-left: auto;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.status-bar__mode-toggle:hover {
+  border-color: var(--accent, #b78d59);
+  color: #ffd75e;
+}
+
+/* 採集中 progress overlay (COMF445.ERB:81-84). Upstream's REUSELASTLINE
+   overwrites one console line while `%"." * COUNT%` appends a dot per frame,
+   so the surface is deliberately a single centered line, not a spinner.
+   The dot count comes from GatheringProgress's frame state — no CSS animation
+   drives it, so the five frames stay observable in tests. */
+.gathering-progress__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+.gathering-progress {
+  min-width: 12em;
+  padding: 18px 28px;
+  border: 1px solid var(--era-line, #555);
+  background: #14120e;
+  text-align: center;
+}
+.gathering-progress__text {
+  color: var(--era-text, #ddd);
+  font-size: 1.05em;
+  /* Reserve room for the widest frame ("采集中.....") so the box does not
+     jitter wider as dots accumulate. */
+  display: inline-block;
+  min-width: 9em;
+  text-align: left;
+  white-space: pre;
+}
+
+/* 採集 result card (@MESSAGE_COM445). The find line is green upstream
+   (SETCOLOR 0x00FF00); the 说明文 that follows the DRAWLINE is ordinary
+   prose, indented to read as a gloss on the item just named. */
+.interaction-box__line--gather.interaction-box__line--gather-auspicious,
+.scene-view__line--gather.scene-view__line--gather-auspicious {
+  color: #6ddf6d;
+}
+.interaction-box__line--gather.interaction-box__line--gather-plain,
+.scene-view__line--gather.scene-view__line--gather-plain {
+  padding-left: 1.2em;
+  border-top: 1px solid rgba(140, 130, 110, .35);
+  padding-top: 6px;
+  margin-top: 4px;
+  color: #c9c2b0;
+}
+
+/* 手动触发 L3 叙事导演面板 */
+.manual-narrative {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.l3-status { display: grid; gap: 10px; min-width: 0; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.l3-status section { min-width: 0; }
+.l3-status h3 { margin: 0 0 6px; font-size: 14px; color: #e8ce83; }
+.l3-status p { margin: 3px 0; font-size: 12px; line-height: 1.45; }
+.l3-status__summary, .l3-status__card { border: 1px solid #38434f; padding: 8px 10px; margin: 4px 0; background: #10151b; border-radius: 4px; }
+.l3-status__summary { border-color: #857344; background: #191b1e; }
+.l3-status__summary > strong { font-size: 15px; color: #f4dfaa; }
+.l3-status__summary .l3-status__counts { font-size: 13px; color: #d8e8f6; margin-top: 6px; }
+.l3-status__card strong { font-size: 13px; color: #e7edf5; }
+.l3-status__card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; margin-bottom: 4px; }
+.l3-status__badge { font-size: 11px; color: #dfc782; background: #29271e; border: 1px solid #544b32; border-radius: 3px; padding: 1px 5px; }
+.l3-status__components { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 3px 8px; margin: 6px 0; }
+.l3-status__components dt { color: #bac6d4; }
+.l3-status__components dd { margin: 0; }
+.l3-status button { min-height: 30px; padding: 4px 9px; color: inherit; background: #1b2530; border: 1px solid #596b80; border-radius: 3px; cursor: pointer; font: inherit; }
+.l3-status button:disabled { opacity: .5; cursor: default; }
+.l3-status button:hover:not(:disabled) { border-color: #c0cddb; }
+.l3-status .l3-status__danger { color: #f2aeaa; border-color: #80504f; background: #2c1c20; }
+.l3-status summary { cursor: pointer; font-size: 12px; }
+.l3-status small, .l3-status .l3-status__hint { font-size: 11px; color: #91a0b2; }
+.l3-status pre { max-height: 240px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; line-height: 1.4; }
+.l3-status__toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: #9caabd; font-size: 11px; }
+.l3-status__toolbar label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.l3-status__toolbar input { margin: 0; }
+.l3-status__actions { display: flex; gap: 6px; margin: 6px 0; }
+.l3-status .l3-status__feedback { border-left: 2px solid #a3c3a3; padding: 4px 8px; color: #bedbbf; }
+.l3-status__diagnostics { border-top: 1px solid #38434f; padding-top: 7px; }
+.l3-status__diagnostics > summary { font-size: 13px; color: #a7b9cd; }
+.excom-panel--l3 { width: 760px; }
+@media (max-width: 480px) { .l3-status { gap: 8px; } .l3-status__card { padding: 7px 8px; } .l3-status__components { grid-template-columns: 7.5em minmax(0, 1fr); } }
+
+.manual-narrative__label {
+  display: block;
+  margin-bottom: 6px;
+  color: #f0d4a2;
+  font-weight: bold;
+}
+
+.manual-narrative__textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 8px 12px;
+  background: rgba(20, 18, 14, 0.8);
+  border: 1px solid #6b5b3a;
+  border-radius: 4px;
+  color: #ddd;
+  font-family: inherit;
+  font-size: 0.95em;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.manual-narrative__textarea:focus {
+  outline: none;
+  border-color: #8b7b5a;
+  background: rgba(20, 18, 14, 0.95);
+}
+
+.manual-narrative__textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.manual-narrative__textarea::placeholder {
+  color: #888;
+}
+
+.manual-narrative__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.manual-narrative__actions button {
+  padding: 8px 16px;
+  background: rgba(96, 70, 36, 0.35);
+  border: 1px solid #6b5b3a;
+  border-radius: 4px;
+  color: #f0d4a2;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.manual-narrative__actions button:hover:not(:disabled) {
+  background: rgba(96, 70, 36, 0.55);
+  border-color: #8b7b5a;
+}
+
+.manual-narrative__actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* AI 设置页面分段样式增强 */
+.ai-settings__section-desc {
+  margin: 0 0 12px 0;
+  padding: 6px 10px;
+  color: #b8b0a0;
+  background: rgba(60, 50, 30, 0.25);
+  border-left: 3px solid #6b5b3a;
+  font-size: 0.9em;
+  line-height: 1.4;
 }

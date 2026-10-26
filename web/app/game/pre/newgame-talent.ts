@@ -6,10 +6,11 @@
  * (NEWGAME_CUSTOM.ERB:583-887) for **MASTER, non-debug, `FLAG:周回数 == 0`**:
  * only ids the 選べない素質 predicate leaves selectable (RETURNF 0).
  *
- * Ladders + simplified-Chinese labels are transcribed verbatim from
- * `@GET_TALENTNAME` (ステータス表示関連/PRINT_TALENTNAME.ERB:43-119). The empty
- * label "" is the neutral middle (rendered as 「中立」 for `kind:"level"`, 「无」
- * for `kind:"toggle"`).
+ * Numeric ladders mirror `@GET_TALENTNAME`
+ * (ステータス表示関連/PRINT_TALENTNAME.ERB:43-119). Player-facing copy has
+ * three intentional presentation overrides: 年龄 0=青年, 性的兴趣 1=开放的,
+ * and 目立ちたがり=爱出风头. Other empty labels render as 「中立」 for
+ * `kind:"level"` and 「无」 for `kind:"toggle"`.
  *
  * The `requires` + `needsTalent` fields capture `@CUSTOM_選べない素質` (line
  * 799-887) **MASTER** arms:
@@ -52,8 +53,8 @@ export const ANATA_TALENT: AnataTalent[] = [
   { id: 11, kind: "level", name: "态度", values: [-1, 0, 1], labels: ["坦率", "", "叛逆"] },
   { id: 12, kind: "level", name: "回应", values: [-1, 0, 1], labels: ["老实", "", "傲慢"] },
   { id: 13, kind: "level", name: "自尊心", values: [-1, 0, 1], labels: ["自尊心低", "", "自尊心高"] },
-  { id: 17, kind: "level", name: "年龄", values: [-1, 0, 1, 2], labels: ["儿童", "", "中年", "老人"] },
-  { id: 23, kind: "level", name: "性的兴趣", values: [-1, 0, 1], labels: ["保守的", "", "好奇心"] },
+  { id: 17, kind: "level", name: "年龄", values: [-1, 0, 1, 2], labels: ["儿童", "青年", "中年", "老人"] },
+  { id: 23, kind: "level", name: "性的兴趣", values: [-1, 0, 1], labels: ["保守的", "", "开放的"] },
   { id: 24, kind: "level", name: "开朗／阴郁", values: [-1, 0, 1], labels: ["阴郁", "", "开朗"] },
   { id: 30, kind: "level", name: "贞操", values: [-1, 0, 1], labels: ["不在乎贞操", "", "贞操重视"] },
   { id: 31, kind: "level", name: "自己爱", values: [-1, 0, 1], labels: ["压抑", "", "解放"] },
@@ -69,7 +70,7 @@ export const ANATA_TALENT: AnataTalent[] = [
   { id: 21, kind: "toggle", name: "冷漠", values: [0, 1], labels: [OFF, "冷漠"] },
   { id: 22, kind: "toggle", name: "感情缺乏", values: [0, 1], labels: [OFF, "感情缺乏"] },
   { id: 25, kind: "toggle", name: "一線越えない", values: [0, 1], labels: [OFF, "一線越えない"] },
-  { id: 26, kind: "toggle", name: "目立ちたがり", values: [0, 1], labels: [OFF, "目立ちたがり"] },
+  { id: 26, kind: "toggle", name: "爱出风头", values: [0, 1], labels: [OFF, "爱出风头"] },
   { id: 27, kind: "toggle", name: "无知", values: [0, 1], labels: [OFF, "无知"] },
   { id: 32, kind: "toggle", name: "抵抗", values: [0, 1], labels: [OFF, "抵抗"] },
   { id: 54, kind: "toggle", name: "猫舌", values: [0, 1], labels: [OFF, "猫舌"] },
@@ -105,6 +106,27 @@ export const ANATA_TALENT: AnataTalent[] = [
   { id: 146, kind: "toggle", name: "具现", requires: "noPenis", values: [0, 1], labels: [OFF, "具现"] },
 ];
 
+/**
+ * Player-facing identity traits. This is deliberately a presentation
+ * projection, not a reduced TALENT catalog: hidden entries remain available
+ * to deterministic initialization, normalization and gameplay rules.
+ *
+ * The same ordered projection is also the sole TALENT source exposed to L1 as
+ * protagonist.traits, keeping the opening screen and prompt contract in
+ * sync without granting AI any state authority.
+ */
+export const PLAYER_TALENT_DISPLAY_IDS = [
+  10, 11, 12, 17, 23, 24, 33,
+  14, 18, 19, 20, 21, 26, 27, 151,
+  81, 100,
+] as const;
+
+export const PLAYER_TALENT: readonly AnataTalent[] = PLAYER_TALENT_DISPLAY_IDS.map((id) => {
+  const talent = ANATA_TALENT.find((candidate) => candidate.id === id);
+  if (!talent) throw new Error(`Missing player-facing TALENT definition: ${id}`);
+  return talent;
+});
+
 /** The label shown for `value` on `talent` ("" neutral → 中立/无 by kind). */
 export function talentLevelLabel(talent: AnataTalent, value: number): string {
   const i = talent.values.indexOf(value);
@@ -112,6 +134,23 @@ export function talentLevelLabel(talent: AnataTalent, value: number): string {
   return talent.labels[i] === ""
     ? talent.kind === "toggle" ? OFF : NEUTRAL
     : talent.labels[i]!;
+}
+
+/** Structured player-trait values for L1; no hidden TALENT is included. */
+export function playerTalentSummaryForL1(
+  state: Readonly<GameState>,
+): Record<string, string | boolean> {
+  const entries: [string, string | boolean][] = [];
+  for (const talent of PLAYER_TALENT) {
+    const value = state.master.state.TALENT[talent.id] ?? 0;
+    if (talent.kind === "toggle") {
+      if (value !== 0) entries.push([talent.name, true]);
+      continue;
+    }
+    const label = talentLevelLabel(talent, value);
+    if (label !== NEUTRAL) entries.push([talent.name, label]);
+  }
+  return Object.fromEntries(entries);
 }
 
 /** Whether the talent is selectable given the chosen 性别 and current 依赖 talent picks. */

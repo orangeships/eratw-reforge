@@ -31,6 +31,7 @@
 import type { GameState } from "./game-state.js";
 import { ABL_ID, CFLAG_ID, TALENT_ID } from "./settlement.js";
 import { charaDataOf } from "./chara-data.js";
+import { localizeGiftDisplayName } from "./gift-name.js";
 
 // ---------------------------------------------------------------------------
 // Catalog seam
@@ -61,6 +62,14 @@ export function giftCatalogLoaded(): boolean {
   return Object.keys(catalog.mains).length > 0;
 }
 
+/**
+ * Keep player-facing gift names localized even when a stale/imported catalog
+ * still contains the upstream Japanese atom. The generated catalog is also
+ * localized, but this boundary prevents a cached bundle from leaking Japanese
+ * into the purchase prompt or gift history.
+ */
+const displayGiftAtom = localizeGiftDisplayName;
+
 // ---------------------------------------------------------------------------
 // Records
 // ---------------------------------------------------------------------------
@@ -86,6 +95,10 @@ export interface GiftRecord {
 export interface CharaGiftState {
   /** GIFT_GOT — ordered receive history (upstream ring of 100; we keep all). */
   records: GiftRecord[];
+  /** GIFT_GAVE — the reverse direction: gifts this chara handed the master,
+   *  written by `@GIFT_DATE_EVENT` (see `world/date-gift.ts`). Empty for the
+   *  shop, which only ever fills `records`. */
+  given?: GiftRecord[];
   /** CFLAG:获得的礼物 — index into records of the favorite (夜 GIFT_FAVORITE). */
   favoriteIdx?: number;
   /** CFLAG:礼物保管库 — index of the latest received record. */
@@ -241,7 +254,7 @@ export function createGift(rng: () => number, areaBit: number | null): DrawnGift
   return {
     adjectId: adj.id,
     mainId: main.id,
-    name: `${adj.name}${main.name}`,
+    name: `${displayGiftAtom(adj.name)}${displayGiftAtom(main.name)}`,
     price: Math.trunc((main.price * adj.price) / 100),
   };
 }

@@ -24,13 +24,9 @@ import {
   GENDER_OPTIONS,
   type Gender,
 } from "./newgame-draft.js";
-import {
-  ANATA_TALENT,
-  anataTalentSelectable,
-  filterDraftTalentForGender,
-  talentLevelLabel,
-} from "./newgame-talent.js";
+import { filterDraftTalentForGender } from "./newgame-talent.js";
 import IntroText, { type IntroLine } from "./IntroText.js";
+import PlayerTalentSetup from "./PlayerTalentSetup.js";
 
 // #13 — opening narration in the voice of 八雲紫 (Yukari Yakumo): the gap
 // youkai who draws outsiders across the border into 幻想郷. Languid, teasing,
@@ -64,9 +60,6 @@ export default function NewGameSetup(props: NewGameSetupProps) {
 
   const setAbl = (id: number, level: number): void => {
     setDraft({ abl: { ...draft.abl, [id]: level } });
-  };
-  const setTalent = (id: number, value: number): void => {
-    setDraft({ talent: { ...draft.talent, [id]: value } });
   };
   /** 性别切换 → 剔除被门控失效的 talent 项. */
   const pickGender = (next: Gender): void => {
@@ -171,33 +164,9 @@ export default function NewGameSetup(props: NewGameSetupProps) {
       )}
 
       {page.id === "talent" && (
-        <div className="pre-screen__field" data-testid="newgame-page-talent">
-          <h3 className="pre-screen__field-title">素质</h3>
-          <div className="pre-screen__talent-list" data-testid="talent-list">
-            {ANATA_TALENT.filter((t) => anataTalentSelectable(t, draft.gender, draft.talent)).map((t) => {
-              const cur = draft.talent[t.id] ?? 0;
-              return (
-                <div key={t.id} className="talent-row" data-testid="talent-row" data-talent={t.id}>
-                  <span className="talent-row__name">{t.name}</span>
-                  <span className="talent-row__chips">
-                    {t.values.map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        className={`talent-chip${cur === v ? " talent-chip--active" : ""}`}
-                        data-testid="talent-chip"
-                        data-value={v}
-                        aria-pressed={cur === v}
-                        onClick={() => setTalent(t.id, v)}
-                      >
-                        {talentLevelLabel(t, v)}
-                      </button>
-                    ))}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        <div className="pre-screen__field pre-screen__field--talents" data-testid="newgame-page-talent">
+          <h3 className="pre-screen__field-title">玩家角色素质</h3>
+          <PlayerTalentSetup />
         </div>
       )}
 

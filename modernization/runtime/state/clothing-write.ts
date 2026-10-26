@@ -238,7 +238,7 @@ export function stripBottom(
   rawMode: BottomStripMode,
 ): GameState {
   const next = cloneGameState(state);
-  const chara = next.charas[charaNum];
+  const chara = charaNum === 0 ? next.master : next.charas[charaNum];
   if (!chara) return state;
   const mode = datuiOptimizeBottom(chara, rawMode);
   const slots =
@@ -246,15 +246,22 @@ export function stripBottom(
     : mode === 1 ? BOTTOM_SLOTS_UNDERWEAR_ONLY
     : BOTTOM_SLOTS_OUTER_ONLY;
   for (const slotId of slots) chara.state.EQUIP[slotId] = 0;
+  if (mode !== 2 && hasUniqueUnderwear(charaNum, false) &&
+    (chara.state.CFLAG[CFLAG_ID.没穿内裤] ?? 0) === 0) {
+    // 固有胖次 is stored in CHARA_OUTFITS rather than EQUIP. Keep its
+    // state-bound read path in sync with this DATUI commit.
+    chara.state.CFLAG[CFLAG_ID.没穿内裤] = 1;
+  }
   recomputeExposure(chara);
   return next;
 }
 
 /**
  * `@DATUI_TOP_LATE` + `@DATUI_TOP_T_LATE` — strip the chara's upper body.
- * `targetSide="target"` mirrors `@DATUI_TOP_T_LATE` and additionally sets
- * `TEQUIP:5` (上衣脱衣完毕); `targetSide="master"` mirrors `@DATUI_TOP_LATE`
- * (no flag set — upstream's master strip only writes EQUIP).
+ * `targetSide="target"` mirrors `@DATUI_TOP_T_LATE` and sets `TEQUIP:5`
+ * (上衣脱衣完毕); `targetSide="master"` mirrors `@DATUI_TOP_LATE` (no flag).
+ * `TEQUIP:3` records the half-open mode so the outfit-backed upper-underwear
+ * reader can distinguish it from a full strip.
  *
  * Mode 0 = 全脱; mode 1 = はだけ (keeps はだけ可 layer + 和服).
  */
@@ -265,10 +272,11 @@ export function stripTop(
   targetSide: StripSide = "target",
 ): GameState {
   const next = cloneGameState(state);
-  const chara = next.charas[charaNum];
+  const chara = charaNum === 0 ? next.master : next.charas[charaNum];
   if (!chara) return state;
   const slots = mode === 0 ? TOP_SLOTS_ALL : TOP_SLOTS_HADAKAKE;
   for (const slotId of slots) chara.state.EQUIP[slotId] = 0;
+  writeTequip(chara, TEQUIP_ID.上半身裸露状態, mode === 0 ? 0 : 1);
   if (targetSide === "target") {
     writeTequip(chara, TEQUIP_ID.上衣脱衣完毕, 1);
   }
@@ -476,16 +484,26 @@ export function getEquip(chara: CharaSlot, slot: keyof typeof EQUIP_SLOT): numbe
 }
 
 /**
- * Write a piece id into a slot. Does NOT recompute TEQUIP — callers doing
- * a meaningful clothing change should chain `recomputeExposure(chara)`
- * (exposed separately so batch writers can defer recomputation).
+ * Write a piece id into a slot. Positive underwear writes clear the matching
+ * removal marker; callers doing a meaningful clothing change should also
+ * chain `recomputeExposure(chara)` (exposed separately for batch writers).
  */
 export function setEquip(
   chara: CharaSlot,
   slot: keyof typeof EQUIP_SLOT,
   pieceId: number,
 ): void {
-  chara.state.EQUIP[EQUIP_SLOT[slot]] = pieceId;
+  const slotId = EQUIP_SLOT[slot];
+  chara.state.EQUIP[slotId] = pieceId;
+  if (pieceId <= 0) return;
+
+  if (slotId === EQUIP_SLOT.下半身内衣１ || slotId === EQUIP_SLOT.下半身内衣２) {
+    chara.state.CFLAG[CFLAG_ID.没穿内裤] = 0;
+  }
+  if (slotId === EQUIP_SLOT.上半身内衣１ || slotId === EQUIP_SLOT.上半身内衣２) {
+    writeTequip(chara, TEQUIP_ID.上半身裸露状態, 0);
+    writeTequip(chara, TEQUIP_ID.上衣脱衣完毕, 0);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -549,6 +567,10 @@ export function okigaeRestore(state: GameState, charaNum: number): GameState {
   const outfit = charaOutfit(charaNum);
   if (!outfit) return state;
 
+  chara.state.CFLAG[CFLAG_ID.没穿内裤] = 0;
+  writeTequip(chara, TEQUIP_ID.上半身裸露状態, 0);
+  writeTequip(chara, TEQUIP_ID.上衣脱衣完毕, 0);
+
   // Clear all known EQUIP slots (22 slots from Equip.csv)
   const allSlots = Object.values(EQUIP_SLOT) as number[];
   for (const slotId of allSlots) {
@@ -600,6 +622,11 @@ export function equipUnderwear(state: GameState, charaNum: number): GameState {
   for (const slotId of OUTERWEAR_SLOTS) {
     chara.state.EQUIP[slotId] = 0;
   }
+  // This command restores the authored unique underwear along with any
+  // catalog underwear retained in EQUIP.
+  chara.state.CFLAG[CFLAG_ID.没穿内裤] = 0;
+  writeTequip(chara, TEQUIP_ID.上半身裸露状態, 0);
+  writeTequip(chara, TEQUIP_ID.上衣脱衣完毕, 0);
   recomputeExposure(chara);
   return next;
 }

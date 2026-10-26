@@ -7,15 +7,8 @@
  * chara. The command grid remains the canonical execution surface, which is
  * important for delivery commissions whose recipient is not the client.
  *
- * Lifecycle:
- *   - 玩家点 [接受/拒绝/确认/破弃/执行委托/报告]
- *   - popup 内部调 `applyIntent(state, intent)` 拿 events
- *   - events 写入 popup 右侧"口上面板"立即显示
- *   - 同时 `onIntent(intent)` 提交 store 更新
- *   - popup 进入 done 模式，玩家点 [关闭] → onClose
- *
- * Kojo display 复用既有 `dialogueRouter.resolveIraiKojo`（via handler）。
- * 我们不重新调 kojo 路由，直接展示 handler 流出来的事件。
+ * The popup selects a command; the committed command dialogue is shown by
+ * GameClient's InteractionBox so authored kojo and narration share one owner.
  */
 
 import { useMemo, useState } from "react";
@@ -25,12 +18,11 @@ import type {
   CharaSlot,
   CommissionProgress,
 } from "../../../modernization/runtime/state/game-state.js";
-import type { ObservationEvent } from "../../../modernization/schemas/types.js";
-import { applyIntent } from "../../../modernization/runtime/intent/apply-intent.js";
 import {
   COMMISSION_PROGRESS,
   acceptBlockDescription,
   canAcceptCommission,
+  canBringCommissionClient,
   commissionActName,
   commissionStatus,
   commissionTitleForTarget,
@@ -40,9 +32,6 @@ import {
 } from "../../../modernization/runtime/state/commission.js";
 import { liveAvailableCommands } from "../../../modernization/runtime/intent/apply-intent.js";
 import { pickOneAnswer } from "../../../modernization/runtime/command/prompt.js";
-import kojoColors from "./kojo-colors.bundle.json";
-
-const KOJO_COLORS = kojoColors as Record<string, string>;
 
 export interface CommissionPopupProps {
   state: Readonly<GameState>;
@@ -51,7 +40,6 @@ export interface CommissionPopupProps {
   onClose: () => void;
 }
 
-type Mode = "view" | "done";
 type CommissionActionKind = "accept" | "decline" | "confirm" | "abandon" | "execute" | "report" | "take-along";
 
 function buildIntent(
@@ -119,23 +107,29 @@ function statusToTitle(status: CommissionProgress | 0): string {
 export default function CommissionPopup(props: CommissionPopupProps): JSX.Element {
   const { state, charaNum, onIntent, onClose } = props;
   const status = commissionStatus(state, charaNum);
+  const commandAvailability = liveAvailableCommands(state, charaNum);
+  const reportAvailability = commandAvailability.find((entry) => entry.commandNo === 366);
+  const canReport = reportAvailability?.usable === true;
   const hasActiveSlot = !!searchActiveCommissionSlot(state, charaNum);
   const activeSlot = findSlotByClient(state, charaNum);
+  // 问题4 — take-along follows the upstream `依頼人連れ出し可能` data slot
+  // (FUNC_IRAI.ERB:252) instead of a hard-coded localId. Any ACTIVE
+  // canTakeAlong commission client can be brought out (351) when the command
+  // is currently usable; if the commission is executable right here the
+  // primary action stays 执行委托.
   const canTakeAlong = status === COMMISSION_PROGRESS.Active &&
-    activeSlot?.task === "work" &&
-    activeSlot.localId === 4 &&
+    activeSlot !== undefined &&
     !hasActiveSlot &&
-    liveAvailableCommands(state, charaNum).some((entry) => entry.commandNo === 351 && entry.usable);
+    canBringCommissionClient(state, charaNum) &&
+    commandAvailability.some((entry) => entry.commandNo === 351 && entry.usable);
   const buttons = statusToButtons(status, hasActiveSlot, canTakeAlong);
   const title = statusToTitle(status);
   const popupTitle = commissionTitleForTarget(state, charaNum);
   const actName = hasActiveSlot ? commissionActName(state, charaNum) : null;
 
-  const [mode, setMode] = useState<Mode>("view");
-  const [events, setEvents] = useState<ReadonlyArray<ObservationEvent>>([]);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Detail panel content — re-derive on each render so post-action state is
-  // reflected immediately (we capture events + commit intent below).
+  // Detail panel content follows the authoritative state after each command.
   const detailLines = useMemo(() => describeCommission(state, charaNum), [state, charaNum]);
 
   // When Offered, check whether the player can actually accept right now.
@@ -147,15 +141,27 @@ export default function CommissionPopup(props: CommissionPopupProps): JSX.Elemen
     status === COMMISSION_PROGRESS.Offered && !canAccept
       ? acceptBlockDescription(state, charaNum)
       : null;
+  const reportBlockReason = !canReport && buttons.primary?.kind === "report"
+    ? reportAvailability?.reason?.kind === "precondition"
+      ? reportAvailability.reason.message
+      : "当前无法向委托人报告。"
+    : null;
 
   const handleAction = (kind: CommissionActionKind): void => {
+    if (kind === "report" && !canReport) return;
     // 366 handles accept/decline/confirm/abandon/report; 367 only handles execute.
     const commandNo = kind === "execute" ? 367 : kind === "take-along" ? 351 : 366;
+    const availability = commandAvailability.find((entry) => entry.commandNo === commandNo);
+    if (!availability?.usable) {
+      setActionError(availability?.reason?.kind === "precondition"
+        ? availability.reason.message
+        : "当前无法执行此委托操作。");
+      return;
+    }
     const intent = buildIntent(commandNo, charaNum, kind);
-    const result = applyIntent(state, intent);
-    setEvents(result.appended);
+    // Settle once in the authoritative store, then read its dialogue session.
     onIntent(intent);
-    setMode("done");
+    onClose();
   };
 
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>): void => {
@@ -203,49 +209,30 @@ export default function CommissionPopup(props: CommissionPopupProps): JSX.Elemen
 
           <section className="commission-popup__kojo" data-testid="commission-popup-kojo">
             <h3>对话</h3>
-            {mode === "view" && events.length === 0 ? (
-              <p className="commission-popup__kojo-empty">（选择一个动作以查看回应）</p>
-            ) : (
-              <ul className="commission-popup__kojo-list">
-                {events.map((e, i) => {
-                  const color = e.kind === "DIALOGUE_LINE"
-                    ? KOJO_COLORS[String(e.charaNum)]
-                    : undefined;
-                  return (
-                    <li
-                      key={i}
-                      className={`commission-popup__kojo-line commission-popup__kojo-line--${e.kind}`}
-                      style={color ? { color } : undefined}
-                    >
-                      {formatKojoEvent(e)}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            <p className="commission-popup__kojo-empty">{actionError ?? "选择动作后将在对话框中显示回应。"}</p>
           </section>
         </div>
 
         <footer className="commission-popup__footer">
-          {mode === "view" ? (
-            buttons.noAction ? (
-              <button
-                type="button"
-                className="commission-popup__btn commission-popup__btn--close"
-                onClick={onClose}
-              >
-                关闭
-              </button>
-            ) : (
-              <>
+          {buttons.noAction ? (
+            <button
+              type="button"
+              className="commission-popup__btn commission-popup__btn--close"
+              onClick={onClose}
+            >
+              关闭
+            </button>
+          ) : (
+            <>
                 {buttons.primary && (
                   <button
                     type="button"
                     className="commission-popup__btn commission-popup__btn--primary"
                     data-testid={`commission-popup-primary-${buttons.primary.kind}`}
                     onClick={() => handleAction(buttons.primary!.kind)}
-                    disabled={!canAccept && buttons.primary.kind === "accept"}
-                    title={blockReason ?? undefined}
+                    disabled={(!canAccept && buttons.primary.kind === "accept") ||
+                      (!canReport && buttons.primary.kind === "report")}
+                    title={blockReason ?? reportBlockReason ?? undefined}
                   >
                     {buttons.primary.label}
                   </button>
@@ -260,36 +247,13 @@ export default function CommissionPopup(props: CommissionPopupProps): JSX.Elemen
                     {buttons.secondary.label}
                   </button>
                 )}
-                {blockReason && (
-                  <p className="commission-popup__block-reason">{blockReason}</p>
+                {(blockReason || reportBlockReason) && (
+                  <p className="commission-popup__block-reason">{blockReason ?? reportBlockReason}</p>
                 )}
-              </>
-            )
-          ) : (
-            <button
-              type="button"
-              className="commission-popup__btn commission-popup__btn--primary"
-              data-testid="commission-popup-done"
-              onClick={onClose}
-            >
-              关闭
-            </button>
+            </>
           )}
         </footer>
       </div>
     </div>
   );
-}
-
-function formatKojoEvent(e: ObservationEvent): string {
-  if (e.kind === "DIALOGUE_LINE") {
-    return `「${e.text}」`;
-  }
-  if (e.kind === "NARRATION") {
-    return e.text;
-  }
-  if (e.kind === "STATUS_MESSAGE" && "text" in e) {
-    return `⚠ ${e.text}`;
-  }
-  return "";
 }

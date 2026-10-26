@@ -8,33 +8,43 @@
  *   3. narrative band — the recent eventLog tail, color-coded by kind
  *      (S3). Reuses `formatEvent` from the TextWindow.
  *
- * Presentation-only: no store reads, no intent dispatch. The parent
- * (GameClient) passes the scene, the computed present charas, and the
- * band events.
+ * Presentation-only: no GameState reads and no intent dispatch. The only
+ * external state read is the presentation-only scene display preference.
+ * The parent (GameClient) passes the scene, the computed present charas, and
+ * the band events.
  */
 
 import type { SceneAsset } from "../../../modernization/runtime/scene/index.js";
+import { isMissingSceneIntro } from "../../../modernization/runtime/scene/types.js";
 import { useState } from "react";
 import type { CharaSlot } from "../../../modernization/runtime/state/index.js";
 import type { ObservationEvent } from "../../../modernization/schemas/types.js";
+import { setSceneBackgroundEnabled, useSceneBackgroundEnabled } from "../state/scene-display-settings.js";
 import kojoColors from "./kojo-colors.bundle.json";
 import portraits from "./portraits.bundle.json";
 import SpriteCrop from "./SpriteCrop.js";
 import {
   dimensionForKind,
-  nextClickExpression,
+  portraitForClothing,
   portraitForExpression,
+  portraitForState,
+  portraitSourceForState,
   portraitKind,
   statePortraitExpression,
-  type PortraitExpression,
   type PortraitSource,
 } from "./portrait-expression.js";
+import { portraitWithOutfit } from "./portrait-special-outfit-runtime.js";
+import { checkNude } from "../../../modernization/runtime/state/portrait-outfit-context.js";
 import PortraitCommissionBadge from "./PortraitCommissionBadge.js";
 import type { GameState } from "../../../modernization/runtime/state/game-state.js";
 import { portraitForDynamicCharacter } from "../../../modernization/runtime/world/dynamic-portraits.js";
 import MobPortrait from "./MobPortrait.js";
 import type { SceneAmbientEntry } from "../ai/types.js";
 import { SceneHistoryPanel } from "./SceneSidebar.js";
+import AsciiBackdrop from "./ascii/AsciiBackdrop.js";
+import { previewSceneWeather, sceneWeather, WEATHER_PREVIEWS, type WeatherPreview } from "./ascii/scene-motion.js";
+import AsciiPortraitMask from "./ascii/AsciiPortraitMask.js";
+import { isTimeStopped } from "../../../modernization/runtime/index.js";
 
 /** Parity QA P-25 — per-chara dialogue color (charaNum → "#RRGGBB"), built
  *  from each character's `@M_KOJO..._COLOR_K{N}` SETCOLOR by
@@ -47,6 +57,8 @@ const KOJO_COLORS = kojoColors as Record<string, string>;
 const PORTRAITS = portraits as unknown as Record<string, PortraitSource>;
 
 export interface SceneViewProps {
+  /** ASCII presentation shell; keeps the legacy backdrop selector available elsewhere. */
+  asciiShell?: boolean;
   scene: SceneAsset | null;
   present: CharaSlot[];
   /** The eventLog; the band shows the last `bandMax` entries. */
@@ -60,6 +72,15 @@ export interface SceneViewProps {
   /** Classic-compatible inline scene-interaction presentation. When false it
    * also hides portrait dialogue unless `showPortraitAmbient` overrides it. */
   showInlineAmbient?: boolean;
+  /** Show the static room intro and current dynamic scene prose below the
+   * central location name. The immersive shell enables this while leaving
+   * scene-interaction AI lines in the right-hand 场景 panel. */
+  showSceneContext?: boolean;
+  /** 问题1 — render the dynamic scene prose (场景动态地文) in the central
+   * header. Defaults to `showSceneContext`. The immersive shell turns this
+   * off: the prose now renders in the right-hand 场景 panel instead, so it
+   * no longer sits frozen in the middle of the scene column. */
+  showAmbientProse?: boolean;
   /** Character-dialogue presentation above the participating portrait. This
    * lets the three-column shell keep speech over the character while moving
    * scene-interaction prose into the right column. */
@@ -95,7 +116,7 @@ function charaName(chara: CharaSlot): string {
 }
 
 function hasAuthoredIntro(intro: string): boolean {
-  return intro.trim().length > 0 && !intro.startsWith("[not-authored:");
+  return intro.trim().length > 0 && !isMissingSceneIntro(intro);
 }
 
 function stagedNpcOrder(
@@ -129,8 +150,12 @@ function stagedNpcOrder(
 }
 
 export default function SceneView(props: SceneViewProps) {
-  const [clickedExpressions, setClickedExpressions] = useState<Record<number, PortraitExpression>>({});
   const { scene, present } = props;
+  // ---- Scene backdrop (S2): the authored SVG / background image ----
+  const sceneBackgroundEnabled = useSceneBackgroundEnabled();
+  const [weatherPreview, setWeatherPreview] = useState<WeatherPreview>("game");
+  const visualWeather = scene ? previewSceneWeather(sceneWeather(props.state, scene.location), weatherPreview) : undefined;
+  const showBgLayer = sceneBackgroundEnabled && Boolean(scene?.backgroundImage);
   // Parity QA P-30a — the master (charaNum 0) is never drawn on stage. Filter
   // it out so the portrait row only ever shows NPCs.
   const npcsPresent = present.filter((c) => c.charaNum !== 0);
@@ -149,26 +174,82 @@ export default function SceneView(props: SceneViewProps) {
   }
 
   const authoredIntro = hasAuthoredIntro(scene.intro);
+  const showSceneContext = props.showSceneContext ?? (props.showInlineAmbient !== false);
+  const showAmbientProse = props.showAmbientProse ?? showSceneContext;
 
   return (
-    <div className="scene-view" data-testid="scene-view" data-scene-id={scene.id}>
-      {/* The authored scene intro belongs to the room, not to its current NPC
-          occupancy. ASCII art remains hidden per the compact UI policy. */}
-      {authoredIntro && (
-        <div className="scene-view__ascii" data-testid="scene-ascii">
-          <p className="scene-view__intro">{scene.intro}</p>
-        </div>
+    <div
+      className={"scene-view" + (showBgLayer ? " scene-view--has-bg" : "") + (props.asciiShell ? " scene-view--ascii-shell" : "")}
+      data-testid="scene-view"
+      data-scene-id={scene.id}
+    >
+      {/* Backdrop layer — behind the header and the portrait stage. Either
+          the authored字符画 (scaled to fit, edge-faded) or the real image
+          (cover-fit, edge-blurred). Presentation-only. */}
+      {props.asciiShell && sceneBackgroundEnabled && (
+        <AsciiBackdrop key={scene.id} sceneId={scene.id} weather={visualWeather} stopped={props.state ? isTimeStopped(props.state) : false} />
       )}
-      {/* `@LOOK_AT` 动态场景散文 (MAP_UNIQUEMESSAGE / MESSAGE_TALK) — a lighter
-          layer under the intro: what is happening here right now. */}
-      {scene.ambientProse && (
-        <div className="scene-view__ambient" data-testid="scene-ambient">
-          <p>{scene.ambientProse}</p>
+      {!props.asciiShell && showBgLayer && scene.backgroundImage && (
+        <div className="scene-view__bg" data-testid="scene-bg" data-bg-mode="image" aria-hidden="true">
+          <>
+            {/* Outer ring: the same image, blurred and masked so only the
+                outermost ~5% of each side is visible. Acts as the feather. */}
+            <img
+              className="scene-view__bg-img scene-view__bg-img--feather"
+              src={scene.backgroundImage}
+              alt=""
+              draggable={false}
+            />
+            {/* Inner region: the sharp image, masked to leave the outer 5%
+                transparent so the blurred ring bleeds through there. */}
+            <img
+              className="scene-view__bg-img scene-view__bg-img--core"
+              src={scene.backgroundImage}
+              alt=""
+              draggable={false}
+            />
+          </>
+          <div className="scene-view__bg-scrim" />
         </div>
       )}
 
-      <div className="scene-view__stage" data-testid="scene-stage">
+      <div className="scene-view__header" data-testid="scene-header">
         <div className="scene-view__place">{scene.displayName}</div>
+        <button
+          type="button"
+          className="excom-row__btn"
+          data-testid="scene-background-toggle"
+          aria-label="场景背景"
+          aria-pressed={sceneBackgroundEnabled}
+          onClick={() => setSceneBackgroundEnabled(!sceneBackgroundEnabled)}
+        >
+          [背景：{sceneBackgroundEnabled ? "开" : "关"}]
+        </button>
+        {props.asciiShell && (
+          <label className="scene-view__weather-preview">
+            [天气预览：
+            <select aria-label="天气效果预览" value={weatherPreview} disabled={!sceneBackgroundEnabled}
+              onChange={(event) => setWeatherPreview(event.target.value as WeatherPreview)}>
+              {WEATHER_PREVIEWS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>]
+          </label>
+        )}
+        {/* The central scene surface owns the static room intro and dynamic
+            current-location prose. AI scene-interaction lines stay in the
+            right-hand 场景 panel in the immersive shell. */}
+        {showSceneContext && authoredIntro && (
+          <div className="scene-view__ascii" data-testid="scene-ascii">
+            <p className="scene-view__intro">{scene.intro}</p>
+          </div>
+        )}
+        {showSceneContext && showAmbientProse && scene.ambientProse && (
+          <div className="scene-view__ambient" data-testid="scene-ambient">
+            <p>{scene.ambientProse}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="scene-view__stage" data-testid="scene-stage">
         {npcsPresent.length > 0 && (
           <div className="scene-view__roster" data-testid="scene-roster" aria-label="在场人物">
             {npcsPresent.map((chara) => (
@@ -177,10 +258,12 @@ export default function SceneView(props: SceneViewProps) {
                 type="button"
                 className={
                   "scene-view__roster-name" +
-                  (props.selectedChara === chara.charaNum ? " scene-view__roster-name--selected" : "")
+                  (props.selectedChara === chara.charaNum ? " scene-view__roster-name--selected" : "") +
+                  (props.state?.training?.target === chara.charaNum ? " scene-view__roster-name--h-target" : "")
                 }
                 data-testid="scene-roster-name"
                 data-chara={chara.charaNum}
+                data-h-target={props.state?.training?.target === chara.charaNum ? "true" : undefined}
                 aria-pressed={props.selectedChara === chara.charaNum}
                 disabled={!props.onSelectChara}
                 onClick={() => props.onSelectChara?.(chara.charaNum)}
@@ -200,19 +283,29 @@ export default function SceneView(props: SceneViewProps) {
           ) : (
             stagedNpcs.map((chara) => {
               const selected = props.selectedChara === chara.charaNum;
+              const hTarget = props.state?.training?.target === chara.charaNum;
               const selectable = !!props.onSelectChara;
-              const portrait = PORTRAITS[String(chara.charaNum)];
+              const portrait = props.state
+                ? portraitSourceForState(props.state, chara.charaNum, PORTRAITS)
+                : PORTRAITS[String(chara.charaNum)];
+              const selectedPortrait = props.state
+                ? portraitForState(props.state, chara.charaNum, portrait)
+                : portrait;
               // 立絵種類: face dimension when 顔絵 is active (needs state;
               // presentation-only calls without state default to 立絵).
               const kind = props.state ? portraitKind(props.state) : "standing";
-              const dimension = dimensionForKind(portrait, kind);
-              const stateExpression = props.state
+              const dimension = dimensionForKind(selectedPortrait, kind);
+              // 裸/服分支统一走上游 `CHECK_NUDE` 口径（不看内衣），与换装判定同源。
+              const naked = props.state ? checkNude(props.state, chara.charaNum) : false;
+              const clothingDimension = portraitForClothing(dimension, naked);
+              const expression = props.state
                 ? statePortraitExpression(props.state, chara.charaNum)
                 : "normal";
-              const expression = stateExpression === "normal"
-                ? clickedExpressions[chara.charaNum] ?? "normal"
-                : stateExpression;
-              const portraitSource = portraitForExpression(dimension, expression);
+              // 特殊服装必须在选表情**之前**套上：表情裁切跟着服装走。
+              const outfitDimension = props.state
+                ? portraitWithOutfit(props.state, chara.charaNum, selectedPortrait, clothingDimension, naked, kind)
+                : clothingDimension;
+              const portraitSource = portraitForExpression(outfitDimension, expression);
               const dynamicPortrait = props.state
                 ? portraitForDynamicCharacter(props.state, chara.charaNum)
                 : undefined;
@@ -226,18 +319,16 @@ export default function SceneView(props: SceneViewProps) {
               // eraTW USERCOM.ERB:433-436: clicking the CURRENT TARGET's
               // portrait flips 立絵種類; clicking another chara selects it as
               // the target. The old cosmetic click-expression cycle is gone
-              // (upstream has no such behavior).
+              // (upstream has no such behavior), and with it the last piece of
+              // mutable portrait state in this component — a per-charaNum
+              // `useState` face that outlived target changes, scene changes
+              // and H-scene exits, and could therefore outlive the character
+              // it was drawn for.
               const selectPortrait = (): void => {
                 if (!selectable) return;
                 if (selected && props.onTogglePortraitKind) {
                   props.onTogglePortraitKind();
                   return;
-                }
-                if (stateExpression === "normal") {
-                  setClickedExpressions((current) => ({
-                    ...current,
-                    [chara.charaNum]: nextClickExpression(dimension, current[chara.charaNum]),
-                  }));
                 }
                 props.onSelectChara?.(chara.charaNum);
               };
@@ -248,11 +339,14 @@ export default function SceneView(props: SceneViewProps) {
                   className={
                     "scene-view__portrait" +
                     (selected ? " scene-view__portrait--selected" : "") +
+                    (hTarget ? " scene-view__portrait--h-target" : "") +
                     (selectable ? " scene-view__portrait--selectable" : "")
                   }
                   data-testid="scene-portrait"
                   data-chara={chara.charaNum}
                   data-selected={selected ? "true" : undefined}
+                  data-h-target={hTarget ? "true" : undefined}
+                  aria-label={hTarget ? `${charaName(chara)}（H 会话目标）` : charaName(chara)}
                   disabled={!selectable}
                   onClick={selectable ? selectPortrait : undefined}
                 >
@@ -293,6 +387,9 @@ export default function SceneView(props: SceneViewProps) {
                   ) : portraitSource ? (
                     <SpriteCrop
                       className="scene-view__portrait-img scene-view__portrait-img--real"
+                      fit={props.asciiShell ? "contain" : "cover"}
+                      frameWidth={props.asciiShell ? 180 : undefined}
+                      frameHeight={props.asciiShell ? 280 : undefined}
                       source={portraitSource}
                       alt={charaName(chara)}
                       cropTestId="scene-portrait-crop"
@@ -300,6 +397,14 @@ export default function SceneView(props: SceneViewProps) {
                     />
                   ) : (
                     <span className="scene-view__portrait-img" aria-hidden="true" />
+                  )}
+                  {props.asciiShell && portraitSource && (
+                    <AsciiPortraitMask key={`${scene.id}:${portraitSource.sprite}`} source={portraitSource} />
+                  )}
+                  {hTarget && (
+                    <span className="scene-view__h-target-badge" data-testid="scene-h-target-badge">
+                      H 目标
+                    </span>
                   )}
                   <span className="scene-view__portrait-name">{charaName(chara)}</span>
                   {/* Commission badge — sits in the top-right corner of the

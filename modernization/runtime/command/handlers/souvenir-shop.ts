@@ -40,12 +40,14 @@ import { canAfford, pay } from "../../state/money.js";
 import {
   ABL_ID,
   CFLAG_ID,
+  EVENT_FLAG_ALIASES as EVENT_FLAGS,
   FLAG_ID,
   SOURCE_ID,
   TALENT_ID,
   advanceTimeTicks,
   times,
 } from "../../state/settlement.js";
+import { souvenirSaleDiscount } from "../../state/shop.js";
 import { pickOne, requirePickOne, type PromptSpec } from "../prompt.js";
 import { createGift, recordGiftPurchase, reviewGift, type DrawnGift } from "../../state/gifts.js";
 import { RINNOSUKE_HOME, RINNOSUKE_ROLE } from "../../world/dynamic-characters.js";
@@ -108,6 +110,9 @@ const SHELF_SIZE = 10; // 品揃え上限 (non-市場の神).
 export function drawShelf(state: GameState): DrawnGift[] {
   const shop = giftShopAt(state.master.location);
   if (!shop) return [];
+  if ((state.flagStore[EVENT_FLAGS.marketGod] ?? 0) === 10 && state.marketGifts?.length) {
+    return state.marketGifts.map((gift) => ({ ...gift }));
+  }
   const seed =
     (state.time.dayIndex * 131071 + state.time.tickValue * 197 + hashString(state.master.location)) >>> 0;
   const rng = splitmix32(seed);
@@ -118,6 +123,11 @@ export function drawShelf(state: GameState): DrawnGift[] {
     out.push(gift);
   }
   return out;
+}
+
+/** Festival/day-event price adjustment shared by the pure prompt and settlement. */
+export function effectiveGiftPrice(state: Readonly<GameState>, gift: Readonly<DrawnGift>): number {
+  return Math.max(0, Math.trunc(gift.price * (100 - souvenirSaleDiscount(state)) / 100));
 }
 
 function check626(state: GameState, target: number):
@@ -166,11 +176,12 @@ function buildPrompt(ctx: CommandContext): PromptSpec | null {
   const name = tSlot?.callName ?? "对方";
   const options = shelf.map((g, i) => {
     const review = reviewGift(state, target, g.adjectId, g.mainId);
+    const price = effectiveGiftPrice(state, g);
     return {
       id: i,
       label: g.name,
-      detail: `评价 ${review.score} / 价格 ${g.price} 円`,
-      disabled: !canAfford(state, g.price),
+      detail: `评价 ${review.score} / 价格 ${price} 円`,
+      disabled: !canAfford(state, price),
     };
   });
   options.push({ id: -1, label: "只是看看（取消）", detail: "", disabled: false });
@@ -229,7 +240,8 @@ export const souvenirShop626HandlerEntry: HandlerEntry = {
 
     const shelf = drawShelf(ctx.state);
     const gift = shelf[Number(choice)];
-    if (!gift || !canAfford(next, gift.price)) {
+    const price = gift ? effectiveGiftPrice(next, gift) : 0;
+    if (!gift || !canAfford(next, price)) {
       return {
         state: next,
         events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "钱不够……" }],
@@ -238,7 +250,7 @@ export const souvenirShop626HandlerEntry: HandlerEntry = {
     }
 
     // 購入 (ERB 134-163).
-    pay(next, gift.price);
+    pay(next, price);
     const review = reviewGift(next, target, gift.adjectId, gift.mainId);
     const shop = giftShopAt(next.master.location)!;
     recordGiftPurchase(next, target, gift, review.score, shop.areaId);
@@ -265,7 +277,7 @@ export const souvenirShop626HandlerEntry: HandlerEntry = {
         {
           kind: "NARRATION" as const,
           timestamp: ctx.now(),
-          text: `买下【${gift.name}】(${gift.price}円) 送给了${name}。（对方评价 ${review.score}）`,
+          text: `买下【${gift.name}】(${price}円) 送给了${name}。（对方评价 ${review.score}）`,
         },
         ...settled.events,
       ],

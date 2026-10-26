@@ -66,6 +66,7 @@ import {
 import { TFLAG_ID, getTflag, setTflag } from "../../state/tflag.js";
 import { readTequip, writeTequip } from "../../state/tequip.js";
 import { roomProps } from "../comable/room-props.js";
+import { checkHBaseResourceAvailability } from "../h-base-resources.js";
 
 const PLAYER = 0;
 /** TEQUIP:継続接吻 (Tequip.csv id=45). Master TEQUIP slot. */
@@ -188,10 +189,17 @@ export const comf19HandlerEntry: HandlerEntry = {
  * @COM_ABLE23 (P1-14) — the pillow-talk menu/exec gate. Modeled arms:
  *   both 体力 > MAXBASE/2 → block (someone must be tired); TEQUIP 11-24 any →
  *   block; 継続接吻 (45) → block; CFLAG:恶作剧>1 → block; !BEDROOM → block
- *   (≈ roomProps.private). The 発情/幼稚 master-tired-only arms and the
- *   時止め+344 arm are deferred (CFLAG:344 unmodeled; 発情 unmodeled).
+ *   (≈ roomProps.private). During 時止め, CFLAG:344 must be set; the 発情/
+ *   幼稚 master-tired-only arms remain deferred.
  */
 function pillowTalkGate(ctx: CommandContext) {
+  const targetHasActed = ctx.state.charas[ctx.target]?.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0;
+  if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 && targetHasActed === 0) {
+    return {
+      ok: false as const,
+      reason: { kind: "precondition" as const, message: "对方还没有在时间停止中行动。" },
+    };
+  }
   const t = ctx.state.charas[ctx.target];
   if (!t) return { ok: false as const, reason: { kind: "precondition" as const, message: "需要在场的对象。" } };
   const masterMax = ctx.state.master.state.MAXBASE[BASE_ID.体力] ?? 0;
@@ -219,10 +227,21 @@ function pillowTalkGate(ctx: CommandContext) {
   return { ok: true as const };
 }
 
+function pillowTalkResourceGate(ctx: CommandContext) {
+  const gate = pillowTalkGate(ctx);
+  if (!gate.ok) return gate;
+  const target = ctx.state.charas[ctx.target]!;
+  if ((target.state.TCVAR[TCVAR_ID.会話不能] ?? 0) === 0) return gate;
+  return checkHBaseResourceAvailability(ctx, {
+    master: { [BASE_ID.気力]: 100 },
+    target: { [BASE_ID.気力]: 100 },
+  });
+}
+
 export const comf23HandlerEntry: HandlerEntry = {
   commandNo: 23,
-  execCheck: pillowTalkGate,
-  hModeMenuCheck: pillowTalkGate,
+  execCheck: pillowTalkResourceGate,
+  hModeMenuCheck: pillowTalkResourceGate,
   handler: (ctx: CommandContext) => {
     const next: GameState = cloneGameState(ctx.state);
     const target = next.charas[ctx.target]!;

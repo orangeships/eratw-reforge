@@ -81,8 +81,7 @@ import {
   times,
 } from "../../state/settlement.js";
 import { chkDateNow } from "../../world/location-predicates.js";
-import { activeDatePartner, advanceDateTravel, syncDateMirrors } from "../../world/date-session.js";
-import { locationToRoomId } from "../../world/room-id-location.js";
+import { activeDatePartner, syncDateMirrors } from "../../world/date-session.js";import { locationToRoomId } from "../../world/room-id-location.js";
 import { shrineZoneOf } from "../../world/odekake-shrine.js";
 import { myourenZoneOf } from "../../world/odekake-myouren.js";
 import { villageZoneOf } from "../../world/odekake-village.js";
@@ -90,7 +89,6 @@ import { koumakanZoneOf } from "../../world/odekake-koumakan.js";
 import { tikurinZoneOf } from "../../world/odekake-tikurin.js";
 import {
   TFLAG_ID,
-  addTflag,
   getTflag,
   setTflag,
   setTflagBit,
@@ -726,11 +724,13 @@ function check603Eligible(
   if (target < 1 || !state.charas[target]) {
     return { ok: false, reason: { kind: "precondition", message: "没有牵手的对象。" } };
   }
-  // ERB: 约会道中以外 → block (mid-date stroll only).
-  if (state.dateSession
-    ? state.dateSession.partner !== target || (state.dateSession.phase !== "traveling" && state.dateSession.phase !== "returning")
-    : getTflag(state, TFLAG_ID.约会道中) === 0) {
-    return { ok: false, reason: { kind: "precondition", message: "不在约会途中。" } };
+  // Upstream `@COM_ABLE603` is road-only: `SIF !TFLAG:约会道中 → RETURN 0`
+  // (COMF603 手を繋ぐ.ERB:165-168). The road stage is retired, so a literal
+  // port would make 603 permanently unreachable. The gate degrades to "a date
+  // is in progress with this partner" — a documented deviation, not a silent
+  // content drop. See modernization/docs/DATE-FLOW-PARITY-2026-10-04.md.
+  if (state.dateSession?.partner !== target) {
+    return { ok: false, reason: { kind: "precondition", message: "不在约会中。" } };
   }
   const tSlot = state.charas[target]!;
   if ((tSlot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) {
@@ -780,9 +780,6 @@ export const holdHands603HandlerEntry: HandlerEntry = {
 
     // TIME += 10 + 約會経験++ (ERB 154-156).
     advanceTimeTicks(next, 10);
-    // Besides the ten minutes that pass naturally, successful hand-holding
-    // makes the route feel shorter by another ten minutes.
-    advanceDateTravel(next, 10);
     bumpDateExp(next.master);
     bumpDateExp(tSlot);
 
@@ -896,10 +893,10 @@ function check605Eligible(
   if (!isOnDate(state, target)) {
     return { ok: false, reason: { kind: "precondition", message: "不在约会中。" } };
   }
-  if (state.dateSession
-    ? state.dateSession.partner !== target || (state.dateSession.phase !== "traveling" && state.dateSession.phase !== "returning")
-    : getTflag(state, TFLAG_ID.约会道中) === 0) {
-    return { ok: false, reason: { kind: "precondition", message: "不在约会途中。" } };
+  // `@COM_ABLE605` is road-only upstream (`SIF !TFLAG:约会道中 → RETURN 0`,
+  // COMF605 寄り道する.ERB:120-123). Road retired → same degradation as 603.
+  if (state.dateSession?.partner !== target) {
+    return { ok: false, reason: { kind: "precondition", message: "不在约会中。" } };
   }
   // 30-min cooldown: TIME_PROGRESS(TCVAR:309) < 30 → block.
   const last = state.master.state.TCVAR[TCVAR_ID.寄り道日時] ?? 0;
@@ -951,15 +948,13 @@ export const detour605HandlerEntry: HandlerEntry = {
     const sources = compute605Sources(tSlot);
     apply605Tier(sources, tier);
 
-    // 寄り道日時 = now (ERB cooldown stamp) + TIME += 10 + 约会道中 += 10.
+    // 寄り道日時 = now (ERB cooldown stamp) + TIME += 10.
+    // Upstream additionally does `TFLAG:约会道中 += 10` (COMF605:98) to push
+    // the arrival back; with the road stage retired there is nothing to delay,
+    // so the detour only costs the ten minutes plus its own settlement.
     next.master.state.TCVAR[TCVAR_ID.寄り道日時] = next.time.tickValue;
     advanceTimeTicks(next, 10);
-    if (next.dateSession) {
-      next.dateSession.travelRemainingMinutes = (next.dateSession.travelRemainingMinutes ?? 0) + 20;
-      syncDateMirrors(next);
-    } else {
-      addTflag(next, TFLAG_ID.约会道中, 10);
-    }
+    syncDateMirrors(next);
     bumpDateExp(next.master);
     bumpDateExp(tSlot);
 

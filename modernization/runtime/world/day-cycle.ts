@@ -53,11 +53,16 @@ import { selectDayEvent, executeDayEvent } from "./dayevent.js";
 import { computeVisitFlags } from "./visit-flags.js";
 import { runEncounterMorning } from "./encounter.js";
 import { runCommissionMorning, type CommissionGenerationHooks } from "../state/commission.js";
+import { settleInsectForagingMorning } from "../state/insect-foraging.js";
 import { runPersonalHistoryReconciliation } from "../state/chara-info-state.js";
 import { resolveEventKojoAndApply } from "../kojo/effects.js";
 import { ensureWorkRuntime } from "./work/work-system.js";
 import { projectScheduledLocations } from "./scheduler.js";
 import { replenishPantyGap } from "../state/panty-collection.js";
+import {
+  syncRabbitDayOutfits,
+} from "./rabbit-day.js";
+import { runFestivalMorning } from "./festival-events.js";
 
 /** Injected dependencies for the day-cycle phases. A phase whose `needs`
  *  aren't satisfied is skipped (silent) — the faithful equivalent of the
@@ -68,6 +73,9 @@ export interface DayCycleDeps {
   router?: DialogueRouter;
   /** No rng → random phases (DAYEVENT, 来訪/遭遇/依頼) are skipped. */
   rng?: Rng;
+  /** When waking from player sleep, only characters already in the sleeping
+   * room may emit おはよう; overnight schedule arrivals are not witnesses. */
+  morningGreetingCandidates?: readonly number[];
 }
 
 /** One morning-flow subsystem. `upstream` is the BEFORETRAIN.ERB anchor
@@ -241,6 +249,23 @@ export const MORNING_PHASES: readonly MorningPhase[] = [
     },
   },
   {
+    id: "insect-foraging",
+    upstream: "BEFORETRAIN.ERB:IFS_GATHER next-day service settlement",
+    needs: ["rng"],
+    run(state, deps) {
+      return settleInsectForagingMorning(state, deps.rng!, deps.now);
+    },
+  },
+  {
+    id: "rabbit-day-outfit",
+    upstream: "BEFORETRAIN.ERB:490-516 SPECIAL_OUTFIT / CLOTHES_SETTING_TRAIN",
+    needs: [],
+    run(state) {
+      syncRabbitDayOutfits(state);
+      return [];
+    },
+  },
+  {
     id: "dayevent-day",
     upstream: 'BEFORETRAIN.ERB:585 DAYEVENT_MAIN("day")',
     needs: ["router", "rng"],
@@ -258,7 +283,11 @@ export const MORNING_PHASES: readonly MorningPhase[] = [
       const here = state.master.location;
       const out: ObservationEvent[] = [];
       const masterInitial = state.master.state.CFLAG[CFLAG_ID.初期位置];
+      const candidates = deps.morningGreetingCandidates
+        ? new Set(deps.morningGreetingCandidates)
+        : null;
       for (const slot of Object.values(state.charas)) {
+        if (candidates && !candidates.has(slot.charaNum)) continue;
         if (slot.location !== here) continue;
         const targetInitial = slot.state.CFLAG[CFLAG_ID.初期位置];
         const cohabiting = Number.isFinite(masterInitial) &&
@@ -290,6 +319,14 @@ export const MORNING_PHASES: readonly MorningPhase[] = [
         );
       }
       return out;
+    },
+  },
+  {
+    id: "festival-morning",
+    upstream: "BEFORETRAIN.ERB:677-680 FESTIVAL + SEASONAL_MORNING",
+    needs: [],
+    run(state, deps) {
+      return runFestivalMorning(state, deps.now);
     },
   },
 ];

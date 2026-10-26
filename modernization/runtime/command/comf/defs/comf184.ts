@@ -102,8 +102,9 @@ export const comf184Def: ComfDef = {
 
   timeCost: 0,
 
-  // Target drain lives in body.
+  // ERB 19-20: target drain is shared with the resource preflight.
   downbase: {},
+  targetDownbase: { [BASE_ID.気力]: 150 },
 
   buildSources: (c) => {
     // ERB 22-25: base values.
@@ -137,11 +138,6 @@ export const comf184Def: ComfDef = {
       result[SOURCE_ID.鬱屈] = utsuku;
     }
     return result;
-  },
-
-  body: (c) => {
-    // ERB 19-20: target 体力 0 / 気力 150 drain.
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 150;
   },
 
   narration: (_c, favorDelta) =>

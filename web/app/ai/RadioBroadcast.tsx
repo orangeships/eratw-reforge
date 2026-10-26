@@ -5,7 +5,11 @@ import { useAiStore } from "./store.js";
 
 export interface RadioBroadcastProps {
   rawBroadcast: string;
+  /** A low-education protagonist hears signal noise, not forecast facts. */
+  canUnderstand?: boolean;
 }
+
+export const RADIO_UNREADABLE_SCRIPT = "滋……喀啦……$#@%……";
 
 interface BroadcastFacts {
   weather: string | null;
@@ -28,14 +32,19 @@ export function parseRadioBroadcast(rawBroadcast: string): BroadcastFacts {
   return { weather, temperature, warning, tendency, extra: facts.filter((line) => !claimed.has(line)) };
 }
 
-export default function RadioBroadcast({ rawBroadcast }: RadioBroadcastProps) {
+export default function RadioBroadcast({ rawBroadcast, canUnderstand = true }: RadioBroadcastProps) {
   const settings = useAiStore((state) => state.settings);
   const [script, setScript] = useState("");
   const [status, setStatus] = useState<"tuning" | "ready" | "fallback">("tuning");
   const facts = useMemo(() => parseRadioBroadcast(rawBroadcast), [rawBroadcast]);
 
   useEffect(() => {
-    if (!settings.enabled || !settings.radioEnabled || !settings.baseUrl.trim() || !settings.model.trim()) {
+    if (!canUnderstand) {
+      setScript(RADIO_UNREADABLE_SCRIPT);
+      setStatus("fallback");
+      return;
+    }
+    if (!rawBroadcast.trim() || !settings.enabled || !settings.radioEnabled || !settings.baseUrl.trim() || !settings.model.trim()) {
       setScript("短波信号稳定，以下为幻想乡气象台定时播报。");
       setStatus("fallback");
       return;
@@ -57,7 +66,7 @@ export default function RadioBroadcast({ rawBroadcast }: RadioBroadcastProps) {
         setStatus("fallback");
       });
     return () => controller.abort();
-  }, [rawBroadcast, settings]);
+  }, [canUnderstand, rawBroadcast, settings]);
 
   return (
     <section className="radio-broadcast" data-testid="radio-broadcast" aria-label="收音机天气播报">
@@ -72,13 +81,15 @@ export default function RadioBroadcast({ rawBroadcast }: RadioBroadcastProps) {
       <p className={`radio-broadcast__script radio-broadcast__script--${status}`}>
         {status === "tuning" ? "滋... 正在校准短波信号..." : script}
       </p>
-      <div className="radio-broadcast__facts">
-        {facts.weather && <p className="radio-broadcast__fact radio-broadcast__fact--weather">{facts.weather}</p>}
-        {facts.temperature && <p className="radio-broadcast__fact radio-broadcast__fact--temperature">{facts.temperature}</p>}
-        {facts.warning && <p className={`radio-broadcast__fact ${facts.warning.includes("没有") ? "radio-broadcast__fact--clear" : "radio-broadcast__fact--warning"}`}>{facts.warning}</p>}
-        {facts.tendency && <p className="radio-broadcast__fact radio-broadcast__fact--tendency">{facts.tendency}</p>}
-        {facts.extra.map((line) => <p className="radio-broadcast__fact radio-broadcast__fact--extra" key={line}>{line}</p>)}
-      </div>
+      {canUnderstand && (
+        <div className="radio-broadcast__facts">
+          {facts.weather && <p className="radio-broadcast__fact radio-broadcast__fact--weather">{facts.weather}</p>}
+          {facts.temperature && <p className="radio-broadcast__fact radio-broadcast__fact--temperature">{facts.temperature}</p>}
+          {facts.warning && <p className={`radio-broadcast__fact ${facts.warning.includes("没有") ? "radio-broadcast__fact--clear" : "radio-broadcast__fact--warning"}`}>{facts.warning}</p>}
+          {facts.tendency && <p className="radio-broadcast__fact radio-broadcast__fact--tendency">{facts.tendency}</p>}
+          {facts.extra.map((line) => <p className="radio-broadcast__fact radio-broadcast__fact--extra" key={line}>{line}</p>)}
+        </div>
+      )}
     </section>
   );
 }

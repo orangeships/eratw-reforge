@@ -63,6 +63,10 @@ const FAMILY_BY_ID = new Map(COMMAND_FAMILIES.map((f) => [f.id, f]));
 /** Map a commandNo to its family id. The faithful COM_TAGS category wins;
  *  untagged commands fall back to the upstream force-wrap ranges. */
 export function familyIdOf(n: number): string {
+  // COM314 is stored under the upstream daily folder and carries both A and
+  // SEKUHARA tags. Keep its H-session route and A filter identity even if the
+  // generated tag bundle is missing or classifies it as everyday SEKUHARA.
+  if (n === 314) return "a";
   // 1) Faithful COM_TAGS category (V/A/SM/侍奉/性骚扰/家务) — the authority.
   const tagged = TAG_CATEGORY[String(n)];
   if (tagged) {
@@ -121,6 +125,13 @@ const H_MODE_FAMILY_IDS: ReadonlySet<string> = new Set([
   "foreplay", "toy", "v", "a", "service", "sm", "hmode", "solo",
 ]);
 
+/**
+ * COM_TAGS is a filter taxonomy, not a gameplay-mode taxonomy. 316 keeps its
+ * V filter identity while remaining an everyday-page touch command. 314 is
+ * deliberately routed to the H session despite sharing the 310-323 range.
+ */
+const EVERYDAY_TAGGED_COMMANDS: ReadonlySet<number> = new Set([316]);
+
 /** The H-mode ENTRY commands — how you ENTER うふふ. These MUST stay visible on
  *  the everyday page (their own execCheck decides when), otherwise うふふ would
  *  be unreachable and no sex act could ever fire. Faithful to the entry cluster:
@@ -135,20 +146,25 @@ const H_MODE_ENTRY_COMMANDS: ReadonlySet<number> = new Set([
 /** Whether a command is a うふふ-only sex act (by its faithful tag/family).
  *  This is the authority the UI uses to hide sex acts outside 調教 — it
  *  subsumes the runtime range-based `requiresHMode` and also catches the
- *  tagged V/A acts (314/316) and partner-led positions (317-323) the ranges
- *  missed. 性骚扰 (sekuhara) is everyday-page, so NOT gated; the H-mode ENTRY
- *  commands are NOT gated (they're how you enter うふふ). */
+ *  tagged V/A acts and partner-led positions (317-323) the ranges missed.
+ *  性骚扰 (sekuhara) is everyday-page, so NOT gated; 316 is an explicit
+ *  ordinary-page exception even though its filter tag is V. 314 is H-only.
+ *  The H-mode ENTRY commands are NOT gated (they're how you enter うふふ). */
 export function familyRequiresHMode(commandNo: number): boolean {
   if (H_MODE_ENTRY_COMMANDS.has(commandNo)) return false;
+  if (EVERYDAY_TAGGED_COMMANDS.has(commandNo)) return false;
   return H_MODE_FAMILY_IDS.has(familyIdOf(commandNo));
 }
 
-/** General utility retained beside the H action grid. The upstream H panel
- * keeps the item picker (490), while ordinary daily commands stay on the
- * normal page. */
-const H_MODE_TOOL_COMMANDS: ReadonlySet<number> = new Set([490]);
 
-/** Whether a command belongs on the H-mode Act_COM page. */
-export function familyVisibleInHMode(commandNo: number): boolean {
-  return familyRequiresHMode(commandNo) || H_MODE_TOOL_COMMANDS.has(commandNo);
+/**
+ * Whether a command belongs on the current Act_COM grid.
+ *
+ * Upstream shows ONE grid (`@QOL_SHOW_USERCOM` walks every command, keeping
+ * whatever passes `@COM_ABLE` + `@QUICKFILTER`); the H state does not narrow
+ * it. Only the everyday page hides the うふふ-only acts, because those need a
+ * partner already in H state.
+ */
+export function visibleOnCommandGrid(commandNo: number, hMode: boolean): boolean {
+  return hMode || !familyRequiresHMode(commandNo);
 }

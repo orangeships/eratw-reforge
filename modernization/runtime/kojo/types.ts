@@ -598,6 +598,13 @@ export interface DiaryHappenResolution {
   diagnostics?: KojoDiagnostic[];
 }
 
+/** Source identity for development-only EVENT_COUNTER diagnostics. */
+export interface CounterKojoMetadata {
+  variantCode: string;
+  sourceFile?: string;
+  functionName?: string;
+}
+
 /** Function-level hooks dispatched by the upstream CHARA_DIARY lifecycle. */
 export type DiaryHookKind = "exist" | "before-check" | "after-check";
 
@@ -649,6 +656,8 @@ export interface FuncLocation {
   lineEnd: number;
   /** COM type: "COM" | "SCOM" | "CUSTOM_COM" | "CUSTOM_SCOM". */
   comType: string;
+  /** Stable source-content fingerprint emitted by the index generator. */
+  contentFingerprint?: string;
 }
 
 /** One string-selected scene branch inside a commission (`IRAI`) function.
@@ -690,6 +699,9 @@ export interface VariantIndex {
    *  (night). Dispatched upstream by `KOJO_MESSAGE_SEND("EVENT",arm,...)`.
    *  Phase 8 朝夜挨拶 — the scheduler fires arm 2/3 on sleep↔wake. */
   events?: Record<string, FuncLocation>;
+  /** DAILY event personal kojo (`M_KOJO[_suffix]_DAILY_EVENT_K{n}_{id}`),
+   * keyed `"DAILY:{id}"`. Only the selected event/target is resolved. */
+  dailyEvents?: Record<string, FuncLocation>;
   /** SP_EVENT kojo funcs (`M_KOJO[_suffix]_SPEVENT_K{n}_{subid}`), keyed
    *  `"SP_EVENT:{subid}"`. Dispatched upstream by
    *  `KOJO_MESSAGE_SEND("SP_EVENT", subid, target, …)` →
@@ -769,6 +781,7 @@ export interface KojoCommandIndex {
   projectRoot: string;
   charaNums: number[];
   variants: Record<number, VariantIndex[]>;
+  /** Exact MESSAGE_COM<n> common prose; SCOM<n> must never share these keys. */
   eventMessages: Record<number, EventMsgIndex>;
 }
 
@@ -797,12 +810,18 @@ export interface DialogueRouter {
    * Diagnostic command resolution. Unlike `collect()`, this distinguishes
    * missing authored content from a gated branch and an unsupported
    * predicate. AI fallback must only use `not-authored`.
+   *
+   * `options.probeReadonly` runs a side-effect-free walk (no effect
+   * staging, no working-state mutation) for AI voice sampling
+   * (AI-PREPARE-PERF-PLAN.md §4.A). Routers that ignore it degrade to
+   * the ordinary live walk.
    */
   collectDetailed?(
     charaNum: number,
     commandNo: number,
     state: Readonly<GameState>,
     rng: Rng,
+    options?: { probeReadonly?: boolean },
   ): KojoResolution;
 
   collectInteractive?(
@@ -881,6 +900,33 @@ export interface DialogueRouter {
     rng: Rng,
     args?: readonly number[],
   ): KojoContinuationResolution;
+
+  /** Personal reaction for `KOJO_MESSAGE_SEND("DAILY", eventId, target)`.
+   * This is distinct from DAYEVENT/SP_EVENT. */
+  resolveDailyKojo?(
+    charaNum: number,
+    eventId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+    args?: number[],
+  ): KojoLine[];
+
+  resolveDailyKojoDetailed?(
+    charaNum: number,
+    eventId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+    args?: number[],
+  ): KojoResolution;
+
+  resolveDailyKojoInteractive?(
+    charaNum: number,
+    eventId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+    args: readonly number[] | undefined,
+    choices: readonly number[],
+  ): InteractiveKojoResolution;
 
   /**
    * Return the lines a chara says for an SP_EVENT kojo
@@ -1156,6 +1202,13 @@ export interface DialogueRouter {
     mode?: string,
   ): KojoResolution;
 
+  /** Optional source metadata for development Counter diagnostics. */
+  getCounterKojoMetadata?(
+    charaNum: number,
+    counterAction: number,
+    state: Readonly<GameState>,
+  ): CounterKojoMetadata;
+
   resolveDiaryKojoInteractive?(
     charaNum: number,
     page: number,
@@ -1228,4 +1281,14 @@ export interface DialogueRouter {
     state: Readonly<GameState>,
     rng: Rng,
   ): KojoLine[];
+  /** Detailed counterpart used by the L1 boundary to distinguish genuinely
+   * absent commission prose from gated or unsupported authored content. */
+  resolveIraiKojoDetailed?(
+    charaNum: number,
+    role: string,
+    scene: string,
+    iraiId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+  ): KojoResolution;
 }

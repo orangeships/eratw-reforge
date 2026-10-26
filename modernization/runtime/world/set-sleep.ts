@@ -8,14 +8,6 @@
  *     着替え実行 bit 0/1 + sleep-depth = 1200 × (睡眠薬強度+1) +
  *     疲労度/3 + conditional master-連動 sleep + BUFF_RESET.
  *
- * Modern callers:
- *   - sleep.ts:706 — currently only sets CFLAG:睡眠 + 就寝時間 on the
- *     master (a "minimal" subset; the upstream full body wasn't
- *     modeled). This slice replaces that minimal path with a real
- *     `setMasterSleep(state, 1, …)` call so 着替え実行 + BUFF_RESET
- *     are no longer silent.
- *   - `@CHARA_SLEEP` (P1-#5 Slice B, deferred) — the per-chara caller.
- *
  * Conditional gates (`!睡眠時間(ARG:1)` / `衰弱` / `現在位置 != 初期位置`)
  * are evaluated with two faithful modern helpers:
  *   - `isCharaInSleepTime` — mirrors `@睡眠時間(ARG)` (COMMON.ERB:886)
@@ -50,20 +42,15 @@ const MASTER_LINK_IF_SAME_ROOM = 2;
  * sleep window (i.e. NOT in the wake interval). MASTER is always
  * considered "in sleep window" iff `CFLAG:睡眠 == 1`.
  */
-function isCharaInSleepTime(slot: CharaSlot, _masterSleepFlag: number): boolean {
+function isCharaInSleepTime(slot: CharaSlot, tickValue: number): boolean {
   const s = slot.state.CFLAG;
   if (slot.charaNum === 0) return s[CFLAG_ID.睡眠] === 1;
   if (s[CFLAG_ID.衰弱]) return true;
-  return !betweenTimeMinutes(
-    s[CFLAG_ID.起床時間] ?? 0,
-    (s[CFLAG_ID.就寝時間] ?? 0) + (s[CFLAG_ID.清醒劑] ?? 0),
-  );
-}
-
-/** `BETWEENTIME(from, to)` — the upstream interval helper. Returns
- *  true when `from <= to` (i.e. now is between them, inclusive). */
-function betweenTimeMinutes(from: number, to: number): boolean {
-  return from <= to;
+  const minute = ((tickValue % 1440) + 1440) % 1440;
+  const wake = ((s[CFLAG_ID.起床時間] ?? 0) % 1440 + 1440) % 1440;
+  const bed = (((s[CFLAG_ID.就寝時間] ?? 0) + (s[CFLAG_ID.清醒劑] ?? 0)) % 1440 + 1440) % 1440;
+  const awake = wake < bed ? minute >= wake && minute < bed : minute >= wake || minute < bed;
+  return !awake;
 }
 
 /** CFLAG:現在位置 == CFLAG:初期位置 — used by the SET_SLEEP CASE 1
@@ -145,7 +132,7 @@ function flagOn(
   const slot = slotFor(state, charaNum);
   if (!slot) return;
   // 整合性チェック: 延迟中 (SET_DERAY 中) 通常不能睡; 衰弱时可
-  const delayed = false; // SET_DERAY / CFLAG:延迟 not yet modeled
+  const delayed = (slot.state.CFLAG[CFLAG_ID.延迟] ?? 0) !== 0;
   const weak = (slot.state.CFLAG[CFLAG_ID.衰弱] ?? 0) !== 0;
   if (!delayed || charaNum === 0 || weak) {
     slot.state.CFLAG[CFLAG_ID.睡眠] = 1;
@@ -167,7 +154,7 @@ function flagOn(
   // 延迟中 OR 不在睡眠时间 OR 衰弱+不在自宅 → 反向 bit
   if (
     delayed ||
-    !isCharaInSleepTime(slot, slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) ||
+    !isCharaInSleepTime(slot, state.time.tickValue) ||
     (weak && !isCharaHome(slot, slot.location))
   ) {
     setBit(slot.state.CFLAG, CFLAG_ID.着替え実行, 0);

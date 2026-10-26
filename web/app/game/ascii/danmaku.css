@@ -1,0 +1,96 @@
+/* ERA presentation: black playfield, ordinary portrait art, pixel bullets.
+   The playfield stays exactly 480 x 640 in Runtime coordinates. */
+.era-duel.danmaku-battle {
+  --duel-fs: clamp(12px, min(1.05vw, 1.65dvh), 34px);
+  position: fixed; inset: 0; width: 100%; height: 100dvh; z-index: 1;
+  display: grid; grid-template-areas: "title title title" "player stage boss" "controls controls controls";
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 1.2em 3ch; padding: 1.5em 5vw;
+  background: #000; color: #c8c8c8; font: var(--duel-fs)/1.5 var(--era-mono, "MS Gothic", SimHei, monospace);
+  letter-spacing: 0; overflow: hidden; animation: none; text-shadow: none;
+}
+.era-duel *, .era-duel *::before, .era-duel *::after { box-sizing: border-box; }
+.era-duel :is(h1, h2, p, pre, dl) { margin: 0; font: inherit; }
+.era-duel :is(button, kbd) { font: inherit; letter-spacing: 0; }
+.era-duel .danmaku-battle__title { grid-area: title; position: static; inset: auto; width: auto; max-width: none; transform: none; display: flex; align-items: center; justify-self: stretch; justify-content: space-between; gap: 1ch; padding: 0 0 .7em; border-bottom: 1px dashed #3a3a3a; text-shadow: none; font: inherit; }
+.era-duel .danmaku-battle__title h1 { color: #c8c8c8; font: inherit; font-size: 1.1em; letter-spacing: 0; }
+.era-duel .danmaku-battle__title h1 > span { color: #87d787; }
+.era-duel .era-duel__button { border: 0; border-radius: 0; background: #000; box-shadow: none; color: #999; padding: .4em 1ch; cursor: pointer; min-width: 0; transition: none; }
+.era-duel .era-duel__button:not(:disabled):is(:hover, :focus-visible) { color: #ffd75f; background: #000; outline: 1px dashed #666; }
+.era-duel .era-duel__button:disabled { opacity: .4; cursor: default; }
+.era-duel .danmaku-battle__stats { position: static; width: min(100%, 26ch); min-width: 0; min-height: 0; padding: .5em 0; display: flex; flex-direction: column; gap: 1.1em; background: #000; border: 0; color: #c8c8c8; font: inherit; text-align: left; overflow-y: auto; overflow-wrap: anywhere; }
+.era-duel .danmaku-battle__stats--player { grid-area: player; align-self: stretch; justify-self: end; }
+.era-duel .danmaku-battle__stats--boss { grid-area: boss; align-self: stretch; justify-self: start; }
+.era-duel .danmaku-battle__stats h2 { color: #5fd7ff; }
+.era-duel .danmaku-meter { display: grid; grid-template-columns: auto minmax(0,1fr); gap: .25em 1ch; font-size: .9em; }
+.era-duel .danmaku-meter > span:first-child { color: #999; }
+.era-duel .danmaku-meter__glyphs { grid-column: 1 / -1; grid-row: 2; color: #87d787; white-space: pre; font-size: 1.1em; }
+.era-duel .danmaku-meter--boss .danmaku-meter__glyphs { color: #d7879f; }
+.era-duel .danmaku-meter b { grid-column: 2; grid-row: 1; font: inherit; text-align: right; color: #c8c8c8; font-variant-numeric: tabular-nums; }
+.era-duel .danmaku-battle__numbers { display: grid; gap: .55em; padding-block: 1em; border-block: 1px dashed #333; }
+.era-duel .danmaku-battle__numbers > div { display: flex; justify-content: space-between; gap: 1ch; }
+.era-duel dt { color: #858585; }
+.era-duel dd { margin: 0; color: #ffd75f; font-variant-numeric: tabular-nums; }
+.era-duel .danmaku-battle__rule { font-size: .85em; color: #999; }
+.era-duel .danmaku-battle__rule span { color: #6c6c6c; }
+.era-duel .danmaku-battle__stage { grid-area: stage; position: relative; align-self: center; justify-self: center; width: min(48vw, calc((100dvh - 9em) * .75)); height: auto; max-height: none; aspect-ratio: 3/4; overflow: hidden; background: #000; border: 1px dashed #3a3a3a; box-shadow: none; transform: none; animation: none; touch-action: none; }
+.era-duel .danmaku-battle__canvas { position: relative; z-index: 2; display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.era-duel .danmaku-battle__boss { position: absolute; width: 20%; height: 20%; z-index: 1; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; pointer-events: none; filter: none; animation: none; }
+.era-duel .era-duel__actor, .era-duel .era-duel__portrait { position: relative; display: block; flex: none; overflow: hidden; max-width: 100%; image-rendering: auto; }
+.era-duel .era-duel__actor { width: 100%; height: 100%; }
+.era-duel .danmaku-battle__portrait { display: flex; flex-direction: column; align-items: center; gap: .4em; color: #ffd75f; font-size: 1.1em; }
+.era-duel .era-duel__portrait { width: 11em; height: 13em; }
+.era-duel .danmaku-battle__identity { color: #858585; font-size: .8em; text-align: center; }
+.era-duel .danmaku-battle__phase { color: #ffd75f; padding-top: .8em; border-top: 1px dashed #333; font-size: .9em; }
+.era-duel .danmaku-battle__kojo { padding: 0; margin: 0; max-height: none; border: 0; background: #000; color: #d7a0b2; font: inherit; font-size: .9em; }
+.era-duel .danmaku-battle__kojo b { display: block; color: #858585; font-size: .85em; font-weight: 400; }
+.era-duel .danmaku-battle__kojo p { margin: .35em 0; font: inherit; line-height: 1.8; overflow-wrap: anywhere; }
+.era-duel .danmaku-battle__controls { grid-area: controls; position: static; display: flex; justify-content: center; flex-wrap: wrap; gap: .25em 3ch; color: #6c6c6c; font-size: .8em; }
+.era-duel .danmaku-battle__controls kbd { color: #999; }
+.era-duel .danmaku-battle__touch-hint { position: absolute; z-index: 3; inset: auto 0 .5em; color: #777; text-align: center; font-size: .75em; pointer-events: none; }
+.era-duel .danmaku-battle__touch-control { z-index: 4; }
+.era-duel .danmaku-battle__entry, .era-duel .danmaku-battle__overlay { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: 1.5em; overflow: auto; background: rgba(0,0,0,.86); animation: duel-reveal 120ms steps(4) both; }
+.era-duel .danmaku-battle__entry { pointer-events: none; z-index: 7; }
+.era-duel .era-duel__intro { display: grid; gap: .8em; text-align: center; padding: 1em 3ch; border-block: 1px dashed #444; background: #000; }
+.era-duel .era-duel__intro span { color: #858585; font: inherit; transform: none; text-shadow: none; animation: none; }
+.era-duel .era-duel__intro h2 { font: inherit; font-size: 1.6em; color: #ffd75f; transform: none; text-shadow: none; }
+.era-duel .era-duel__intro p { color: #858585; font-size: .9em; }
+.era-duel .era-duel__dialog { display: flex; flex-direction: column; align-items: stretch; gap: 1em; width: min(48ch, 100%); max-height: 100%; overflow-y: auto; padding: 1.5em 3ch; border: 1px dashed #555; background: #000; text-align: left; }
+.era-duel .era-duel__dialog h2 { color: #ffd75f; text-align: center; font: inherit; font-size: 1.25em; white-space: nowrap; letter-spacing: 0; }
+.era-duel .danmaku-battle__result-numbers { display: flex; justify-content: space-around; gap: 1ch; border-block: 1px dashed #333; padding: .7em 0; }
+.era-duel .danmaku-battle__result-numbers dd { font-size: 1.4em; }
+.era-duel .danmaku-battle__victory-kojo { width: 100%; padding: 0; border: 0; margin: 0; background: #000; font: inherit; white-space: pre-wrap; }
+.era-duel .danmaku-battle__victory-kojo b { color: #858585; font: inherit; }
+.era-duel .danmaku-battle__victory-kojo p { color: #d7a0b2; font: inherit; line-height: 1.8; margin-top: .5em; text-shadow: none; overflow-wrap: anywhere; }
+.era-duel.danmaku-battle--finished .danmaku-battle__overlay::after, .era-duel.danmaku-battle--hit::before { content: none; }
+.era-duel.danmaku-battle--hit .danmaku-battle__stage { border-color: #d78787; animation: none; transform: none; }
+.era-duel.danmaku-battle--leaving { animation: duel-close 160ms steps(4) forwards; }
+@keyframes duel-reveal { from { clip-path: inset(0 0 100%); } to { clip-path: inset(0); } }
+@keyframes duel-close { to { clip-path: inset(0 0 100%); } }
+@media (max-width: 650px) and (orientation: portrait) {
+  .era-duel.danmaku-battle { --duel-fs: clamp(11px, 3.1vw, 17px); grid-template-areas: "title" "boss" "stage" "player" "controls"; grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto minmax(0,1fr) auto auto; gap: .55em; padding: 1em 1.5ch; }
+  .era-duel .danmaku-battle__stage { width: min(100%, calc((100dvh - 21em) * .75)); }
+  .era-duel .danmaku-battle__stats { width: 100%; padding: 0; gap: .3em; overflow-y: auto; max-height: 6em; }
+  .era-duel .danmaku-battle__stats--boss { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: .25em 2ch; }
+  .era-duel .danmaku-battle__stats--boss > h2, .era-duel .era-duel__portrait, .era-duel .danmaku-battle__identity { display: none; }
+  .era-duel .danmaku-battle__portrait { flex-direction: row; align-items: start; }
+  .era-duel .danmaku-battle__phase { grid-column: 1; grid-row: 2; border: 0; padding: 0; font-size: .8em; }
+  .era-duel .danmaku-battle__kojo { grid-column: 1/-1; max-height: 2.7em; overflow: auto; font-size: .85em; }
+  .era-duel .danmaku-battle__kojo b { display: none; }
+  .era-duel .danmaku-battle__kojo p { margin: 0; line-height: 1.4; }
+  .era-duel .danmaku-battle__stats--player { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 2ch; }
+  .era-duel .danmaku-battle__stats--player > :is(h2, pre, p) { display: none; }
+  .era-duel .danmaku-battle__numbers { display: flex; align-items: center; padding: 0; border: 0; gap: 1ch; justify-content: space-between; font-size: .85em; }
+  .era-duel .danmaku-battle__numbers > div { flex-direction: column; gap: 0; }
+  .era-duel .danmaku-battle__controls { font-size: max(10px, .8em); gap: 1ch; }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  .era-duel.danmaku-battle { --duel-fs: clamp(10px, 1.5vw, 15px); padding: .6em 2ch; gap: .5em 2ch; }
+  .era-duel .danmaku-battle__stage { width: min(48vw, calc((100dvh - 6em) * .75)); }
+  .era-duel .era-duel__portrait { width: 6em; height: 5em; }
+  .era-duel .danmaku-battle__stats { gap: .45em; }
+  .era-duel .danmaku-battle__identity { display: none; }
+}
+@media (pointer: fine) { .era-duel .danmaku-battle__touch-hint { display: none; } }
+@media (prefers-reduced-motion: reduce) { .era-duel, .era-duel * { animation: none !important; } }
+html[data-ui-motion="reduced"] .era-duel, html[data-ui-motion="reduced"] .era-duel * { animation: none !important; }

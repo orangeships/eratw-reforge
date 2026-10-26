@@ -133,6 +133,9 @@ export function makeSimpleComfHandler(opts: SimpleComfOpts): HandlerEntry {
             kind: "NARRATION",
             timestamp: ctx.now(),
             text: narrationText,
+            // Migration-fallback narration: retired by `withTrainMessage`
+            // whenever the authored TRAIN_MESSAGE route produced prose.
+            origin: "comf-fallback",
           },
           ...dialogueEvents,
           ...hostEvents,

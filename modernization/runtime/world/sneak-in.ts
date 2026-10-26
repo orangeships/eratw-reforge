@@ -65,6 +65,12 @@ export interface SneakResult {
   finalLocation: string;
   /** True when the master ended up inside `dest`. */
   entered: boolean;
+  /** Shell-layer hint: when true, no authored EVENT 12 kojo was found and L1
+   * AI completion is eligible (if AI is enabled). */
+  needsAiKojo?: boolean;
+  /** When needsAiKojo is true, provides the EVENT arm and sub for AI prompt. */
+  eventArm?: number;
+  eventSub?: number[];
 }
 
 export interface SneakKojoDeps {
@@ -127,9 +133,18 @@ export function attemptSneakIn(
     } else {
       events.push(narr(now, `潜入熟睡的${name}的房间打开门，却见${name}正瞪大眼睛睨视着这边，只好放弃了潜入…`));
     }
-    events.push(...event12(state, owner, 2, 1, now, deps));
+    const kojoEvents = event12(state, owner, 2, 1, now, deps);
+    events.push(...kojoEvents);
     setSlotLocation(state.master, prevLocation);
-    return { events, finalLocation: prevLocation, entered: false };
+    const hasAuthoredKojo = kojoEvents.length > 0;
+    return {
+      events,
+      finalLocation: prevLocation,
+      entered: false,
+      needsAiKojo: !hasAuthoredKojo && deps?.dialogueRouter !== undefined,
+      eventArm: !hasAuthoredKojo ? 12 : undefined,
+      eventSub: !hasAuthoredKojo ? [2, 1] : undefined,
+    };
   }
 
   // ── wake roll (owner is asleep & not 出禁 by lockedRoomOwner). ───────────
@@ -142,20 +157,47 @@ export function attemptSneakIn(
     owner.state.CFLAG[CFLAG_ID.睡眠] = 0; // @CHARA_AWAKE (modern wake)
     if (bedroomPermission(state, owner)) {
       events.push(narr(now, `${name}确认来访者是主人后，露出了安心的表情…`));
-      events.push(...event12(state, owner, 1, 2, now, deps));
+      const kojoEvents = event12(state, owner, 1, 2, now, deps);
+      events.push(...kojoEvents);
       setSlotLocation(state.master, dest);
-      return { events, finalLocation: dest, entered: true };
+      const hasAuthoredKojo = kojoEvents.length > 0;
+      return {
+        events,
+        finalLocation: dest,
+        entered: true,
+        needsAiKojo: !hasAuthoredKojo && deps?.dialogueRouter !== undefined,
+        eventArm: !hasAuthoredKojo ? 12 : undefined,
+        eventSub: !hasAuthoredKojo ? [1, 2] : undefined,
+      };
     }
     events.push(narr(now, `被${name}赶出了房间…`));
-    events.push(...event12(state, owner, 1, 4, now, deps));
+    const kojoEvents = event12(state, owner, 1, 4, now, deps);
+    events.push(...kojoEvents);
     setSlotLocation(state.master, prevLocation);
-    return { events, finalLocation: prevLocation, entered: false };
+    const hasAuthoredKojo = kojoEvents.length > 0;
+    return {
+      events,
+      finalLocation: prevLocation,
+      entered: false,
+      needsAiKojo: !hasAuthoredKojo && deps?.dialogueRouter !== undefined,
+      eventArm: !hasAuthoredKojo ? 12 : undefined,
+      eventSub: !hasAuthoredKojo ? [1, 4] : undefined,
+    };
   }
 
   // ── quiet sneak success. ────────────────────────────────────────────────
   events.push(narr(now, `悄悄潜入了熟睡的${name}的房间。`));
-  events.push(...event12(state, owner, 1, 1, now, deps));
+  const kojoEvents = event12(state, owner, 1, 1, now, deps);
+  events.push(...kojoEvents);
   owner.state.CFLAG[CFLAG_ID.夜這い] = (owner.state.CFLAG[CFLAG_ID.夜這い] ?? 0) | SNEAK_SUCCESS_BIT;
   setSlotLocation(state.master, dest);
-  return { events, finalLocation: dest, entered: true };
+  const hasAuthoredKojo = kojoEvents.length > 0;
+  return {
+    events,
+    finalLocation: dest,
+    entered: true,
+    needsAiKojo: !hasAuthoredKojo && deps?.dialogueRouter !== undefined,
+    eventArm: !hasAuthoredKojo ? 12 : undefined,
+    eventSub: !hasAuthoredKojo ? [1, 1] : undefined,
+  };
 }

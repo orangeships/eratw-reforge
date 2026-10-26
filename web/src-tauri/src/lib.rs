@@ -1,20 +1,21 @@
-//! Native Tauri shell for the eraTW Modern Player.
+//! Native Tauri shell for the Web/Tauri runtime and Mod Studio.
 //!
-//! The renderer invokes only the commands registered below:
-//!   - `ping` — liveness check; returns `"pong-<unix-millis>"`.
-//!   - `validate_kojo_source_path` — normalize a player-selected source.
-//!   - `add_kojo_source_scope` — authorize the normalized Kojo tree.
-//!   - `save_state` / `load_state` — persist GameState JSON in the app data dir.
-//!
-//! Plugins enabled:
-//!   - `tauri-plugin-dialog` — native folder picker.
-//!   - `tauri-plugin-store` — persisted settings file (renderer side only).
+//! The registered command set is the IPC authority. Player/runtime commands
+//! cover Kojo source access and save/load; Studio commands cover project
+//! validation, generated manifests, resource scope, and source watching.
+//! Manifest watcher events are emitted on `manifest://rebuilt` and
+//! `manifest://error`.
 
 mod asset_scope;
+mod ai_proxy;
 mod game_state;
+mod manifest;
 mod project;
+mod watcher;
 
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use watcher::WatchHandle;
 
 #[tauri::command]
 fn ping() -> String {
@@ -30,10 +31,18 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_shell::init())
+        .manage(WatchHandle(std::sync::Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             ping,
+            ai_proxy::ai_http_request,
+            project::validate_project_path,
             project::validate_kojo_source_path,
+            manifest::get_manifest,
+            asset_scope::add_asset_scope,
             asset_scope::add_kojo_source_scope,
+            watcher::start_watch,
+            watcher::stop_watch,
             game_state::save_state,
             game_state::load_state,
         ])

@@ -2,6 +2,7 @@ import type { GameState } from "../state/game-state.js";
 import type { InteractionSignalKind } from "./types.js";
 import { ensureEngagement } from "./init.js";
 import { recordSignal } from "./engagement.js";
+import { recordAgentDailyActivity } from "./daily-ledger.js";
 
 /**
  * Core signal recording function.
@@ -50,8 +51,20 @@ export function recordDialogueSignal(
   state: GameState,
   targetCharaNum: number,
   label: string,
+  dialogueText?: string,
+  startTick = state.time.tickValue,
 ): void {
   recordInteractionSignal(state, targetCharaNum, "dialogue", 3, label);
+  const slot = state.charas[targetCharaNum];
+  if (!slot) return;
+  recordAgentDailyActivity(state, targetCharaNum, {
+    kind: "player-command-dialogue",
+    startTick,
+    endTick: state.time.tickValue,
+    location: slot.location,
+    label: (dialogueText?.trim() || "与主人公进行了确定性命令对话").slice(0, 180),
+    participants: [0],
+  });
 }
 
 /**

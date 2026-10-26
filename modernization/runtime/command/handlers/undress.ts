@@ -208,7 +208,7 @@ function check820Eligible(
   target: number,
 ): { ok: true } | { ok: false; reason: { kind: "precondition"; message: string } } {
   if (actor !== 0) return block("主角才能执行。" );
-  if (getMasterCflag(state as GameState, CFLAG_ID.诶嘿嘿) !== 2) return block("诶嘿嘿中才可以执行。" );
+  if (getMasterCflag(state as GameState, CFLAG_ID.诶嘿嘿) === 0) return block("诶嘿嘿中才可以执行。" );
   if (getMasterCflag(state as GameState, CFLAG_ID.恶作剧) !== 0) return block("恶作剧中不能执行。" );
   if (isNaked(state.master)) return block("已经什么也没穿了。" );
   if (!requestedTarget(state, target)) return block("对象不在这里。" );
@@ -350,7 +350,7 @@ function check821Eligible(
 ): { ok: true } | { ok: false; reason: { kind: "precondition"; message: string } } {
   if (actor !== 0) return block("主角才能执行。" );
   const stopped = (state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
-  const hMode = getMasterCflag(state as GameState, CFLAG_ID.诶嘿嘿) === 2;
+  const hMode = getMasterCflag(state as GameState, CFLAG_ID.诶嘿嘿) !== 0;
   if (!stopped && !hMode) return block("诶嘿嘿中或时间停止中才可以执行。" );
   const target = requestedTarget(state, targetNum);
   if (!target) return block("对象不在这里。" );

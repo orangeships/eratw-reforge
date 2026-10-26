@@ -5,6 +5,22 @@ import type { PromptAnswer } from "../../../modernization/runtime/command/prompt
 import { formatGameEvent } from "./event-format.js";
 import { EventChoicePanel } from "./EventChoicePanel.js";
 import { dailyEventPromptView } from "../../../modernization/runtime/world/daily-event.js";
+import { usePresentationMode } from "../state/presentation-mode.js";
+import portraits from "./portraits.bundle.json";
+import SpriteCrop from "./SpriteCrop.js";
+import {
+  dimensionForKind,
+  portraitForClothing,
+  portraitForState,
+  portraitForExpression,
+  portraitKind,
+  portraitSourceForState,
+  type PortraitSource,
+} from "./portrait-expression.js";
+import { portraitWithOutfit } from "./portrait-special-outfit-runtime.js";
+import { checkNude } from "../../../modernization/runtime/state/portrait-outfit-context.js";
+
+const PORTRAITS = portraits as unknown as Record<string, PortraitSource>;
 
 interface Props {
   state: GameState;
@@ -30,6 +46,8 @@ interface DisplayLine {
  */
 interface Block {
   key: string;
+  charaNum: number;
+  onanism: boolean;
   lines: DisplayLine[];
 }
 
@@ -77,7 +95,12 @@ function buildBlocks(state: GameState): Block[] {
   for (const key of order) {
     const lines = byChara.get(key)!;
     if (lines.length === 0) continue;
-    blocks.push({ key: String(key), lines });
+    blocks.push({
+      key: String(key),
+      charaNum: key,
+      onanism: stream.some((event) => charaNumOf(event) === key && event.portrait === "onanism"),
+      lines,
+    });
   }
   return blocks;
 }
@@ -91,8 +114,11 @@ export default function NightSettlementScreen({
 }: Props) {
   const streamRef = useRef<HTMLDivElement | null>(null);
   const settledSessionKey = useRef<string | null>(null);
+  // Minimal mode: keep ONLY the 夜间事件 text (event stage with choices);
+  // the per-character 夜报 (呢喃/自慰/陷落/属性升级) is skipped.
+  const minimal = usePresentationMode() === "minimal";
   // App-level store updates can recreate this callback while the sleep screen
-  // is fading in. Keep the 720ms settlement timer tied to the sleep session,
+  // is fading in. Keep the short settlement timer tied to the sleep session,
   // not to that render-only callback identity; otherwise each parent rerender
   // cancels and restarts it forever.
   const settleSleepRef = useRef(onSettleSleep);
@@ -150,7 +176,7 @@ export default function NightSettlementScreen({
     const timer = window.setTimeout(() => {
       settledSessionKey.current = key;
       settleSleepRef.current();
-    }, 720);
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [
     pending?.startedAtTick,
@@ -224,6 +250,23 @@ export default function NightSettlementScreen({
               </>
             )}
           </div>
+        ) : minimal ? (
+          <>
+            {/* Minimal mode skips the per-character 夜报 (升级/决算) entirely;
+                only the 夜间事件 text (event stage above) is shown. */}
+            <p className="night-settlement__summary" data-testid="night-report-skipped">
+              结算完成。
+            </p>
+            <div className="night-settlement__actions">
+              <button
+                type="button"
+                data-testid="night-continue-menu"
+                onClick={onContinue}
+              >
+                前往起床前主菜单
+              </button>
+            </div>
+          </>
         ) : (
           <>
             <p className="night-settlement__summary" data-testid="night-report-summary">
@@ -256,15 +299,54 @@ export default function NightSettlementScreen({
                     data-testid="night-block"
                     data-chara={block.key}
                   >
-                    {block.lines.map((line, index) => (
-                      <p
-                        key={`${block.key}-${index}`}
-                        className={`night-settlement__line night-settlement__line--${line.kind}`}
-                        data-event-kind={line.kind}
-                      >
-                        {line.text}
-                      </p>
-                    ))}
+                    {block.charaNum > 0 && state.charas[block.charaNum] && (() => {
+                      const source = portraitForState(
+                        state,
+                        block.charaNum,
+                        portraitSourceForState(state, block.charaNum, PORTRAITS),
+                      );
+                      const kind = portraitKind(state);
+                      const naked = checkNude(state, block.charaNum);
+                      // 换装要在**选完服装分支之后**套上，否则只有 onanism 分支吃到。
+                      // ⚠️ onanism 分支必须**强制颜绘维度**（`lust` 只在顔絵上有），
+                      // 所以它要自己从 `source` 重新选维度 —— 不能再对已解析好的
+                      // `withOutfit` 调 `dimensionForKind`（那是叶子节点，没有 `.face`）。
+                      const withOutfitFor = (dimKind: typeof kind) =>
+                        portraitWithOutfit(
+                          state,
+                          block.charaNum,
+                          source,
+                          portraitForClothing(dimensionForKind(source, dimKind), naked),
+                          naked,
+                          dimKind,
+                        );
+                      const portrait = block.onanism
+                        ? portraitForExpression(withOutfitFor("face"), "lust")
+                        // 顺带修一个换装之前就存在的缺陷：原来非 onanism 分支直接用
+                        // `source`（没有 `dimensionForKind`），颜绘模式下会画出立绘。
+                        : withOutfitFor(kind);
+                      return portrait ? (
+                        <SpriteCrop
+                          source={portrait}
+                          alt={state.charas[block.charaNum]?.callName ?? `角色${block.charaNum}`}
+                          className={`night-settlement__portrait${block.onanism ? " night-settlement__portrait--onanism" : ""}`}
+                          frameWidth={112}
+                          frameHeight={172}
+                          cropTestId="night-block-portrait"
+                        />
+                      ) : null;
+                    })()}
+                    <div className="night-settlement__block-lines">
+                      {block.lines.map((line, index) => (
+                        <p
+                          key={`${block.key}-${index}`}
+                          className={`night-settlement__line night-settlement__line--${line.kind}`}
+                          data-event-kind={line.kind}
+                        >
+                          {line.text}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 ))
               )}

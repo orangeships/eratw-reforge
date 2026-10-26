@@ -1,7 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
+import { readMemorySave, writeMemorySave } from "./memory-archive-storage.js";
+import { exportMemoryBlocks, hydrateMemoryArchive, importMemoryBlocks } from "../ai/memory-archive.js";
+import { hasArchivedMemories, validateMemoryAttachments } from "../../../modernization/runtime/agent/memory-archive.js";
+import type { AgentRuntimeState } from "../../../modernization/runtime/agent/types.js";
 
-/** Player/runtime IPC bridge. It exposes only the Kojo-source and save/load
- * commands registered by the Player Tauri shell. */
+/** Player/runtime IPC bridge. Studio project and manifest IPC lives in
+ * `tauri-studio-bridge.ts`; keeping that surface separate prevents player
+ * code from depending on authoring-only APIs. */
 export interface KojoSourceValidation {
   path: string;
   kojoRoot: string | null;
@@ -78,11 +83,62 @@ export interface SeedSavePayload {
   summary?: SaveSummary;
 }
 
-interface StateEnvelope {
-  version: 1;
+export interface StateEnvelope {
+  version: 1 | 2;
   savedAt: number;
   summary?: SaveSummary;
   state: unknown;
+  /** Portable exports include originals; ordinary saves reference durable immutable blocks. */
+  memoryBlocks?: readonly unknown[];
+}
+
+export class MemoryArchiveLoadError extends Error {
+  readonly archiveCause: unknown;
+  constructor(cause: unknown) {
+    super("存档的长期记忆无法完整读取，请尝试其他存档。");
+    this.name = "MemoryArchiveLoadError";
+    this.archiveCause = cause;
+  }
+}
+
+function memoryRuntime(state: unknown): AgentRuntimeState | undefined {
+  return state && typeof state === "object" ? (state as { agentRuntime?: AgentRuntimeState }).agentRuntime : undefined;
+}
+
+async function loadEnvelope(projectRoot: string): Promise<StateEnvelope | null> {
+  if (!useLocalStateStore()) return toEnvelope(await invoke<unknown | null>("load_state", { projectRoot }));
+  const raw = window.localStorage.getItem(localStateKey(projectRoot));
+  if (!isMemorySaveLocator(raw)) return parseLocalEnvelope(raw);
+  try {
+    const archived = await readMemorySave(projectRoot);
+    if (!archived) throw new Error("Missing memory save document");
+    return toEnvelope(archived);
+  } catch (error) { throw new MemoryArchiveLoadError(error); }
+}
+
+function isMemorySaveLocator(raw: string | null): boolean {
+  if (!raw) return false;
+  try {
+    const value = JSON.parse(raw);
+    return value?.version === 2 && value.memoryIndexedDb === true && value.state === null;
+  } catch { return false; }
+}
+
+/** A self-contained portable save, without exposing other branches' archive blocks. */
+export async function exportSaveDocument(state: unknown, summary?: SaveSummary): Promise<StateEnvelope> {
+  const runtime = memoryRuntime(state);
+  await hydrateMemoryArchive(runtime?.memoryArchive);
+  return { version: 2, savedAt: Date.now(), summary, state: structuredClone(state), memoryBlocks: exportMemoryBlocks(runtime) };
+}
+
+export async function importSaveDocument(baseKey: string, slot: SaveSlot, input: unknown): Promise<void> {
+  const envelope = toEnvelope(input);
+  if (!envelope) throw new Error("Invalid save document");
+  const runtime = memoryRuntime(envelope.state);
+  if (hasArchivedMemories(runtime) && !Array.isArray(envelope.memoryBlocks)) throw new Error("Save document is missing its memory attachments");
+  if (envelope.memoryBlocks) await importMemoryBlocks(validateMemoryAttachments(runtime?.memoryArchive, envelope.memoryBlocks));
+  await hydrateMemoryArchive(memoryRuntime(envelope.state)?.memoryArchive);
+  await saveState(baseKey, slot, envelope.state, envelope.summary);
 }
 
 export interface SlotInfo {
@@ -149,9 +205,20 @@ export async function saveState(
   summary?: SaveSummary,
 ): Promise<void> {
   const projectRoot = slotProjectRoot(baseKey, slot);
-  const envelope: StateEnvelope = { version: 1, savedAt: Date.now(), summary, state };
+  const runtime = memoryRuntime(state);
+  const archived = hasArchivedMemories(runtime);
+  await hydrateMemoryArchive(runtime?.memoryArchive);
+  const envelope: StateEnvelope = { version: archived ? 2 : 1, savedAt: Date.now(), summary, state };
   if (useLocalStateStore()) {
-    window.localStorage.setItem(localStateKey(projectRoot), JSON.stringify(envelope));
+    const key = localStateKey(projectRoot);
+    const previous = window.localStorage.getItem(key);
+    const migrated = isMemorySaveLocator(previous);
+    // Ordinary AI-off saves never require IndexedDB. Keep the original legacy
+    // payload in cold storage before replacing its large localStorage entry.
+    if (archived || migrated) {
+      await writeMemorySave(projectRoot, envelope, migrated ? null : previous);
+      if (!migrated) window.localStorage.setItem(key, JSON.stringify({ version: 2, memoryIndexedDb: true, state: null }));
+    } else window.localStorage.setItem(key, JSON.stringify(envelope));
     return;
   }
   // Rust round-trips the envelope JSON verbatim (it only hashes projectRoot
@@ -182,22 +249,18 @@ export async function loadState(
   slot: SaveSlot,
 ): Promise<unknown | null> {
   const projectRoot = slotProjectRoot(baseKey, slot);
-  if (useLocalStateStore()) {
-    return parseLocalEnvelope(window.localStorage.getItem(localStateKey(projectRoot)))?.state ?? null;
-  }
-  const loaded = await invoke<unknown | null>("load_state", { projectRoot });
-  return toEnvelope(loaded)?.state ?? null;
+  const envelope = await loadEnvelope(projectRoot);
+  try {
+    if (envelope?.memoryBlocks) await importMemoryBlocks(envelope.memoryBlocks);
+    await hydrateMemoryArchive(memoryRuntime(envelope?.state)?.memoryArchive);
+  } catch (error) { throw new MemoryArchiveLoadError(error); }
+  return envelope?.state ?? null;
 }
 
 /** Slot metadata for the SAVE/LOAD page: existence + savedAt + summary. */
 export async function slotInfo(baseKey: string, slot: SaveSlot): Promise<SlotInfo> {
   const projectRoot = slotProjectRoot(baseKey, slot);
-  let env: StateEnvelope | null;
-  if (useLocalStateStore()) {
-    env = parseLocalEnvelope(window.localStorage.getItem(localStateKey(projectRoot)));
-  } else {
-    env = toEnvelope(await invoke<unknown | null>("load_state", { projectRoot }));
-  }
+  const env = await loadEnvelope(projectRoot);
   return {
     slot,
     exists: env !== null,

@@ -49,6 +49,14 @@ import { applyKojoEffects } from "../../kojo/effects.js";
 import { CFLAG_ID, FLAG_ID } from "../../state/settlement.js";
 import type { ObservationEvent } from "../../../schemas/types.js";
 import { TFLAG_ID, setTflag } from "../../state/tflag.js";
+import { isHMode } from "../h-mode.js";
+import {
+  activeHInsertionSites,
+  clearHInteractionState,
+  clearTrainingMode,
+  settleHInsertionHistory,
+} from "../training-session.js";
+import { afterAffairNarration } from "../../world/after-affair.js";
 
 function releasePantyReactions(ctx: CommandContext, state: GameState): ObservationEvent[] {
   const events: ObservationEvent[] = [];
@@ -144,13 +152,112 @@ export const comf201HandlerEntry: HandlerEntry = {
 
 export const comf999HandlerEntry: HandlerEntry = {
   commandNo: 999,
+  displayCheck: (ctx) => {
+    const hExit = ctx.state.training?.target === ctx.target ||
+      (ctx.target > 0 && isHMode(ctx.state, ctx.target));
+    const timeStopRelease =
+      (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
+      (ctx.state.master.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) === 0;
+    return {
+      shown: hExit || timeStopRelease,
+      labelOverride: hExit ? "结束幽会" : "解除时间停止",
+    };
+  },
+  execCheck: (ctx) => {
+    const hExit = ctx.state.training?.target === ctx.target ||
+      (ctx.target > 0 && isHMode(ctx.state, ctx.target));
+    const timeStopRelease =
+      (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
+      (ctx.state.master.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) === 0;
+    if (hExit || timeStopRelease) return { ok: true };
+    return { ok: false, reason: { kind: "precondition", message: "当前没有可结束的幽会或时间停止。" } };
+  },
   handler: (ctx: CommandContext) => {
     let next = cloneGameState(ctx.state);
 
-    if (next.training?.target === ctx.target) {
+    const hExit = ctx.state.training?.target === ctx.target ||
+      (ctx.target > 0 && isHMode(ctx.state, ctx.target));
+    if (hExit) {
+      const prose = afterAffairNarration(next, ctx.target, ctx.now());
+      const events: ObservationEvent[] = [...prose.opening, ...prose.fluid];
+      if (ctx.dialogueRouter && ctx.target > 0) {
+        const router = ctx.dialogueRouter;
+        // EVENT15's detailed route is authoritative. Do not turn gated or
+        // unsupported authored branches into AI/placeholder text.
+        const appendEvent15 = (detail: 1 | 2 | 3 | 4): void => {
+          const detailed = router.resolveEventKojoDetailed?.(
+            ctx.target,
+            15,
+            next,
+            ctx.rng,
+            [3, detail],
+          );
+          if (detailed) {
+            if (detailed.status === "resolved" || detailed.status === "partial") {
+              if (detailed.effects.length > 0) Object.assign(next, applyKojoEffects(next, detailed.effects));
+              events.push(...detailed.lines.map((line) => ({
+                kind: "DIALOGUE_LINE" as const,
+                timestamp: ctx.now(),
+                charaNum: ctx.target,
+                text: line.text,
+                form: line.form,
+              })));
+            }
+          } else {
+            const lines = router.resolveEventKojo?.(ctx.target, 15, next, ctx.rng, [3, detail]) ?? [];
+            events.push(...lines.map((line) => ({
+              kind: "DIALOGUE_LINE" as const,
+              timestamp: ctx.now(),
+              charaNum: ctx.target,
+              text: line.text,
+              form: line.form,
+            })));
+          }
+        };
+        if (prose.fluidKojoDetail) appendEvent15(prose.fluidKojoDetail);
+        events.push(...prose.mood);
+        appendEvent15(3);
+        events.push(...prose.clothing);
+        appendEvent15(4);
+        const ending = router.resolveEventKojoDetailed?.(ctx.target, 15, next, ctx.rng, [2, 0]);
+        if (ending && (ending.status === "resolved" || ending.status === "partial")) {
+          if (ending.effects.length > 0) Object.assign(next, applyKojoEffects(next, ending.effects));
+          events.push(...ending.lines.map((line) => ({
+            kind: "DIALOGUE_LINE" as const,
+            timestamp: ctx.now(),
+            charaNum: ctx.target,
+            text: line.text,
+            form: line.form,
+          })));
+        } else if (!ending) {
+          const lines = router.resolveEventKojo?.(ctx.target, 15, next, ctx.rng, [2, 0]) ?? [];
+          events.push(...lines.map((line) => ({
+            kind: "DIALOGUE_LINE" as const,
+            timestamp: ctx.now(),
+            charaNum: ctx.target,
+            text: line.text,
+            form: line.form,
+          })));
+        }
+      } else {
+        events.push(...prose.mood, ...prose.clothing);
+      }
+      // Deflowering/history and insertion marker cleanup happen only after
+      // AFTER_AFFAIR and every EVENT15 arm has had the original live state.
+      const history = activeHInsertionSites(next, ctx.target).flatMap((site) =>
+        settleHInsertionHistory(next, ctx.target, site));
+      const clearedEdging = clearHInteractionState(next, ctx.target);
+      clearTrainingMode(next, ctx.target);
       return {
         state: next,
-        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "结束了这次幽会。" }],
+        events: [
+          ...events,
+          ...history.map((text) => ({ kind: "NARRATION" as const, timestamp: ctx.now(), text })),
+          ...(clearedEdging > 0
+            ? [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "幽会结束，未吸收的寸止积累已清除。" }]
+            : []),
+          { kind: "NARRATION" as const, timestamp: ctx.now(), text: "结束了这次幽会。" },
+        ],
         outcome: "ok" as const,
       };
     }

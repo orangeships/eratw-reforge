@@ -25,6 +25,8 @@ import type { DanmakuBattleSession } from "./danmaku-game.js";
 import type { FishingGameSession, FishingSettlement } from "./fishing-game.js";
 import type { FishingGearState } from "./fishing.js";
 import type { StoneContestProgress, StoneContestSession } from "./stone-contest.js";
+import type { AcceptedExperience } from "../experience.js";
+import type { NarrativeEventInstance, NarrativeSituationSessionV1, StoryArcInstanceV1, StoryProgram, StoryTemplateFavoriteRequest } from "../story/types.js";
 
 /**
  * Per-character numeric state. Each namespace is a sparse
@@ -173,9 +175,9 @@ export interface Dish {
 }
 
 export interface TimeSlot {
-  /** Monotonically increasing in-game clock value. Stub for Phase 8. */
+  /** Absolute ERA timestamp (`DAY * 1440 + TIME`); a legacy H TIME correction may rewind it. */
   tickValue: number;
-  /** 0-based day index from game start. */
+  /** Upstream DAY counter; not decremented by a short negative TIME correction. */
   dayIndex: number;
   /** 0–23. */
   hourOfDay: number;
@@ -253,8 +255,8 @@ export interface EventPromptSpec {
 
 /** Persisted continuation for a gameplay-affecting DAILY_EV prompt. */
 export interface DailyEventSession {
-  kind: "ev0-fairy-punishment" | "ev20-head-visit" | "ev5-oppai" | "ev23-visit-sales";
-  eventId: 0 | 5 | 20 | 23;
+  kind: "ev0-fairy-punishment" | "ev20-head-visit" | "ev5-oppai" | "ev23-visit-sales" | "daily-kojo";
+  eventId: 0 | 2 | 4 | 5 | 20 | 23;
   /** Day reached by the in-progress night settlement. */
   eventDay: number;
   /** Seed of the whole sleep settlement, used to replay every RAND exactly. */
@@ -262,12 +264,22 @@ export interface DailyEventSession {
   phase: "punishment-choice" | "visit-choice" |
     "oppai-choice" | "oppai-futanari-choice" | "oppai-target" | "oppai-correction" |
     "sales-appearance" | "sales-listen" | "sales-offer" | "sales-bargain" |
-    "sales-use" | "sales-return" | "sales-intimate" | "sales-intimate-payment";
+    "sales-use" | "sales-return" | "sales-intimate" | "sales-intimate-payment" |
+    "kojo-choice";
   /** Primitive continuation data (upstream random rolls, bit flags, and selected ids). */
   data?: Record<string, number | string | boolean>;
   /** Snapshot of the exact prompt/opening shown at the pause boundary. Older
    * saves omit it and use the event-specific compatibility view. */
   prompt?: EventPromptSpec;
+}
+
+/** Persisted continuation for the upstream `@NEWYEAR` resolution choice. */
+export interface FestivalEventSession {
+  kind: "new-year";
+  /** Absolute modern day index on which the prompt was opened. */
+  dayIndex: number;
+  /** Snapshot of the six deterministic `@NEWYEAR` choices. */
+  prompt: EventPromptSpec;
 }
 
 /** Serializable child entity; CFLAG child counters remain compatibility mirrors. */
@@ -323,6 +335,9 @@ export interface GeneratedDynamicCharacterMeta {
   createdDay: number;
   portrait?: DynamicCharacterPortrait;
   rememberedSlot?: number;
+  /** DAILY_EV34 applied to this encounter; persisted for battle/UI adapters. */
+  raceBuffBattleBonus?: number;
+  raceBuffHandicapMultiplier?: number;
 }
 
 /** Stable authored residents share the CharaSlot/state authorities used by
@@ -357,7 +372,7 @@ export interface MobGirlMemorySession {
 export interface AcceptedEventRanking {
   setId: string;
   contextHash: string;
-  channel: "daily" | "outing-departure" | "outing-return" | "banquet";
+  channel: "daily" | "outing-departure" | "outing-return" | "banquet" | "story";
   dayIndex: number;
   candidateIds: number[];
   acceptedAtTick: number;
@@ -515,7 +530,23 @@ export interface BanquetEventInstance {
   originRoomIds?: Record<number, number>;
 }
 
-export type DateSessionPhase = "traveling" | "active" | "returning";
+/**
+ * A date is always in this single phase: the upstream on-the-road stage
+ * (`TFLAG:约会道中`, upstream `SET_DATE` writing `所要时间 + 1000`) is
+ * deliberately not modeled. Upstream travel *time* is still charged, but both
+ * participants are placed at the destination in the same settlement pass.
+ * Legacy `traveling` / `returning` values are normalized to `"active"` by the
+ * save migration.
+ */
+export type DateSessionPhase = "active";
+
+export interface DateItineraryStep {
+  id: string;
+  location: string;
+  label: string;
+  travelMinutes: number;
+  status: "pending" | "completed" | "skipped";
+}
 
 /** Authoritative single-partner date state. Legacy ERA flags are projections. */
 export interface DateSession {
@@ -528,7 +559,15 @@ export interface DateSession {
   forcedEndTick?: number;
   phase: DateSessionPhase;
   destination?: string;
-  travelRemainingMinutes?: number;
+  /** Who chooses the route. Missing on legacy saves and therefore treated as
+   * player-led. A partner-led session is created only after player consent. */
+  controller?: "player" | "partner";
+  leaderId?: number;
+  eventId?: string;
+  autoAdvance?: boolean;
+  itinerary?: DateItineraryStep[];
+  itineraryCursor?: number;
+  executedActionIds?: string[];
 }
 
 export type DatePlanPhase =
@@ -554,6 +593,40 @@ export interface DatePlanEvent {
   arrivalTick?: number;
   waitUntilTick?: number;
   resolvedAtTick?: number;
+  /** NPC invitations default to partner-led after acceptance. Legacy events
+   * without this field remain player-led. */
+  controller?: "player" | "partner";
+}
+
+export interface EventDialogueDirectiveV1 {
+  version: 1;
+  eventId: string;
+  arcId?: string;
+  beatId: string;
+  participantIds: number[];
+  objective: string;
+  actorRole: string;
+  visibleFactIds: string[];
+  revealableFactIds: string[];
+  forbiddenClaims: string[];
+  allowedIntentIds: string[];
+  completionFactIds: string[];
+  openedAtTick: number;
+  expiresAtTick: number;
+}
+
+export interface ScheduledWeatherIncidentV1 {
+  version: 1;
+  id: string;
+  optionId: string;
+  label: string;
+  startTick: number;
+  endTick: number;
+  weatherId: number;
+  windId: number;
+  status: "scheduled" | "active" | "completed" | "cancelled";
+  sourceEventId?: string;
+  idempotencyKey: string;
 }
 
 export type WorldEventInstance = BanquetEventInstance | DatePlanEvent;
@@ -676,6 +749,22 @@ export type CommissionTaskKind =
   | "deliver_person"
   | "deliver_place";
 
+/** Progressive disclosure state for search-type requests. */
+export type CommissionSearchReveal = "hidden" | "person" | "map" | "place";
+
+/** Pending request data that upstream keeps in IRAI_DATA/IRAI_SUB/IRAI_EX. */
+export interface CommissionOffer {
+  /** Snapshot chosen when the request is generated, before acceptance. */
+  targetCharaNum?: number;
+  targetLocation?: string;
+  /** Source-backed clue variant (`IRAI_SUB`). */
+  sub?: number;
+  /** Current disclosure stage; hidden until the player pays for a search. */
+  searchReveal?: CommissionSearchReveal;
+  /** Dynamic location revealed by a person search. */
+  revealedLocation?: string;
+}
+
 /** One accepted 委托 slot (`IRAI_SLOT`/`IRAI_DATA`/`IRAI_SUB`/deadline). */
 export interface CommissionSlot {
   /** `MAKE_IRAI_ID(client, localId)` = client*1000 + localId. */
@@ -686,8 +775,26 @@ export interface CommissionSlot {
   task: CommissionTaskKind;
   targetCharaNum?: number;
   targetLocation?: string;
+  /** Persisted source sub-variant used by the search clue. */
+  sub?: number;
+  /** Search disclosure stage for lost-person/lost-place requests. */
+  searchReveal?: CommissionSearchReveal;
+  /** Location disclosed by the second dowsing step. */
+  revealedLocation?: string;
   itemId?: number;
   itemQty?: number;
+  /** 一般依頼17 味要求 — the client's vague-memory taste tags, slash-delimited
+   *  (`一般17.ERB:213 @IRAI_一般17_味設定`). Resolved once at acceptance from a
+   *  seed derived from `sub`/`acceptedDay`, because upstream re-seeds the same
+   *  scratch RNG on every display. Optional: slots accepted before this was
+   *  ported have no request and score on dish quality alone. */
+  tasteRequest?: string;
+  /** 一般依頼18 点单 — the ordered dish (`一般18.ERB:151 REQUEST_DISHNAME`).
+   *  Absent on old slots and when the DISHDATA catalog is not injected. */
+  dishRequest?: { no: number; name: string; isSp: boolean };
+  /** 大成功 (おまけ) — stamped at execution, consumed once at report
+   *  (`一般17.ERB:187` / `一般18.ERB:273`). */
+  bonus?: boolean;
   /** Absolute day index when the request expires. 0 = no deadline. */
   deadlineDay: number;
   acceptedDay: number;
@@ -696,6 +803,8 @@ export interface CommissionSlot {
 /** JSON-safe modern mirror of eraTW's accepted request arrays. */
 export interface CommissionState {
   slots: CommissionSlot[];
+  /** Pending offers keyed by client id; accepted offers move into `slots`. */
+  offers: Record<number, CommissionOffer>;
   /** Day index when IRAI_HAPPEN → IRAI_VANISH last ran. Prevents double-run
    *  across finishPlayerSleep + explicit [100] 睁开眼睛 in the same morning. */
   lastMorningDay?: number;
@@ -768,9 +877,15 @@ export interface TrainingSession {
   participants: number[];
   recentCommands: TrainingCommandRecord[];
   /** Authoritative insertion/position state for H-derived commands. */
+  /** Compatibility projections of the canonical relation, refreshed by the
+   * insertion writer and save migration. Never use as a gameplay gate. */
   vInserted?: boolean;
   aInserted?: boolean;
   currentPositionCommandNo?: number;
+  /** Debug/AI-context marker for the most recent EVENT_COUNTER action
+   *  (upstream `TCVAR:Counter行動`); informational, never re-read by the
+   *  counter pipeline itself. */
+  lastCounterAction?: number;
 }
 
 export interface TrainingSummary {
@@ -783,6 +898,82 @@ export interface TrainingSummary {
   mode: TrainingMode;
   lastCommandNo: number;
   reason: "exit-command" | "target-changed" | "manual";
+}
+
+/** One per-turn physiological event captured while the command's
+ *  `KojoExecutionFrame` is still alive. `subject` is copied verbatim from the
+ *  `nowExByChara` key — never inferred from "who is the player". */
+export interface HSettlementEvent {
+  /** Chara number the event happened to. 0 = MASTER. */
+  subject: number;
+  /** `unaware-orgasm` is the 無自覚 channel (time-stop / sleeping). */
+  kind: "orgasm" | "unaware-orgasm" | "ejaculation";
+  /** Orgasm channel; absent for `ejaculation`. */
+  channel?: "Ｃ" | "Ｖ" | "Ａ" | "Ｂ" | "Ｍ";
+  /** This turn's increment (NOWEX), not a cumulative total. */
+  amount: number;
+  /** Where an ejaculation landed (`TCVAR:射精箇所` → `ejaculationSiteInfo`). */
+  site?: {
+    code: number;
+    kind: "ejaculation-site" | "stimulated-side";
+    label: string;
+  };
+  /** Special-combination markers (`TCVAR:口上出力用射精部位` bitmask). */
+  markerLabels?: string[];
+}
+
+/**
+ * Snapshot of one H-family command's settlement, taken at the end of
+ * `resolveCommand` while `state.turnContext.frame` still holds the per-turn
+ * SOURCE/NOWEX data.
+ *
+ * This exists because the frame is **not** readable later: `apply-intent.ts`
+ * clears `turnContext` on every successful command, and
+ * `game-state-migration.ts` drops it on load. Without this receipt the L1
+ * request (prepared from the already-committed post-state) has no structured
+ * source for "what happened this turn".
+ *
+ * A receipt is a **receipt, not a projection**: it is overwritten by each
+ * H-family command and says nothing durable about long-term state. `undefined`
+ * means unknown (no H command has run since the save was loaded) — it must
+ * never be read as "nothing happened".
+ */
+export interface HSettlementReceipt {
+  version: 1;
+  /** Post-settlement clock, used for freshness checks against a later request. */
+  tick: number;
+  day: number;
+  commandNo: number;
+  /** Command issuer. 0 = MASTER. Under partner-led the actor is the NPC. */
+  actor: number;
+  /** The session this command acted in. Null when the command ran outside a
+   *  session (rare) — `exited` still records that one ended. */
+  session: {
+    target: number;
+    mode: TrainingMode;
+    participants: number[];
+    /** This command ended the session (850/999/127/mob interrupt). */
+    exited: boolean;
+    exitReason: TrainingSummary["reason"] | null;
+    /** This command started the session (350/356). */
+    started: boolean;
+  } | null;
+  /** This turn's events. Empty array is a positive claim of "none". */
+  events: HSettlementEvent[];
+  /** Accepted V/A deposit volumes for LOOK_AT after the command frame clears.
+   * Optional for old/in-memory receipts; absence means unknown, never zero. */
+  deposits?: Array<{ subject: number; site: "v" | "a"; amount: number }>;
+  /** 寸止め deltas. Edging does not write NOWEX, so these are EX diffs. */
+  edging: { gained: number; cleared: number };
+  /** Brands newly acquired or raised this turn, e.g. `"苦痛刻印Lv2"`. */
+  marks: string[];
+  /** Insertion links still active after settlement. */
+  insertion: { v: boolean; a: boolean };
+  /** Insertion links BEFORE settlement — the diff against `insertion` is what
+   *  makes `changes_this_turn` a real claim rather than a guess. */
+  insertionBefore: { v: boolean; a: boolean };
+  /** BASE deltas this turn (negative = spent). */
+  vitality: Array<{ subject: number; stamina: number; will: number }>;
 }
 
 /** Save-compatible authored-kojo memory. Keys are explicit source-level
@@ -806,11 +997,29 @@ export interface KojoExecutionFrame {
   commandNo: number;
   previousCommandNo?: number;
   outcome?: number;
+  /** Actual elapsed world-time minutes committed for this command. */
+  elapsedMinutes?: number;
+  /** Guards TRACHECK_TIME so repeated SOURCE_CHECK calls share one cost. */
+  sourceCheckTimeApplied?: boolean;
+  /** H command clock work is projected in-frame and committed after resolution. */
+  batchCommandTime?: boolean;
+  commandTimeOrigin?: { tickValue: number; dayIndex: number; hourOfDay: number };
+  commandTimeOperations?: Array<{ kind: "elapsed" | "adjustment"; minutes: number }>;
+  /** Command-start BASE snapshot used to derive the current slice's fatigue. */
+  baseBeforeByChara?: Record<number, { stamina: number; will: number }>;
+  /** Guards ADD_TIRED so repeated SOURCE_CHECK calls do not double-count it. */
+  fatigueAppliedByChara?: Record<number, true>;
   sourceByChara: Record<number, Record<number, number>>;
   nowExByChara: Record<number, Record<number, number>>;
   args: Array<number | string>;
   results: Array<number | string>;
   roleAliases: Record<string, number | string>;
+  /**
+   * EVENT_COUNTER once-per-command-per-chara dedup (`TCVAR:ARG:30` upstream).
+   * Frame-scoped: a fresh command naturally resets it, so the counter never
+   * pollutes the save. Only targets that actually fired a counter are set.
+   */
+  counterFiredByChara?: Record<number, number>;
   /**
    * Per-target `DOUBLE_MESSAGE_BLOCKED:TARGET` snapshot for the duration of
    * one command's kojo execution frame. Each bit corresponds to a single
@@ -820,8 +1029,10 @@ export interface KojoExecutionFrame {
    * resolver rebuilds the frame on the next command. The field is intentionally
    * absent from `GameState.schemaVersion` and is reset on every save migration,
    * so it never survives a save/load round-trip.
-   */
+  */
   doubleMessageBlockedByChara: Record<number, number>;
+  /** H MARK_GOT_CHECK inputs accumulated across SOURCE_CHECK passes in this command. */
+  trainingMarkCupsByChara?: Record<number, Record<number, number>>;
 }
 
 /** Command-local execution state. Never persisted as long-lived gameplay data. */
@@ -835,6 +1046,10 @@ export interface TurnContext {
 }
 
 export interface GameState {
+  /** Ephemeral, Runtime-validated dialogue consent; discarded on save migration. */
+  aiDialogueAccompany?: Record<number, import("../ai-state/dialogue-action.js").DialogueAccompanyPermit>;
+  /** Persistent AI chat receipts and absolute daily relationship budgets. */
+  aiRelationshipLedger?: import("../ai-state/relationship.js").AiRelationshipLedger;
   /** Runtime state schema, distinct from the outer save-envelope version. */
   schemaVersion?: number;
   time: TimeSlot;
@@ -851,6 +1066,8 @@ export interface GameState {
   charas: Record<number, CharaSlot>;
   /** Top-level FLAG store (not per-chara CFLAG). Phase 5 extends. */
   flagStore: Record<number, number>;
+  /** Named upstream `#DIM SAVEDATA` values (for example DLC.ERH toggles). */
+  dlcSavedata?: Record<string, number>;
   /**
    * Legacy flat `TFLAG` namespace. Schema migration always initializes this
    * independently from `flagStore`; numeric overlap makes copying between the
@@ -889,6 +1106,8 @@ export interface GameState {
   dailyEventValues?: Record<number, number>;
   /** Gameplay prompt that paused the whole sleep settlement before commit. */
   dailyEventSession?: DailyEventSession | null;
+  /** Pending public festival choice, currently the `@NEWYEAR` resolution. */
+  festivalEventSession?: FestivalEventSession | null;
   /** Pending world-level `@MAKANAI` yes/no prompt. */
   mobMealSession?: MobMealSession | null;
   /** Generated individual-character metadata, keyed by the normal CharaSlot id. */
@@ -899,6 +1118,32 @@ export interface GameState {
   mobGirlMemorySession?: MobGirlMemorySession | null;
   /** Accepted read-only event orderings. Cleared after their opportunity settles. */
   acceptedEventRankings?: AcceptedEventRanking[];
+  /** Default-off S5 short-event program. Deterministic runtime owns its
+   * control flow and the only whitelisted gameplay effects. */
+  storyProgram?: StoryProgram | null;
+  /** Accepted L3 calendar instances. Invalid proposals never enter this list. */
+  narrativeEvents?: NarrativeEventInstance[];
+  /** Accepted dialogue hooks. Expression receipts never imply gameplay effects. */
+  narrativeHooks?: import("../story/dialogue-hook.js").NarrativeHookV1[];
+  /** Accepted portable small stories; waiting frontiers do not own the foreground. */
+  storylets?: import("../story/storylet-runtime.js").StoryletInstanceV1[];
+  nextStoryletSerial?: number;
+  /** Stage-A situations generated overnight, awaiting the player's pick. The
+   * opening act is only generated after a choice, so nothing here has a
+   * StoryProgram yet. Persisted so a save between night and morning keeps it. */
+  narrativeSituationSession?: NarrativeSituationSessionV1 | null;
+  /** At most three persistent L3 arcs. Future facts are planned one phase at a time. */
+  storyArcs?: StoryArcInstanceV1[];
+  /** Player-originated favorite requests. Runtime never writes project files. */
+  storyTemplateFavorites?: StoryTemplateFavoriteRequest[];
+  /** Runtime-authored event context consumed by L1. This is structured data,
+   * never a system-prompt fragment supplied by a model. */
+  activeEventContext?: EventDialogueDirectiveV1 | null;
+  /** Weather authority-owned incidents selected through an opaque L3
+   * capability. The weather scheduler, not StoryProgram, applies them. */
+  scheduledWeatherIncidents?: ScheduledWeatherIncidentV1[];
+  /** Idempotency receipts for accepted L2/L1 action proposals. */
+  acceptedAgentActionIds?: string[];
   /** Persisted world-event instances; the instance is authoritative over mirrors. */
   worldEvents?: WorldEventInstance[];
   /** Ordinary solo outing, independent of an active date. */
@@ -947,6 +1192,11 @@ export interface GameState {
   training?: TrainingSession | null;
   /** Last completed training session, kept for UI/debug summaries. */
   lastTrainingSummary?: TrainingSummary | null;
+  /** Most recent H-family command's settlement snapshot (see
+   *  `HSettlementReceipt`). Absent on saves written before this field existed
+   *  and on sessions where no H command has run yet — absent means **unknown**,
+   *  never "nothing happened". */
+  lastHSettlement?: HSettlementReceipt | null;
   /** Selected personal-kojo variant per character. Missing = the bundled
    *  default, mirroring upstream `CFLAG:口上セレクタ == 0`. */
   selectedKojoVariants?: Record<number, string>;
@@ -1013,6 +1263,8 @@ export interface GameState {
    * only limited counts + sold-out (-1) + sealed (-2) markers are persisted.
    */
   itemSales?: Record<number, number>;
+  /** Active Wriggle insect-foraging subscription (COMF443 target 27). */
+  insectForaging?: import("./insect-foraging.js").InsectForagingContract;
   /**
    * Opening-flow kojo opt-out list. Keyed by charaNum; a truthy entry means the
    * pre-game selection screen disabled that character's personal dialogue pack.
@@ -1102,6 +1354,13 @@ export interface GameState {
    * only the non-zero EQUIP entries (sparse). JSON-safe via structuredClone.
    */
   outfitSets?: Record<number, Record<number, Record<number, number>>>;
+  /** Temporary EQUIP snapshots used by the 祭日イベント rabbit-day outfit. */
+  festivalOutfitSnapshots?: Record<number, Record<number, number>>;
+  /** NPC schedule fields saved before the upstream 大晦日 late-night override. */
+  festivalScheduleSnapshots?: Record<number, {
+    returnTime: number;
+    sleepTime: number;
+  }>;
   /**
    * The current dish (`DISH_*` globals, `FOOD.ERH`). `null`/unset = no dish.
    * Populated by COMF413 (B7-cook, deferred) or `seedDish()` (B7-eat slice).
@@ -1226,10 +1485,13 @@ export interface GameState {
    *
    * Persists interaction scores, dynamic top-N roster, per-character
    * cognitive state (observations / memories / reflections / goals /
-   * diaries), and runtime settings.  No LLM calls are made in the
-   * persistence-foundation slice — this is pure data.
+   * diaries / bounded L2 mind / pending player episodes), and runtime
+   * settings. No LLM calls are made in this persistence field — this is pure
+   * data.
    */
   agentRuntime?: import("../agent/types.js").AgentRuntimeState;
+  /** Bounded system-accepted narrative history; never canonical gameplay state. */
+  acceptedExperiences?: AcceptedExperience[];
 }
 
 /** One NPC's line in the night-settlement daily report. */

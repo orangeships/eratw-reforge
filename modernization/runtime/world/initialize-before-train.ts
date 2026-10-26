@@ -40,6 +40,7 @@
 
 import type { CharaSlot, GameState } from "../state/index.js";
 import { BASE_ID, CFLAG_ID, TCVAR_ID } from "../state/settlement.js";
+import { restoreTemporaryStayovers } from "./temporary-stay.js";
 
 /** Id list of the CFLAG bits that `@InitializeBeforeTrain` clears on
  *  every character every morning. Faithful to BEFORETRAIN.ERB:840-859. */
@@ -185,6 +186,7 @@ export function initializeBeforeTrain(
 
 /** Apply `@InitializeBeforeTrain` to every character + master. */
 export function runInitializeBeforeTrain(state: GameState): void {
+  restoreTemporaryStayovers(state);
   initializeBeforeTrain(state, 0);
   for (const num of Object.keys(state.charas)) {
     initializeBeforeTrain(state, Number(num));

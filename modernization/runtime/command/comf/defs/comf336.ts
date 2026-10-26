@@ -29,10 +29,13 @@
  *   - Master: 気力 += 100 (in `downbase`)
  *   - 大成功 extra: target 体力-=150, target 気力-=300, master 気力-=50 (body)
  *
- * Persisted (ERB 107-110):
- *   - `TIME += 20` → timeCost
- *   - `TFLAG:膝枕した = 1440*DAY + TIME` → written as TCVAR 310 (膝枕時刻)
- *   - 大成功 extra: `TIME += 20` → added in body
+ * Clock (ERB 101, 107): every outcome costs +20 minutes; 大成功 adds another
+ * +20. TRACHECK_TIME applies the optional −4 before @COM336, so the modern
+ * outcome-dependent timeCost folds that correction into one clock advance.
+ *
+ * ERB 110 writes global `TFLAG:膝枕した` after the command clock cost. Its
+ * COM_ABLE336 consumer blocks repeat use for 45 minutes. Keep this in the
+ * global TFLAG namespace; TCVAR 310 belongs to separate per-character routes.
  *
  * **DEFERRED (documented, off in a clean state):**
  *   - Complex RAND:LOCAL outcome roll with TALENT/BASE inputs
@@ -41,21 +44,16 @@
  *   - SET_DERAY(6, TARGET)
  *   - CASE 1 強制成功 / CASE -1 強制失敗 / CASE -2 指令終了 arms
  *   - MAGIC_DLC_大成功相关 / M_TFLAG:成功
- *   - TIME_PROGRESS(TFLAG:膝枕した) < 45 cooldown (checked in COM_ABLE336)
  */
 import type { HandlerEntry } from "../../types.js";
 import { ABL_ID, BASE_ID, SOURCE_ID } from "../../../state/settlement.js";
+import { setTflag, TFLAG_ID } from "../../../state/tflag.js";
 import { makeComfHandler } from "../make-comf-handler.js";
 import {
   MUL_NONE,
   type ComfDef,
   type OutcomeMul,
 } from "../comf-def.js";
-
-/** TCVAR:膝枕時刻 = 310 (from TCVAR.als). ERB uses TFLAG:膝枕した (231)
- *  but CharaSlotState has no TFLAG namespace — TCVAR 310 serves the same
- *  cooldown-marker role. COM_ABLE336 gate is deferred. */
-const TCVAR_HIZAMAKURA = 310;
 
 /** Outcome multipliers for 露出: great 1.80, fail 0.40.
  *  通常 ×0.90 (ERB line 95) cannot be modeled — see docstring. */
@@ -64,7 +62,8 @@ const MUL_ROSHUTSU: OutcomeMul = { great: 1.80, fail: 0.40 };
 export const comf336Def: ComfDef = {
   commandNo: 336,
   label: "膝枕する",
-  timeCost: 20,
+  gate: { tflagCooldown: { tflagId: TFLAG_ID.膝枕した, minutes: 45 } },
+  timeCost: (c) => 20 + (c.outcome === 1 ? 20 : 0),
   // Default roll: RAND:100, greatThreshold:5, failThreshold:90.
   // Complex RAND:LOCAL with TALENT/BASE inputs deferred (hasRand=false).
 
@@ -136,16 +135,12 @@ export const comf336Def: ComfDef = {
     // ERB 57: DOWNBASE:気力 += 50 (target — factory only drains master)
     c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 50;
 
-    // ERB 110: TFLAG:膝枕した = 1440*DAY + TIME
-    // Written to TCVAR 310 (膝枕時刻) since CharaSlotState has no TFLAG.
-    // = tickValue (absolute minute); old `1440*dayIndex + tickValue` doubled
-    // the day — see comf302 / oracle 9912.
-    c.t.state.TCVAR[TCVAR_HIZAMAKURA] = c.next.time.tickValue;
+    // ERB 110: global TFLAG:膝枕した = 1440*DAY + TIME. The factory has
+    // already advanced the clock, including TRACHECK_TIME's pre-command −4.
+    setTflag(c.next, TFLAG_ID.膝枕した, c.next.time.tickValue);
 
     // 大成功 extra effects (ERB 101-105)
     if (c.outcome === 1) {
-      // ERB 101: TIME += 20 (extra time on 大成功)
-      c.next.time.tickValue += 20;
       // ERB 102-103: DOWNBASE:体力 -= 150, DOWNBASE:気力 -= 300 (target)
       c.t.state.BASE[BASE_ID.体力] =
         (c.t.state.BASE[BASE_ID.体力] ?? 0) - 150;

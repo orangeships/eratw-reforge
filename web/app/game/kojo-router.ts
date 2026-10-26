@@ -3,8 +3,10 @@ import {
   resolveKojoNodeDetailed,
   resolveKojoFunctionDetailed,
   resolveKojoNodeWithChoices,
+  hasActionableKojoNode,
   palamKojoKey,
   iraiKojoSelectorKeys,
+  mergeIraiKojoResolutions,
   resolveActiveKojoVariantCode,
 } from "../../../modernization/runtime";
 import { resolveDiaryCall } from "../../../modernization/runtime/kojo/diary-call.js";
@@ -38,6 +40,7 @@ export interface BrowserKojoVariant {
   /** Personal SCOM trees selected by upstream TFLAG:50 dispatch. */
   byScom?: Record<string, KojoNode>;
   byEventArm?: Record<string, KojoNode>;
+  byDailyEvent?: Record<string, KojoNode>;
   bySpEvent?: Record<string, KojoNode>;
   /** Authored DAYEVENT_COND return hook for this character/variant. */
   byDayEventCondition?: KojoNode;
@@ -170,6 +173,7 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
     commandNo: number,
     state: Readonly<GameState>,
     rng: Rng,
+    options?: { probeReadonly?: boolean },
   ): KojoResolution => {
     if (!roleplayEnabledForTarget(state, charaNum)) {
       return emptyKojoResolution("gated");
@@ -180,14 +184,51 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
     if (!node) {
       return emptyKojoResolution("not-authored");
     }
-    return resolveKojoNodeDetailed(node, charaNum, state, rng, [], { commandNo });
+    return resolveKojoNodeDetailed(node, charaNum, state, rng, [], {
+      commandNo,
+      probeReadonly: options?.probeReadonly,
+    });
+  };
+
+  const resolveIraiDetailed = (
+    charaNum: number,
+    role: string,
+    scene: string,
+    iraiId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+  ): KojoResolution => {
+    if (!roleplayEnabledForTarget(state, charaNum)) return emptyKojoResolution("gated");
+    const chara = bundle.byChara[String(charaNum)];
+    const variant = activeKojoVariant(chara, state, charaNum);
+    const clientId = iraiIdToClient(iraiId);
+    const targetName = state.charas[charaNum]?.callName ?? chara?.callName ?? "对方";
+    const clientName =
+      state.charas[clientId]?.callName ?? bundle.byChara[String(clientId)]?.callName ?? targetName;
+    const context = {
+      nameResolver: (reference: number | string) =>
+        typeof reference === "number"
+          ? state.charas[reference]?.callName ?? bundle.byChara[String(reference)]?.callName
+          : undefined,
+      callNameAliases: { CHARA: targetName, CLIENT_ID: clientName },
+      subjectAliases: { CLIENT_ID: clientId },
+      targetName,
+    };
+    const resolutions: KojoResolution[] = [];
+    for (const selector of iraiKojoSelectorKeys(iraiId)) {
+      const byRole = variant?.byIrai?.[selector];
+      const node = byRole?.[role]?.[scene] ?? byRole?.["*"]?.[scene];
+      if (node) resolutions.push(resolveKojoNodeDetailed(node, charaNum, state, rng, [], context));
+    }
+    return mergeIraiKojoResolutions(resolutions);
   };
 
   return {
     hasUpdateKojo(charaNum, state) {
       if (!roleplayEnabledForTarget(state, charaNum)) return false;
       const chara = bundle.byChara[String(charaNum)];
-      return Boolean(activeKojoVariant(chara, state, charaNum)?.byUpdate);
+      const update = activeKojoVariant(chara, state, charaNum)?.byUpdate;
+      return update !== undefined && hasActionableKojoNode(update);
     },
     resolveUpdateKojoInteractive(charaNum, state, rng, choices) {
       if (!roleplayEnabledForTarget(state, charaNum)) {
@@ -253,6 +294,28 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
       const node = variant?.byEventArm?.[String(arm)];
       if (!node) return emptyInteractiveKojoResolution("not-authored");
       return resolveKojoNodeWithChoices(node, charaNum, state, rng, args ?? [], choices);
+    },
+    resolveDailyKojo(charaNum, eventId, state, rng, args = []) {
+      if (!roleplayEnabledForTarget(state, charaNum)) return [];
+      const chara = bundle.byChara[String(charaNum)];
+      const node = activeKojoVariant(chara, state, charaNum)?.byDailyEvent?.[String(eventId)];
+      return node ? resolveKojoNode(node, charaNum, state, rng, args) : [];
+    },
+    resolveDailyKojoDetailed(charaNum, eventId, state, rng, args = []) {
+      if (!roleplayEnabledForTarget(state, charaNum)) return emptyKojoResolution("gated");
+      const chara = bundle.byChara[String(charaNum)];
+      const node = activeKojoVariant(chara, state, charaNum)?.byDailyEvent?.[String(eventId)];
+      return node
+        ? resolveKojoNodeDetailed(node, charaNum, state, rng, args)
+        : emptyKojoResolution("not-authored");
+    },
+    resolveDailyKojoInteractive(charaNum, eventId, state, rng, args, choices) {
+      if (!roleplayEnabledForTarget(state, charaNum)) return emptyInteractiveKojoResolution("gated");
+      const chara = bundle.byChara[String(charaNum)];
+      const node = activeKojoVariant(chara, state, charaNum)?.byDailyEvent?.[String(eventId)];
+      return node
+        ? resolveKojoNodeWithChoices(node, charaNum, state, rng, args ?? [], choices)
+        : emptyInteractiveKojoResolution("not-authored");
     },
     resolveSpEventKojo(
       charaNum: number,
@@ -622,29 +685,8 @@ export function createBrowserKojoRouter(bundle: BrowserKojoBundle): DialogueRout
       };
     },
     resolveIraiKojo(charaNum, role, scene, iraiId, state, rng): KojoLine[] {
-      if (!roleplayEnabledForTarget(state, charaNum)) return [];
-      const chara = bundle.byChara[String(charaNum)];
-      const variant = activeKojoVariant(chara, state, charaNum);
-      const clientId = iraiIdToClient(iraiId);
-      const targetName = state.charas[charaNum]?.callName ?? chara?.callName ?? "对方";
-      const clientName =
-        state.charas[clientId]?.callName ?? bundle.byChara[String(clientId)]?.callName ?? targetName;
-      const context = {
-        nameResolver: (reference: number | string) =>
-          typeof reference === "number"
-            ? state.charas[reference]?.callName ?? bundle.byChara[String(reference)]?.callName
-            : undefined,
-        callNameAliases: { CHARA: targetName, CLIENT_ID: clientName },
-        subjectAliases: { CLIENT_ID: clientId },
-        targetName,
-      };
-      const out: KojoLine[] = [];
-      for (const selector of iraiKojoSelectorKeys(iraiId)) {
-        const byRole = variant?.byIrai?.[selector];
-        const node = byRole?.[role]?.[scene] ?? byRole?.["*"]?.[scene];
-        if (node) out.push(...resolveKojoNode(node, charaNum, state, rng, [], context));
-      }
-      return out;
+      return resolveIraiDetailed(charaNum, role, scene, iraiId, state, rng).lines;
     },
+    resolveIraiKojoDetailed: resolveIraiDetailed,
   };
 }

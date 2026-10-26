@@ -34,13 +34,12 @@ function validateLine(
       throw new Error("character-dialogue accepts speech lines only");
     }
   } else {
-    if (opportunity.kind !== "self-gesture" &&
-        opportunity.kind !== "npc-exchange" &&
+    if (opportunity.kind !== "npc-exchange" &&
         opportunity.kind !== "event-echo") {
       throw new Error("scene-interaction only permits scene interaction kinds");
     }
-    if (opportunity.kind === "self-gesture" && form !== "action") {
-      throw new Error("self-gesture must contain action lines only");
+    if (form !== "speech") {
+      throw new Error("scene-interaction accepts speech lines only");
     }
   }
   if (!text || text.length > MAX_LINE_LENGTH) {
@@ -87,19 +86,14 @@ function validateStructure(
     throw new Error("Ambient response has an unknown initiative mode");
   }
   switch (opportunity.kind) {
-    case "self-gesture":
-      if (used.size !== 1 || lines.some((line) => line.form !== "action")) {
-        throw new Error("self-gesture must contain one participant and action lines only");
-      }
-      break;
-    case "address-player":
     case "event-echo":
       if (used.size !== 1 || !used.has(opportunity.initiatorId) || speech.length === 0) {
         throw new Error(`${opportunity.kind} must contain the initiator and at least one speech line`);
       }
       break;
+    case "address-player":
     case "question-player":
-      throw new Error("question-player belongs to character-dialogue");
+      throw new Error(`${opportunity.kind} belongs to character-dialogue`);
     case "npc-exchange":
       if (
         opportunity.participantIds.length !== 2 ||

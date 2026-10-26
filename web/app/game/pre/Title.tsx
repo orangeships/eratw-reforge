@@ -1,9 +1,7 @@
 /**
  * Phase 4.5E — Title screen (era-style, single centered stream).
  *
- * The original eraTW title renders `resources/title.webp` (a ~1041×560
- * banner the ERB displays as 35 stacked 16px strips — an era HTML-workaround;
- * here we just show the whole image). Below it sit the centered menu and the
+ * The modern title uses authored character art. Below it sit the menu and the
  * demoted dev entry. `继续游戏` is enabled only when a game state is
  * available; `开发者工具` reaches the demoted Mod Studio surfaces.
  */
@@ -61,27 +59,20 @@ export default function Title(props: TitleProps) {
 
   return (
     <section className="pre-screen pre-screen--title" data-testid="screen-title">
-      <img
-        className="pre-screen__title-img"
-        src="title.webp"
-        alt="eraTW"
-        data-testid="title-image"
-      />
+      <pre className="ascii-title" role="img" aria-label="eraTW" data-testid="title-ascii">{String.raw`
+ ______                 _______ __          __
+|  ____|               |__   __|\ \        / /
+| |__   _ __ __ _         | |    \ \  /\  / /
+|  __| | '__/ _' |        | |     \ \/  \/ /
+| |____| | | (_| |        | |      \  /\  /
+|______|_|  \__,_|        |_|       \/  \/
+
+       - - - 幻 想 乡 - - -
+`}</pre>
       <div className="pre-screen__menu pre-screen__menu--title">
-        <button type="button" data-testid="title-start" onClick={props.onStart}>
-          [0] 开始游戏
-        </button>
-        <button
-          type="button"
-          data-testid="title-continue"
-          onClick={() => void openLoadSlots()}
-          disabled={!props.onContinue || !hasReadableSlot}
-        >
-          [1] 读取存档
-        </button>
-        <button type="button" data-testid="title-demo" disabled>
-          [2] DEMO
-        </button>
+        <button type="button" data-testid="title-start" onClick={props.onStart}>[0] 开始游戏</button>
+        <button type="button" data-testid="title-continue" onClick={() => void openLoadSlots()}
+          disabled={!props.onContinue || !hasReadableSlot}>[1] 读取存档</button>
       </div>
       {showLoadSlots && props.onLoadSlot && (
         <div className="pre-screen__load-panel" data-testid="title-load-panel">

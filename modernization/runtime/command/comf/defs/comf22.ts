@@ -53,6 +53,7 @@ export const comf22Def: ComfDef = {
   greatThreshold: 0,
   failThreshold: 101,
   timeCost: 0,
+  targetDownbase: { [BASE_ID.気力]: 30 },
 
   // Target gets only a small 露出.
   buildSources: (): Record<number, number> => ({
@@ -78,11 +79,6 @@ export const comf22Def: ComfDef = {
       [SOURCE_ID.液体]: ekitai,
       [SOURCE_ID.欲情]: yokujou,
     };
-  },
-
-  body: (c) => {
-    // DOWNBASE 気力 30 (bare = TARGET).
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 30;
   },
 
   narration: (_c, favorDelta) =>

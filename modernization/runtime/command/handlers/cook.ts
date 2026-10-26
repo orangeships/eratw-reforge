@@ -67,10 +67,9 @@
  *
  * **DEFERRED (documented):**
  *   - `nExcludeAssi` 「不让X帮忙」 toggle — auto-helps a present target.
- *   - 闪耀 (weather + 日光浴/月光浴 + TIME:2 band), 大火力/氷結 の DISH_MAXLIMIT×2
- *     (鮮度 unused), 去掉蔬菜 (rare veg-dislike corner), the DLC 料理相关 block.
- *   - `DISH_TASTE_ADD` ingredient→taste (蘑菇/果物/卵/跳蛋…) — enriches
- *     EAT-side taste only, not basepoint — P3.
+ *   - 闪耀 (weather + 日光浴/月光浴 + TIME:2 band), 大火力/氷結 の DISH_MAXLIMIT×2,
+ *     去掉蔬菜 (rare veg-dislike corner), the DLC 料理相关 block. Basic
+ *     freshness decay is already owned by state/dish-freshness.ts.
  *   - おまかせ/搜索/委托一览/たかり — UI arms.
  *   - STAIN / 精液 resets (ERB 304-308), 保温壺 鮮度 ×1.5 — H/QoL detail.
  */
@@ -213,7 +212,7 @@ function charaName(state: GameState, num: number): string {
 function validCookHelper(state: GameState, charaNum: number): boolean {
   if (charaNum <= 0) return false;
   const c = state.charas[charaNum];
-  if (!c) return false;
+  if (!c || c.location !== state.master.location) return false;
   return (
     (c.state.CFLAG[CFLAG_ID.睡眠] ?? 0) === 0 &&
     (c.state.CFLAG[CFLAG_ID.陪睡中] ?? 0) === 0 &&
@@ -501,6 +500,16 @@ interface Chosen {
   drg2: number;
 }
 
+function normalDishAllowed(state: GameState, dish: DishEntry): boolean {
+  return !!dish.name && !dish.uncookable && masterCookingSkill(state) >= dish.skillLv
+    && (dish.spChara === undefined || isSpDishLearned(state, dish.spChara));
+}
+
+function additiveAllowed(state: GameState, dish: DishEntry, id: number): boolean {
+  const additive = TENKABUTSU.find(entry => entry.id === id);
+  return !!additive && itemCount(state, id) > 0 && (!additive.dessertOnly || dish.type === "甜点");
+}
+
 /** Decode `cook:<dishNo>:<ingId>[:d<drg>|:a<add>]` (+ target helper), or null. */
 function decodeCook(state: GameState, picked: number | string | null, target: number): Chosen | null {
   if (typeof picked !== "string") return null;
@@ -508,7 +517,7 @@ function decodeCook(state: GameState, picked: number | string | null, target: nu
   if (parts[0] !== "cook") return null;
   const dish = dishByNo(Number(parts[1]));
   const ingId = Number(parts[2]);
-  if (!dish) return null;
+  if (!dish || !normalDishAllowed(state, dish)) return null;
   const ing = dish.ingredients.find((i) => i.id === ingId);
   // Must still own it (state may have changed since the prompt was built).
   if (!ing || itemCount(state, ingId) <= 0) return null;
@@ -519,20 +528,23 @@ function decodeCook(state: GameState, picked: number | string | null, target: nu
   const mod = parts[3] ?? "";
   if (mod.startsWith("d") && !helperNum) {
     const id = Number(mod.slice(1));
-    if (itemCount(state, id) > 0) drg = id;
+    if (!SHIKOMI_DRUGS.some(drug => drug.id === id) || itemCount(state, id) <= 0) return null;
+    drg = id;
   } else if (mod.startsWith("a")) {
     const id = Number(mod.slice(1));
-    if (itemCount(state, id) > 0) drg2 = id;
+    if (!additiveAllowed(state, dish, id)) return null;
+    drg2 = id;
   }
   return { dish, ingId, ingName: ing.name, rank: ing.rank, helperNum, isPractice: false, drg, drg2 };
 }
 
 /** Decode `practice:<helperNum>` → the helper's SP dish (re-validates 練習可). */
-function decodePractice(state: GameState, picked: number | string | null): Chosen | null {
+function decodePractice(state: GameState, picked: number | string | null, target: number): Chosen | null {
   if (typeof picked !== "string") return null;
   const parts = picked.split(":");
   if (parts[0] !== "practice") return null;
   const helperNum = Number(parts[1]);
+  if (helperNum !== target) return null;
   const opt = practiceOptionFor(state, helperNum);
   if (!opt) return null;
   return { ...opt, helperNum, isPractice: true, drg: 0, drg2: 0 };
@@ -540,11 +552,11 @@ function decodePractice(state: GameState, picked: number | string | null): Chose
 
 function decodeStagedCook(state: GameState, answer: PromptAnswer | undefined, target: number): Chosen | null {
   const selections = stagedSelections(answer);
-  if (!selectedValue(selections, "commit:")) return null;
+  if (selectedValue(selections, "commit:") !== "commit:yes") return null;
   const type = selectedNumber(selections, "type:");
   const dishNo = selectedNumber(selections, "dish:");
   const ingId = selectedNumber(selections, "ingredient:");
-  if (!type || !dishNo || ingId === undefined) return null;
+  if (!type || ![1, 2, 3, 4].includes(type) || !dishNo || ingId === undefined) return null;
   const dish = dishByNo(dishNo);
   if (!dish || itemCount(state, ingId) <= 0) return null;
   const ingredient = dish.ingredients.find((entry) => entry.id === ingId);
@@ -553,17 +565,13 @@ function decodeStagedCook(state: GameState, answer: PromptAnswer | undefined, ta
   const practice = type === 4 ? (helperNum ? practiceOptionFor(state, helperNum) : null) : null;
   if (type === 4 && (!practice || practice.dish.no !== dish.no)) return null;
   if (type !== 4 && dish.type !== (type === 1 ? "軽食" : type === 2 ? "主食" : "甜点")) return null;
-  if (type !== 4 && (dish.uncookable || masterCookingSkill(state) < dish.skillLv)) return null;
+  if (type !== 4 && !normalDishAllowed(state, dish)) return null;
   const selectedDrug = selectedNumber(selections, "drug:") ?? 0;
   const selectedAdditive = selectedNumber(selections, "additive:") ?? 0;
-  const drg = !helperNum && SHIKOMI_DRUGS.some((drug) => drug.id === selectedDrug) && itemCount(state, selectedDrug) > 0
-    ? selectedDrug
-    : 0;
-  const drg2 = TENKABUTSU.some((additive) => additive.id === selectedAdditive) &&
-    itemCount(state, selectedAdditive) > 0 &&
-    (!TENKABUTSU.find((additive) => additive.id === selectedAdditive)?.dessertOnly || dish.type === "甜点")
-      ? selectedAdditive
-      : 0;
+  if (selectedDrug && (helperNum || !SHIKOMI_DRUGS.some(drug => drug.id === selectedDrug) || itemCount(state, selectedDrug) <= 0)) return null;
+  if (selectedAdditive && !additiveAllowed(state, dish, selectedAdditive)) return null;
+  const drg = selectedDrug;
+  const drg2 = selectedAdditive;
   return {
     dish,
     ingId,
@@ -590,7 +598,7 @@ export const cookHandlerEntry: HandlerEntry = {
     const legacyPick = ctx.promptAnswer?.kind === "pick_one" ? ctx.promptAnswer.value : null;
     const chosen =
       decodeStagedCook(next, ctx.promptAnswer, ctx.target) ??
-      decodePractice(next, legacyPick) ??
+      decodePractice(next, legacyPick, ctx.target) ??
       decodeCook(next, legacyPick, ctx.target);
     if (!chosen) {
       return {
@@ -616,6 +624,7 @@ export const cookHandlerEntry: HandlerEntry = {
       ingredientName: ingName,
       charaTags,
       rng: ctx.rng,
+      practice: isPractice,
     });
     // Basepoint: skillSum + rank + 道具力(銀杏案板) + BONUS − 減点(0). skillSum is
     // 料理技能*2 solo (ERB 629) or master+helper (ERB 619).
@@ -637,6 +646,7 @@ export const cookHandlerEntry: HandlerEntry = {
         taste,
         basepoint,
         time: dish.time,
+        assi: helperNum,
         maxLimit: dish.maxLimit,
         limit: dish.maxLimit + dish.time,
         drg, // 仕込み — the eat path (dish.ts) stamps the drug TCVAR (ERB 683).

@@ -318,6 +318,7 @@ function applyFallState(
 ): void {
   const st = slot.state;
   const name = slot.callName ?? `角色${slot.charaNum}`;
+  const masterName = deps.state.master.callName?.trim() || "主人公";
   void isMaster;
   if ((bits & FALL_STATE_LOVE) !== 0) {
     // 恋慕 — 面霊気 (id 57) special-case, else 思慕 → 恋慕 vs 愛欲 → 恋慕
@@ -326,19 +327,19 @@ function applyFallState(
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}在察觉了自己对主人的思慕的同时、嘴角翘了起来`,
+        text: `${name}在察觉了自己对${masterName}的思慕的同时、嘴角翘了起来`,
       });
     } else if (talent(st, TALENT_ID.愛欲) !== 0) {
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}因为身体与心灵都被主人填满而感到了喜悦…`,
+        text: `${name}因为身体与心灵都被${masterName}填满而感到了喜悦…`,
       });
     } else {
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}因为与主人共同渡过的时光而感到很幸福的样子…`,
+        text: `${name}因为与${masterName}共同渡过的时光而感到很幸福的样子…`,
       });
     }
     // EVENT 21 / 1
@@ -368,13 +369,13 @@ function applyFallState(
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}对主人产生了身体之外的兴趣`,
+        text: `${name}对${masterName}产生了身体之外的兴趣`,
       });
     } else {
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}变得对主人很在意的样子…`,
+        text: `${name}变得对${masterName}很在意的样子…`,
       });
     }
     const lines = fallKojo(deps, slot.charaNum, [FALL_KOJO_ID.YEARNING]);
@@ -392,13 +393,13 @@ function applyFallState(
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}与主人不仅在心灵上也在肉体的羁绊上获得了满足的样子…`,
+        text: `${name}与${masterName}不仅在心灵上也在肉体的羁绊上获得了满足的样子…`,
       });
     } else {
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}好像沉溺于对主人的情欲之中了…`,
+        text: `${name}好像沉溺于对${masterName}的情欲之中了…`,
       });
     }
     const lines = fallKojo(deps, slot.charaNum, [FALL_KOJO_ID.LUST]);
@@ -417,7 +418,7 @@ function applyFallState(
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}似乎开始觉得就算这样沉溺在与主人的快乐之中也没有什么不好的了…`,
+        text: `${name}似乎开始觉得就算这样沉溺在与${masterName}的快乐之中也没有什么不好的了…`,
       });
       const lines = fallKojo(deps, slot.charaNum, [FALL_KOJO_ID.LOVER]);
       emitKojoLines(lines, slot.charaNum, events, deps);
@@ -431,7 +432,7 @@ function applyFallState(
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}好像渴望着与主人产生超越单纯的肉体关系之上的羁绊的样子…`,
+        text: `${name}好像渴望着与${masterName}产生超越单纯的肉体关系之上的羁绊的样子…`,
       });
       const lines = fallKojo(deps, slot.charaNum, [FALL_KOJO_ID.LOVER]);
       emitKojoLines(lines, slot.charaNum, events, deps);
@@ -445,7 +446,7 @@ function applyFallState(
       events.push({
         kind: "NARRATION",
         timestamp: deps.now(),
-        text: `${name}沉溺在主人给予的快感之中…`,
+        text: `${name}沉溺在${masterName}给予的快感之中…`,
       });
       const lines = fallKojo(deps, slot.charaNum, [FALL_KOJO_ID.FUCK_BUDDY]);
       emitKojoLines(lines, slot.charaNum, events, deps);

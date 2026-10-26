@@ -13,14 +13,25 @@
 
 import type {
   CommissionKind,
+  CommissionOffer,
   CommissionProgress,
+  CommissionSearchReveal,
   CommissionSlot,
   CommissionState,
   CommissionTaskKind,
   GameState,
 } from "./game-state.js";
 import { GATHERING_SPOT_1_ITEMS } from "./gathering.js";
-import { clearDish, getDish } from "./dish.js";
+import { LETTER_MATERIAL_POOL, type LetterMaterialReward } from "./commission-materials.js";
+import {
+  dishOrderAffinity,
+  dishScoreStars,
+  generateTasteRequest,
+  pickDishRequest,
+  scoreDishCommission,
+  type DishRequest,
+} from "./commission-dish.js";
+import { clearDish, getDish, reviewDish } from "./dish.js";
 import { addItem, ITEM_ID, itemCount, removeItem } from "./items.js";
 import { grant } from "./money.js";
 import { recordCommissionSignal } from "../agent/recorder.js";
@@ -33,11 +44,13 @@ import {
   FLAG_ID,
   SOURCE_ID,
   TALENT_ID,
+  TCVAR_ID,
   advanceTimeTicks,
   getCharaCflag,
   setCharaCflag,
 } from "./settlement.js";
 import { applySourceCheck, settleSourcePalam } from "../command/source-check.js";
+import { createRng } from "../command/rng.js";
 import { mapCanMove0 } from "../world/map-can-move.js";
 import { roomIdToLocation } from "../world/room-id-location.js";
 import { youbiMatch } from "../world/calendar.js";
@@ -96,16 +109,30 @@ export interface CommissionDef {
   description: string;
   rewardText: string;
   actName: string;
+  /** Upstream `依頼実行指令名` may depend on MASTER (一般依頼17/18 branch on
+   *  性別 for the joke delivery line); this overrides `actName` when present. */
+  actNameFor?: (state: Readonly<GameState>) => string;
   task: CommissionTaskKind;
   weight: number;
   deadlineDays: number;
   targetChara?: (state: Readonly<GameState>, clientId: number) => number | undefined;
   targetLocation?: (state: Readonly<GameState>, clientId: number) => string | undefined;
+  /** Resolve random/persisted request data at generation time. */
+  resolveOffer?: (
+    state: Readonly<GameState>,
+    clientId: number,
+    rng: CommissionRng,
+  ) => CommissionOffer | undefined;
   itemId?: number;
   itemQty?: number;
   canGenerate: (state: Readonly<GameState>, clientId: number) => boolean;
   canAccept?: (state: Readonly<GameState>, clientId: number) => boolean;
   canExecute?: (state: Readonly<GameState>, slot: CommissionSlot, target: number) => boolean;
+  /** Upstream `依頼人連れ出し可能` data slot (FUNC_IRAI.ERB:252): the client of
+   *  an ACTIVE commission with this flag can be brought along by COMF351
+   *  regardless of 態度 (COMF351 連れ出す.ERB:298). Declared by 一般依頼
+   *  01/04/05/06/07/15. */
+  canTakeAlong?: boolean;
   noReport?: boolean;
 }
 
@@ -113,6 +140,11 @@ interface CommissionRng {
   int(max: number): number;
   pick<T>(arr: readonly T[]): T;
 }
+
+const FALLBACK_COMMISSION_RNG: CommissionRng = {
+  int: () => 0,
+  pick: <T>(arr: readonly T[]) => arr[0]!,
+};
 
 /** Optional authored-kojo hooks used while building the morning catalog. */
 export interface CommissionGenerationHooks {
@@ -138,8 +170,11 @@ export function iraiIdToLocalId(iraiId: number): number {
 }
 
 export function ensureCommissionState(state: GameState): CommissionState {
-  if (!state.commissions) state.commissions = { slots: [] };
+  if (!state.commissions) state.commissions = { slots: [], offers: {} };
   if (!Array.isArray(state.commissions.slots)) state.commissions.slots = [];
+  if (!state.commissions.offers || typeof state.commissions.offers !== "object") {
+    state.commissions.offers = {};
+  }
   return state.commissions;
 }
 
@@ -184,6 +219,7 @@ export function setCommissionProgress(
   slot.state.CFLAG[CFLAG_ID.依頼状況] = progress;
   if (progress === 0) {
     slot.state.CFLAG[CFLAG_ID.依頼内容] = 0;
+    if (state.commissions?.offers) delete state.commissions.offers[charaNum];
   } else {
     slot.state.CFLAG[CFLAG_ID.依頼内容] = iraiId;
   }
@@ -191,6 +227,10 @@ export function setCommissionProgress(
 
 function changeRelation(state: GameState, charaNum: number, favor: number, trust: number): void {
   applyRelationshipDelta(state, charaNum, favor, trust);
+}
+
+function commissionRelationshipTarget(slot: CommissionSlot): number {
+  return slot.targetCharaNum ?? slot.clientId;
 }
 
 /**
@@ -312,6 +352,92 @@ function firstOtherChara(state: Readonly<GameState>, clientId: number): number |
   return ids.sort((a, b) => a - b)[0];
 }
 
+function otherMeetableCharas(state: Readonly<GameState>, clientId: number): number[] {
+  return Object.keys(state.charas)
+    .map(Number)
+    .filter((id) => id > 0 && id !== clientId && canMeet(state, id))
+    .sort((a, b) => a - b);
+}
+
+function randomOtherChara(
+  state: Readonly<GameState>,
+  clientId: number,
+  rng: CommissionRng,
+): number | undefined {
+  const candidates = otherMeetableCharas(state, clientId);
+  return candidates.length > 0 ? candidates[Math.max(0, Math.min(candidates.length - 1, rng.int(candidates.length)))] : undefined;
+}
+
+/** The fixed place pool from `FUNC_IRAI.ERB:@RAND_PLACE(..., "LOST_ITEM")`. */
+const LOST_ITEM_PLACE_IDS = [
+  1, 2, 3, 5, 20, 21, 22, 23, 24, 25, 36,
+  101, 102, 121, 122, 123, 124,
+  201, 202, 203, 204, 205, 206, 207, 211, 212, 213, 214, 215, 216, 217, 218, 219, 222,
+  301, 302, 306, 309, 334, 343,
+  401, 403, 405, 433, 434, 436, 438, 447,
+  501, 502, 503, 506, 507, 508, 509, 510, 520, 534, 540,
+  610, 620, 630, 640, 650, 660, 670, 680, 690,
+  701, 702, 703, 705, 707, 708, 711, 732,
+  801, 802, 803, 804, 805, 806, 811, 814, 830, 831, 832, 833,
+  901, 902, 926, 931, 932, 933, 939, 944, 945, 946, 948,
+  1010, 1050, 1070, 1080, 1090,
+] as const;
+
+function lostItemPlaceCandidates(
+  state: Readonly<GameState>,
+  clientId: number,
+): string[] {
+  const home = clientHome(state, clientId);
+  if (!home) return [];
+  const homeMap = mapIdOfLocation(home);
+  const homePrefix = home.split(":")[0];
+  return LOST_ITEM_PLACE_IDS
+    .map((roomId) => roomIdToLocation(roomId))
+    .filter((location): location is string => location !== null)
+    .filter((location, index, all) => all.indexOf(location) === index)
+    .filter((location) => {
+      const map = mapIdOfLocation(location);
+      return homeMap !== null && map !== null
+        ? map !== homeMap
+        : location.split(":")[0] !== homePrefix;
+    });
+}
+
+function randomLostItemPlace(
+  state: Readonly<GameState>,
+  clientId: number,
+  rng: CommissionRng,
+): string | undefined {
+  const candidates = lostItemPlaceCandidates(state, clientId);
+  return candidates.length > 0
+    ? candidates[Math.max(0, Math.min(candidates.length - 1, rng.int(candidates.length)))]
+    : undefined;
+}
+
+function lostPersonOffer(
+  state: Readonly<GameState>,
+  clientId: number,
+  rng: CommissionRng,
+  sub: number,
+): CommissionOffer | undefined {
+  const targetCharaNum = randomOtherChara(state, clientId, rng);
+  return targetCharaNum === undefined
+    ? undefined
+    : { targetCharaNum, sub, searchReveal: "hidden" };
+}
+
+function lostPlaceOffer(
+  state: Readonly<GameState>,
+  clientId: number,
+  rng: CommissionRng,
+  sub: number,
+): CommissionOffer | undefined {
+  const targetLocation = randomLostItemPlace(state, clientId, rng);
+  return targetLocation === undefined
+    ? undefined
+    : { targetLocation, sub, searchReveal: "hidden" };
+}
+
 function cleaningDefAccept(state: Readonly<GameState>, clientId: number): boolean {
   if (!canMeet(state, clientId)) return false;
   const home = clientHome(state, clientId);
@@ -338,6 +464,7 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
     canGenerate: cleaningDefAccept,
     canAccept: cleaningDefAccept,
     canExecute: cleaningDefExecute,
+    canTakeAlong: true,
   },
   {
     kind: "common",
@@ -398,6 +525,7 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
       target === slot.clientId &&
       hasPlace(placeFlagsOf(state.master.location), PLACE_KITCHEN) &&
       !hasCurrentDish(state),
+    canTakeAlong: true,
   },
   {
     kind: "common",
@@ -416,6 +544,7 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
       ability(state, clientId, ABL_ID.親密) >= 2,
     canExecute: (state, slot, target) =>
       target === slot.clientId && hasPlace(placeFlagsOf(state.master.location), PLACE_TRAINING),
+    canTakeAlong: true,
   },
   {
     kind: "common",
@@ -430,6 +559,7 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
     canGenerate: (state, clientId) =>
       canMeet(state, clientId) &&
       ability(state, clientId, ABL_ID.教養) <= ability(state, 0, ABL_ID.教養),
+    canTakeAlong: true,
   },
   {
     kind: "common",
@@ -449,6 +579,7 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
       ability(state, clientId, ABL_ID.親密) >= 3,
     canAccept: (state, clientId) =>
       isWinterYearEnd(state) && sameMap(state.master.location, clientHome(state, clientId)),
+    canTakeAlong: true,
   },
   {
     kind: "common",
@@ -461,10 +592,14 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
     weight: 10,
     deadlineDays: 3,
     targetChara: firstOtherChara,
+    resolveOffer: (state, clientId, rng) => {
+      const targetCharaNum = randomOtherChara(state, clientId, rng);
+      return targetCharaNum === undefined ? undefined : { targetCharaNum };
+    },
     canGenerate: (state, clientId) =>
       canMeet(state, clientId) &&
       (getCharaCflag(state as GameState, clientId, CFLAG_ID.信頼度) >= 30) &&
-      firstOtherChara(state, clientId) !== undefined,
+      otherMeetableCharas(state, clientId).length > 0,
     canAccept: (state, clientId) =>
       (getCharaCflag(state as GameState, clientId, CFLAG_ID.信頼度) >= 30) &&
       firstOtherChara(state, clientId) !== undefined,
@@ -481,10 +616,11 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
     weight: 4,
     deadlineDays: 10,
     targetChara: firstOtherChara,
+    resolveOffer: (state, clientId, rng) => lostPersonOffer(state, clientId, rng, rng.int(3) + 1),
     canGenerate: (state, clientId) =>
       canMeet(state, clientId) &&
       getCharaCflag(state as GameState, clientId, CFLAG_ID.信頼度) >= 30 &&
-      firstOtherChara(state, clientId) !== undefined,
+      otherMeetableCharas(state, clientId).length > 0,
   },
   {
     kind: "common",
@@ -497,10 +633,11 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
     weight: 3,
     deadlineDays: 10,
     targetLocation: firstOtherHome,
+    resolveOffer: (state, clientId, rng) => lostPlaceOffer(state, clientId, rng, rng.int(2) + 1),
     canGenerate: (state, clientId) =>
       canMeet(state, clientId) &&
       getCharaCflag(state as GameState, clientId, CFLAG_ID.信頼度) >= 30 &&
-      firstOtherHome(state, clientId) !== undefined,
+      lostItemPlaceCandidates(state, clientId).length > 0,
   },
   {
     kind: "common",
@@ -513,10 +650,11 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
     weight: 3,
     deadlineDays: 10,
     targetChara: firstOtherChara,
+    resolveOffer: (state, clientId, rng) => lostPersonOffer(state, clientId, rng, 0),
     canGenerate: (state, clientId) =>
       canMeet(state, clientId) &&
       getCharaCflag(state as GameState, clientId, CFLAG_ID.信頼度) >= 30 &&
-      firstOtherChara(state, clientId) !== undefined,
+      otherMeetableCharas(state, clientId).length > 0,
   },
   {
     kind: "common",
@@ -579,6 +717,7 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
       canMeet(state, clientId) &&
       ((state.charas[clientId]?.state.TALENT[TALENT_ID.愛欲] ?? 0) !== 0 ||
         (state.charas[clientId]?.state.TALENT[TALENT_ID.セフレ] ?? 0) !== 0),
+    canTakeAlong: true,
   },
   {
     kind: "common",
@@ -596,29 +735,39 @@ const COMMISSION_BASE_DEFS: readonly CommissionDef[] = [
   {
     kind: "common",
     localId: 17,
-    name: "想吃那个",
-    description: "把准备好的料理交给%CALLNAME:TARGET%。",
-    rewardText: "¥2500",
+    // 一般依頼17_あれがたべたい.ERB:16-52 — 依頼名 / 依頼内容表示 /
+    // 依頼報酬表示 / 依頼実行指令名 verbatim.
+    name: "我想吃那个！那个叫什么来着？",
+    description: "凭借模糊的记忆做出并送上料理",
+    rewardText: "¥2,500＋奖金",
     actName: "交付料理",
+    actNameFor: (state) =>
+      (state.master.state.TALENT[TALENT_ID.性別] ?? 0) === 2 ? "您好，外卖到了" : "您好，UmanEats外送",
     task: "work",
     weight: 5,
     deadlineDays: 3,
+    // 依頼サブ = RAND:1000000 (`:41-43`) — the seed the taste draw re-uses.
+    resolveOffer: (_state, _clientId, rng) => ({ sub: rng.int(1000000) }),
     canGenerate: (state, clientId) => canMeet(state, clientId) && clientId !== 80,
-    canAccept: (state) => hasCurrentDish(state),
+    // 依頼受託可能条件 is unconditional upstream (`:53-54`): accept first, cook
+    // within the 3-day deadline. 依頼実行可能条件 needs DISH_NAME (`:55-57`).
     canExecute: (state) => hasCurrentDish(state),
   },
   {
     kind: "common",
     localId: 18,
-    name: "肚子饿了",
-    description: "把准备好的料理交给%CALLNAME:TARGET%。",
-    rewardText: "¥2000",
+    // 一般依頼18_おなかすいた.ERB:16-52.
+    name: "有谁能帮我做一下吗！",
+    description: "接受点单并送达",
+    rewardText: "¥2,000＋奖金",
     actName: "交付料理",
+    actNameFor: (state) =>
+      (state.master.state.TALENT[TALENT_ID.性別] ?? 0) === 2 ? "您好，外卖到了" : "您好，UmanEats外送",
     task: "work",
     weight: 5,
     deadlineDays: 3,
+    resolveOffer: (_state, _clientId, rng) => ({ sub: rng.int(1000000) }),
     canGenerate: (state, clientId) => canMeet(state, clientId),
-    canAccept: (state) => hasCurrentDish(state),
     canExecute: (state) => hasCurrentDish(state),
   },
   {
@@ -914,17 +1063,59 @@ function weightedPick<T extends { weight: number }>(
   return items[0];
 }
 
+function resolveCommissionOffer(
+  state: Readonly<GameState>,
+  clientId: number,
+  def: CommissionDef,
+  rng: CommissionRng,
+): CommissionOffer | undefined {
+  if (def.resolveOffer) return def.resolveOffer(state, clientId, rng);
+  const targetCharaNum = def.targetChara?.(state, clientId);
+  const targetLocation = def.targetLocation?.(state, clientId);
+  // A generated request with a missing target is invalid.  In particular,
+  // never fall back to the client's home for a source-backed lost-place roll.
+  if (def.targetChara && targetCharaNum === undefined) return undefined;
+  if (def.targetLocation && targetLocation === undefined) return undefined;
+  return {
+    ...(targetCharaNum !== undefined ? { targetCharaNum } : {}),
+    ...(targetLocation !== undefined ? { targetLocation } : {}),
+  };
+}
+
 export function setNewCommission(
   state: GameState,
   clientId: number,
   def: CommissionDef,
   progress: CommissionProgress = COMMISSION_PROGRESS.Generated,
+  rng: CommissionRng = FALLBACK_COMMISSION_RNG,
 ): boolean {
   if (!state.charas[clientId]) return false;
   if (commissionStatus(state, clientId) !== 0) return false;
+  const offer = resolveCommissionOffer(state, clientId, def, rng);
+  if (!offer) return false;
   const iraiId = makeIraiId(clientId, def.localId);
+  const commissions = ensureCommissionState(state);
+  commissions.offers[clientId] = offer;
   setCommissionProgress(state, clientId, progress, iraiId);
   return true;
+}
+
+/**
+ * Deterministic scratch RNG for the dish-commission draws.
+ *
+ * Upstream wraps the 17/18 taste and point-order draws in
+ * `DUMPRAND / RANDOMIZE IRAI_SUB:受諾 / … / INITRAND`
+ * (`一般17.ERB:86-89`, `COMF366 依頼を聞く.ERB:128-132`, `一般18.ERB:108-159`)
+ * so the same request is regenerated identically on every display. We draw
+ * once at acceptance and persist the result on the slot, seeding from the
+ * same `依頼サブ` (`slot.sub`, drawn in `resolveOffer`) so the values are
+ * stable for the life of the slot and reproducible across runs.
+ */
+function dishCommissionRng(slot: CommissionSlot): CommissionRng {
+  const mixed =
+    Math.imul(slot.iraiId, 2654435761) ^
+    Math.imul(slot.sub ?? slot.acceptedDay * 7919 + 13, 40503);
+  return createRng(mixed | 0);
 }
 
 export function acceptCommission(
@@ -938,8 +1129,12 @@ export function acceptCommission(
   const commissions = ensureCommissionState(state);
   if (commissions.slots.length >= COMMISSION_MAX_SLOTS) return null;
   if (commissions.slots.some((s) => s.iraiId === iraiId)) return null;
-  const targetCharaNum = def.targetChara?.(state, clientId);
-  const targetLocation = def.targetLocation?.(state, clientId);
+  const pending = commissions.offers[clientId];
+  const fallback = resolveCommissionOffer(state, clientId, def, FALLBACK_COMMISSION_RNG);
+  const offer = pending ?? fallback;
+  if (!offer) return null;
+  const targetCharaNum = offer.targetCharaNum;
+  const targetLocation = offer.targetLocation;
   const slot: CommissionSlot = {
     iraiId,
     clientId,
@@ -950,12 +1145,29 @@ export function acceptCommission(
     acceptedDay: state.time.dayIndex,
     ...(targetCharaNum !== undefined ? { targetCharaNum } : {}),
     ...(targetLocation !== undefined ? { targetLocation } : {}),
+    ...(offer.sub !== undefined ? { sub: offer.sub } : {}),
+    ...(offer.searchReveal !== undefined ? { searchReveal: offer.searchReveal } : {}),
+    ...(offer.revealedLocation !== undefined ? { revealedLocation: offer.revealedLocation } : {}),
     ...(def.itemId !== undefined ? { itemId: def.itemId } : {}),
     ...(def.itemQty !== undefined ? { itemQty: def.itemQty } : {}),
   };
   commissions.slots.push(slot);
+  delete commissions.offers[clientId];
   syncCommissionTargets(state);
   setCommissionProgress(state, clientId, COMMISSION_PROGRESS.Active, iraiId);
+  // 一般依頼17 味要求 / 一般依頼18 点单 — resolved once here so the accept
+  // dialog, the popup detail panel and the delivery all read the same request.
+  if (def.kind === "common" && def.localId === 17) {
+    slot.tasteRequest = generateTasteRequest(clientId, dishCommissionRng(slot));
+  } else if (def.kind === "common" && def.localId === 18) {
+    const request: DishRequest | undefined = pickDishRequest(
+      clientId,
+      dishOrderAffinity(state, clientId),
+      canBringCommissionClient(state, clientId),
+      dishCommissionRng(slot),
+    );
+    if (request) slot.dishRequest = request;
+  }
   // A1 — record agent interaction signal.
   recordCommissionSignal(state, clientId, `委托受理 #iraiId=${iraiId}`);
   return slot;
@@ -968,13 +1180,15 @@ export function clearCommissionSlot(
 ): void {
   const commissions = ensureCommissionState(state);
   commissions.slots = commissions.slots.filter((s) => s.iraiId !== slot.iraiId);
+  delete commissions.offers[slot.clientId];
   syncCommissionTargets(state);
   setCommissionProgress(state, slot.clientId, progress, progress === 0 ? 0 : slot.iraiId);
 }
 
 export function syncCommissionTargets(state: GameState): void {
-  const slots = ensureCommissionState(state).slots.slice(0, COMMISSION_MAX_SLOTS);
-  state.commissions = { ...state.commissions, slots };
+  const commissions = ensureCommissionState(state);
+  const slots = commissions.slots.slice(0, COMMISSION_MAX_SLOTS);
+  state.commissions = { ...commissions, slots };
   for (let i = 0; i < COMMISSION_MAX_SLOTS; i += 1) {
     const cflagId = CFLAG_ID.依頼対象1 + i;
     const target = slots[i]?.targetCharaNum ?? slots[i]?.clientId ?? 0;
@@ -987,6 +1201,22 @@ export function findSlotByClient(
   clientId: number,
 ): CommissionSlot | undefined {
   return state.commissions?.slots.find((slot) => slot.clientId === clientId);
+}
+
+/** Upstream `@CAN_IRAI_CHARA_GO_TOGATHER` / `@CAN_IRAI_SLOT_GO_TOGATHER`
+ *  (FUNC_IRAI.ERB:227-256): a chara can be brought along by COMF351 when an
+ *  ACTIVE commission slot declares `依頼人連れ出し可能` for them as the client.
+ *  The original gates this independently of 態度 (COMF351.ERB:298
+ *  `態度>0 || CAN_IRAI_CHARA_GO_TOGATHER`). */
+export function canBringCommissionClient(
+  state: Readonly<GameState>,
+  charaNum: number,
+): boolean {
+  if (commissionStatus(state, charaNum) !== COMMISSION_PROGRESS.Active) return false;
+  const slot = findSlotByClient(state, charaNum);
+  if (!slot) return false;
+  const def = defFromIraiId(commissionContent(state, charaNum));
+  return def?.canTakeAlong === true;
 }
 
 export function canAcceptCommission(state: Readonly<GameState>, clientId: number): boolean {
@@ -1023,7 +1253,10 @@ export function acceptBlockDescription(
   if (itemCount(state as GameState, def.itemId ?? 0) < (def.itemQty ?? 0)) {
     return "持有的道具不足。";
   }
-  if (!hasCurrentDish(state) && (def.localId === 4 || def.localId === 17 || def.localId === 18)) {
+  // 一般依頼04 gates acceptance on already holding a dish (upstream also
+  // accepts 宴会参加 / AT_HOME, which its own 発生条件 already covers).
+  // 17/18 are deliberately NOT here: upstream accepts them unconditionally.
+  if (!hasCurrentDish(state) && def.localId === 4) {
     return "需要先准备一份料理。";
   }
   const trust30Gated = [8, 9, 10, 11].includes(def.localId);
@@ -1056,9 +1289,11 @@ export function canExecuteCommissionSlot(
       if (target !== slot.clientId || !isResponsive(state, target)) return false;
       break;
     case "deliver_person":
+      if ((slot.localId === 9 || slot.localId === 11) && slot.searchReveal === "hidden") return false;
       if (!slot.targetCharaNum || target !== slot.targetCharaNum || !isResponsive(state, target)) return false;
       break;
     case "deliver_place":
+      if (slot.localId === 10 && (slot.searchReveal === "hidden" || slot.searchReveal === "map")) return false;
       if (!slot.targetLocation || state.master.location !== slot.targetLocation) return false;
       break;
     case "procure":
@@ -1067,6 +1302,18 @@ export function canExecuteCommissionSlot(
       break;
   }
   return def.canExecute ? def.canExecute(state, slot, target) : true;
+}
+
+/** Active search request addressed to Nazrin's dowsing service. */
+export function findActiveSearchCommission(
+  state: Readonly<GameState>,
+  clientId: number,
+): CommissionSlot | undefined {
+  return state.commissions?.slots.find((slot) =>
+    slot.clientId === clientId &&
+    commissionStatus(state, clientId) === COMMISSION_PROGRESS.Active &&
+    (slot.localId === 9 || slot.localId === 10 || slot.localId === 11),
+  );
 }
 
 export function searchActiveCommissionSlot(
@@ -1086,7 +1333,7 @@ export function commissionActName(state: Readonly<GameState>, target: number): s
   if (slot.localId === 1 && slot.targetLocation && getYogore(state as GameState, slot.targetLocation) < 1000) {
     return "完成扫除";
   }
-  return def.actName;
+  return def.actNameFor ? def.actNameFor(state) : def.actName;
 }
 
 export function commissionTitleForTarget(
@@ -1105,6 +1352,70 @@ export function commissionTitleForTarget(
   return "听取委托";
 }
 
+function isLostSearchCommission(slot: CommissionSlot | undefined, def: CommissionDef): boolean {
+  return def.kind === "common" && (def.localId === 9 || def.localId === 10 || def.localId === 11) && !!slot;
+}
+
+function searchRevealFor(
+  slot: CommissionSlot | undefined,
+  offer: CommissionOffer | undefined,
+): CommissionSearchReveal {
+  return slot?.searchReveal ?? offer?.searchReveal ?? "hidden";
+}
+
+function lostSearchHint(def: CommissionDef, sub: number | undefined): string {
+  if (def.localId === 10) {
+    return sub === 1
+      ? "线索：失物不在委托人平时居住的地图上，先从地图方向查起。"
+      : "线索：失物被落在了另一张地图的公共地点。";
+  }
+  if (def.localId === 11) return "线索：知情者也许知道失物最后出现的地方。";
+  if (sub === 1) return "线索：失主并不在委托人身边，可能正在自己的活动范围内。";
+  if (sub === 2) return "线索：失主平时会在住处附近活动。";
+  return "线索：失物的主人仍在幻想乡中，可以继续追查。";
+}
+
+/**
+ * The line COMF366 prints the moment a 17/18 request is accepted:
+ * `大概是一道有%RESULTS:0%味道の菜肴`, with the tags joined by 、
+ * (`COMF366 依頼を聞く.ERB:127-135` — the scratch RNG is re-seeded with
+ * `IRAI_SUB:受諾`, so it matches the tag set stored on the slot).
+ *
+ * 一般依頼18 has no such accept line upstream; it defers to 依頼条件表示
+ * (`想要の菜肴：…`), which `describeCommission` renders instead.
+ */
+export function commissionRequestDialogLines(
+  state: Readonly<GameState>,
+  clientId: number,
+): string[] {
+  const slot = findSlotByClient(state, clientId);
+  if (slot?.kind !== "common" || slot.localId !== 17 || !slot.tasteRequest) return [];
+  return [`大概是一道有${slot.tasteRequest.replace(/\//g, "、")}味道的菜肴`];
+}
+
+/** 依頼条件表示 for an accepted 17/18 slot — the popup detail panel's tail. */
+function commissionRequestDetailLines(
+  state: Readonly<GameState>,
+  slot: CommissionSlot | undefined,
+): string[] {
+  if (slot?.kind !== "common") return [];
+  if (slot.localId === 17) {
+    return slot.tasteRequest
+      ? [`要求的味道：${slot.tasteRequest.replace(/\//g, "、")}`]
+      : [];
+  }
+  if (slot.localId === 18) {
+    if (!slot.dishRequest) return [];
+    const callName = state.charas[slot.clientId]?.callName ?? "对方";
+    // `一般18.ERB:177-183` — TASTE_TR of an already-translated name is a
+    // no-op, so the order is shown by name; uniques add the signature line.
+    return slot.dishRequest.isSp
+      ? [`想要的菜肴：${slot.dishRequest.name}`, `……这是${callName}的拿手菜来着？`]
+      : [`想要的菜肴：${slot.dishRequest.name}`];
+  }
+  return [];
+}
+
 export function describeCommission(
   state: Readonly<GameState>,
   clientId: number,
@@ -1118,11 +1429,29 @@ export function describeCommission(
     `报酬：${def.rewardText}`,
   ];
   const slot = findSlotByClient(state, clientId);
+  const offer = state.commissions?.offers?.[clientId];
   if (slot?.deadlineDay) lines.push(`期限：第 ${slot.deadlineDay + 1} 天`);
-  if (slot?.targetCharaNum) {
-    lines.push(`目标人物：${state.charas[slot.targetCharaNum]?.callName ?? `角色${slot.targetCharaNum}`}`);
+  if (isLostSearchCommission(slot, def) || (!slot && offer && [9, 10, 11].includes(def.localId))) {
+    const reveal = searchRevealFor(slot, offer);
+    if (reveal === "hidden") {
+      lines.push(lostSearchHint(def, slot?.sub ?? offer?.sub));
+    } else if (def.localId === 10) {
+      if (slot?.targetLocation && (reveal === "map" || reveal === "place")) {
+        lines.push(`所在地图：${slot.targetLocation.split(":")[0]}`);
+      }
+      if (reveal === "place" && slot?.targetLocation) lines.push(`目的地：${slot.targetLocation}`);
+    } else if (slot?.targetCharaNum) {
+      lines.push(`失主：${state.charas[slot.targetCharaNum]?.callName ?? `角色${slot.targetCharaNum}`}`);
+      if (slot.targetCharaNum !== 39 && slot.revealedLocation) {
+        lines.push(`当前位置：${slot.revealedLocation}`);
+      }
+    }
+  } else {
+    if (slot?.targetCharaNum) {
+      lines.push(`目标人物：${state.charas[slot.targetCharaNum]?.callName ?? `角色${slot.targetCharaNum}`}`);
+    }
+    if (slot?.targetLocation) lines.push(`目的地：${slot.targetLocation}`);
   }
-  if (slot?.targetLocation) lines.push(`目的地：${slot.targetLocation}`);
   if (slot?.itemId && slot.itemQty) {
     const itemName = slot.itemId === ITEM_WOOD
       ? "木材"
@@ -1131,6 +1460,8 @@ export function describeCommission(
         : `道具${slot.itemId}`;
     lines.push(`要求品：${itemName}×${slot.itemQty}`);
   }
+  // 依頼条件表示 — the 17/18 request the client is holding the player to.
+  lines.push(...commissionRequestDetailLines(state, slot));
   return lines;
 }
 
@@ -1170,8 +1501,8 @@ export function runCommissionMorning(
       if (localId !== null) {
         const defs = eligibleDefsForClient(state, clientId, hooks, rng);
         const def = defs.find((d) => d.localId === localId);
-        if (def && def.canGenerate(state, clientId)) {
-          setNewCommission(state, clientId, def, COMMISSION_PROGRESS.Generated);
+        if (def && def.canGenerate(state, clientId) &&
+          setNewCommission(state, clientId, def, COMMISSION_PROGRESS.Generated, rng)) {
           agentDecided.add(clientId);
           events.push({
             kind: "STATUS_MESSAGE",
@@ -1199,7 +1530,7 @@ export function runCommissionMorning(
     if (defs.length === 0) continue;
     const def = weightedPick(defs, rng);
     if (!def) continue;
-    setNewCommission(state, clientId, def, COMMISSION_PROGRESS.Generated);
+    setNewCommission(state, clientId, def, COMMISSION_PROGRESS.Generated, rng);
   }
   // Clear any remaining agent decisions that we processed.
   for (const clientId of agentDecided) {
@@ -1360,24 +1691,28 @@ export function executeCommissionCore(
   }
 
   if (slot.kind === "common" && slot.localId === 8) {
+    settleUniqueSource(state, slot.targetCharaNum ?? 0, { [SOURCE_ID.歓楽]: 500 });
     changeRelation(state, slot.targetCharaNum ?? 0, 20, 0);
     return { result: "success", events };
   }
 
   if (slot.kind === "common" && slot.localId === 9) {
-    changeRelation(state, slot.targetCharaNum ?? 0, 20, 0);
-    advanceTimeTicks(state, 10);
+    const target = commissionRelationshipTarget(slot);
+    settleUniqueSource(state, target, {
+      [SOURCE_ID.恭顺]: 1500,
+      [SOURCE_ID.歓楽]: 1000,
+    });
+    changeRelation(state, target, 20, 10);
     return { result: "success", events };
   }
 
   if (slot.kind === "common" && slot.localId === 10) {
-    advanceTimeTicks(state, 30);
     return { result: "success", events };
   }
 
   if (slot.kind === "common" && slot.localId === 11) {
-    changeRelation(state, slot.targetCharaNum ?? 0, 10, 0);
-    advanceTimeTicks(state, 20);
+    const target = commissionRelationshipTarget(slot);
+    settleUniqueSource(state, target, { [SOURCE_ID.歓楽]: 500 });
     return { result: "success", events };
   }
 
@@ -1418,8 +1753,76 @@ export function executeCommissionCore(
   }
 
   if (slot.kind === "common" && (slot.localId === 17 || slot.localId === 18)) {
-    if (!getDish(state)) return { result: "cancel", events };
+    const dish = getDish(state);
+    if (!dish) return { result: "cancel", events };
+    const deliveredName = dish.name;
+    // REVIEW_DISH reads DISH_TASTE, so it must run before the dish is reset
+    // (`一般17.ERB:112-113`; 18 blanks DISH_NAME first but still scores on
+    // DISH_TASTE, so the net order is the same).
+    reviewDish(state, slot.clientId, rng);
+    const evaluated = state.charas[slot.clientId]?.state.TCVAR[TCVAR_ID.料理評価値] ?? 0;
     clearDish(state);
+
+    const score = scoreDishCommission({
+      localId: slot.localId === 18 ? 18 : 17,
+      evaluated,
+      dishTaste: dish.taste,
+      ...(slot.tasteRequest !== undefined ? { tasteRequest: slot.tasteRequest } : {}),
+      ...(slot.dishRequest !== undefined ? { dishRequest: slot.dishRequest } : {}),
+      deliveredName,
+    });
+    slot.bonus = score.bonus ? true : undefined;
+
+    const callName = state.charas[slot.clientId]?.callName ?? "对方";
+    const isOrder = slot.localId === 18;
+    events.push({ kind: "NARRATION", timestamp: 0, text: `料理评价：${dishScoreStars(score.base, score.extra)}` });
+    if (score.outcome === "failed") {
+      if (isOrder) {
+        events.push({
+          kind: "NARRATION", timestamp: 0,
+          text: score.extra === 0
+            ? `${callName}看着手上与要求不一样的菜肴，陷入了困惑`
+            : `看着眼前所谓制作完成的菜品，${callName}表情僵硬`,
+        });
+        events.push({ kind: "NARRATION", timestamp: 0, text: "没能完成委托……" });
+      } else {
+        events.push({
+          kind: "NARRATION", timestamp: 0,
+          text: score.base < score.total / 2
+            ? `${callName}的表情有些不自然`
+            : `${callName}面对着与想象相差甚远的料理，有些不知所措`,
+        });
+        events.push({ kind: "NARRATION", timestamp: 0, text: `没有达成${callName}的要求……` });
+      }
+      return { result: "failed", events };
+    }
+
+    // 成功 / 大成功 both return 実行して成功 upstream; 大成功 additionally
+    // stamps おまけ so the report pays the bonus.
+    settleUniqueSource(state, slot.clientId, {
+      [SOURCE_ID.歓楽]: isOrder
+        ? (score.outcome === "great" ? 1000 : 300)
+        : (score.outcome === "great" ? 2000 : 500),
+    });
+    if (isOrder) {
+      events.push({
+        kind: "NARRATION", timestamp: 0,
+        text: score.outcome === "great"
+          ? (score.extra === 0
+            ? `虽然和${callName}的委托内容不一样，但好像还是给对方留下了好印象！`
+            : `${callName}收到了所委托的好吃的菜肴而十分满足！`)
+          : (score.extra === 0
+            ? `虽然与点的不太一样，但${callName}觉得还可以接受`
+            : `拿到了所委托的料理的${callName}看上去很开心`),
+      });
+    } else {
+      events.push({
+        kind: "NARRATION", timestamp: 0,
+        text: score.outcome === "great"
+          ? `${callName}很高兴地接受了符合自己要求的菜肴！`
+          : `${callName}好像勉强接受了`,
+      });
+    }
     return { result: "success", events };
   }
 
@@ -1573,7 +1976,7 @@ export function applyCommissionReport(
   slot: CommissionSlot,
   success: boolean,
   rng: CommissionRng,
-): void {
+): LetterMaterialReward[] {
   if (!success) {
     if (slot.kind === "unique") {
       const target = slot.targetCharaNum ?? slot.clientId;
@@ -1635,13 +2038,21 @@ export function applyCommissionReport(
         default:
           changeRelation(state, slot.clientId, -10, -5);
       }
-      return;
+      return [];
     }
     if (slot.localId === 8) changeRelation(state, slot.clientId, -20, -10);
+    else if (slot.kind === "common" && [9, 10, 11].includes(slot.localId)) {
+      changeRelation(state, commissionRelationshipTarget(slot), -2, -1);
+    }
+    // 一般依頼17/18 失敗時: 好感 -5 / 信頼 -5 (`一般17.ERB:203-207`,
+    // `一般18.ERB:289-293`).
     else if (slot.localId === 101) changeRelation(state, slot.clientId, -5, -3);
     else if (slot.localId === 14) changeRelation(state, slot.clientId, -5, -5);
+    else if (slot.kind === "common" && (slot.localId === 17 || slot.localId === 18)) {
+      changeRelation(state, slot.clientId, -5, -5);
+    }
     else changeRelation(state, slot.clientId, -10, slot.localId === 1 ? -10 : -5);
-    return;
+    return [];
   }
 
   if (slot.kind === "common" && slot.localId === 1) {
@@ -1666,16 +2077,29 @@ export function applyCommissionReport(
     changeRelation(state, slot.clientId, 50, 20);
     grant(state, 1500);
   } else if (slot.kind === "common" && slot.localId === 8) {
+    settleUniqueSource(state, slot.clientId, { [SOURCE_ID.歓楽]: 500 });
     changeRelation(state, slot.clientId, 50, 30);
-    grantRandomMaterial(state, rng, 4);
+    return grantLetterMaterials(state, rng);
   } else if (slot.kind === "common" && slot.localId === 9) {
-    changeRelation(state, slot.clientId, 30, 15);
+    const target = commissionRelationshipTarget(slot);
+    settleUniqueSource(state, target, { [SOURCE_ID.歓楽]: 500 });
+    changeRelation(state, target, 30, 20);
     grantRandomMaterial(state, rng, 1);
   } else if (slot.kind === "common" && slot.localId === 10) {
-    changeRelation(state, slot.clientId, 30, 15);
+    const target = commissionRelationshipTarget(slot);
+    settleUniqueSource(state, target, {
+      [SOURCE_ID.恭順]: 1500,
+      [SOURCE_ID.歓楽]: 1000,
+    });
+    changeRelation(state, target, 50, 30);
     grantRandomMaterial(state, rng, 2);
   } else if (slot.kind === "common" && slot.localId === 11) {
-    changeRelation(state, slot.clientId, 30, 15);
+    const target = commissionRelationshipTarget(slot);
+    settleUniqueSource(state, target, {
+      [SOURCE_ID.恭順]: 1500,
+      [SOURCE_ID.歓楽]: 1000,
+    });
+    changeRelation(state, target, 25, 15);
     grant(state, 3200);
   } else if (slot.kind === "common" && slot.localId === 12) {
     changeRelation(state, slot.clientId, 30, 15);
@@ -1700,11 +2124,23 @@ export function applyCommissionReport(
     changeRelation(state, slot.clientId, 30, 15);
     grantRandomMaterial(state, rng, 1);
   } else if (slot.kind === "common" && slot.localId === 17) {
-    changeRelation(state, slot.clientId, 30, 15);
+    // 一般依頼17_あれがたべたい.ERB:190-202 — 好感 +25 / 信頼 +25 / ¥2500,
+    // and 大成功 (おまけ) adds another +15 / +15 / ¥1000.
+    changeRelation(state, slot.clientId, 25, 25);
     grant(state, 2500);
+    if (slot.bonus) {
+      changeRelation(state, slot.clientId, 15, 15);
+      grant(state, 1000);
+    }
   } else if (slot.kind === "common" && slot.localId === 18) {
-    changeRelation(state, slot.clientId, 20, 10);
+    // 一般依頼18_おなかすいた.ERB:276-288 — 好感 +20 / 信頼 +20 / ¥2000,
+    // 大成功 adds another +20 / +20 / ¥1000.
+    changeRelation(state, slot.clientId, 20, 20);
     grant(state, 2000);
+    if (slot.bonus) {
+      changeRelation(state, slot.clientId, 20, 20);
+      grant(state, 1000);
+    }
   } else if (slot.kind === "unique") {
     const target = slot.targetCharaNum ?? slot.clientId;
     switch (`${slot.clientId}:${slot.localId}`) {
@@ -1818,6 +2254,19 @@ export function applyCommissionReport(
         break;
     }
   }
+  return [];
+}
+
+/** @GetRandMaterial builds its candidate array once, then draws with replacement. */
+function grantLetterMaterials(state: GameState, rng: CommissionRng): LetterMaterialReward[] {
+  const candidates = LETTER_MATERIAL_POOL.filter(({ id }) => itemCount(state, id) < 99);
+  const granted: LetterMaterialReward[] = [];
+  for (let i = 0; i < 4 && candidates.length > 0; i += 1) {
+    const material = candidates[rng.int(candidates.length)]!;
+    addItem(state, material.id, 1);
+    granted.push(material);
+  }
+  return granted;
 }
 
 function grantRandomMaterial(state: GameState, rng: CommissionRng, count: number): void {
@@ -1838,11 +2287,12 @@ export function setCommissionExecutionResult(
   }
 }
 
-export function reportCommission(state: GameState, slot: CommissionSlot, rng: CommissionRng): void {
+export function reportCommission(state: GameState, slot: CommissionSlot, rng: CommissionRng): LetterMaterialReward[] {
   const status = commissionStatus(state, slot.clientId);
   if (status === COMMISSION_PROGRESS.Completed) {
-    applyCommissionReport(state, slot, true, rng);
+    const granted = applyCommissionReport(state, slot, true, rng);
     clearCommissionSlot(state, slot, COMMISSION_PROGRESS.EndedSuccess);
+    return granted;
   } else if (status === COMMISSION_PROGRESS.Expired) {
     applyCommissionReport(state, slot, false, rng);
     clearCommissionSlot(state, slot, COMMISSION_PROGRESS.EndedExpired);
@@ -1853,6 +2303,7 @@ export function reportCommission(state: GameState, slot: CommissionSlot, rng: Co
     applyCommissionReport(state, slot, false, rng);
     clearCommissionSlot(state, slot, COMMISSION_PROGRESS.EndedFailed);
   }
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -1872,6 +2323,7 @@ export function resetAllCommissions(state: GameState): { resetSlots: number; res
   const commissions = ensureCommissionState(state);
   const resetSlots = commissions.slots.length;
   commissions.slots = [];
+  commissions.offers = {};
   let resetFlags = 0;
   for (const charaNum of Object.keys(state.charas).map(Number)) {
     const slot = state.charas[charaNum];

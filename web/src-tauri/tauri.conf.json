@@ -1,19 +1,19 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "eraTW Modern Player",
-  "version": "0.2.0-alpha.1",
-  "identifier": "game.eratw.modernplayer",
+  "productName": "GensoEra",
+  "version": "0.3.0",
+  "identifier": "studio.eratw.modstudio",
   "build": {
     "beforeDevCommand": "pnpm run dev:tauri",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm.cmd run build:player",
+    "beforeBuildCommand": "pnpm run build:player",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
         "label": "main",
-        "title": "eraTW Modern Player",
+        "title": "GensoEra",
         "width": 1100,
         "height": 760,
         "minWidth": 720,

@@ -8,10 +8,11 @@ export type DialogueSessionOwner =
   | "sp-event"
   | "mark"
   | "state"
+  | "story"
   | "diary";
 
 export interface DialogueChoiceSession {
-  kind: "encounter" | "command" | "dayevent" | "event" | "diary";
+  kind: "encounter" | "command" | "dayevent" | "event" | "story" | "diary";
   charaNum: number;
   commandNo?: number;
   subid?: number;
@@ -25,6 +26,10 @@ export interface DialogueChoiceSession {
   continuationId?: string;
   continuationValues?: (number | string)[];
   continuationInputMode?: "number" | "string";
+  /** StoryProgram V1 uses stable option IDs rather than kojo numeric arms. */
+  storyProgramId?: string;
+  storyBeatId?: string;
+  storyChoiceIds?: string[];
   /** Number of non-replayed prefix events retained before the KOJO transcript. */
   transcriptStart: number;
   /** Remaining first-meeting candidates after an interactive encounter pause. */
@@ -38,6 +43,8 @@ export interface DialogueChoiceSession {
 export interface DialogueSession {
   id: string;
   owner: DialogueSessionOwner;
+  /** Game day that owns this transient UI session; absent means legacy data. */
+  dayIndex?: number;
   priority: number;
   interruptible: boolean;
   transcript: ObservationEvent[];
@@ -45,6 +52,12 @@ export interface DialogueSession {
   /** Pending realtime AI request owned by this exact command session. */
   aiRequestId?: string;
   aiCharaNum?: number;
+  /** This session's AI request defers a deterministic command settlement
+   * (AI-first presentation): the world must not write state until it
+   * settles. Free AI chat streams rebase on the live state and set no flag. */
+  aiSettlesCommand?: boolean;
+  /** Bound on final publication, never taken from model-supplied revisions. */
+  storyChoiceGrant?: import("../../../modernization/runtime/story/interaction-progress.js").StoryInteractionGrantV1;
 }
 
 export const DIALOGUE_SESSION_PRIORITY: Readonly<Record<DialogueSessionOwner, number>> = {
@@ -54,6 +67,7 @@ export const DIALOGUE_SESSION_PRIORITY: Readonly<Record<DialogueSessionOwner, nu
   encounter: 80,
   mark: 70,
   state: 70,
+  story: 95,
   arrival: 60,
   diary: 50,
 };

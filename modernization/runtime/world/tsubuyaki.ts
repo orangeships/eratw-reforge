@@ -31,6 +31,8 @@ export interface TsubuyakiDeps {
   now: () => number;
   router?: DialogueRouter;
   rng?: Rng;
+  /** Day being settled; sleep may already have advanced the world to morning. */
+  settlementDayIndex?: number;
 }
 
 /**
@@ -77,7 +79,7 @@ export function runTsubuyaki(state: GameState, deps: TsubuyakiDeps): Observation
     // `TCVAR:今天有否见面 ? 0 # 会ってない日数` — arm arg selects the
     // met-today branch (0) vs the "haven't seen you in N days" branch.
     const metToday = (st.TCVAR[TCVAR_ID.今天有否见面] ?? 0) !== 0;
-    const daysSince = Math.max(0, state.time.dayIndex - (st.CFLAG[CFLAG_ID.最后见面的日子] ?? 0));
+    const daysSince = Math.max(0, (deps.settlementDayIndex ?? state.time.dayIndex) - (st.CFLAG[CFLAG_ID.最后见面的日子] ?? 0));
     const arg = metToday ? 0 : daysSince;
 
     const lines = resolveEventKojoAndApply(router, state, charaNum, 31, rng, [arg])

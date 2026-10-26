@@ -79,6 +79,7 @@ export const comf10Def: ComfDef = {
   failThreshold: 101,
 
   timeCost: 0,
+  targetDownbase: { [BASE_ID.体力]: 5, [BASE_ID.気力]: 50 },
 
   canExecute: com10Check,
   hModeMenuCheck: com10Check,
@@ -126,9 +127,6 @@ export const comf10Def: ComfDef = {
 
   body: (c) => {
     // ERB 25-26: DOWNBASE target 体力 5 / 気力 50.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 5;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 50;
-
     // ERB 77: 口淫経験 PLAYER++.
     c.master.state.EXP[EXP_ID.口淫経験] =
       (c.master.state.EXP[EXP_ID.口淫経験] ?? 0) + 1;

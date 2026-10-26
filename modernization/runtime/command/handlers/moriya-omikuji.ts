@@ -13,6 +13,7 @@ import {
   advanceTimeTicks,
 } from "../../state/settlement.js";
 import { canAfford, pay } from "../../state/money.js";
+import type { ObservationEvent } from "../../../schemas/types.js";
 
 const LOCATION = "守矢神社:社務所";
 const OPEN_MINUTE = 600;
@@ -53,7 +54,7 @@ function selections(answer: PromptAnswer | undefined): readonly (number | string
 
 function paymentOptions(state: CommandContext["state"]): PromptSpec {
   const seals = itemCount(state, ITEM_ID.守矢之守札);
-  return pickOne("守矢神签怎么抽？", [
+  return pickOne("守矢神签，绝赞贩卖中！\n接待员带着亲切的笑容，指了指身旁写着「布施箱」的箱子。\n「单抽 3000 日元、20 筹码，或者 5 张守矢守札。要试试吗？」", [
     ...PAYMENTS.map((payment) => ({
       id: payment.id,
       label: payment.label,
@@ -61,6 +62,85 @@ function paymentOptions(state: CommandContext["state"]): PromptSpec {
     })),
     { id: "cancel", label: "算了" },
   ]);
+}
+
+// COM435's handover / PRINTDATAW suspense and FOTUNE_MORIYA's prize scenes.
+// Flavor is derived from the drawn slip, so presentation consumes no extra RNG.
+const REVEAL_LINES = [
+  "「那么，结果是……」", "「唔唔，这个是……」", "「会是什么呢，会是什么呢？」",
+  "「哎呀呀，抽到这个了吗。」", "「奇怪的文字呢……啊，上下拿反了。」", "「……？……！？」",
+] as const;
+
+function prizeScene(value: number, result: string): string[] {
+  if (value === 0) return [
+    "接待员的笑容僵了一下，随即赶紧重新堆起笑脸。",
+    "「恭喜恭喜！中特等奖了！」",
+    "「来，请放心服用，水也为你准备好了。」",
+    "将药和水一起咽下，力量从体内不断涌出。",
+    "等那股感觉消退，身体似乎变得更有余裕了。",
+    result,
+    "「这个箱子的特等奖已经开出了。」",
+    "「下次抽签时，可以选择换一个新箱子哦。」",
+  ];
+  if (value <= 3) return [
+    "接待员仔细确认签面，然后郑重地递来一张约会券。",
+    "「恭喜获得一等奖！」",
+    "「准备好了的话，请再来打招呼吧。」", result,
+  ];
+  if (value <= 8) return [
+    "「二等奖，是早苗大人带来的幸福之奇迹！」",
+    "柔和的祝福笼罩下来，心情平静了，连身体也轻快了许多。",
+    "「不过，做了过分的事情还是会惹人生气的。」",
+    "「奇迹也不是万能的哦。」", result,
+  ];
+  if (value <= 14) return [
+    "「三等奖，守矢新人训练营的优待券！」",
+    "「使用期限刚好就在今天，我们这就开始吧。」",
+    "还没来得及解释接下来的安排，就被热情地领向了训练场……",
+    "一番密集指导结束后，虽然有些恍惚，却确实掌握了新的诀窍。", result,
+  ];
+  if (value <= 24) return [
+    "「四等奖！」",
+    "「神奈子大人秘藏的甜酒、浊酒、清酒，还有鬼杀酒。」",
+    "「请仔细品尝吧！」",
+    "接过沉甸甸的酒瓶，瓶身碰撞，发出清脆的声响。", result,
+  ];
+  if (value <= 39) return [
+    "「五等奖！」",
+    "「精疲力竭的时候，就靠这份礼包熬过去吧！」",
+    "接待员搬来精力剂、大回复药、药水和一大包饮料。",
+    "光是抱着它们，手臂就已经有些酸了……", result,
+  ];
+  if (value <= 59) return [
+    "「六等奖。」",
+    "「奖品是……恋爱惊喜礼包呢。」",
+    "接待员把包好的礼包推到面前，又低头确认了一遍签上的字样。", result,
+  ];
+  if (value <= 89) return [
+    "「七等奖！」",
+    "「把收获的喜悦带回家吧，这是蔬菜苗礼包！」",
+    "一株株幼苗被仔细装进袋子。",
+    "至于最后会长出什么，就等亲手种下以后再说了。", result,
+  ];
+  if (value <= 129) return [
+    "「八等奖！」",
+    "「吃过一次就停不下来的巧克力点心，请收下吧！」",
+    "接待员递来一整盒黑雷神巧克力。", result,
+  ];
+  if (value <= 199) return [
+    "「这个是特别奖——刷帚！」",
+    "「可不是普通的刷帚哦，集齐十个就能换金刷帚！」",
+    ...(result.includes("集齐")
+      ? ["「恭喜，已经集齐十个了！」", "接待员收好刷帚，递来了金光闪闪的金刷帚。"]
+      : ["接待员认真数了数已经收集的刷帚，鼓励你朝金刷帚继续努力。"]),
+    result,
+  ];
+  return [
+    "接待员满脸笑容地把签递了回来。",
+    "【守矢之守札】\n积攒五枚，额外赠送一抽。\n不保证利益。——守矢神社",
+    "说得这么拐弯抹角，这不就是落空了吗……",
+    "「下次一定会抽到更好的，加油，加油！」", result,
+  ];
 }
 
 function moriyaPrompt(ctx: CommandContext): PromptSpec | null {
@@ -189,18 +269,34 @@ export const moriyaOmikujiHandlerEntry: HandlerEntry = {
     if (payment.yen) pay(next, payment.yen);
     next.casinoChips = Math.max(0, (next.casinoChips ?? 0) - payment.chips);
     removeItem(next, ITEM_ID.守矢之守札, payment.seals);
-    if (!next.moriyaOmikujiBox?.length) next.moriyaOmikujiBox = freshBox();
-    const results: string[] = [];
+    if (!next.moriyaOmikujiBox) next.moriyaOmikujiBox = freshBox();
+    const events: ObservationEvent[] = [];
+    const narrate = (text: string) => events.push({ kind: "NARRATION", timestamp: ctx.now(), text });
+    narrate(payment.yen ? "把钱投入布施箱，接待员笑着把签箱推到面前。" : payment.chips ? "付好了筹码，接待员笑着把签箱推到面前。" : "把守矢守札交给接待员，换来了抽签的机会。");
+    if (boxChoice === "box:new") narrate("「那么就更换签箱吧。」接待员收起旧箱，搬来一个新签箱。");
     for (let draw = 0; draw < payment.draws; draw += 1) {
+      if (!next.moriyaOmikujiBox?.length) {
+        next.moriyaOmikujiBox = freshBox();
+        next.flagStore[FLAG_ID.おみくじ] = (next.flagStore[FLAG_ID.おみくじ] ?? 0) & ~BIT_SPECIAL_DRAWN;
+        narrate("「这一箱已经抽完了，请稍等。」接待员准备好了新的签箱。");
+      }
       const box = next.moriyaOmikujiBox!;
       const index = ctx.rng.int(box.length);
       const value = box.splice(index, 1)[0]!;
-      results.push(awardRank(next, value));
+      narrate(`【守矢神签 · 第 ${draw + 1} / ${payment.draws} 抽】\n从箱子里抽出一根神签，递给接待员。`);
+      narrate(`接待员低头端详着签上的文字。\n……\n${REVEAL_LINES[value % REVEAL_LINES.length]}`);
+      const result = awardRank(next, value);
+      events.push({
+        kind: "NARRATION", timestamp: ctx.now(),
+        text: prizeScene(value, result).join("\n"),
+        surface: "omikuji", tone: value <= 14 ? "auspicious" : value >= 200 ? "notice" : "plain",
+      });
     }
+    narrate("「非常感谢，欢迎下次再来！」接待员笑着送你离开签箱前。");
     advanceTimeTicks(next, 2);
     return {
       state: next,
-      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: `抽出了${payment.draws === 10 ? "十连" : "一张"}守矢神签。${results.join("；")}` }],
+      events,
       outcome: "ok" as const,
     };
   },

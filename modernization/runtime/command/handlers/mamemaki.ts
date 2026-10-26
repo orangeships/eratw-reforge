@@ -36,13 +36,8 @@
  *   - `TIME += 30` (ERB l.45).
  *
  * **DEFERRED (documented, not stubbed as reachable):**
- *   - `FESTIVAL() == "節分"` calendar gate (@COM_ABLE364 ERB l.76) — calendar
- *     not modeled → execCheck blocks. Live-unreachable until the Phase 8
- *     calendar slice.
- *   - `CHECK_CHARA(,"鬼")` 鬼族 race gate (@COM_ABLE364 l.79-84) + loop skip
- *     (l.19) — TALENT race not imported → execCheck blocks; loop skip is a
- *     no-op in trial (no 鬼 charas).
- *   - `[[正邪]]` charaNum skip (l.21) — charaNum unknown, no consumer.
+ *   - `[[正邪]]` charaNum skip (l.21) — the modern roster uses the authored
+ *     call-name exception because a stable numeric alias is not exposed.
  *   - `TFLAG:207 += count*300` 仕事-income (l.39) — no TFLAG:207 model /
  *     consumer in the runtime; bean-money payout deferred.
  *   - `TFLAG:193` outcome flag (consumed by GET_SUCCESS_RATE outcome-scaling
@@ -52,10 +47,10 @@
  *     resolver/catalog plumbing.
  *   - `TCVAR:116 = PLAYER` (l.11) — no TCVAR_ID for 接触反省.
  *
- * **Live reachability.** Double-deferred (calendar + 鬼-race) → 364 never
- * executes in the current runtime. The settlement is pinned by tests via a
- * direct handler call (bypassing execCheck), matching how 412/441 pin their
- * def-level arithmetic.
+ * **Live reachability.** The calendar and 鬼-race gates are now wired, so the
+ * command is reachable on winter date 3 for an eligible target. The remaining
+ * deferred income flag is deliberately not converted into money without an
+ * authoritative modern consumer.
  */
 import type { CommandContext, HandlerEntry } from "../types.js";
 import type { ObservationEvent } from "../../../schemas/types.js";
@@ -67,6 +62,7 @@ import {
   FLAG_ID,
   PALAM_ID,
   SOURCE_ID,
+  TALENT_ID,
   advanceTimeTicks,
   getMasterBase,
   palamLevel,
@@ -75,6 +71,7 @@ import {
 import { applySourceCheck } from "../source-check.js";
 import { presentNpcs } from "../../scene/presence.js";
 import { TFLAG_ID, setTflag } from "../../state/tflag.js";
+import { festivalNow } from "../../world/calendar.js";
 
 type Blocked = { ok: false; reason: { kind: "precondition"; message: string } };
 
@@ -152,12 +149,26 @@ function checkMamemakiEligible(ctx: CommandContext): { ok: true } | Blocked {
   if ((target.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) {
     return { ok: false, reason: { kind: "precondition", message: "对方正在睡觉。" } };
   }
-  // ERB l.76: 節分 festival gate (calendar deferred) → always blocked live.
-  // ERB l.79-84: 鬼族 race gate (race deferred) → also always blocked live.
-  return {
-    ok: false,
-    reason: { kind: "precondition", message: "撒豆只能在节分之日对鬼族进行（历法与鬼族判定尚未实现）。" },
-  };
+  // ERB l.76: FESTIVAL() == "節分".
+  if (festivalNow(ctx.state.time) !== "節分") {
+    return { ok: false, reason: { kind: "precondition", message: "撒豆只能在节分之日进行。" } };
+  }
+  // ERB l.79-84: target must be the 鬼 tribe, with 正邪 as the explicit
+  // exception. The modern roster carries the tribe in TALENT:妖怪; the
+  // name check preserves the upstream singleton exception without inventing
+  // a numeric roster constant.
+  const oni = (target.state.TALENT[TALENT_ID.妖怪] ?? 0) === 2
+    || target.callName?.includes("正邪");
+  if (!oni) {
+    return { ok: false, reason: { kind: "precondition", message: "撒豆的对象必须是鬼族。" } };
+  }
+  if ((target.state.CFLAG[CFLAG_ID.陪睡中] ?? 0) !== 0) {
+    return { ok: false, reason: { kind: "precondition", message: "陪睡中无法撒豆。" } };
+  }
+  if ((getMasterBase(ctx.state, BASE_ID.気力) ?? 0) <= 0) {
+    return { ok: false, reason: { kind: "precondition", message: "气力不足，无法撒豆。" } };
+  }
+  return { ok: true };
 }
 
 export const comf364HandlerEntry: HandlerEntry = {
@@ -175,12 +186,13 @@ export const comf364HandlerEntry: HandlerEntry = {
     setTflag(next, TFLAG_ID.信頼度管理, -1);
 
     // ERB l.16-26: loop present NPCs (ascending charaNum), skip 睡眠/鬼/正邪.
-    // 鬼/正邪 skips deferred → only 睡眠 filters here.
     const npcs = presentNpcs(next, master.location);
     const eligible: EligibleChara[] = [];
     for (const npc of npcs) {
       if ((npc.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) continue; // ERB l.17
-      // ERB l.19,21: 鬼 / 正邪 skips deferred (no-op in trial).
+      const oni = (npc.state.TALENT[TALENT_ID.妖怪] ?? 0) === 2
+        || npc.callName?.includes("正邪");
+      if (!oni) continue;
       eligible.push({ charaNum: npc.charaNum, sade: npc.state.ABL[ABL_ID.施虐属性] ?? 0 });
     }
 

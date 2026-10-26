@@ -20,7 +20,7 @@
  * (the parent owns the game-state store).
  */
 
-import { useEffect, useRef, useState, useCallback, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
 import { useSceneStore } from "../state/scene-store.js";
 import { useGameStateStore } from "../state/game-state-store.js";
 import { SCENES_BY_LOCATION } from "./scenes.js";
@@ -29,23 +29,35 @@ import ColoredMapView from "./ColoredMapView.js";
 import WorldMapView from "./WorldMapView.js";
 import { currentMapIdForLocation, REGIONS } from "./regions.js";
 import CommandGrid from "./CommandGrid.js";
-import InteractionBox from "./InteractionBox.js";
-import GameStatusBar, { TextGameInfoPanel } from "./GameStatusBar.js";
+import InteractionBox, { buildRadioCharacterEntry } from "./InteractionBox.js";
+import SceneDialogueOverlay from "./SceneDialogueOverlay.js";
+import HSessionView from "./HSessionView.js";
+import DiaryBook, { diaryPages } from "./DiaryBook.js";
+import GameStatusBar, { TextGameInfoPanel, type NarrativePursuitSummary } from "./GameStatusBar.js";
 import { SceneAmbientPanel, SceneHistoryPanel } from "./SceneSidebar.js";
 import ExComPanel, { type ExComTool } from "./ExComPanel.js";
 import CommissionPopup from "./CommissionPopup.js";
 import CharacterInfoPopup from "./CharacterInfoPopup.js";
 import KojoDebugPopup from "./KojoDebugPopup.js";
 import AiSettingsPopup from "../ai/AiSettingsPopup.js";
+import OptionsDialog from "./OptionsDialog.js";
 import { currentAiCharacterProfile, useAiStore } from "../ai/store.js";
+import { AI_CHAT_COMMAND_NO } from "../ai/kojo-runtime.js";
 import { useSceneAmbient } from "../ai/use-scene-ambient.js";
+import { dismissSceneAmbientForParticipant } from "../ai/ambient-runtime.js";
+import { describeNarrativeDirectorStatus } from "../ai/narrative-status.js";
 import portraits from "./portraits.bundle.json";
 import SpriteCrop from "./SpriteCrop.js";
 import {
   dimensionForKind,
+  portraitForClothing,
+  portraitForState,
   portraitKind,
+  portraitSourceForState,
   type PortraitSource,
 } from "./portrait-expression.js";
+import { portraitWithOutfit } from "./portrait-special-outfit-runtime.js";
+import { checkNude } from "../../../modernization/runtime/state/portrait-outfit-context.js";
 import { kojoColor } from "./kojo-colors.js";
 import { selectPresentCharas } from "../../../modernization/runtime/scene/presence.js";
 import { canOpenWhereabouts } from "../../../modernization/runtime/world/whereabouts.js";
@@ -66,8 +78,9 @@ import type {
   DatePlanEvent,
   OutingChoicePromptLine,
   OutingChoiceValue,
+  TrainingSession,
 } from "../../../modernization/runtime/state/game-state.js";
-import { CFLAG_ID, getCharaCflag } from "../../../modernization/runtime/state/settlement.js";
+import { ABL_ID, CFLAG_ID, getCharaCflag } from "../../../modernization/runtime/state/settlement.js";
 import {
   mobGirlCandidateProfile,
   mobGirlProfileForCharacter,
@@ -76,16 +89,22 @@ import type { WalkChoice } from "../../../modernization/runtime/world/skip-move.
 import { askYn, pickOne, pickOneAnswer, yesNoAnswer, type PromptAnswer, type PromptSpec } from "../../../modernization/runtime/command/prompt.js";
 import type { AgentIntent, IssueCommandIntent, ObservationEvent } from "../../../modernization/schemas/types.js";
 import type { CommandGridAction } from "./CommandGrid.js";
-import commandsBundle from "./commands.bundle.json";
+import { commandLabel } from "./command-label.js";
 import { comFilterClassOf } from "./com-filter-class.js";
-import { COMMAND_FAMILIES, familyOf, familyRequiresHMode, familyVisibleInHMode } from "./command-families.js";
+
+/** Sentinel option value for "decline every offered situation". */
+const DISMISS_SITUATIONS = "__dismiss__";
+import { COMMAND_FAMILIES, familyOf, visibleOnCommandGrid } from "./command-families.js";
 import { weatherBackgroundStyle } from "../../../modernization/runtime/weather/background-color.js";
 import { formatGameEvent } from "./event-format.js";
 import { EventChoicePanel, EventResultLines } from "./EventChoicePanel.js";
 import { findPath } from "./pathfind.js";
 import FishingTackleShop from "./FishingTackleShop.js";
+import GatheringProgress from "./GatheringProgress.js";
 import { sceneForPresentation } from "./scene-intro.js";
 import { privateRoomDescriptionProse } from "./room-description.js";
+import { isNarrativePresentationEvent } from "./player-visible-events.js";
+import { eventInstanceKey, eventKey, mergeCommandTranscript, trimSuffixOverlap } from "./event-merge.js";
 import { currentIntentDeps } from "../../../modernization/runtime/intent/apply-intent.js";
 import MobGirlCandidatePanel from "./MobGirlCandidatePanel.js";
 import MobPortrait from "./MobPortrait.js";
@@ -96,20 +115,33 @@ import {
   mobGirlPersonaKey,
 } from "../ai/mob-girl-profile.js";
 import { PLAYER_BUILD } from "../player-build.js";
+import MinimalTextStream from "./minimal/MinimalTextStream.js";
+import MinimalChoiceBar from "./minimal/MinimalChoiceBar.js";
+import DialogueAccompanyChoices from "./DialogueAccompanyChoices.js";
+import { dialogueAccompanyInvitations, hasDialogueAccompanyPermit } from "../../../modernization/runtime/ai-state/dialogue-action.js";
+import MinimalAiChatBar from "./minimal/MinimalAiChatBar.js";
+import MinimalOutingList from "./minimal/MinimalOutingList.js";
 import "./immersive.css";
+import "./minimal.css";
+import "./h-session.css";
 
-export type GamePresentationMode = "classic" | "immersive";
+export type GamePresentationMode = "immersive" | "minimal";
 
 export interface GameClientProps {
   state: GameState;
-  /** App selects the three-column text-game surface; omitted callers retain
-   * the full classic surface for compatibility and focused tests. */
+  /** `immersive` is the three-column text-game surface; `minimal` is the
+   * phone-portrait ultra-slim mode (text stream + Act_COM only). */
   presentationMode?: GamePresentationMode;
+  /** Presentation experiment enabled only by the development shell. */
+  sceneDialogue?: boolean;
   onIntent: (intent: AgentIntent) => void;
   /** Phase D (实玩反馈 #9): walk a multi-hop map path (SKIP_MOVE) with
    *  pass-through encounters + time cost instead of teleporting. Optional:
    *  when absent, the map walk is a no-op. */
-  onWalkPath?: (rooms: string[]) => void;
+  onWalkPath?: (rooms: string[]) => void | Promise<void>;
+  /** Player-build chunk preflight. Movement waits for every character that can
+   *  be encountered along these locations so first-meeting remains one-shot. */
+  onPrepareKojoForLocations?: (locations: readonly string[]) => Promise<void>;
   /** Phase D slice 2: resolve the current mid-walk encounter (无视/打招呼/停下来). */
   onResolveWalkEncounter?: (choice: WalkChoice) => void;
   /** Toggle an Act_COM filter (Parity QA P-1) for the focused target. */
@@ -178,36 +210,7 @@ function rangeSuppressesWalkKojo(
   return index >= range.start && index < range.end && isWalkEncounterKojo(event, range.charaNum);
 }
 
-const COMMAND_LABELS = commandsBundle as Record<
-  string,
-  { label: string; category: string }
->;
-
-const COMMAND_LABEL_FALLBACKS: Record<number, string> = {
-  419: "水汲み（打水）",
-  480: "弹幕胜负",
-  72: "插入后·刺激Ｇ点",
-  73: "插入后·刺激子宫口",
-  820: "脱衣服",
-  821: "偷胖次",
-  992: "邀请约会",
-  201: "禁用指令",
-  270: "调教口上",
-  999: "结束幽会",
-};
-
 const PORTRAITS = portraits as unknown as Record<string, PortraitSource>;
-
-function commandLabel(commandNo: number): string {
-  if (commandNo === 0) return "爱抚";
-  if (commandNo === 72) return "插入后·刺激Ｇ点";
-  if (commandNo === 73) return "插入后·刺激子宫口";
-  if (commandNo === 700) return "自慰·爱抚自己";
-  if (commandNo === 999) return "结束幽会";
-  const bundled = COMMAND_LABELS[String(commandNo)]?.label;
-  if (bundled && !/^#\d+$/.test(bundled) && bundled !== "未命名行动") return bundled;
-  return COMMAND_LABEL_FALLBACKS[commandNo] ?? `指令 ${commandNo}`;
-}
 
 /**
  * 神社闭环 v2 (刀二) — focused single-map / single-character TRIAL RUN.
@@ -304,21 +307,53 @@ function issueCommand(
  */
 const MENU_EXCLUDED_COMMANDS: ReadonlySet<number> = new Set([
   400, 405, 499, 604, 650, 201, 697, 698, 699, 270, 355, 448,
-  // 实玩反馈 P2-04: H-class commands whose upstream label still resolves to
-  // JP text are blocked from the menu until labels are localized.
-  122, 141, 142, 143, 148, 187, 190, 511, 850,
+  // Keep registered H commands out while their menu gates or action routes
+  // are still unsupported. 187 has an explicit gate and bounded toggle route.
+  122, 141, 142, 143, 148, 190, 511,
 ]);
+const L3_NARRATIVE_OPENING_COMMAND_NO = -30_003;
+
+/**
+ * A queued command session can be opened after another owner has finished.
+ * Recover its root command from the session transcript instead of opening
+ * every queued session as command 0. This keeps command-specific surfaces
+ * (notably COM496's radio page) owner-aware across queue transitions.
+ */
+function commandNoFromDialogueTranscript(
+  events: readonly ObservationEvent[] | null,
+): number | null {
+  const command = events?.find((event) => event.kind === "COMMAND_ISSUED");
+  return command?.kind === "COMMAND_ISSUED" ? command.commandNo : null;
+}
+
+function dialogueTranscriptContainsCommand(
+  transcript: readonly ObservationEvent[] | null,
+  command: Extract<ObservationEvent, { kind: "COMMAND_ISSUED" }>,
+): boolean {
+  return transcript?.some((event) =>
+    event.kind === "COMMAND_ISSUED" &&
+    event.timestamp === command.timestamp &&
+    event.actor === command.actor &&
+    event.commandNo === command.commandNo) ?? false;
+}
 
 export default function GameClient(props: GameClientProps) {
   const {
     state,
     onIntent,
     onWalkPath,
+    onPrepareKojoForLocations,
     onResolveWalkEncounter,
     onToggleFilter,
     commandAvailabilityMode = "normal",
   } = props;
-  const presentationMode = props.presentationMode ?? "classic";
+  const presentationMode = props.presentationMode ?? "immersive";
+  const sceneDialogue = props.sceneDialogue === true && !PLAYER_BUILD && presentationMode !== "minimal";
+  const [closingHSession, setClosingHSession] = useState<Pick<TrainingSession, "target" | "mode" | "startedAtTick"> | null>(null);
+  const [hTranscriptStartIndex, setHTranscriptStartIndex] = useState<number | null>(null);
+  const [hPortraitCommandNo, setHPortraitCommandNo] = useState<number | null>(null);
+  const [hHistoryEvents, setHHistoryEvents] = useState<ObservationEvent[]>([]);
+  const hHistoryOwnerRef = useRef<{ target: number; logLength: number } | null>(null);
   const interaction = useSceneStore((s) => s.interaction);
   const openInteraction = useSceneStore((s) => s.openInteraction);
   const closeInteraction = useSceneStore((s) => s.closeInteraction);
@@ -334,7 +369,14 @@ export default function GameClient(props: GameClientProps) {
   // P1 typed dialogue queue: the first session owns the active modal.
   // Closing advances the queue; a later arrival/event cannot replace it.
   const dialogueQueue = useGameStateStore((s) => s.dialogueQueue);
+  const clearCompletedDialogueBeforeNavigation = useGameStateStore((s) => s.clearCompletedDialogueBeforeNavigationAction);
+  const [minimalNavigationPending, setMinimalNavigationPending] = useState(false);
+  // 问题1 — author DIALOGUE_LINE instance keys whose realtime AI replace succeeded;
+  // the immersive history hides them in favour of the AI lines.
+  const replacedAuthorLineKeys = useGameStateStore((s) => s.replacedAuthorLineKeys);
   const aiSettings = useAiStore((s) => s.settings);
+  const aiDebugEntries = useAiStore((s) => s.debugEntries);
+  const narrativeDirectorStatus = useGameStateStore((s) => s.narrativeDirectorStatus);
   const updateAiCharacterProfile = useAiStore((s) => s.updateCharacterProfile);
   const aiEnabled = aiSettings.enabled;
   const generatedPersonaKey = Object.entries(state.dynamicCharacters ?? {})
@@ -416,32 +458,153 @@ export default function GameClient(props: GameClientProps) {
     updateAiCharacterProfile,
   ]);
   const activeDialogueSession = dialogueQueue[0] ?? null;
+  // 问题1 — cross-session buffer for transcript lines that never enter the
+  // eventLog (AI chat turns, AI-replaced kojo lines, kojo choice branches), so
+  // the immersive history keeps them after the session closes. Mirrors the
+  // minimal stream's extras buffer but WITHOUT the per-command chapter cutoff:
+  // the immersive history is the full conversation/action record.
+  const [aiHistoryExtras, setAiHistoryExtras] = useState<ObservationEvent[]>([]);
+  const prevHistoryLogLengthRef = useRef(state.eventLog.length);
+  useEffect(() => {
+    if (state.eventLog.length < prevHistoryLogLengthRef.current) {
+      // 读档/重置: drop stale lines from a previous save.
+      setAiHistoryExtras([]);
+    }
+    prevHistoryLogLengthRef.current = state.eventLog.length;
+  }, [state.eventLog.length]);
+  useEffect(() => {
+    if (presentationMode !== "immersive") return;
+    if (sceneDialogue && activeDialogueSession?.aiRequestId !== undefined) return;
+    const sessionLines = (activeDialogueSession?.transcript ?? [])
+      .filter(isNarrativePresentationEvent);
+    if (sessionLines.length === 0) return;
+    const bandSet = new Set(sceneBandEventsForPresentation.map(eventKey));
+    setAiHistoryExtras((prev) => {
+      const existing = new Set(prev.map(eventKey));
+      const additions = sessionLines.filter(
+        (event) => !bandSet.has(eventKey(event)) && !existing.has(eventKey(event)),
+      );
+      return additions.length === 0 ? prev : [...prev, ...additions].slice(-200);
+    });
+    // sceneBandEventsForPresentation derives from state.eventLog; the length
+    // keeps this effect from re-running on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presentationMode, sceneDialogue, activeDialogueSession?.id, activeDialogueSession?.transcript, activeDialogueSession?.aiRequestId, state.eventLog.length]);
   const pendingArrivalEvents = activeDialogueSession?.transcript ?? null;
+  const activeDialogueCommandNo = commandNoFromDialogueTranscript(pendingArrivalEvents);
   const offeredDates = offeredDateInvitations(state);
   const offeredDate = offeredDates[0];
+  const accompanyInvitation = dialogueAccompanyInvitations(state)[0];
   const scheduledDate = (state.worldEvents ?? [])
     .filter((event): event is DatePlanEvent => event.kind === "date-plan" && ["scheduled", "waiting"].includes(event.phase) && event.scheduledStartTick != null)
     .sort((a, b) => (a.scheduledStartTick ?? Infinity) - (b.scheduledStartTick ?? Infinity) || a.partner - b.partner)[0];
   const clearArrivalPopup = useGameStateStore((s) => s.clearArrivalPopup);
   const pendingKojoChoice = activeDialogueSession?.choice ?? null;
   const resolveKojoChoice = useGameStateStore((s) => s.resolveKojoChoiceAction);
+  const resolveStoryChoice = useGameStateStore((s) => s.resolveStoryChoiceAction);
+  const recoverStoryProgram = useGameStateStore((s) => s.recoverStoryProgramAction);
+  const abortStoryProgram = useGameStateStore((s) => s.abortStoryProgramAction);
+  const skipStoryProgram = useGameStateStore((s) => s.skipStoryProgramAction);
+  const favoriteNarrativeEvent = useGameStateStore((s) => s.favoriteNarrativeEventAction);
+  const setStoryArcStatus = useGameStateStore((s) => s.setStoryArcStatusAction);
+  const startNarrativeEvent = useGameStateStore((s) => s.startNarrativeEventAction);
+  const startAiChat = useGameStateStore((s) => s.startAiChatAction);
+  const respondAccompany = useGameStateStore((s) => s.respondDialogueAccompanyAction);
+  const advancePartnerLedDate = useGameStateStore((s) => s.advancePartnerLedDateAction);
+  const appendAiChatBranch = useGameStateStore((s) => s.appendAiChatBranchAction);
   const pendingPrompt = useGameStateStore((s) => s.pendingPrompt);
   const resolvePromptAnswer = useGameStateStore((s) => s.resolvePromptAnswer);
   const cancelPrompt = useGameStateStore((s) => s.cancelPrompt);
   const resolveMobMeal = useGameStateStore((s) => s.resolveMobMealAction);
+  const resolveFestivalEvent = useGameStateStore((s) => s.resolveFestivalEventAction);
+  const chooseNarrativeSituation = useGameStateStore((s) => s.chooseNarrativeSituationAction);
+  const dismissNarrativeSituations = useGameStateStore((s) => s.dismissNarrativeSituationsAction);
+  // The overnight situation menu, rendered only while a set is outstanding.
+  // Option values are situation ids plus the DISMISS sentinel, so the pick
+  // handler never has to infer intent from an index.
+  const situationPrompt = useMemo<PromptSpec | null>(() => {
+    const session = state.narrativeSituationSession;
+    // A runtime-picked set is never a question for the player: it exists only
+    // long enough for the runtime to open one of them.
+    if (session?.autoSelect) return null;
+    const situations = session?.situations;
+    if (!situations || situations.length === 0) return null;
+    return pickOne("有几件事正在发生。要插手哪一件？", [
+      ...situations.map((situation) => ({ id: situation.id, label: situation.premise })),
+      { id: DISMISS_SITUATIONS, label: "先不管" },
+    ]);
+  }, [state.narrativeSituationSession]);
   const resolveMobGirlMemory = useGameStateStore((s) => s.resolveMobGirlMemoryAction);
   const resolveOutingChoice = useGameStateStore((s) => s.resolveOutingChoiceAction);
   const cancelOutingChoice = useGameStateStore((s) => s.cancelOutingChoiceAction);
   const closeOutingChoiceResult = useGameStateStore((s) => s.closeOutingChoiceResultAction);
   const startDanmakuBattle = useGameStateStore((s) => s.startDanmakuBattleAction);
   const togglePortraitKind = useGameStateStore((s) => s.togglePortraitKindAction);
+  const setPortraitVariant = useGameStateStore((s) => s.setPortraitVariantAction);
   const updateAgentSettings = useGameStateStore((s) => s.updateAgentSettingsAction);
-  const sleepPresentationRef = useRef<string | null>(null);
+  // 问题3 — manual wipe of AI-generated persisted content.
+  const clearAiGeneratedContent = useGameStateStore((s) => s.clearAiGeneratedContentAction);
+  const prepareCharacterForEncounter = useGameStateStore((s) => s.prepareCharacterForEncounterAction);
+  const cancelLazyMaterialization = useGameStateStore((s) => s.cancelLazyMaterializationAction);
+  const startStoryProgram = useGameStateStore((s) => s.startStoryProgramAction);
   useEffect(() => {
-    if (pendingArrivalEvents && pendingArrivalEvents.length > 0 && !interaction.open && state) {
-      openInteraction(0, state.eventLog.length);
+    const session = state.dateSession;
+    if (!session || session.controller !== "partner" || !session.autoAdvance || session.phase !== "active") return;
+    if (dialogueQueue.length > 0 || pendingPrompt) return;
+    const timer = window.setTimeout(() => { advancePartnerLedDate(); }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [
+    state.dateSession?.eventId,
+    state.dateSession?.phase,
+    state.dateSession?.itineraryCursor,
+    state.dateSession?.autoAdvance,
+    dialogueQueue.length,
+    pendingPrompt,
+    advancePartnerLedDate,
+  ]);
+  const sleepPresentationRef = useRef<string | null>(null);
+  // Minimal mode has no popup to close, so an arrival kojo session (first
+  // meeting 口上 etc.) would sit in the queue forever and its transcript
+  // would linger in the text stream. The player's FIRST command advances the
+  // arrival queue (the same clearArrivalPopup the popup exit used).
+  const prevArrivalLogLength = useRef(state.eventLog.length);
+  useEffect(() => {
+    if (presentationMode !== "minimal") {
+      prevArrivalLogLength.current = state.eventLog.length;
+      return;
     }
-  }, [pendingArrivalEvents, interaction.open, openInteraction, state]);
+    const newCommands = state.eventLog.slice(prevArrivalLogLength.current)
+      .filter((event): event is Extract<ObservationEvent, { kind: "COMMAND_ISSUED" }> =>
+        event.kind === "COMMAND_ISSUED");
+    if (newCommands.length > 0) {
+      // An in-flight AI reply owns the queue head: don't pop its session
+      // while `aiRequestId` is set — the late reply must still land in the
+      // stream instead of being swallowed by clearArrivalPopup.
+      // A completed AI command publishes its deterministic COMMAND_ISSUED in
+      // the same update as the final transcript. That command is part of this
+      // session, not the player's next command, so it must not immediately
+      // clear the AI line that just arrived.
+      const sessionOwnsPublishedCommand = newCommands.some((command) =>
+        dialogueTranscriptContainsCommand(pendingArrivalEvents, command));
+      if (pendingArrivalEvents && pendingArrivalEvents.length > 0
+        && activeDialogueSession?.aiRequestId === undefined
+        && !sessionOwnsPublishedCommand) {
+        clearArrivalPopup();
+      }
+    }
+    prevArrivalLogLength.current = state.eventLog.length;
+  }, [presentationMode, state.eventLog.length, pendingArrivalEvents, clearArrivalPopup, activeDialogueSession?.aiRequestId]);
+  useEffect(() => {
+    if (state.storyProgram?.status === "active"
+      && !dialogueQueue.some((session) => session.owner === "story")) {
+      recoverStoryProgram();
+    }
+  }, [dialogueQueue, recoverStoryProgram, state.storyProgram?.id, state.storyProgram?.status]);
+  const activeStoryArcId = state.storyProgram?.version === 2 ? state.storyProgram.arcId : undefined;
+  const activeStoryEventId = state.storyProgram?.version === 2 ? state.storyProgram.eventId : undefined;
+  const activeStoryArcPhase = activeStoryArcId
+    ? state.storyArcs?.find((arc) => arc.id === activeStoryArcId)?.phase
+    : undefined;
   const onArrivalExit = useCallback(() => {
     closeInteraction();
     clearArrivalPopup();
@@ -457,12 +620,12 @@ export default function GameClient(props: GameClientProps) {
     // 刀二→Phase 8: the autonomous scheduler tick is now driven by
     // SCHEDULER_ON (decoupled from TRIAL_RUN). We deliberately don't tick
     // while the interaction box is open (the player is reading).
-    if (!SCHEDULER_ON || interaction.open || offeredDate) return;
+    if (!SCHEDULER_ON || interaction.open || offeredDate || accompanyInvitation || state.festivalEventSession) return;
     const id = setInterval(() => {
       onIntent({ kind: "NOOP", reason: "tick" });
     }, 1500);
     return () => clearInterval(id);
-  }, [interaction.open, offeredDate?.id, onIntent]);
+  }, [interaction.open, offeredDate?.id, accompanyInvitation?.requestId, onIntent, state.festivalEventSession]);
 
   // A sleep request is a queued screen transition, never permission to tear
   // down the command UI. The command/event tail and every owner-aware kojo
@@ -476,8 +639,21 @@ export default function GameClient(props: GameClientProps) {
       return;
     }
     const key = `${session.startedAtTick}:${session.forced ? 1 : 0}:${session.presentationEventLogIndex ?? "legacy"}`;
-    if (interaction.open || dialogueQueue.length > 0 || pendingPrompt !== null) {
+    const hasBlockingDialogue = dialogueQueue.some((queued) =>
+      queued.choice !== null || queued.aiRequestId !== undefined,
+    );
+    if (interaction.open || pendingPrompt !== null ||
+      (presentationMode !== "minimal" && dialogueQueue.length > 0) ||
+      hasBlockingDialogue) {
       sleepPresentationRef.current = key;
+      return;
+    }
+    if (presentationMode === "minimal") {
+      // No kojo popup surface in minimal mode: the sleep narration already
+      // streamed into the text log; jump straight to nightly settlement.
+      if (dialogueQueue.length > 0) clearCompletedDialogueBeforeNavigation();
+      sleepPresentationRef.current = key;
+      setScreen("nightSettlement");
       return;
     }
     if (sleepPresentationRef.current !== key && session.presentationEventLogIndex !== undefined) {
@@ -486,7 +662,7 @@ export default function GameClient(props: GameClientProps) {
       return;
     }
     setScreen("nightSettlement");
-  }, [state.sleepSession, state.eventLog.length, interaction.open, dialogueQueue.length, pendingPrompt, openInteraction, setScreen]);
+  }, [state.sleepSession, state.eventLog.length, interaction.open, dialogueQueue, pendingPrompt, presentationMode, openInteraction, clearCompletedDialogueBeforeNavigation, setScreen]);
 
   // A persisted battle session resumes as its own surface after a save/load
   // just as a persisted sleep session resumes at nightly settlement.
@@ -535,14 +711,16 @@ export default function GameClient(props: GameClientProps) {
 
   const location = state.master.location;
   const scene = SCENES_BY_LOCATION[location] ?? null;
-  const present = selectPresentCharas(state, location);
-  const renderedScene = sceneForPresentation(scene, state, present);
+  const present = useMemo(() => selectPresentCharas(state, location), [state, location]);
+  const renderedScene = useMemo(() => sceneForPresentation(scene, state, present), [scene, state, present]);
   // `_ROOM_DESCRIPTION` personal kojo — when standing inside a chara's own
   // room, append the owner's room-description prose to the ambient layer
   // (upstream `@情景描写` → `K{n}_ROOM_DESCRIPTION`, ANOTHER_TALK.ERB:1023).
-  const roomDesc = renderedScene
-    ? privateRoomDescriptionProse(state, location, currentIntentDeps().router)
-    : null;
+  const sceneRouter = currentIntentDeps().router;
+  const sceneRouterRevision = "preparationRevision" in sceneRouter ? sceneRouter.preparationRevision : undefined;
+  const roomDesc = useMemo(() => renderedScene
+    ? privateRoomDescriptionProse(state, location, sceneRouter)
+    : null, [renderedScene, state, location, sceneRouter, sceneRouterRevision]);
   const finalScene =
     renderedScene && roomDesc
       ? {
@@ -578,7 +756,7 @@ export default function GameClient(props: GameClientProps) {
   // Parity QA P-1 — the Ex_COM utility row collapse (upstream `▼[－] Ex_COM`,
   // toggle id 3002). Expanded by default; holds the tool buttons (移动/变更
   // 对象/…), NOT settlement commands.
-  const [showExCom, setShowExCom] = useState(presentationMode === "classic");
+  const [showExCom, setShowExCom] = useState(true);
   // Commission popup state — clicking a portrait's "?" badge sets this to
   // the charaNum; the popup is rendered above the rest of the screen and
   // clears this on close.
@@ -590,8 +768,38 @@ export default function GameClient(props: GameClientProps) {
   const [characterInfoChara, setCharacterInfoChara] = useState<number | null>(null);
   const [showKojoDebug, setShowKojoDebug] = useState(false);
   const [showAiSettings, setShowAiSettings] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [aiChatDraftOpen, setAiChatDraftOpen] = useState(false);
+  // The story panel lives on the status bar's circled ! and is closed until
+  // asked for — an always-open version of this is the banner it replaced.
+  const [narrativePanelOpen, setNarrativePanelOpen] = useState(false);
+  // Presentation-only AI-branch lines picked in the minimal choice bar; they
+  // stream into the text log but never enter the eventLog/GameState. Cleared
+  // on 移动 (new location chapter, mirroring MinimalTextStream's history reset).
+  const [minimalAiBranchLines, setMinimalAiBranchLines] = useState<ObservationEvent[]>([]);
+  const prevBranchResetLocation = useRef(location);
+  useEffect(() => {
+    if (location !== prevBranchResetLocation.current) {
+      setMinimalAiBranchLines([]);
+      // A command transcript belongs to the room where it was produced.
+      // Minimal mode has no popup exit to advance it, so moving must close the
+      // old command owner explicitly. A newly queued destination encounter has
+      // its own owner and remains available after this queue advance.
+      if (presentationMode === "minimal" && activeDialogueSession?.owner === "command") {
+        clearArrivalPopup();
+      }
+    }
+    prevBranchResetLocation.current = location;
+  }, [location, presentationMode, activeDialogueSession?.owner, clearArrivalPopup]);
   const [showBugCatchingMenu, setShowBugCatchingMenu] = useState(false);
   const [showTackleShop, setShowTackleShop] = useState(false);
+  /**
+   * COMF445 採集 pre-phase. Upstream shows five `采集中.`→`采集中.....` frames
+   * (COMF445.ERB:81-84) before drawing. The resolver is synchronous, so the
+   * command is not issued until the overlay finishes; this holds the pending
+   * command number meanwhile.
+   */
+  const [gatheringProgress, setGatheringProgress] = useState<number | null>(null);
   const walkEncounterCloseSeq = useRef(0);
   const [closingWalkEncounter, setClosingWalkEncounter] =
     useState<ClosingWalkEncounter | null>(null);
@@ -605,24 +813,46 @@ export default function GameClient(props: GameClientProps) {
   const presentNpcIds = new Set(presentNpcs.map((c) => c.charaNum));
   const targetStale =
     selectedTarget === undefined || !presentNpcIds.has(selectedTarget);
-  const actionTarget = targetStale
+  // A persisted H session owns its target. Do not wait for the ephemeral
+  // React selection to be rebuilt after a save/load or browser refresh: the
+  // H controls, status panel, and portrait highlight must all recover from
+  // the authoritative TrainingSession.
+  const persistedTrainingTarget = state.training?.target;
+  const trainingTargetPresent = persistedTrainingTarget !== undefined &&
+    state.charas[persistedTrainingTarget]?.location === state.master.location
+    ? persistedTrainingTarget
+    : undefined;
+  const actionTarget = trainingTargetPresent ?? (targetStale
     ? presentNpcs[0]?.charaNum
-    : selectedTarget;
+    : selectedTarget);
   const walkEncounter = state.walkSession?.encounter;
   // A locked 私室 reached at the end of a walk → 潜入/算了 prompt (@潜入房間).
   const lockedDoor = state.walkSession?.lockedDoor;
   // Any open walk encounter (choice OR result card), locked-door prompt, or
   // NPC date invitation blocks commands until the player resolves it.
+  const minimalDialogueNavigationBlocked = presentationMode === "minimal" && dialogueQueue.some(
+    (session) => session.choice !== null || session.aiRequestId !== undefined,
+  );
   const movementBlocked =
-    walkEncounter !== undefined || closingWalkEncounter !== null || lockedDoor !== undefined || offeredDate !== undefined;
+    (sceneDialogue && interaction.open) ||
+    walkEncounter !== undefined ||
+    closingWalkEncounter !== null ||
+    lockedDoor !== undefined ||
+    offeredDate !== undefined ||
+    accompanyInvitation !== undefined ||
+    minimalNavigationPending ||
+    minimalDialogueNavigationBlocked;
   const trainingMovementLocked = state.training !== undefined && state.training !== null;
+  const effectiveRootCommandNo = activeDialogueCommandNo ?? interaction.rootCommandNo;
   const radioInteractionActive =
     interaction.open &&
-    interaction.rootCommandNo === 496 &&
-    aiSettings.enabled &&
-    aiSettings.radioEnabled;
+    effectiveRootCommandNo === 496;
+  const aiChatInteractionActive =
+    interaction.open &&
+    effectiveRootCommandNo === AI_CHAT_COMMAND_NO;
+  const radioUnderstood = (state.master.state.ABL[ABL_ID.教養] ?? 0) >= 2;
   const formalAmbientBlock =
-    interaction.open || dialogueQueue.length > 0 || pendingPrompt !== null || pendingKojoChoice !== null;
+    interaction.open || dialogueQueue.length > 0 || pendingPrompt !== null || pendingKojoChoice !== null || Boolean(state.festivalEventSession);
   const exclusiveAmbientBlock =
     showMap ||
     showWorldMap ||
@@ -632,13 +862,16 @@ export default function GameClient(props: GameClientProps) {
     characterInfoChara !== null ||
     showKojoDebug ||
     showAiSettings ||
+    showOptions ||
     showBugCatchingMenu ||
     showTackleShop ||
+    gatheringProgress !== null ||
     danmakuExit ||
     Boolean(
       state.outingEventSession ||
       state.mobGirlMemorySession ||
       state.mobMealSession ||
+      state.festivalEventSession ||
       state.sleepSession ||
       state.danmakuBattle ||
       state.fishingGame ||
@@ -657,37 +890,59 @@ export default function GameClient(props: GameClientProps) {
   const showWalkEncounterChoices = walkEncounter !== undefined && resultWalkEncounter === null;
   const walkEncounterChara =
     visibleWalkEncounter !== undefined ? state.charas[visibleWalkEncounter.charaNum] : undefined;
-  const activeSuppressionRanges = [
-    ...suppressedWalkKojoRanges,
-    ...(closingWalkEncounter
-      ? [{
-          key: closingWalkEncounter.key,
-          start: closingWalkEncounter.eventLogIndexAtChoice,
-          end: state.eventLog.length,
-          charaNum: closingWalkEncounter.encounter.charaNum,
-        }]
-      : []),
-  ];
-  const sceneBandEvents =
-    activeSuppressionRanges.length === 0
-      ? state.eventLog
-      : state.eventLog.filter(
-          (event, index) =>
-            !activeSuppressionRanges.some((range) =>
-              rangeSuppressesWalkKojo(range, event, index),
-            ),
-          );
-  // The classic surface keeps the full audit stream. The compact surface
-  // keeps narrative/dialogue/movement prose but removes internal bookkeeping
-  // rows that are useful to creators and distracting to players.
-  const sceneBandEventsForPresentation = presentationMode === "immersive"
-    ? sceneBandEvents.filter((event) =>
-        event.kind !== "STATUS_MESSAGE" &&
-        event.kind !== "COMMAND_ISSUED" &&
-        event.kind !== "STATE_DELTA" &&
-        event.kind !== "FLAG_CHANGED",
-      )
-    : sceneBandEvents;
+  const sceneBandEventsForPresentation = useMemo(() => {
+    const activeSuppressionRanges = [
+      ...suppressedWalkKojoRanges,
+      ...(closingWalkEncounter
+        ? [{
+            key: closingWalkEncounter.key,
+            start: closingWalkEncounter.eventLogIndexAtChoice,
+            end: state.eventLog.length,
+            charaNum: closingWalkEncounter.encounter.charaNum,
+          }]
+        : []),
+    ];
+    const sceneBandEvents =
+      activeSuppressionRanges.length === 0
+        ? state.eventLog
+        : state.eventLog.filter(
+            (event, index) =>
+              !activeSuppressionRanges.some((range) =>
+                rangeSuppressesWalkKojo(range, event, index),
+              ),
+            );
+    // Player surfaces keep narrative/dialogue/movement prose and remove
+    // internal bookkeeping rows that are useful to creators but distracting
+    // to players.
+    return sceneBandEvents.filter(isNarrativePresentationEvent);
+  }, [state.eventLog, suppressedWalkKojoRanges, closingWalkEncounter]);
+  // 问题1 — immersive history merge: the full eventLog narrative stream plus
+  // transcript-only lines (AI chat / AI-replaced kojo / choice branches).
+  // fullAiKojo replace-authored successes hide their author DIALOGUE_LINEs so
+  // the history shows the AI output instead of the original kojo.
+  const immersiveHistoryEvents = useMemo(() => {
+    const suppressed = new Set(replacedAuthorLineKeys);
+    const band = sceneBandEventsForPresentation.filter(
+      (event) =>
+        !(event.kind === "DIALOGUE_LINE" && event.origin !== "ai" && suppressed.has(eventInstanceKey(event))),
+    );
+    const sessionPart = (sceneDialogue && activeDialogueSession?.aiRequestId !== undefined ? [] : activeDialogueSession?.transcript ?? [])
+      .filter(isNarrativePresentationEvent);
+    const trimmedBand = trimSuffixOverlap(band, sessionPart);
+    const sessionKeys = new Set(sessionPart.map(eventKey));
+    const bandKeys = new Set(trimmedBand.map(eventKey));
+    const extras = aiHistoryExtras.filter(
+      (event) => !bandKeys.has(eventKey(event)) && !sessionKeys.has(eventKey(event)),
+    );
+    // Transcript-only lines are captured after the owning event is published.
+    // Appending them blindly made an earlier movement line appear at the very
+    // bottom of history. Reconstruct chronological order before the panel's
+    // rolling window is applied; stable index order preserves same-tick prose.
+    return [...trimmedBand, ...extras, ...sessionPart]
+      .map((event, index) => ({ event, index }))
+      .sort((a, b) => a.event.timestamp - b.event.timestamp || a.index - b.index)
+      .map(({ event }) => event);
+  }, [sceneBandEventsForPresentation, sceneDialogue, activeDialogueSession?.transcript, activeDialogueSession?.aiRequestId, aiHistoryExtras, replacedAuthorLineKeys]);
   const walkEncounterKojoLines =
     closingWalkEncounter === null
       ? []
@@ -760,15 +1015,134 @@ export default function GameClient(props: GameClientProps) {
     commandAvailabilityMode,
   );
   const hMode = actionTarget !== undefined ? isHMode(state, actionTarget) : false;
+  // A legacy/just-entered H state can have the authoritative H flag before the
+  // first command creates TrainingSession. Keep that real runtime mode visible.
+  const hPresentationSession = state.training ?? (hMode && actionTarget !== undefined
+    ? { target: actionTarget, mode: "h" as const, startedAtTick: state.time.tickValue }
+    : closingHSession);
+  const hPresentationClosing = !state.training && !hMode && closingHSession !== null;
+  // H owns queued dialogue inline. Opening the modal here would fight the
+  // H effect below, repeatedly opening/closing it until React tears down.
+  useEffect(() => {
+    if (hPresentationSession || presentationMode !== "immersive" || interaction.open) return;
+    if (activeDialogueSession?.owner !== "story" || !activeDialogueSession.id.startsWith("narrative-intro:")) return;
+    openInteraction(L3_NARRATIVE_OPENING_COMMAND_NO, state.eventLog.length);
+  }, [hPresentationSession, activeDialogueSession?.id, activeDialogueSession?.owner, interaction.open, openInteraction, presentationMode, state.eventLog.length]);
+  useEffect(() => {
+    if (hPresentationSession || presentationMode === "minimal" || interaction.open) return;
+    if (pendingArrivalEvents && pendingArrivalEvents.length > 0) {
+      openInteraction(activeDialogueCommandNo ?? 0, state.eventLog.length);
+    }
+  }, [hPresentationSession, presentationMode, pendingArrivalEvents, activeDialogueCommandNo, interaction.open, openInteraction, state.eventLog.length]);
+  const dialoguePresentationOwner = useRef<{ id: string; interaction: typeof interaction } | null>(null);
+  useEffect(() => {
+    const previousOwner = dialoguePresentationOwner.current;
+    dialoguePresentationOwner.current = activeDialogueSession && interaction.open
+      ? { id: activeDialogueSession.id, interaction } : null;
+    // Cancellation/load/owner withdrawal can clear the queue without going
+    // through this component's onArrivalExit. Its UI shell must end as well.
+    // An unbound shell may still be preparing a command or AI-chat draft.
+    if (previousOwner !== null && activeDialogueSession === null && interaction.open
+      && previousOwner.interaction === interaction && !aiChatDraftOpen && pendingPrompt === null) {
+      closeInteraction();
+    }
+  }, [activeDialogueSession, interaction, aiChatDraftOpen, pendingPrompt, closeInteraction]);
+  useEffect(() => {
+    if (!hPresentationSession) {
+      setHTranscriptStartIndex(null);
+      setHPortraitCommandNo(null);
+      setHHistoryEvents((history) => history.length ? [] : history);
+      hHistoryOwnerRef.current = null;
+      return;
+    }
+    const previousOwner = hHistoryOwnerRef.current;
+    if (previousOwner && (previousOwner.target !== hPresentationSession.target || state.eventLog.length < previousOwner.logLength)) {
+      setHHistoryEvents([]);
+      setHTranscriptStartIndex(state.eventLog.length);
+      setHPortraitCommandNo(null);
+    }
+    hHistoryOwnerRef.current = { target: hPresentationSession.target, logLength: state.eventLog.length };
+    const initialIndex = interaction.open
+      ? Math.min(interaction.eventLogIndexAtOpen, state.eventLog.length)
+      : state.eventLog.length;
+    if (hTranscriptStartIndex === null) setHTranscriptStartIndex(initialIndex);
+    if (hPortraitCommandNo === null) {
+      const transcriptIndex = hTranscriptStartIndex ?? initialIndex;
+      const issued = [...state.eventLog.slice(transcriptIndex)].reverse().find(
+        (event): event is Extract<ObservationEvent, { kind: "COMMAND_ISSUED" }> => event.kind === "COMMAND_ISSUED",
+      );
+      if (issued) setHPortraitCommandNo(issued.commandNo);
+    }
+    // A legacy command can have opened the modal just before the H session
+    // flag committed. H owns the display now, so discard only that UI shell.
+    if (interaction.open) closeInteraction();
+  }, [
+    hPresentationSession?.target,
+    hPresentationSession?.startedAtTick,
+    hTranscriptStartIndex,
+    hPortraitCommandNo,
+    interaction.open,
+    interaction.eventLogIndexAtOpen,
+    closeInteraction,
+    state.eventLog,
+  ]);
+  const aiChatAvailable = aiEnabled && filterTarget > 0 && currentAiCharacterProfile(filterTarget).enabled;
+  const readyNarrativeEvent = (state.narrativeEvents ?? [])
+    .filter((event) => event.status === "ready")
+    .sort((left, right) => left.windowStartTick - right.windowStartTick || left.id.localeCompare(right.id))
+    .find((event) => event.locationIds.includes(state.master.location)
+      || (actionTarget !== undefined && event.participantIds.includes(actionTarget)));
+  // The story the status bar reports on. A resolved or cancelled story is over
+  // and says nothing; an expired one is still worth showing once, so the player
+  // learns the scene they were told about has passed rather than watching it
+  // silently disappear.
+  const narrativePursuit = useMemo<NarrativePursuitSummary | null>(() => {
+    const tracked = (state.narrativeEvents ?? [])
+      .filter((event) => event.status === "scheduled" || event.status === "ready" || event.status === "active" || event.status === "missed" || event.status === "expired")
+      .sort((left, right) => left.windowStartTick - right.windowStartTick || left.id.localeCompare(right.id));
+    // A live story outranks a missed one: the player can still act on it.
+    const live = tracked.filter((event) => event.status !== "expired" && event.status !== "missed");
+    const chosen = live[0] ?? tracked[tracked.length - 1];
+    if (!chosen) return null;
+    const speaker = chosen.participantIds
+      .filter((id) => id !== 0)
+      .map((id) => state.charas[id])
+      .find((slot) => slot !== undefined);
+    const name = speaker?.callName || speaker?.name;
+    return {
+      id: chosen.id,
+      hint: chosen.status === "expired" || chosen.status === "missed"
+        ? "好像已经错过了什么，之后再留意一下吧。"
+        : name
+          ? `好像${name}要找你，不妨留意一下。`
+          : "好像附近有些事件，不妨留意一下。",
+      state: chosen.status === "active" ? "active" : chosen.status === "expired" || chosen.status === "missed" ? "missed" : "waiting",
+      count: Math.max(1, live.length),
+    };
+  }, [state.narrativeEvents, state.charas]);
+  // What the L3 director is doing right now. During pre-authoring there is no
+  // event yet — this readout is the only way the player can tell "the director
+  // is working" or "a window is promised, go there" apart from silence.
+  const narrativeDirector = useMemo(
+    () => describeNarrativeDirectorStatus(state, narrativeDirectorStatus, aiDebugEntries),
+    [state, narrativeDirectorStatus, aiDebugEntries],
+  );
   const gridActions: CommandGridAction[] = availability
     .filter((a) => a.usable)
     .filter((a) => !MENU_EXCLUDED_COMMANDS.has(a.commandNo))
-    .filter((a) => hMode ? familyVisibleInHMode(a.commandNo) : !familyRequiresHMode(a.commandNo))
+    // H exits are pinned in a fixed control strip below; keeping them out of
+    // the scrollable Act_COM groups prevents an exit from disappearing below
+    // a long H command list or being rendered twice.
+    .filter((a) => !(hMode && (a.commandNo === 850 || a.commandNo === 999)))
+    // Upstream shows ONE grid: `@QOL_SHOW_USERCOM` walks every command and
+    // keeps whatever passes `@COM_ABLE` + `@QUICKFILTER`. Only the everyday
+    // page hides the うふふ-only acts (they need a partner in H state).
+    .filter((a) => visibleOnCommandGrid(a.commandNo, hMode))
     .filter((a) => !quickFilterHidden(comFilterClassOf(a.commandNo), filterTarget, state))
     .map((a) => {
       return {
         commandNo: a.commandNo,
-        label: a.labelOverride ?? commandLabel(a.commandNo),
+        label: a.labelOverride ?? commandLabel(a.commandNo, state, filterTarget),
         usable: true as const,
         highlighted: a.commandNo === 351 && filterTarget > 0 &&
           getCharaCflag(state, filterTarget, CFLAG_ID.同行) === 0,
@@ -776,6 +1150,14 @@ export default function GameClient(props: GameClientProps) {
       };
     })
     .sort((x, y) => x.commandNo - y.commandNo);
+  if (readyNarrativeEvent && !hMode) {
+    gridActions.push({
+      commandNo: L3_NARRATIVE_OPENING_COMMAND_NO,
+      label: readyNarrativeEvent.startCommandLabel ?? readyNarrativeEvent.title,
+      usable: true,
+      narrativeOpening: true,
+    });
+  }
   const hActionGroups = hMode
     ? COMMAND_FAMILIES.map((family) => ({
         id: family.id,
@@ -783,6 +1165,20 @@ export default function GameClient(props: GameClientProps) {
         items: gridActions.filter((action) => familyOf(action.commandNo).id === family.id),
       })).filter((group) => group.items.length > 0)
     : undefined;
+  // The exit strip reads its labels from the same runtime authority as every
+  // other button. 999's label is state-dependent (结束幽会 / 解除时间停止), so a
+  // hard-coded string here would disagree with the command grid. The fallbacks
+  // only apply when the command's own gate hides it.
+  const exitLabel = (commandNo: number, fallback: string) =>
+    availability.find((a) => a.commandNo === commandNo)?.labelOverride ?? fallback;
+  const hExitControls = hMode && filterTarget > 0
+    ? [
+        { commandNo: 999, label: exitLabel(999, "结束幽会"), detail: "结束当前 H 会话并清理插入状态" },
+        ...(getCharaCflag(state, filterTarget, CFLAG_ID.诶嘿嘿) === 2
+          ? [{ commandNo: 850, label: exitLabel(850, "退出逆推"), detail: "结束对方主导的逆推会话" }]
+          : []),
+      ]
+    : [];
 
   const bugTrapAvailable = availability.some((action) => action.commandNo === 448 && action.usable);
 
@@ -828,17 +1224,49 @@ export default function GameClient(props: GameClientProps) {
     label: e.label,
   }));
 
+  const beginMinimalNavigation = (): boolean => {
+    if (presentationMode !== "minimal") return true;
+    if (minimalNavigationPending || !clearCompletedDialogueBeforeNavigation()) return false;
+    setMinimalNavigationPending(true);
+    return true;
+  };
+
+  const finishMinimalNavigation = (): void => {
+    if (presentationMode === "minimal") setMinimalNavigationPending(false);
+  };
+
   const handleExit = (commandNo: number): void => {
     if (movementBlocked || trainingMovementLocked) return;
-    // Move command — goes through the intent stream (S1).
-    onIntent(issueCommand(commandNo));
+    if (!beginMinimalNavigation()) return;
+    const destination = exits.find((exit) => exit.commandNo === commandNo)?.toLocation;
+    const move = (): void => {
+      onIntent(issueCommand(commandNo));
+      finishMinimalNavigation();
+    };
+    if (!destination || !onPrepareKojoForLocations) move();
+    else void onPrepareKojoForLocations([destination]).then(move).catch((error) => {
+      console.warn("[eraTW] movement kojo preflight failed:", error);
+      finishMinimalNavigation();
+    });
   };
 
   // Map click → move, then auto-return to the scene view (the player asked
   // for "click a spot and go there" — not "click then manually close the map").
   const handleMapMove = (commandNo: number): void => {
     if (movementBlocked || trainingMovementLocked) return;
-    onIntent(issueCommand(commandNo));
+    if (!beginMinimalNavigation()) return;
+    const destination = commandNo === 10703
+      ? state.homeLocation
+      : moveCommands.find((move) => move.commandNo === commandNo)?.toLocation;
+    const move = (): void => {
+      onIntent(issueCommand(commandNo));
+      finishMinimalNavigation();
+    };
+    if (!destination || !onPrepareKojoForLocations) move();
+    else void onPrepareKojoForLocations([destination]).then(move).catch((error) => {
+      console.warn("[eraTW] map kojo preflight failed:", error);
+      finishMinimalNavigation();
+    });
     setShowMap(false);
   };
 
@@ -849,7 +1277,24 @@ export default function GameClient(props: GameClientProps) {
   // [first hop … destination] room list from ColoredMapView's pathfind.
   const handleMapPath = (rooms: string[]): void => {
     if (movementBlocked || trainingMovementLocked) return;
-    if (onWalkPath) onWalkPath(rooms);
+    if (!beginMinimalNavigation()) return;
+    if (onWalkPath) {
+      try {
+        const result = onWalkPath(rooms);
+        if (result && typeof result.then === "function") {
+          void result.catch((error) => {
+            console.warn("[eraTW] map path kojo preflight failed:", error);
+          }).finally(finishMinimalNavigation);
+        } else {
+          finishMinimalNavigation();
+        }
+      } catch (error) {
+        finishMinimalNavigation();
+        console.warn("[eraTW] map path failed:", error);
+      }
+    } else {
+      finishMinimalNavigation();
+    }
     setShowMap(false);
   };
 
@@ -858,14 +1303,28 @@ export default function GameClient(props: GameClientProps) {
   // entrance, then we return to the scene view.
   const handleWorldTravel = (commandNo: number): void => {
     if (movementBlocked || trainingMovementLocked) return;
+    if (!beginMinimalNavigation()) return;
     const region = REGIONS.find((item) => item.commandNo === commandNo);
-    if (state.dateSession?.phase === "active" && region) {
-      onIntent(issueCommand(19997, state.dateSession.partner, pickOneAnswer(region.mapId)));
-    } else if (!state.outing && !state.dateSession && region) {
-      onIntent(issueCommand(405, dateEntry ? actualCompanions[0]!.charaNum : 0, pickOneAnswer(region.mapId)));
-    } else {
-      onIntent(issueCommand(commandNo));
-    }
+    const travel = (): void => {
+      if (state.dateSession?.phase === "active" && region) {
+        onIntent(issueCommand(19997, state.dateSession.partner, pickOneAnswer(region.mapId)));
+      } else if (!state.outing && !state.dateSession && region) {
+        onIntent(issueCommand(405, dateEntry ? actualCompanions[0]!.charaNum : 0, pickOneAnswer(region.mapId)));
+      } else {
+        onIntent(issueCommand(commandNo));
+      }
+      finishMinimalNavigation();
+    };
+    const regionLocations = region
+      ? [...new Set(Object.values(state.charas)
+          .filter((chara) => currentMapIdForLocation(chara.location) === region.mapId)
+          .map((chara) => chara.location))]
+      : [];
+    if (regionLocations.length === 0 || !onPrepareKojoForLocations) travel();
+    else void onPrepareKojoForLocations(regionLocations).then(travel).catch((error) => {
+      console.warn("[eraTW] travel kojo preflight failed:", error);
+      finishMinimalNavigation();
+    });
     setShowWorldMap(false);
   };
   const openWorldMap = (): void => {
@@ -910,18 +1369,56 @@ export default function GameClient(props: GameClientProps) {
   };
 
   const handleDateInvitationResponse = (commandNo: 19989 | 19988, invitation: DatePlanEvent): void => {
-    if (!interaction.open) {
+    if (presentationMode !== "minimal" && !interaction.open) {
       openInteraction(commandNo, state.eventLog.length);
     }
+    dismissSceneAmbientForParticipant(invitation.partner);
     onIntent(issueCommand(commandNo, invitation.partner));
   };
 
-  const handleAction = (commandNo: number): void => {
+  /**
+   * Open the interaction box (if not already open) and issue `commandNo` on the
+   * present NPC. Split out of {@link handleAction} so a pre-phase overlay (e.g.
+   * the 採集中 progress frames) can defer the issue until it finishes without
+   * duplicating the box/ambient bookkeeping.
+   */
+  const issueActionCommand = (commandNo: number): void => {
+    // Open the box on the first action of a sub-loop, capturing the
+    // eventLog length BEFORE the action's events are appended (S4). If
+    // the box is already open we keep accumulating, index unchanged.
+    // Minimal mode skips the box entirely — kojo streams inline.
+    if (presentationMode !== "minimal" && !interaction.open) {
+      openInteraction(commandNo, state.eventLog.length);
+    }
+    // Real COMF command on the present NPC. The resolver
+    // settles it for real; with no NPC present `target` is omitted and
+    // the handler blocks gracefully.
+    if (actionTarget !== undefined) dismissSceneAmbientForParticipant(actionTarget);
+    onIntent(issueCommand(commandNo, actionTarget));
+  };
+
+  const handleAction = (commandNo: number, directHSession = false): void => {
     if (movementBlocked) return;
+    if (!directHSession && commandNo === 350 && !hPresentationSession) {
+      // COM350 may create the H session during this intent. Keep its first
+      // result, rather than starting the center transcript after settlement.
+      setHTranscriptStartIndex(state.eventLog.length);
+      setHPortraitCommandNo(commandNo);
+    }
+    if (!directHSession && (commandNo === 999 || commandNo === 850) && hPresentationSession) {
+      setClosingHSession(hPresentationSession);
+    }
+    if (commandNo === L3_NARRATIVE_OPENING_COMMAND_NO && readyNarrativeEvent) {
+      if (startNarrativeEvent(readyNarrativeEvent.id) && presentationMode !== "minimal" && !interaction.open) {
+        openInteraction(L3_NARRATIVE_OPENING_COMMAND_NO, state.eventLog.length);
+      }
+      return;
+    }
     // Only the explicit practice course owns the full-screen danmaku surface.
     // COM480 remains the upstream-style deterministic text settlement.
     if (commandNo === 411) {
       if (startDanmakuBattle(commandNo, actionTarget)) {
+        if (actionTarget !== undefined) dismissSceneAmbientForParticipant(actionTarget);
         closeInteraction();
         setDanmakuExit(true);
         window.setTimeout(() => setScreen("danmakuBattle"), 760);
@@ -932,16 +1429,49 @@ export default function GameClient(props: GameClientProps) {
       setShowBugCatchingMenu(true);
       return;
     }
+    // COMF445 採集: run the upstream 采集中 dot frames (COMF445.ERB:81-84)
+    // before the draw. Minimal mode has no overlay surface, so it issues
+    // straight through.
+    if (commandNo === 445 && presentationMode !== "minimal") {
+      setGatheringProgress(commandNo);
+      return;
+    }
     // Open the box on the first action of a sub-loop, capturing the
     // eventLog length BEFORE the action's events are appended (S4). If
     // the box is already open we keep accumulating, index unchanged.
-    if (!interaction.open) {
+    // Minimal mode skips the box entirely — kojo streams inline.
+    if (!directHSession && (presentationMode !== "minimal" || hMode || [350, 351, 353, 354, 355, 356, 357, 358].includes(commandNo)) && !interaction.open) {
       openInteraction(commandNo, state.eventLog.length);
     }
     // Real COMF command on the present NPC. The resolver
     // settles it for real; with no NPC present `target` is omitted and
     // the handler blocks gracefully.
+    if (actionTarget !== undefined) dismissSceneAmbientForParticipant(actionTarget);
     onIntent(issueCommand(commandNo, actionTarget));
+  };
+
+  const handleHAction = (commandNo: number): void => {
+    if (!clearCompletedDialogueBeforeNavigation()) return;
+    // Archive the final transcript once, at the command boundary. Streaming
+    // and choice replay continue to replace only the live tail above it.
+    setHHistoryEvents((history) => [...history, ...hCurrentEvents]);
+    setHTranscriptStartIndex(state.eventLog.length);
+    setHPortraitCommandNo(commandNo);
+    if ((commandNo === 999 || commandNo === 850) && hPresentationSession) {
+      setClosingHSession(hPresentationSession);
+    }
+    if (interaction.open) closeInteraction();
+    handleAction(commandNo, true);
+  };
+
+  const handleAiChatSubmit = (semantic: string): boolean => {
+    if (!aiChatAvailable) return false;
+    const started = startAiChat(filterTarget, semantic);
+    if (started) {
+      dismissSceneAmbientForParticipant(filterTarget);
+      setAiChatDraftOpen(false);
+    }
+    return started;
   };
 
   const handleTrackChara = (charaNum: number): void => {
@@ -950,18 +1480,37 @@ export default function GameClient(props: GameClientProps) {
     if (!target) return;
     const path = findPath(state.master.location, target.location);
     if (!path) return;
+    if (!beginMinimalNavigation()) return;
     setSelectedTarget(charaNum);
     setExcomPanel(null);
-    if (path.length > 0) onWalkPath?.(path.map((step) => step.toLocation));
+    if (path.length > 0 && onWalkPath) {
+      const result = onWalkPath(path.map((step) => step.toLocation));
+      if (result && typeof result.then === "function") {
+        void result.catch((error) => {
+          console.warn("[eraTW] character tracking kojo preflight failed:", error);
+        }).finally(finishMinimalNavigation);
+      }
+      else finishMinimalNavigation();
+    } else {
+      finishMinimalNavigation();
+    }
   };
 
   const handleBugCatchingAction = (commandNo: 448 | 449): void => {
     if (movementBlocked) return;
     setShowBugCatchingMenu(false);
-    if (!interaction.open) {
+    if (presentationMode !== "minimal" && !interaction.open) {
       openInteraction(commandNo, state.eventLog.length);
     }
+    if (actionTarget !== undefined) dismissSceneAmbientForParticipant(actionTarget);
     onIntent(issueCommand(commandNo, actionTarget));
+  };
+
+  const handleDateReturn = (): void => {
+    if (!state.dateSession || movementBlocked || trainingMovementLocked) return;
+    if (!beginMinimalNavigation()) return;
+    onIntent(issueCommand(19998, state.dateSession.partner));
+    finishMinimalNavigation();
   };
 
   const boxEvents = interaction.open
@@ -969,31 +1518,205 @@ export default function GameClient(props: GameClientProps) {
       ? pendingArrivalEvents
       : state.eventLog.slice(interaction.eventLogIndexAtOpen)
     : [];
+  const hLogEvents = hPresentationSession
+    ? state.eventLog.slice(Math.min(hTranscriptStartIndex ?? state.eventLog.length, state.eventLog.length))
+      .filter((event) => !(event.kind === "DIALOGUE_LINE" && event.origin !== "ai"
+        && replacedAuthorLineKeys.includes(eventInstanceKey(event))))
+    : [];
+  const hTranscriptEvents = hPresentationSession ? activeDialogueSession?.transcript ?? [] : [];
+  const hCurrentEvents = mergeCommandTranscript(hLogEvents, hTranscriptEvents);
+  const hSessionEvents = [...hHistoryEvents, ...hCurrentEvents];
   const boxSessionId =
     activeDialogueSession?.id ?? `command:${interaction.eventLogIndexAtOpen}`;
-  const radioBroadcast = aiSettings.enabled && aiSettings.radioEnabled && interaction.rootCommandNo === 496
+  const diaryBookActive =
+    interaction.open &&
+    effectiveRootCommandNo === 406 &&
+    diaryPages(boxEvents).length > 0;
+  const radioBroadcast = effectiveRootCommandNo === 496
     ? boxEvents.find((event): event is Extract<ObservationEvent, { kind: "NARRATION" }> =>
-      event.kind === "NARRATION" && event.text.includes("天气播报"),
+      event.kind === "NARRATION" && event.text.includes("收音机"),
     )?.text
     : undefined;
+  const radioCharacterEntry = radioInteractionActive
+    ? buildRadioCharacterEntry(boxEvents, boxSessionId)
+    : null;
   // COM496 owns the same formal InteractionBox surface as command dialogue.
   // Suppress any stale scene-ambient entry from the first radio render so the
   // radio page always has presentation priority; ambient resumes only after
   // the modal closes and useSceneAmbient's post-paint delay elapses.
   const weatherStyle = weatherBackgroundStyle(state) as CSSProperties;
 
+  // Ex_COM tool buttons (能力显示/日历/污渍/所在地/角色情报/道具/钓具).
+  // Shared by the full Ex_COM row and the minimal-mode [▸ 工具] fold-out.
+  const excomToolButtons = (
+    <>
+      {actionTarget !== undefined && (
+        <button
+          type="button"
+          className="excom-row__btn"
+          data-testid="excom-ability-target"
+          onClick={() => setExcomPanel("ability-target")}
+        >
+          [能力显示]
+        </button>
+      )}
+      <button
+        type="button"
+        className="excom-row__btn"
+        data-testid="excom-ability-master"
+        onClick={() => setExcomPanel("ability-master")}
+      >
+        [能力显示(主角)]
+      </button>
+      <button
+        type="button"
+        className="excom-row__btn"
+        data-testid="excom-calendar"
+        onClick={() => setExcomPanel("calendar")}
+      >
+        [日历]
+      </button>
+      <button
+        type="button"
+        className="excom-row__btn"
+        data-testid="excom-yogore"
+        onClick={() => setExcomPanel("yogore")}
+      >
+        [污渍显示]
+      </button>
+      <button
+        type="button"
+        className={`excom-row__btn${whereaboutsGate.ok ? "" : " excom-row__btn--disabled"}`}
+        data-testid="excom-whereabouts"
+        disabled={!whereaboutsGate.ok}
+        title={whereaboutsGate.reason}
+        onClick={() => setExcomPanel("whereabouts")}
+      >
+        [所在地察觉]
+      </button>
+      <button
+        type="button"
+        className={`excom-row__btn${actionTarget === undefined ? " excom-row__btn--disabled" : ""}`}
+        disabled={actionTarget === undefined}
+        title={actionTarget === undefined ? "请先选择目标角色" : `查看 ${state.charas[actionTarget]?.callName ?? actionTarget} 的详细情报`}
+        data-testid="excom-char-info"
+        onClick={() => { const t = actionTarget; if (t !== undefined) setCharacterInfoChara(t); }}
+      >
+        {actionTarget !== undefined ? `[角色情报 → ${state.charas[actionTarget]?.callName ?? `#${actionTarget}`}]` : "[角色情报]"}
+      </button>
+      {/* Honest stub (upstream Ex_COM has 道具确认; item-name table not
+          wired yet — disabled + reason, NOT a fake working button). */}
+      <button
+        type="button"
+        className="excom-row__btn"
+        title="道具名称表尚未接入"
+        data-testid="excom-items"
+        onClick={() => setExcomPanel("living")}
+      >
+        [道具确认]
+      </button>
+      {location === "魔法之森:香霖堂" && (
+        <button type="button" className="excom-row__btn" data-testid="kourindou-tackle" onClick={() => setShowTackleShop(true)}>
+          [钓具柜台]
+        </button>
+      )}
+    </>
+  );
+
+  const interactionBoxProps = {
+      sessionId: boxSessionId,
+      events: boxEvents,
+      state,
+      onExit: () => {
+        if (activeDialogueSession) onArrivalExit();
+        else closeInteraction();
+        setAiChatDraftOpen(false);
+        if (!state.training) setClosingHSession(null);
+      },
+      pendingChoice: pendingKojoChoice
+        ? {
+            options: pendingKojoChoice.options,
+            ...(pendingKojoChoice.continuationInputMode
+              ? { inputMode: pendingKojoChoice.continuationInputMode }
+              : {}),
+          }
+        : null,
+      onPickChoice: (idx: number | string) => {
+        if (pendingKojoChoice?.kind === "story") {
+          const choiceId = pendingKojoChoice.storyChoiceIds?.[Number(idx)];
+          if (choiceId) resolveStoryChoice(choiceId);
+          return;
+        }
+        resolveKojoChoice(idx);
+      },
+      aiPending: activeDialogueSession?.aiRequestId !== undefined,
+      aiCharaNum: activeDialogueSession?.aiCharaNum ?? (aiChatInteractionActive ? filterTarget : undefined),
+      aiChatMode: aiChatInteractionActive,
+      aiChatInput: aiChatInteractionActive && aiChatDraftOpen,
+      onSubmitAiChat: handleAiChatSubmit,
+      onRespondAccompany: respondAccompany,
+      onPickAiBranch: (choiceLabel: string, lines: ObservationEvent[]) => {
+        if (boxSessionId) return appendAiChatBranch(boxSessionId, choiceLabel, lines);
+      },
+      radioActive: radioInteractionActive,
+      radioBroadcast,
+      radioUnderstood,
+      radioCharacterEntry,
+  };
+  const sceneDialogueActive = sceneDialogue && !hPresentationSession
+    && !diaryBookActive && !radioInteractionActive && !state.sleepSession
+    && activeDialogueSession?.owner !== "story";
+
   return (
-    <div className={`game-client${presentationMode === "immersive" ? " game-client--immersive" : ""}${danmakuExit ? " game-client--battle-exit" : ""}${battleReturn ? " game-client--battle-return" : ""}`} data-testid="game-client" style={weatherStyle}>
+    <div className={`game-client${presentationMode === "immersive" ? " game-client--immersive" : ""}${presentationMode === "minimal" ? " game-client--minimal" : ""}${sceneDialogueActive ? " game-client--scene-dialogue" : ""}${hPresentationSession ? " game-client--h-session" : ""}${danmakuExit ? " game-client--battle-exit" : ""}${battleReturn ? " game-client--battle-return" : ""}`} data-testid="game-client" style={weatherStyle}>
       <div className="game-client__top">
         <GameStatusBar
           state={state}
           target={actionTarget}
-          layout={presentationMode === "immersive" ? "world-only" : "full"}
+          showHSessionStatus={!hPresentationSession}
+          layout={presentationMode === "immersive" ? "world-only" : presentationMode === "minimal" ? "minimal" : "full"}
           onReleaseTimeStop={() => handleAction(999)}
           onTimeStop={() => handleAction(355)}
           onOpenCharaInfo={(charaNum) => setCharacterInfoChara(charaNum)}
+          onSelectChara={presentationMode === "minimal" ? setSelectedTarget : undefined}
+          narrativePursuit={narrativePursuit}
+          narrativeDirector={narrativeDirector}
+          narrativePanelOpen={narrativePanelOpen}
+          onToggleNarrativePanel={() => setNarrativePanelOpen((open) => !open)}
         />
       </div>
+
+      {hPresentationSession && (
+        <HSessionView
+          key={hPresentationSession.target}
+          state={state}
+          session={hPresentationSession}
+          closing={hPresentationClosing}
+          actions={hPresentationClosing ? [] : gridActions}
+          filters={hPresentationClosing ? [] : filterButtons}
+          exitControls={hExitControls}
+          onAction={handleHAction}
+          onToggleFilter={onToggleFilter}
+          events={hSessionEvents}
+          currentEvents={hCurrentEvents}
+          commandNo={hPortraitCommandNo}
+          onOpenAiSettings={() => setShowAiSettings(true)}
+          onClose={() => {
+            setClosingHSession(null);
+            closeInteraction();
+          }}
+          choices={pendingKojoChoice?.options ?? null}
+          onPickChoice={(index) => {
+            if (pendingKojoChoice?.kind === "story") {
+              const choiceId = pendingKojoChoice.storyChoiceIds?.[index];
+              if (choiceId) resolveStoryChoice(choiceId);
+              return;
+            }
+            resolveKojoChoice(index);
+          }}
+          reading={pendingPrompt !== null || activeDialogueSession?.aiRequestId !== undefined}
+        />
+      )}
 
       <div className="game-client__middle">
         {presentationMode === "immersive" && (
@@ -1001,22 +1724,27 @@ export default function GameClient(props: GameClientProps) {
             state={state}
             target={actionTarget}
             onOpenCharaInfo={(charaNum) => setCharacterInfoChara(charaNum)}
+            onSetPortraitVariant={setPortraitVariant}
           />
         )}
-        <div className="game-client__scene-slot">
+        <div className={`game-client__scene-slot${sceneDialogueActive ? " game-client__scene-slot--dialogue" : ""}`}>
         {lockedDoor ? (
           <div className="walk-encounter-layer" data-testid="locked-door-layer">
+            {presentationMode !== "minimal" && (
             <SceneView
+              asciiShell={presentationMode === "immersive"}
               scene={finalScene}
               present={present}
               bandEvents={state.eventLog}
               ambientEntry={radioInteractionActive ? null : ambientEntry}
-              showInlineHistory={presentationMode === "classic"}
-              showInlineAmbient={presentationMode === "classic"}
+              showInlineHistory={false}
+              showInlineAmbient={false}
+              showSceneContext
               showPortraitAmbient
               selectedChara={actionTarget}
               state={state}
             />
+            )}
             <div className="walk-encounter-stack" data-testid="locked-door-stack">
               <div className="walk-encounter" role="dialog" aria-label="上锁的房间">
                 <div className="walk-encounter__portrait">
@@ -1027,17 +1755,44 @@ export default function GameClient(props: GameClientProps) {
                       alt={lockedDoor.ownerName}
                       testId="locked-door-mob-portrait"
                     />
-                  ) : PORTRAITS[String(lockedDoor.ownerCharaNum)] ? (
-                    <SpriteCrop
-                      className="walk-encounter__portrait-img"
-                      source={dimensionForKind(PORTRAITS[String(lockedDoor.ownerCharaNum)], portraitKind(state))!}
-                      alt={lockedDoor.ownerName}
-                      frameWidth={112}
-                      frameHeight={172}
-                    />
-                  ) : (
-                    <span className="walk-encounter__portrait-fallback" aria-hidden="true" />
-                  )}
+                  ) : (() => {
+                    // Guard on the SAME resolution that is rendered. A numeric
+                    // `PORTRAITS[charaNum]` probe disagrees with the draw for
+                    // authored residents (`role:` keys) and disguised
+                    // characters (変化先), which produced a blank silhouette
+                    // where art actually existed.
+                    const owner = lockedDoor.ownerCharaNum;
+                    const ownerSource = portraitForState(
+                      state,
+                      owner,
+                      portraitSourceForState(state, owner, PORTRAITS),
+                    );
+                    const ownerKind = portraitKind(state);
+                    const ownerDimension = dimensionForKind(ownerSource, ownerKind);
+                    // 裸/服分支。`checkNude` 是上游 `CHECK_NUDE` 的口径
+                    // （`IMAGE.ERB:898-910`），**不看内衣**；与换装判定同源，
+                    // 避免底图取 `服` 分支而 token 取 `_裸_` 分支的错配。
+                    const ownerNaked = checkNude(state, owner);
+                    const dim = portraitWithOutfit(
+                      state,
+                      owner,
+                      ownerSource,
+                      portraitForClothing(ownerDimension, ownerNaked),
+                      ownerNaked,
+                      ownerKind,
+                    );
+                    return dim ? (
+                      <SpriteCrop
+                        className="walk-encounter__portrait-img"
+                        source={dim}
+                        alt={lockedDoor.ownerName}
+                        frameWidth={112}
+                        frameHeight={172}
+                      />
+                    ) : (
+                      <span className="walk-encounter__portrait-fallback" aria-hidden="true" />
+                    );
+                  })()}
                   <span className="walk-encounter__name">{lockedDoor.ownerName}</span>
                 </div>
                 <div className="walk-encounter__body">
@@ -1068,17 +1823,21 @@ export default function GameClient(props: GameClientProps) {
           </div>
         ) : visibleWalkEncounter ? (
           <div className="walk-encounter-layer" data-testid="walk-encounter-layer">
+            {presentationMode !== "minimal" && (
             <SceneView
+              asciiShell={presentationMode === "immersive"}
               scene={finalScene}
               present={present}
               bandEvents={sceneBandEventsForPresentation}
               ambientEntry={radioInteractionActive ? null : ambientEntry}
-              showInlineHistory={presentationMode === "classic"}
-              showInlineAmbient={presentationMode === "classic"}
+              showInlineHistory={false}
+              showInlineAmbient={false}
+              showSceneContext
               showPortraitAmbient
               selectedChara={actionTarget}
               state={state}
             />
+            )}
             <div
               className={
                 "walk-encounter-stack" +
@@ -1121,19 +1880,40 @@ export default function GameClient(props: GameClientProps) {
                     alt={visibleWalkEncounter.name}
                     testId="walk-encounter-mob-portrait"
                   />
-                ) : PORTRAITS[String(visibleWalkEncounter.charaNum)] ? (
-                  <SpriteCrop
-                    className="walk-encounter__portrait-img"
-                    source={dimensionForKind(PORTRAITS[String(visibleWalkEncounter.charaNum)], portraitKind(state))!}
-                    alt={visibleWalkEncounter.name}
-                    frameWidth={112}
-                    frameHeight={172}
-                    cropTestId="walk-encounter-crop"
-                    imageTestId="walk-encounter-img"
-                  />
-                ) : (
-                  <span className="walk-encounter__portrait-fallback" aria-hidden="true" />
-                )}
+                ) : (() => {
+                  // Guard on the SAME resolution that is rendered — see the
+                  // locked-door card above.
+                  const enc = visibleWalkEncounter.charaNum;
+                  const encSource = portraitForState(
+                    state,
+                    enc,
+                    portraitSourceForState(state, enc, PORTRAITS),
+                  );
+                  const encKind = portraitKind(state);
+                  const encDimension = dimensionForKind(encSource, encKind);
+                  const encNaked = checkNude(state, enc);
+                  const dim = portraitWithOutfit(
+                    state,
+                    enc,
+                    encSource,
+                    portraitForClothing(encDimension, encNaked),
+                    encNaked,
+                    encKind,
+                  );
+                  return dim ? (
+                    <SpriteCrop
+                      className="walk-encounter__portrait-img"
+                      source={dim}
+                      alt={visibleWalkEncounter.name}
+                      frameWidth={112}
+                      frameHeight={172}
+                      cropTestId="walk-encounter-crop"
+                      imageTestId="walk-encounter-img"
+                    />
+                  ) : (
+                    <span className="walk-encounter__portrait-fallback" aria-hidden="true" />
+                  );
+                })()}
                 <span className="walk-encounter__name">
                   {walkEncounterChara?.callName ?? visibleWalkEncounter.name}
                 </span>
@@ -1194,12 +1974,21 @@ export default function GameClient(props: GameClientProps) {
             </div>
           </div>
         ) : showWorldMap ? (
+          presentationMode === "minimal" ? (
+            <MinimalOutingList
+              currentLocation={location}
+              onTravel={handleWorldTravel}
+              onClose={() => setShowWorldMap(false)}
+              blocked={movementBlocked || trainingMovementLocked}
+            />
+          ) : (
           <WorldMapView
             currentLocation={location}
             onTravel={handleWorldTravel}
             onClose={() => setShowWorldMap(false)}
             season={state.time.season}
           />
+          )
         ) : hasMap && showMap ? (
           <ColoredMapView
             currentLocation={location}
@@ -1214,30 +2003,75 @@ export default function GameClient(props: GameClientProps) {
             gameState={state}
           />
         ) : hasNpc ? (
+          presentationMode === "minimal" ? (
+            <MinimalTextStream
+              scene={finalScene}
+              bandEvents={sceneBandEventsForPresentation}
+              ambientEntry={radioInteractionActive ? null : ambientEntry}
+              liveSession={activeDialogueSession}
+              aiPending={activeDialogueSession?.aiRequestId !== undefined}
+              extraLines={minimalAiBranchLines}
+              suppressedEventKeys={replacedAuthorLineKeys}
+              state={state}
+            />
+          ) : (
           <SceneView
+            asciiShell={presentationMode === "immersive"}
             scene={finalScene}
             present={present}
             bandEvents={sceneBandEventsForPresentation}
             ambientEntry={radioInteractionActive ? null : ambientEntry}
-            showInlineHistory={presentationMode === "classic"}
-            showInlineAmbient={presentationMode === "classic"}
+            showInlineHistory={false}
+            showInlineAmbient={false}
+            showSceneContext
             showPortraitAmbient
             selectedChara={actionTarget}
-            onSelectChara={setSelectedTarget}
+            onSelectChara={sceneDialogue && movementBlocked ? undefined : setSelectedTarget}
             state={state}
             onCommissionClick={setCommissionPopupChara}
             onTogglePortraitKind={togglePortraitKind}
           />
+          )
         ) : (
+          presentationMode === "minimal" ? (
+            <MinimalTextStream
+              scene={finalScene}
+              bandEvents={sceneBandEventsForPresentation}
+              ambientEntry={radioInteractionActive ? null : ambientEntry}
+              liveSession={activeDialogueSession}
+              aiPending={activeDialogueSession?.aiRequestId !== undefined}
+              extraLines={minimalAiBranchLines}
+              suppressedEventKeys={replacedAuthorLineKeys}
+              state={state}
+            />
+          ) : (
           <SceneView
+            asciiShell={presentationMode === "immersive"}
             scene={finalScene}
             present={present}
             bandEvents={sceneBandEventsForPresentation}
             ambientEntry={radioInteractionActive ? null : ambientEntry}
-            showInlineHistory={presentationMode === "classic"}
-            showInlineAmbient={presentationMode === "classic"}
+            showInlineHistory={false}
+            showInlineAmbient={false}
+            showSceneContext
+            // 问题1 — the dynamic scene prose (pitfall clues etc.) renders in
+            // the right-hand 场景 panel in immersive mode instead of sitting
+            // frozen in the middle of the scene column.
+            showAmbientProse={false}
             showPortraitAmbient
             state={state}
+          />
+          )
+        )}
+        {sceneDialogueActive && (
+          <SceneDialogueOverlay
+            key={`${location}:${state.time.dayIndex}`}
+            state={state}
+            live={interaction.open ? interactionBoxProps : null}
+            canComplete={pendingPrompt === null}
+            onSkipReply={interaction.open && activeDialogueSession?.aiRequestId !== undefined
+              && !activeDialogueSession.aiSettlesCommand && !pendingKojoChoice
+              ? interactionBoxProps.onExit : undefined}
           />
         )}
         </div>
@@ -1245,15 +2079,24 @@ export default function GameClient(props: GameClientProps) {
           <aside className="text-game-right" data-testid="text-game-right-column" aria-label="AI 场景对话与历史">
             <SceneAmbientPanel
               entry={radioInteractionActive ? null : ambientEntry}
+              sceneEvents={sceneBandEventsForPresentation}
+              dynamicProse={finalScene?.ambientProse ?? ""}
               state={state}
               enabled={aiSettings.enabled && !radioInteractionActive}
             />
             <section className="text-game-history-panel" data-testid="text-game-history-panel">
               <h2 className="text-game-panel__heading">┌ 历史 ┐</h2>
               <SceneHistoryPanel
-                events={sceneBandEventsForPresentation}
+                events={immersiveHistoryEvents}
                 state={state}
                 placement="sidebar"
+                animateNewLines={!sceneDialogue}
+                // The immersive history is the complete player-visible event
+                // stream. Keep the bounded default for inline scene bands,
+                // but do not silently drop older command prose from this
+                // dedicated history column (large imported saves can exceed
+                // 500 events).
+                max={Math.max(1, immersiveHistoryEvents.length)}
               />
             </section>
           </aside>
@@ -1266,6 +2109,7 @@ export default function GameClient(props: GameClientProps) {
           <strong id="date-invitation-title">
             {state.charas[offeredDate.partner]?.callName ?? `#${offeredDate.partner}`}想和你约个时间一起出门。
           </strong>
+          <p>提案：{datePlanScheduleLabel(offeredDate)}</p>
           {offeredDates.length > 1 && <p>另有 {offeredDates.length - 1} 份邀约，回应后会依次显示。</p>}
           <div className="date-invitation-card__actions">
             <button type="button" data-testid="accept-date-invitation" onClick={() => handleDateInvitationResponse(19989, offeredDate)}>
@@ -1284,6 +2128,43 @@ export default function GameClient(props: GameClientProps) {
         </div>
       )}
 
+      {/* Minimal mode: inline kojo-choice bar + AI chat input (replaces the
+          InteractionBox popup surface; DOM order handled by CSS). */}
+      {presentationMode === "minimal" && (
+        <div className="game-client__docks" data-testid="minimal-docks">
+          <DialogueAccompanyChoices state={state} target={accompanyInvitation?.target ?? actionTarget}
+            pending={dialogueQueue.some(session => !!session.aiRequestId || !!session.choice) || pendingPrompt !== null}
+            onRespond={respondAccompany} />
+          <MinimalChoiceBar
+            pendingChoice={pendingKojoChoice}
+            liveSession={activeDialogueSession}
+            state={state}
+            onPickChoice={(value) => {
+              if (pendingKojoChoice?.kind === "story") {
+                const choiceId = pendingKojoChoice.storyChoiceIds?.[Number(value)];
+                if (choiceId) resolveStoryChoice(choiceId);
+                return;
+              }
+              resolveKojoChoice(value);
+            }}
+            onAppendAiBranch={async (lines, choiceLabel) => {
+              if (choiceLabel && activeDialogueSession?.id) {
+                return await appendAiChatBranch(activeDialogueSession.id, choiceLabel, lines);
+              }
+              setMinimalAiBranchLines((prev) => [...prev, ...lines]);
+              return true;
+            }}
+          />
+          <MinimalAiChatBar
+            open={aiChatDraftOpen}
+            aiChatAvailable={aiChatAvailable}
+            targetName={actionTarget !== undefined ? state.charas[actionTarget]?.callName : undefined}
+            onSubmit={handleAiChatSubmit}
+            onClose={() => setAiChatDraftOpen(false)}
+          />
+        </div>
+      )}
+
       {/* Parity QA P-1 — the Ex_COM utility row (`▼[－] Ex_COM`). Tool
           buttons (变更对象→cycle target), NOT settlement commands.
           Collapsible like upstream; many upstream members (能力显示/道具/
@@ -1293,158 +2174,169 @@ export default function GameClient(props: GameClientProps) {
           group (a single "🗺 移动" entry that opens the map menu), so it's no
           longer a buried Ex_COM tool. */}
       <div className="excom-row" data-testid="excom-row">
-        <button
-          type="button"
-          className="excom-row__collapse"
-          data-testid="excom-collapse"
-          onClick={() => setShowExCom((s) => !s)}
-        >
-          {showExCom ? "▾ Ex_COM" : "▸ Ex_COM"}
-        </button>
-        {showExCom && (
-          <span
-            className={"excom-row__tools" + (movementBlocked || trainingMovementLocked ? " excom-row__tools--blocked" : "")}
-            data-testid="excom-tools"
-            aria-disabled={movementBlocked || trainingMovementLocked ? "true" : undefined}
-            title={offeredDate ? `请先回应${state.charas[offeredDate.partner]?.callName ?? `#${offeredDate.partner}`}的邀约` : movementBlocked ? "移动遭遇处理完毕前无法使用其他指令" : undefined}
+        {presentationMode === "minimal" ? (
+          <>
+            {/* minimal: the three mandated entries (移动/外出/AI辅助) stay
+                always-visible, plus the gameplay-required 踏上归途 + grid
+                exits; every other tool folds behind [▸ 工具]. */}
+            <span
+              className={"excom-row__tools" + (movementBlocked ? " excom-row__tools--blocked" : "")}
+              data-testid="excom-tools"
+              aria-disabled={movementBlocked ? "true" : undefined}
+              title={movementBlocked ? "移动遭遇处理完毕前无法使用其他指令" : undefined}
+            >
+              {hasMap && (
+                <button
+                  type="button"
+                  className="excom-row__btn"
+                  data-testid="excom-move"
+                  disabled={trainingMovementLocked || movementBlocked}
+                  title={trainingMovementLocked ? "H 进行中不能移动；信息与设置仍可使用" : movementBlocked ? "当前口上处理完成前不能移动" : undefined}
+                  onClick={() => setShowMap((s) => !s)}
+                >
+                  {showMap ? "[返回场景]" : "[移动]"}
+                </button>
+              )}
+              {canUseGoOut && (
+                <button
+                  type="button"
+                  className="excom-row__btn"
+                  data-testid="excom-go-out"
+                  disabled={trainingMovementLocked || movementBlocked}
+                  title={trainingMovementLocked ? "H 进行中不能外出" : movementBlocked ? "当前口上处理完成前不能外出" : undefined}
+                  onClick={openWorldMap}
+                >
+                  [{dateEntry ? "约会" : "外出"}]
+                </button>
+              )}
+              {state.dateSession && (
+                <button type="button" className="excom-row__btn" data-testid="date-return" disabled={trainingMovementLocked || movementBlocked} title={trainingMovementLocked ? "H 进行中不能离开" : undefined} onClick={handleDateReturn}>
+                  [踏上归途]
+                </button>
+              )}
+              {gridExits.map((exit) => (
+                <button
+                  key={exit.commandNo}
+                  type="button"
+                  className="excom-row__btn"
+                  data-testid="exit-button"
+                  data-command-no={exit.commandNo}
+                  disabled={trainingMovementLocked || movementBlocked}
+                  title={trainingMovementLocked ? "H 进行中不能离开当前房间" : movementBlocked ? "当前口上处理完成前不能离开当前房间" : undefined}
+                  onClick={() => handleExit(exit.commandNo)}
+                >
+                  {exit.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="excom-row__btn"
+                data-testid="excom-ai-kojo"
+                onClick={() => setShowAiSettings(true)}
+              >
+                [AI辅助{aiEnabled ? "：开" : ""}]
+              </button>
+            </span>
+            {/* No [▸ 工具] fold in minimal mode — the tool buttons add nothing
+                on the phone surface. */}
+          </>
+        ) : (
+          <>
+          <button
+            type="button"
+            className="excom-row__collapse"
+            data-testid="excom-collapse"
+            onClick={() => setShowExCom((s) => !s)}
           >
-            {/* 移动 (faithful to the original Ex_COM placement): clicking it
-                opens the colored map page where the player picks a destination
-                cell. Shown only where a map exists. The CommandGrid 「🗺 移动」
-                entry remains as the in-grid affordance — both toggle the map. */}
-            {hasMap && (
+            {showExCom ? "▾ Ex_COM" : "▸ Ex_COM"}
+          </button>
+          {showExCom && (
+            <span
+              className={"excom-row__tools" + (movementBlocked ? " excom-row__tools--blocked" : "")}
+              data-testid="excom-tools"
+              aria-disabled={movementBlocked ? "true" : undefined}
+              title={offeredDate ? `请先回应${state.charas[offeredDate.partner]?.callName ?? `#${offeredDate.partner}`}的邀约` : movementBlocked ? "移动遭遇处理完毕前无法使用其他指令" : undefined}
+            >
+              {/* 移动 (faithful to the original Ex_COM placement): clicking it
+                  opens the colored map page where the player picks a destination
+                  cell. Shown only where a map exists. The CommandGrid 「🗺 移动」
+                  entry remains as the in-grid affordance — both toggle the map. */}
+              {hasMap && (
+                <button
+                  type="button"
+                  className="excom-row__btn"
+                  data-testid="excom-move"
+                  disabled={trainingMovementLocked}
+                  title={trainingMovementLocked ? "H 进行中不能移动；信息与设置仍可使用" : undefined}
+                  onClick={() => setShowMap((s) => !s)}
+                >
+                  {showMap ? "[返回场景]" : "[移动]"}
+                </button>
+              )}
+              {/* 外出 (COM405 → @OTHERREGIONS): cross-map travel is gated behind
+                  the global world map. Shown only at a region entrance (where
+                  cross-map exits exist), faithful to the upstream AT_HOME gate.
+                  Within-map rooms the colored map can't render stay as buttons
+                  below (gridExits = 神社:自室 etc.). */}
+              {canUseGoOut && (
+                <button
+                  type="button"
+                  className="excom-row__btn"
+                  data-testid="excom-go-out"
+                  disabled={trainingMovementLocked}
+                  title={trainingMovementLocked ? "H 进行中不能外出" : undefined}
+                  onClick={openWorldMap}
+                >
+                  [{dateEntry ? "约会" : "外出"}]
+                </button>
+              )}
+              {state.dateSession && (
+                <button type="button" className="excom-row__btn" data-testid="date-return" disabled={trainingMovementLocked || movementBlocked} title={trainingMovementLocked ? "H 进行中不能离开" : undefined} onClick={handleDateReturn}>
+                  [踏上归途]
+                </button>
+              )}
+              {gridExits.map((exit) => (
+                <button
+                  key={exit.commandNo}
+                  type="button"
+                  className="excom-row__btn"
+                  data-testid="exit-button"
+                  data-command-no={exit.commandNo}
+                  disabled={trainingMovementLocked}
+                  title={trainingMovementLocked ? "H 进行中不能离开当前房间" : undefined}
+                  onClick={() => handleExit(exit.commandNo)}
+                >
+                  {exit.label}
+                </button>
+              ))}
+              {excomToolButtons}
               <button
                 type="button"
                 className="excom-row__btn"
-                data-testid="excom-move"
-                disabled={trainingMovementLocked}
-                onClick={() => setShowMap((s) => !s)}
+                data-testid="excom-ai-kojo"
+                onClick={() => setShowAiSettings(true)}
               >
-                {showMap ? "[返回场景]" : "[移动]"}
+                [AI辅助{aiEnabled ? "：开" : ""}]
               </button>
-            )}
-            {/* 外出 (COM405 → @OTHERREGIONS): cross-map travel is gated behind
-                the global world map. Shown only at a region entrance (where
-                cross-map exits exist), faithful to the upstream AT_HOME gate.
-                Within-map rooms the colored map can't render stay as buttons
-                below (gridExits = 神社:自室 etc.). */}
-            {canUseGoOut && (
-              <button
-                type="button"
-                className="excom-row__btn"
-                data-testid="excom-go-out"
-                onClick={openWorldMap}
-              >
-                [{dateEntry ? "约会" : "外出"}]
-              </button>
-            )}
-            {state.dateSession && state.dateSession.phase !== "returning" && (
-              <button type="button" className="excom-row__btn" data-testid="date-return" onClick={() => onIntent(issueCommand(19998, state.dateSession!.partner))}>
-                [踏上归途]
-              </button>
-            )}
-            {gridExits.map((exit) => (
-              <button
-                key={exit.commandNo}
-                type="button"
-                className="excom-row__btn"
-                data-testid="exit-button"
-                data-command-no={exit.commandNo}
-                onClick={() => handleExit(exit.commandNo)}
-              >
-                {exit.label}
-              </button>
-            ))}
-            {actionTarget !== undefined && (
-              <button
-                type="button"
-                className="excom-row__btn"
-                data-testid="excom-ability-target"
-                onClick={() => setExcomPanel("ability-target")}
-              >
-                [能力显示]
-              </button>
-            )}
-            <button
-              type="button"
-              className="excom-row__btn"
-              data-testid="excom-ability-master"
-              onClick={() => setExcomPanel("ability-master")}
-            >
-              [能力显示(主角)]
-            </button>
-            <button
-              type="button"
-              className="excom-row__btn"
-              data-testid="excom-calendar"
-              onClick={() => setExcomPanel("calendar")}
-            >
-              [日历]
-            </button>
-            <button
-              type="button"
-              className="excom-row__btn"
-              data-testid="excom-yogore"
-              onClick={() => setExcomPanel("yogore")}
-            >
-              [污渍显示]
-            </button>
-            <button
-              type="button"
-              className={`excom-row__btn${whereaboutsGate.ok ? "" : " excom-row__btn--disabled"}`}
-              data-testid="excom-whereabouts"
-              disabled={!whereaboutsGate.ok}
-              title={whereaboutsGate.reason}
-              onClick={() => setExcomPanel("whereabouts")}
-            >
-              [所在地察觉]
-            </button>
-            <button
-              type="button"
-              className={`excom-row__btn${actionTarget === undefined ? " excom-row__btn--disabled" : ""}`}
-              disabled={actionTarget === undefined}
-              title={actionTarget === undefined ? "请先选择目标角色" : `查看 ${state.charas[actionTarget]?.callName ?? actionTarget} 的详细情报`}
-              data-testid="excom-char-info"
-              onClick={() => { const t = actionTarget; if (t !== undefined) setCharacterInfoChara(t); }}
-            >
-              {actionTarget !== undefined ? `[角色情报 → ${state.charas[actionTarget]?.callName ?? `#${actionTarget}`}]` : "[角色情报]"}
-            </button>
-            {/* Honest stub (upstream Ex_COM has 道具确认; item-name table not
-                wired yet — disabled + reason, NOT a fake working button). */}
-            <button
-              type="button"
-              className="excom-row__btn"
-              title="道具名称表尚未接入"
-              data-testid="excom-items"
-              onClick={() => setExcomPanel("living")}
-            >
-              [道具确认]
-            </button>
-            {location === "魔法之森:香霖堂" && (
-              <button type="button" className="excom-row__btn" data-testid="kourindou-tackle" onClick={() => setShowTackleShop(true)}>
-                [钓具柜台]
-              </button>
-            )}
-            <button
-              type="button"
-              className="excom-row__btn"
-              data-testid="excom-ai-kojo"
-              onClick={() => setShowAiSettings(true)}
-            >
-              [AI辅助{aiEnabled ? "：开" : ""}]
-            </button>
-          </span>
+            </span>
+          )}
+          </>
         )}
+        <button type="button" className="excom-row__btn" data-testid="excom-options" onClick={() => setShowOptions(true)}>[OPTION 设置]</button>
+        <button type="button" className="excom-row__btn" data-testid="excom-l3-status" onClick={() => setExcomPanel("l3-status")}>
+          [L3 剧情状态 / 调试]
+        </button>
       </div>
 
-      <div className="game-client__bottom">
+      {!hPresentationSession && <div className="game-client__bottom">
+        <fieldset className="game-client__command-surface" disabled={sceneDialogueActive && movementBlocked} aria-label="行动指令">
         {/* Parity QA P-1 — the Act_COM filter toggle row (`@过滤器表示`).
             Each button subtracts its class from the grid when pressed
             (pressed = filter OFF). Sex filters only appear in うふふ.
             P-10: the row needs a focused target (per-target filter CFLAGs);
             with no NPC there's nothing target-directed to filter, so hide it
             — but the command grid below still shows master-only commands. */}
-        {hasNpc && !movementBlocked && (
+        {hasNpc && (!movementBlocked || sceneDialogueActive) && (
           <div className="command-filter-row" data-testid="command-filter-row">
             <span className="command-filter-row__label">过滤</span>
             {filterButtons.map((f) => (
@@ -1458,9 +2350,29 @@ export default function GameClient(props: GameClientProps) {
                 data-testid="filter-toggle"
                 data-toggle-id={f.toggleId}
                 data-on={f.on}
+                aria-pressed={f.on}
+                title={f.on ? `显示${f.label}指令；点击隐藏` : `已隐藏${f.label}指令；点击显示`}
                 onClick={() => onToggleFilter?.(f.toggleId, filterTarget)}
               >
                 [{f.label}]
+              </button>
+            ))}
+          </div>
+        )}
+        {hExitControls.length > 0 && !movementBlocked && (
+          <div className="h-exit-controls" data-testid="h-exit-controls" role="group" aria-label="H 会话控制">
+            <span className="h-exit-controls__label">H 会话</span>
+            {hExitControls.map((control) => (
+              <button
+                key={control.commandNo}
+                type="button"
+                className="h-exit-controls__button"
+                data-testid={`h-exit-${control.commandNo}`}
+                data-command-no={control.commandNo}
+                title={control.detail}
+                onClick={() => handleAction(control.commandNo)}
+              >
+                [{control.label}]
               </button>
             ))}
           </div>
@@ -1470,15 +2382,37 @@ export default function GameClient(props: GameClientProps) {
             TARGET; each command's @COM_ABLE decides).
             The bottom zone is PURE Act_COM now: 移动/外出 live in the Ex_COM row
             (showExits=false), faithful to the original Act_COM/Ex_COM split. */}
+        {(presentationMode !== "minimal" || (!showMap && !showWorldMap)) && (
         <CommandGrid
           exits={[]}
-          actions={movementBlocked ? [] : gridActions}
-          actionGroups={movementBlocked ? [] : hActionGroups}
+          actions={movementBlocked && !sceneDialogueActive ? [] : gridActions}
+          actionGroups={
+            movementBlocked && !sceneDialogueActive
+              ? []
+              : (hActionGroups ?? (
+                  presentationMode === "minimal" && gridActions.length > 0
+                    ? [{ id: "actcom", label: "行动", items: gridActions }]
+                    : undefined
+                ))
+          }
           onExit={handleExit}
           onAction={handleAction}
+          aiChatEnabled={aiChatAvailable}
+          onAiChat={() => {
+            if (movementBlocked) return;
+            if (presentationMode === "minimal") {
+              // No popup surface: the inline chat bar opens instead.
+              setAiChatDraftOpen(true);
+              return;
+            }
+            setAiChatDraftOpen(true);
+            if (!interaction.open) openInteraction(AI_CHAT_COMMAND_NO, state.eventLog.length);
+          }}
           showExits={false}
         />
-      </div>
+        )}
+        </fieldset>
+      </div>}
 
       {showBugCatchingMenu && (
         <BugCatchingMenu
@@ -1489,27 +2423,58 @@ export default function GameClient(props: GameClientProps) {
         />
       )}
 
-      {interaction.open && (
-        <InteractionBox
-          key={boxSessionId}
-          sessionId={boxSessionId}
-          events={boxEvents}
-          state={state}
-          onExit={pendingArrivalEvents && pendingArrivalEvents.length > 0 ? onArrivalExit : closeInteraction}
-          pendingChoice={pendingKojoChoice
-            ? {
-                options: pendingKojoChoice.options,
-                ...(pendingKojoChoice.continuationInputMode
-                  ? { inputMode: pendingKojoChoice.continuationInputMode }
-                  : {}),
-              }
-            : null}
-          onPickChoice={(idx) => resolveKojoChoice(idx)}
-          aiPending={activeDialogueSession?.aiRequestId !== undefined}
-          aiCharaNum={activeDialogueSession?.aiCharaNum}
-          radioBroadcast={radioBroadcast}
-          sceneAmbientEntry={radioInteractionActive ? ambientEntry : null}
+      {gatheringProgress !== null && (
+        <GatheringProgress
+          {...(actionTarget !== undefined
+            ? { companionName: state.charas[actionTarget]?.callName ?? undefined }
+            : {})}
+          onDone={() => {
+            const commandNo = gatheringProgress;
+            setGatheringProgress(null);
+            issueActionCommand(commandNo);
+          }}
         />
+      )}
+
+      {activeDialogueSession?.owner === "story" && state.storyProgram?.version === 2 && (
+        <div className="story-session-header" data-testid="story-session-header">
+          <div>
+            <strong>{state.storyProgram.title}</strong>
+            <span>{state.storyProgram.actorIds.map((id) => id === 0 ? state.master.callName ?? "主人公" : state.charas[id]?.callName ?? `#${id}`).join(" · ")}</span>
+            {state.storyProgram.arcId && <span>剧情线 · 阶段 {activeStoryArcPhase ?? "-"}</span>}
+            <span>AI 失败时保留确定性回退</span>
+          </div>
+          <div>
+            <button type="button" onClick={skipStoryProgram}>跳过</button>
+            <button type="button" onClick={abortStoryProgram}>中止</button>
+            {state.storyProgram.status === "completed" && activeStoryEventId && (
+              <button type="button" onClick={() => favoriteNarrativeEvent(activeStoryEventId)}>收藏为模板</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {presentationMode !== "minimal" && diaryBookActive && (
+        <DiaryBook
+          key={`diary:${boxSessionId}`}
+          events={boxEvents}
+          onClose={pendingArrivalEvents && pendingArrivalEvents.length > 0
+            ? onArrivalExit
+            : closeInteraction}
+        />
+      )}
+
+      {!hPresentationSession && presentationMode !== "minimal" && interaction.open && !diaryBookActive && !sceneDialogueActive && (
+        <InteractionBox key={boxSessionId} {...interactionBoxProps} />
+      )}
+      {presentationMode !== "minimal" && !interaction.open && (accompanyInvitation
+        || (actionTarget !== undefined && hasDialogueAccompanyPermit(state, actionTarget))) && (
+        <div className="date-invitation-card">
+          {accompanyInvitation && <span>{state.charas[accompanyInvitation.target]?.callName ?? "对方"}邀你一起出门。</span>}
+          <DialogueAccompanyChoices state={state} target={accompanyInvitation?.target ?? actionTarget}
+            pending={dialogueQueue.some(session => !!session.aiRequestId || !!session.choice) || pendingPrompt !== null}
+            onRespond={respondAccompany} />
+        </div>
       )}
 
       {pendingPrompt && (
@@ -1576,6 +2541,28 @@ export default function GameClient(props: GameClientProps) {
           spec={askYn("被推荐了由哥布林制作的料理。要吃么？", "吃", "拒绝")}
           onPick={(answer) => {
             if (answer.kind === "ask_yn") resolveMobMeal(answer.value);
+          }}
+        />
+      )}
+
+      {state.festivalEventSession && !pendingPrompt && !state.mobGirlMemorySession && !state.mobMealSession && (
+        <PromptMenu
+          spec={state.festivalEventSession.prompt}
+          onPick={(answer) => resolveFestivalEvent(answer)}
+        />
+      )}
+
+      {/* L3 局势菜单 — 夜间生成、醒来弹出。玩家选定后才生成引子与首幕；
+          点「先不管」只是丢掉这组局势，不产生任何事件。 */}
+      {situationPrompt && !pendingPrompt && !state.mobGirlMemorySession && !state.mobMealSession
+        && !state.festivalEventSession && !state.outingEventSession && (
+        <PromptMenu
+          spec={situationPrompt}
+          onPick={(answer) => {
+            if (answer.kind !== "pick_one") return;
+            const picked = String(answer.value);
+            if (picked === DISMISS_SITUATIONS) dismissNarrativeSituations();
+            else void chooseNarrativeSituation(picked);
           }}
         />
       )}
@@ -1649,7 +2636,12 @@ export default function GameClient(props: GameClientProps) {
         <CommissionPopup
           state={state}
           charaNum={commissionPopupChara}
-          onIntent={onIntent}
+          onIntent={(intent) => {
+            if (intent.kind === "ISSUE_COMMAND" && presentationMode !== "minimal" && !interaction.open) {
+              openInteraction(intent.commandNo, state.eventLog.length);
+            }
+            onIntent(intent);
+          }}
           onClose={() => setCommissionPopupChara(null)}
         />
       )}
@@ -1674,18 +2666,17 @@ export default function GameClient(props: GameClientProps) {
       )}
 
       {/* 🐛 口上调试面板 — creator tool to check personal-dialogue coverage. */}
-      <button
-        type="button"
-        className={
-          "kojo-debug__launch" +
-          (PLAYER_BUILD || presentationMode === "immersive" ? " kojo-debug__launch--hidden" : "")
-        }
-        title="口上调试面板"
-        onClick={() => setShowKojoDebug(true)}
-      >
-        🐛
-      </button>
-      {!PLAYER_BUILD && presentationMode === "classic" && showKojoDebug && (
+      {!PLAYER_BUILD && (
+        <button
+          type="button"
+          className="kojo-debug__launch"
+          title="口上调试面板"
+          onClick={() => setShowKojoDebug(true)}
+        >
+          🐛
+        </button>
+      )}
+      {!PLAYER_BUILD && showKojoDebug && (
         <KojoDebugPopup onClose={() => setShowKojoDebug(false)} />
       )}
       {showAiSettings && (
@@ -1693,9 +2684,16 @@ export default function GameClient(props: GameClientProps) {
           state={state}
           currentCharaNum={actionTarget}
           onUpdateAgentSettings={updateAgentSettings}
+          onPrepareCharacterForEncounter={(charaNum) => prepareCharacterForEncounter(charaNum, "debug")}
+          onCancelLazyMaterialization={cancelLazyMaterialization}
+          onStartStoryProgram={startStoryProgram}
+          onSetStoryArcStatus={setStoryArcStatus}
+          onFavoriteNarrativeEvent={favoriteNarrativeEvent}
+          onClearAiGeneratedContent={clearAiGeneratedContent}
           onClose={() => setShowAiSettings(false)}
         />
       )}
+      {showOptions && <OptionsDialog state={state} onClose={() => setShowOptions(false)} onTogglePortraitKind={() => useGameStateStore.getState().togglePortraitKindAction()} />}
       {showTackleShop && <FishingTackleShop state={state} onClose={() => setShowTackleShop(false)} />}
 
       {/* Parity QA P-31 (Wave 7) — footer 上回指令 (PREVCOM). eraTW's
@@ -1757,7 +2755,10 @@ function PromptMenu({
 }) {
   const cooking = commandNo === 413;
   const souvenir = commandNo === 626;
-  const kappaShop = commandNo === 443;
+  const shopSurface = spec.surface === "shop";
+  const hasAuthoredCancel = spec.kind === "pick_one" && spec.options.some(
+    (option) => option.id === "cancel" || option.id === -1,
+  );
   const cookStage = selections?.find((value) => typeof value === "string" && value.startsWith("type:"));
   const mobGirlAiSettings = useAiStore((aiState) => aiState.settings);
   const mobGirlCandidateIndex = selections?.filter((value) => value === "next").length ?? 0;
@@ -1793,7 +2794,7 @@ function PromptMenu({
             ? "prompt-menu prompt-menu--mob-girl"
             : souvenir
               ? "prompt-menu prompt-menu--souvenir"
-              : kappaShop
+              : shopSurface
                 ? "prompt-menu prompt-menu--shop-grid"
                 : "prompt-menu"}
         onClick={(e) => e.stopPropagation()}
@@ -1804,7 +2805,7 @@ function PromptMenu({
             <span className={spec.question === "选择料理类别" ? "is-active" : ""}>类别</span>
             <span className={spec.question === "选择料理" ? "is-active" : ""}>菜谱</span>
             <span className={spec.question === "选择食材" ? "is-active" : ""}>食材</span>
-            <span className={spec.question.includes("仕込み") ? "is-active" : ""}>仕込み</span>
+            <span className={spec.question.includes("仕込み") || spec.question.includes("下药") ? "is-active" : ""}>下药</span>
             <span className={spec.question === "选择添加物" ? "is-active" : ""}>添加物</span>
             <small>{typeof cookStage === "string" ? `已选 ${cookStage.replace("type:", "类别 ")}` : "请选择分类"}</small>
           </aside>
@@ -1832,14 +2833,13 @@ function PromptMenu({
               {spec.kind === "pick_one" && (
                 <div className="prompt-menu__options">
                   {spec.options
-                    .filter((o) => souvenir || !o.disabled)
                     .map((o) => (
                       <button
                         key={String(o.id)}
                         type="button"
                         className={`prompt-menu__btn${souvenir && o.id === -1 ? " prompt-menu__btn--souvenir-cancel" : ""}`}
                         disabled={o.disabled}
-                        title={o.disabled ? "钱不够" : undefined}
+                        title={o.disabled ? o.detail ?? "当前条件不足" : undefined}
                         onClick={() => onPick(pickOneAnswer(o.id))}
                       >
                         <span className="prompt-menu__label">{o.label}</span>
@@ -1868,7 +2868,7 @@ function PromptMenu({
                   </button>
                 </div>
               )}
-              {onCancel && (
+              {onCancel && !hasAuthoredCancel && (
                 <button
                   type="button"
                   className="prompt-menu__btn prompt-menu__btn--cancel"
@@ -1883,7 +2883,7 @@ function PromptMenu({
         {cooking && (
           <aside className="cooking-workbench__preview" aria-label="料理预览">
             <strong>制作预览</strong>
-            <span>类别、菜谱、食材、仕込み与添加物将依次确认。</span>
+            <span>类别、菜谱、食材、下药与添加物将依次确认。</span>
             <span>随机制作、委托与助手数据仍由运行时菜单结算。</span>
           </aside>
         )}

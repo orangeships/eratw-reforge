@@ -46,7 +46,7 @@ function minuteOfDay(tick: number): number {
 
 /** `GET_JOBNAME(ARG)` equivalent — the 職種 label for narration. */
 export function getJobName(jobType: number): string {
-  return JOB_LABEL[jobType] ?? "仕事";
+  return JOB_LABEL[jobType] ?? "工作";
 }
 
 /** The upstream inline ternary `\@ TALENT:恋慕 ? yes # no \@`. */

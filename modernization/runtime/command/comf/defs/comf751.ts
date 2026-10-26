@@ -25,10 +25,15 @@
  *
  * Only the EXP grant + CFLAG reset is ported as the minimal faithful core.
  */
-import type { HandlerEntry } from "../../types.js";
-import { EXP_ID } from "../../../state/settlement.js";
+import type { CommandContext, HandlerEntry } from "../../types.js";
+import { CFLAG_ID, EXP_ID } from "../../../state/settlement.js";
 import { makeComfHandler } from "../make-comf-handler.js";
 import type { ComfDef } from "../comf-def.js";
+import {
+  isHMode,
+  isSelfPleasureSessionActive,
+} from "../../h-mode.js";
+import { isCommandActionPhase } from "../../../state/tflag.js";
 
 export const comf751Def: ComfDef = {
   commandNo: 751,
@@ -49,16 +54,41 @@ export const comf751Def: ComfDef = {
 
   body: (c) => {
     // ERB 69-70: if 自慰过了 > 0, grant EXP:自慰経験 and reset.
-    const mastCount = c.master.state.CFLAG[347] ?? 0;
+    const mastCount = c.master.state.CFLAG[CFLAG_ID.自慰过了] ?? 0;
     if (mastCount > 0) {
       c.master.state.EXP[EXP_ID.自慰経験] =
         (c.master.state.EXP[EXP_ID.自慰経験] ?? 0) + 1;
-      c.master.state.CFLAG[347] = 0;
+      c.master.state.CFLAG[CFLAG_ID.自慰过了] = 0;
     }
+    // 433's independent session latch is cleared at the same terminal
+    // command.  Ordinary H-mode can also use 751, so leaving an unset latch
+    // alone preserves that path.
+    c.master.state.CFLAG[CFLAG_ID.现在忙得抽不出手] = 0;
   },
 
   narration: (_c, _favorDelta) =>
     `%CALLNAME:MASTER% 结束了自慰 — 自慰終了.`,
 };
 
-export const comf751HandlerEntry: HandlerEntry = makeComfHandler(comf751Def);
+const baseComf751HandlerEntry = makeComfHandler(comf751Def);
+
+function comf751SessionCheck(ctx: CommandContext) {
+  if (!isCommandActionPhase(ctx.state)) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "当前不在行动选择阶段。" } };
+  }
+  if (isSelfPleasureSessionActive(ctx.state)) return { ok: true as const };
+  if (isHMode(ctx.state, ctx.target)) return { ok: true as const };
+  return {
+    ok: false as const,
+    reason: { kind: "precondition" as const, message: "没有正在进行的自慰会话。" },
+  };
+}
+
+export const comf751HandlerEntry: HandlerEntry = {
+  ...baseComf751HandlerEntry,
+  // The generated upstream gate is incomplete because it depends on the
+  // larger TEQUIP/H state machine.  433's CFLAG:346 session is sufficient
+  // for this migrated cleanup command; ordinary partner H-mode remains a
+  // valid exit path through the explicit check above.
+  execCheck: comf751SessionCheck,
+};

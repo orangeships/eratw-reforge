@@ -79,8 +79,19 @@ export const comf96Def: ComfDef = {
   canExecute: com96Check,
   hModeMenuCheck: com96Check,
 
-  // Target drain handled in body().
-  downbase: {},
+  // ERB 40-41: unresponsive frozen target costs master TSP; otherwise target BASE.
+  downbase: (c): Record<number, number> => {
+    const frozen =
+      (c.next.flagStore[FLAG_ID.時間停止] ?? 0) === 1 &&
+      (c.t.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
+    return frozen ? { [BASE_ID.TSP]: 60 } : {};
+  },
+  targetDownbase: (c): Record<number, number> => {
+    const frozen =
+      (c.next.flagStore[FLAG_ID.時間停止] ?? 0) === 1 &&
+      (c.t.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
+    return frozen ? {} : { [BASE_ID.体力]: 30, [BASE_ID.気力]: 80 };
+  },
 
   buildSources: (c) => {
     const frozen =
@@ -122,13 +133,6 @@ export const comf96Def: ComfDef = {
     c.master.state.TCVAR[108] = 1;
     c.t.state.TCVAR[2] = 5;
     c.t.state.TCVAR[TCVAR_ID.射精快感強度] = 1200;
-    if (frozen) {
-      c.master.state.BASE[BASE_ID.TSP] = (c.master.state.BASE[BASE_ID.TSP] ?? 0) - 60;
-    } else {
-      c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 30;
-      c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 80;
-    }
-
     c.master.state.EXP[EXP_ID.乳交経験] =
       (c.master.state.EXP[EXP_ID.乳交経験] ?? 0) + (frozen || c.tCflag(CFLAG_ID.恶作剧) ? 1 : 2);
 

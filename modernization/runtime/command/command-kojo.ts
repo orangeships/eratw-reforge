@@ -1,13 +1,16 @@
 import type { ObservationEvent } from "../../schemas/types.js";
 import type { CommandContext, CommandKojoChoiceSession } from "./types.js";
 import { createRng } from "./rng.js";
-import type { KojoHostEvent, KojoStagedEffect } from "../kojo/types.js";
+import type { KojoHostEvent, KojoResolution, KojoStagedEffect } from "../kojo/types.js";
 import { CFLAG_ID, FLAG_ID } from "../state/settlement.js";
 
 export interface CommandKojoCollection {
   events: ObservationEvent[];
   effects: KojoStagedEffect[];
   pendingKojoChoice?: CommandKojoChoiceSession;
+  /** The actual route resolution that produced `events` (AI-PREPARE-PERF-PLAN
+   *  §4.C)：eligibility 可直接复用，避免对同一命令做第二次完整求值。 */
+  resolution?: KojoResolution;
 }
 
 /** Translate committed ERB presentation requests into session-owned events.
@@ -62,6 +65,7 @@ export function collectCommandKojo(
       return {
         events,
         effects: [],
+        resolution: continuation.resolution,
         pendingKojoChoice: {
           kind: "command",
           charaNum: target,
@@ -78,6 +82,7 @@ export function collectCommandKojo(
     return {
       events: [...events, ...kojoHostEventsToObservationEvents(continuation.resolution.hostEvents, target, ctx.now)],
       effects: continuation.resolution.effects,
+      resolution: continuation.resolution,
     };
   }
   const interactive = ctx.dialogueRouter.collectInteractive?.(
@@ -103,6 +108,7 @@ export function collectCommandKojo(
     return {
       events: [...events, ...hostEvents],
       effects: [],
+      resolution: interactive,
       pendingKojoChoice: {
         kind: "command",
         charaNum: target,
@@ -113,7 +119,11 @@ export function collectCommandKojo(
       },
     };
   }
-  return { events: [...events, ...hostEvents], effects: interactive?.effects ?? detailed?.effects ?? [] };
+  return {
+    events: [...events, ...hostEvents],
+    effects: interactive?.effects ?? detailed?.effects ?? [],
+    resolution: interactive ?? detailed ?? undefined,
+  };
 }
 
 export function collectCommandKojoEvents(

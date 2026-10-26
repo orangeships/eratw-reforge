@@ -17,33 +17,52 @@
  *     and bumps 強度; `TFLAG:193==3` adds `好感度BONUS=100` + 快Ｃ+30 if `ABL:Ｖ(Ａ)感覚>=5`.
  *   - TIME += 5; RETURN 1.
  *
- * Time-stop bypass branch (`FLAG:70 && CFLAG:TARGET:344==0`, 344 not modeled → fires
- * whenever time stopped): `BASE:MASTER:TSP -= 80`; `SOURCE:MASTER:快Ｃ = 40 + ABL:膣(肛門)*50`;
+ * Time-stop bypass branch is reachable only after the menu's
+ * `FLAG:70 && CFLAG:TARGET:時間停止行動 != 0` gate: `BASE:MASTER:TSP -= 80`;
+ * `SOURCE:MASTER:快Ｃ = 40 + ABL:膣(肛門)*50`;
  * `SOURCE:快Ｖ(快Ａ) = 40 + ABL:PLAYER:腰*30`; PLAYER:挿入経験++; target Ｖ(Ａ)性交経験++;
  * no DOWNBASE, no TIME advance (the ERB branch has no `TIME += 5` — only the awake ELSE
  * branch advances time). RETURN 1.
  *
  * **DEFERRED** (faithfully recorded, not silently dropped):
  *   - `@COM_ABLE` full gate stack — TFLAG:100 / GLOBAL_COMABLE / 亲熱>=2 / 着衣 /
- *     睡眠+恶作剧 / 行動==5 / 约会 / TCVAR:TARGET:100(101)==PLAYER / ADD_CHARA_POSE /
- *     GETBIT(TCVAR:26,8). Only the core reachability gates we can model are kept
- *     (诶嘿嘿==2, 気力>0, 陪睡中); insertion-pose presence is deferred, so a clean
- *     trial never reaches these unless a test seeds 诶嘿嘿==2.
+ *     睡眠+恶作剧 / 行動==5 / 约会 / TCVAR:TARGET:100(101)==PLAYER /
+ *     GETBIT(TCVAR:26,8), plus remaining command-specific state. The bounded
+ *     modern gate also requires the channel's existing master-P insertion
+ *     (the upstream ADD_CHARA_POSE check), along with 诶嘿嘿==2, 気力>0, and
+ *     not 陪睡中.
  *   - The `ABL:MASTER:腰 >= 3` Ｖ(Ａ)コンボ picker — `COM_ALTER_317/318` (an
  *     `ASK_M` B9 sub-menu 激烈打夯/紧贴顶弄/扭腰碾弄) + `EFFECTIVE_PATTERN_V/A` +
  *     `TEQUIP:Ｖ(Ａ)コンボ` state machine. The `TFLAG:193` *amplification* (the
  *     downstream effect of a picked combo) IS modeled, but the combo *selection*
  *     upstream is deferred → `TFLAG:193` stays 0 in trial.
- *   - `PAIN_CHECK_V/A(TARGET)` — V/A pain SOURCE ladder (処女/润滑/性交経験 tiers).
  *   - `HETEROSEX` EXP — `EXP:(50+HETEROSEX)` += 4 (same-sex exp).
- *   - `STAIN` transfer (P↔V/A 汚れ move).
  *   - `CSTR:PLAYER:10` / `CSTR:TARGET:10` intercourse log appends.
+ *
+ * Shared V/A settlement now owns PAIN_CHECK, orgasm-before-CUP-flush, V/A
+ * history, and repeated-insertion STAIN transfer; EVENTCOMEND2 owns the
+ * cross-turn residue/erection bookkeeping.
  */
 
 import type { GameState, CharaSlot } from "../../state/game-state.js";
-import type { CommandContext, ExecCheck, HandlerEntry } from "../types.js";
+import type { CommandContext, HandlerEntry } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
-import { applySourceCheck, settleSourcePalam } from "../source-check.js";
+import {
+  applyOneMinuteHCommandTimeCorrection,
+  settleSourcePalam,
+} from "../source-check.js";
+import {
+  applyHSourceCheck,
+  applyHInsertionPoseEffects,
+  recordHChannelHistory,
+  syncHChannelStain,
+  type HChannel,
+} from "../h-v-a-settlement.js";
+import { hasCurrentHInsertion } from "../h-interaction.js";
+import {
+  checkHBaseResourceAvailability,
+  type HBaseResourceCheckResult,
+} from "../h-base-resources.js";
 import {
   ABL_ID,
   BASE_ID,
@@ -57,8 +76,8 @@ import {
   getMasterBase,
   setMasterBase,
 } from "../../state/settlement.js";
-import { TFLAG_ID, getTflag, setTflag, setTflagBit } from "../../state/tflag.js";
-import { depositEjaculate, ejaculateAmount } from "../../world/semen-residue.js";
+import { TFLAG_ID, getTflag, setTflag } from "../../state/tflag.js";
+import { readCurrentTouchPose } from "../../state/touch-state.js";
 
 /** PLAYER index = master (0). */
 const PLAYER = 0;
@@ -75,6 +94,11 @@ interface ThrustVariant {
   pleasureSource: number; // SOURCE_ID.快Ｖ (1) or 快Ａ (2)
   /** EXP id for the target's intercourse experience (Ｖ性交経験=20 / Ａ性交経験=21). */
   intercourseExp: number;
+  /** EXP id for the target's body-channel experience (Ｖ経験=1 / Ａ経験=2). */
+  channelExp: number;
+  /** EXP id granted by the upstream pose-6 expansion arm. */
+  expansionExp: number;
+  channel: HChannel;
   /** ABL:Ｖ感覚(1) / Ａ感覚(2) for the combo-3 快Ｃ+30 arm. */
   senseAbl: number;
   word: string;
@@ -87,6 +111,9 @@ const V_VARIANT: ThrustVariant = {
   orificeAbl: ABL_ID.膣,
   pleasureSource: SOURCE_ID.快Ｖ,
   intercourseExp: EXP_ID.Ｖ性交経験,
+  channelExp: EXP_ID.Ｖ経験,
+  expansionExp: EXP_ID.Ｖ拡張経験,
+  channel: "v",
   senseAbl: ABL_ID.Ｖ感覚,
   word: "Ｖ",
 };
@@ -98,6 +125,9 @@ const A_VARIANT: ThrustVariant = {
   orificeAbl: ABL_ID.肛門,
   pleasureSource: SOURCE_ID.快Ａ,
   intercourseExp: EXP_ID.Ａ性交経験,
+  channelExp: EXP_ID.Ａ経験,
+  expansionExp: EXP_ID.Ａ拡張経験,
+  channel: "a",
   senseAbl: ABL_ID.Ａ感覚,
   word: "Ａ",
 };
@@ -110,7 +140,7 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
   // P1-14 逆推: 317/318 腰を動かす are partner-led (诶嘿嘿==2) acts. The same
   // check doubles as the menu gate so they surface in the H menu (and are
   // hidden on the everyday page via requiresHMode).
-  const partnerLedCheck: ExecCheck = (ctx: CommandContext) => {
+  const partnerLedCheck = (ctx: CommandContext): HBaseResourceCheckResult => {
     const target = ctx.state.charas[ctx.target];
     if (!target) return { ok: false, reason: { kind: "precondition", message: "no target" } };
     // Core reachability gates we model; the rest of @COM_ABLE deferred (header).
@@ -123,13 +153,48 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
     if ((target.state.CFLAG[CFLAG_ID.陪睡中] ?? 0) !== 0) {
       return { ok: false, reason: { kind: "precondition", message: "陪睡中" } };
     }
-    return { ok: true };
+    const timeStop = (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
+    if (timeStop && (target.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0) {
+      return {
+        ok: false,
+        reason: { kind: "precondition", message: "目标尚未在时停中行动" },
+      };
+    }
+    if (!hasCurrentHInsertion(ctx.state, ctx.target, variant.channel)) {
+      return {
+        ok: false,
+        reason: {
+          kind: "precondition",
+          message: `${variant.word}插入状态尚未建立`,
+        },
+      };
+    }
+    return checkHBaseResourceAvailability(
+      ctx,
+      timeStop
+        ? { master: { [BASE_ID.TSP]: 80 } }
+        : { master: { [BASE_ID.体力]: 50, [BASE_ID.気力]: 80 } },
+    );
   };
   return {
     commandNo: variant.commandNo,
     execCheck: partnerLedCheck,
     hModeMenuCheck: partnerLedCheck,
     handler: (ctx: CommandContext) => {
+      const gate = partnerLedCheck(ctx);
+      if (!gate.ok) {
+        return {
+          state: cloneGameState(ctx.state),
+          events: [{
+            kind: "STATUS_MESSAGE" as const,
+            timestamp: ctx.now(),
+            source: "system" as const,
+            text: gate.reason.message,
+          }],
+          outcome: "blocked" as const,
+          failReason: gate.reason,
+        };
+      }
       const next: GameState = cloneGameState(ctx.state);
       const target = next.charas[ctx.target]!;
       const master = next.master;
@@ -138,19 +203,10 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
       target.state.TCVAR[TCVAR_ID.行為者] = PLAYER;
       master.state.TCVAR[TCVAR_ID.射精箇所] = variant.playerSite;
       master.state.TCVAR[TCVAR_ID.射精快感強度] = 500 + abl(master, ABL_ID.腰) * 50 + abl(master, variant.orificeAbl) * 50;
-      // 浓厚精液机制:主角射精 → 记下「今日射精」(`TFLAG:一日一回 bit 8`,上游
-      // SOURCE_射精確定前処理),夜间 AFTERTRA 禁欲结算据此清掉浓厚精液。
-      setTflagBit(next, TFLAG_ID.一日一回, 8);
       target.state.TCVAR[TCVAR_ID.射精箇所] = variant.targetSite;
       target.state.TCVAR[TCVAR_ID.射精快感強度] = 1500;
-      // 精液残留沉积 (SOURCE_射精確定後処理.ERB:264-272) — 中出し量写入接收者残留/
-      // 累計/捐赠者标记,夜间 AFTERTRA 消费端据此结算残留 JUEL 伤害与精液中毒升级。
-      depositEjaculate(next, {
-        sender: PLAYER,
-        receiver: ctx.target,
-        site: variant.playerSite,
-        amount: ejaculateAmount(master.state),
-      });
+      const history = recordHChannelHistory(next, ctx.target, variant.channel);
+      syncHChannelStain(target, master, variant.channel);
 
       const timeStop = (next.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
 
@@ -166,7 +222,8 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
         master.state.EXP[EXP_ID.挿入経験] = (master.state.EXP[EXP_ID.挿入経験] ?? 0) + 1;
         target.state.EXP[variant.intercourseExp] = (target.state.EXP[variant.intercourseExp] ?? 0) + 1;
         settleSourcePalam(next, master, master, masterSources);
-        applySourceCheck(next, ctx.target, targetSources, 0);
+        applyHSourceCheck(next, ctx.target, targetSources, variant.channel, 0);
+        target.state.EXP[variant.channelExp] = (target.state.EXP[variant.channelExp] ?? 0) + 1;
         return {
           state: next,
           events: [
@@ -175,6 +232,11 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
               timestamp: ctx.now(),
               text: `%CALLNAME:MASTER% 在时间停止中摆动腰身（${variant.word}）。（TSP -80）`,
             },
+            ...history.map((text) => ({
+              kind: "NARRATION" as const,
+              timestamp: ctx.now(),
+              text,
+            })),
           ],
           outcome: "ok" as const,
         };
@@ -206,6 +268,14 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
         targetSources[SOURCE_ID.鬱屈] = (targetSources[SOURCE_ID.鬱屈] ?? 0) + 20;
       }
 
+      // TRACHECK_EQUIP_挿入継続 adds the active V/A pose pain and favorite-
+      // pose SOURCE quanta only in the awake continuation branch.  Keep this
+      // before the shared pain ladder and SOURCE_CHECK conversion.
+      Object.assign(targetSources, applyHInsertionPoseEffects(targetSources, target, variant.channel));
+      if (readCurrentTouchPose(target) === 6) {
+        target.state.EXP[variant.expansionExp] = (target.state.EXP[variant.expansionExp] ?? 0) + 1;
+      }
+
       // EXP: PLAYER:挿入経験++ (pre-combo), target Ｖ(Ａ)性交経験++ (post-combo in ERB,
       // but the combo arm is an amplifier not the only writer — model base increment here).
       master.state.EXP[EXP_ID.挿入経験] = (master.state.EXP[EXP_ID.挿入経験] ?? 0) + 1;
@@ -235,12 +305,20 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
         setTflag(next, TFLAG_ID.好感度BONUS, 100);
       }
 
-      // TIME += 5 (awake branch only).
-      advanceTimeTicks(next, 5);
+      // TIME += 5 (awake branch only); fold TRACHECK_TIME's conditional −4
+      // before the clock authority advances, as for the factory COMF paths.
+      const timeCost = applyOneMinuteHCommandTimeCorrection(
+        next,
+        variant.commandNo,
+        ctx.target,
+        5,
+      );
+      advanceTimeTicks(next, timeCost);
 
       // Settle: master 快Ｃ (master-as-target), target full set.
       settleSourcePalam(next, master, master, masterSources);
-      const settled = applySourceCheck(next, ctx.target, targetSources, 0);
+      const settled = applyHSourceCheck(next, ctx.target, targetSources, variant.channel, 0);
+      target.state.EXP[variant.channelExp] = (target.state.EXP[variant.channelExp] ?? 0) + 1;
 
       const comboWord = combo === 2 ? "紧贴顶弄，" : combo === 3 ? "扭腰碾弄，" : "";
       return {
@@ -252,6 +330,11 @@ function buildThrustHandler(variant: ThrustVariant): HandlerEntry {
             text: `%CALLNAME:MASTER% 摆动腰身（${variant.word}）。${comboWord}好感度 ${settled.favorDelta >= 0 ? "+" : ""}${settled.favorDelta}。`,
           },
           ...settled.events,
+          ...history.map((text) => ({
+            kind: "NARRATION" as const,
+            timestamp: ctx.now(),
+            text,
+          })),
         ],
         outcome: "ok" as const,
       };

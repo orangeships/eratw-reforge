@@ -57,6 +57,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf416.ts",
       "modernization/runtime/command/comf/defs/comf417.ts",
       "modernization/runtime/command/comf/defs/comf712.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/bug-catching.ts",
       "modernization/runtime/command/handlers/cleaning.ts",
@@ -67,10 +68,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/headpat.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
+      "modernization/runtime/command/handlers/night-cap.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/talk.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/command/source-check.ts",
@@ -78,14 +82,18 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
+      "modernization/runtime/state/commission-dish.ts",
       "modernization/runtime/state/commission.ts",
       "modernization/runtime/state/danmaku.ts",
       "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/item-explanation.ts",
       "modernization/runtime/state/juel.ts",
       "modernization/runtime/state/sekuhara.ts",
       "modernization/runtime/world/daily-event.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/fall-states.ts",
+      "modernization/runtime/world/festival-events.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
@@ -110,6 +118,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf416.ts",
       "modernization/runtime/command/comf/defs/comf417.ts",
       "modernization/runtime/command/comf/defs/comf712.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/bug-catching.ts",
       "modernization/runtime/command/handlers/cleaning.ts",
@@ -121,10 +130,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/headpat.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
+      "modernization/runtime/command/handlers/night-cap.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/talk.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/command/source-check.ts",
@@ -134,15 +146,19 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/abl-name.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
+      "modernization/runtime/state/commission-dish.ts",
       "modernization/runtime/state/commission.ts",
       "modernization/runtime/state/danmaku.ts",
       "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/item-explanation.ts",
       "modernization/runtime/state/juel.ts",
       "modernization/runtime/state/sekuhara.ts",
       "modernization/runtime/world/ablup.ts",
       "modernization/runtime/world/daily-event.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/fall-states.ts",
+      "modernization/runtime/world/festival-events.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
@@ -150,6 +166,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "directAccesses": [
       "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/bug-catching.ts",
       "modernization/runtime/command/handlers/cleaning.ts",
@@ -158,20 +176,178 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/fishing.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
+      "modernization/runtime/command/handlers/night-cap.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
+      "modernization/runtime/state/commission-dish.ts",
       "modernization/runtime/state/commission.ts",
       "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/item-explanation.ts",
       "modernization/runtime/world/daily-event.ts",
       "modernization/runtime/world/dynamic-characters.ts",
+      "modernization/runtime/world/festival-events.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/skip-move.ts"
+    ]
+  },
+  {
+    "key": "ABL:従順",
+    "namespace": "ABL",
+    "name": "従順",
+    "id": 10,
+    "lifecycle": "save",
+    "authority": "mark-settlement",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/debug/kojo-probe.ts",
+      "modernization/runtime/state/abl-name.ts",
+      "modernization/runtime/world/dynamic-characters.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/comf/defs/comf15.ts",
+      "modernization/runtime/command/comf/defs/comf184.ts",
+      "modernization/runtime/command/comf/defs/comf186.ts",
+      "modernization/runtime/command/comf/defs/comf187.ts",
+      "modernization/runtime/command/comf/defs/comf189.ts",
+      "modernization/runtime/command/comf/defs/comf190.ts",
+      "modernization/runtime/command/comf/defs/comf302.ts",
+      "modernization/runtime/command/comf/defs/comf305.ts",
+      "modernization/runtime/command/comf/defs/comf308.ts",
+      "modernization/runtime/command/comf/defs/comf311.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf313.ts",
+      "modernization/runtime/command/comf/defs/comf314.ts",
+      "modernization/runtime/command/comf/defs/comf315.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
+      "modernization/runtime/command/comf/defs/comf331.ts",
+      "modernization/runtime/command/comf/defs/comf335.ts",
+      "modernization/runtime/command/comf/defs/comf336.ts",
+      "modernization/runtime/command/comf/defs/comf363.ts",
+      "modernization/runtime/command/comf/defs/comf412.ts",
+      "modernization/runtime/command/comf/defs/comf441.ts",
+      "modernization/runtime/command/h-ejaculation.ts",
+      "modernization/runtime/command/handlers/apologize.ts",
+      "modernization/runtime/command/handlers/bug-catching.ts",
+      "modernization/runtime/command/handlers/cleaning.ts",
+      "modernization/runtime/command/handlers/cook.ts",
+      "modernization/runtime/command/handlers/date-meal.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/fishing.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-remainder.ts",
+      "modernization/runtime/command/handlers/headpat.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
+      "modernization/runtime/command/handlers/night-cap.ts",
+      "modernization/runtime/command/handlers/omaneki-697.ts",
+      "modernization/runtime/command/handlers/reading.ts",
+      "modernization/runtime/command/handlers/souvenir-shop.ts",
+      "modernization/runtime/command/handlers/talk.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
+      "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/debug/kojo-probe.ts",
+      "modernization/runtime/state/alcohol.ts",
+      "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/juel.ts",
+      "modernization/runtime/world/dynamic-characters.ts",
+      "modernization/runtime/world/free-action-companion.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/comf/defs/comf15.ts",
+      "modernization/runtime/command/comf/defs/comf184.ts",
+      "modernization/runtime/command/comf/defs/comf186.ts",
+      "modernization/runtime/command/comf/defs/comf187.ts",
+      "modernization/runtime/command/comf/defs/comf189.ts",
+      "modernization/runtime/command/comf/defs/comf190.ts",
+      "modernization/runtime/command/comf/defs/comf302.ts",
+      "modernization/runtime/command/comf/defs/comf305.ts",
+      "modernization/runtime/command/comf/defs/comf308.ts",
+      "modernization/runtime/command/comf/defs/comf311.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf313.ts",
+      "modernization/runtime/command/comf/defs/comf314.ts",
+      "modernization/runtime/command/comf/defs/comf315.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
+      "modernization/runtime/command/comf/defs/comf331.ts",
+      "modernization/runtime/command/comf/defs/comf335.ts",
+      "modernization/runtime/command/comf/defs/comf336.ts",
+      "modernization/runtime/command/comf/defs/comf363.ts",
+      "modernization/runtime/command/comf/defs/comf412.ts",
+      "modernization/runtime/command/comf/defs/comf441.ts",
+      "modernization/runtime/command/h-ejaculation.ts",
+      "modernization/runtime/command/handlers/apologize.ts",
+      "modernization/runtime/command/handlers/bug-catching.ts",
+      "modernization/runtime/command/handlers/cleaning.ts",
+      "modernization/runtime/command/handlers/cook.ts",
+      "modernization/runtime/command/handlers/date-meal.ts",
+      "modernization/runtime/command/handlers/diary-406.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/fishing.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-remainder.ts",
+      "modernization/runtime/command/handlers/headpat.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
+      "modernization/runtime/command/handlers/night-cap.ts",
+      "modernization/runtime/command/handlers/omaneki-697.ts",
+      "modernization/runtime/command/handlers/reading.ts",
+      "modernization/runtime/command/handlers/souvenir-shop.ts",
+      "modernization/runtime/command/handlers/talk.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
+      "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/debug/kojo-probe.ts",
+      "modernization/runtime/state/ability-grid.ts",
+      "modernization/runtime/state/abl-name.ts",
+      "modernization/runtime/state/alcohol.ts",
+      "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/juel.ts",
+      "modernization/runtime/world/ablup.ts",
+      "modernization/runtime/world/dynamic-characters.ts",
+      "modernization/runtime/world/free-action-companion.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/comf/defs/comf184.ts",
+      "modernization/runtime/command/comf/defs/comf186.ts",
+      "modernization/runtime/command/comf/defs/comf187.ts",
+      "modernization/runtime/command/comf/defs/comf189.ts",
+      "modernization/runtime/command/comf/defs/comf190.ts",
+      "modernization/runtime/command/h-ejaculation.ts",
+      "modernization/runtime/command/handlers/apologize.ts",
+      "modernization/runtime/command/handlers/bug-catching.ts",
+      "modernization/runtime/command/handlers/cleaning.ts",
+      "modernization/runtime/command/handlers/cook.ts",
+      "modernization/runtime/command/handlers/date-meal.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/fishing.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-remainder.ts",
+      "modernization/runtime/command/handlers/night-cap.ts",
+      "modernization/runtime/command/handlers/reading.ts",
+      "modernization/runtime/command/handlers/souvenir-shop.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
+      "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/state/alcohol.ts",
+      "modernization/runtime/state/dish.ts",
+      "modernization/runtime/world/dynamic-characters.ts",
+      "modernization/runtime/world/free-action-companion.ts"
     ]
   },
   {
@@ -192,9 +368,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf305.ts",
       "modernization/runtime/command/comf/defs/comf311.ts",
       "modernization/runtime/command/comf/defs/comf336.ts",
+      "modernization/runtime/command/h-ejaculation.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
+      "modernization/runtime/command/handlers/event-com-end.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/headpat.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/debug/kojo-probe.ts",
       "modernization/runtime/kojo/static-router.ts",
@@ -202,6 +383,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/gifts.ts",
       "modernization/runtime/state/juel.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/onabare.ts",
@@ -212,9 +394,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf305.ts",
       "modernization/runtime/command/comf/defs/comf311.ts",
       "modernization/runtime/command/comf/defs/comf336.ts",
+      "modernization/runtime/command/h-ejaculation.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
+      "modernization/runtime/command/handlers/event-com-end.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/headpat.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/debug/kojo-probe.ts",
       "modernization/runtime/kojo/static-router.ts",
@@ -225,6 +412,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/gifts.ts",
       "modernization/runtime/state/juel.ts",
       "modernization/runtime/world/ablup.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/onabare.ts",
@@ -232,8 +420,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "directAccesses": [
       "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/h-ejaculation.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
+      "modernization/runtime/command/handlers/event-com-end.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
@@ -260,34 +452,46 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/outing-events.ts"
     ],
     "consumers": [
+      "modernization/runtime/ai-state/context.ts",
       "modernization/runtime/command/comf/defs/comf306.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "references": [
+      "modernization/runtime/ai-state/context.ts",
       "modernization/runtime/command/comf/defs/comf306.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/load-chara.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/initialize-before-train.ts",
       "modernization/runtime/world/mobs.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "directAccesses": [
       "modernization/runtime/command/comf/defs/comf306.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
@@ -316,27 +520,36 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/outing-events.ts"
     ],
     "consumers": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/initialize-before-train.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "references": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
       "modernization/runtime/weather/abnormal-weather.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/initialize-before-train.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
@@ -345,6 +558,144 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/portrait-expression-core.ts",
       "modernization/runtime/world/initialize-before-train.ts",
       "modernization/runtime/world/outing-events.ts"
+    ]
+  },
+  {
+    "key": "BASE:Ｃ絶頂余韻",
+    "namespace": "BASE",
+    "name": "Ｃ絶頂余韻",
+    "id": 30,
+    "lifecycle": "save",
+    "authority": "h-afterglow-settlement",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ]
+  },
+  {
+    "key": "BASE:Ｖ絶頂余韻",
+    "namespace": "BASE",
+    "name": "Ｖ絶頂余韻",
+    "id": 31,
+    "lifecycle": "save",
+    "authority": "h-afterglow-settlement",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ]
+  },
+  {
+    "key": "BASE:Ａ絶頂余韻",
+    "namespace": "BASE",
+    "name": "Ａ絶頂余韻",
+    "id": 32,
+    "lifecycle": "save",
+    "authority": "h-afterglow-settlement",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ]
+  },
+  {
+    "key": "BASE:Ｂ絶頂余韻",
+    "namespace": "BASE",
+    "name": "Ｂ絶頂余韻",
+    "id": 33,
+    "lifecycle": "save",
+    "authority": "h-afterglow-settlement",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ]
+  },
+  {
+    "key": "BASE:Ｍ絶頂余韻",
+    "namespace": "BASE",
+    "name": "Ｍ絶頂余韻",
+    "id": 34,
+    "lifecycle": "save",
+    "authority": "h-afterglow-settlement",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ]
+  },
+  {
+    "key": "BASE:絶頂余韻",
+    "namespace": "BASE",
+    "name": "絶頂余韻",
+    "id": 35,
+    "lifecycle": "save",
+    "authority": "h-afterglow-aggregate",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/ai-state/h-scene-context.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-body-stats.ts"
+    ],
+    "references": [
+      "modernization/runtime/ai-state/h-scene-context.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts",
+      "modernization/runtime/state/h-body-stats.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/ai-state/h-scene-context.ts",
+      "modernization/runtime/state/h-afterglow.ts",
+      "modernization/runtime/state/h-body-stats.ts"
     ]
   },
   {
@@ -357,28 +708,46 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "none",
     "producers": [
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/state/kiss.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/dayevent.ts",
       "modernization/runtime/world/onabare.ts"
     ],
     "consumers": [
       "modernization/runtime/command/comf/defs/comf0.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/kiss.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/date-outfit-resolvers.ts",
+      "modernization/runtime/world/dayevent.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/skip-move.ts"
     ],
     "references": [
       "modernization/runtime/command/comf/defs/comf0.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/kiss.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/date-outfit-resolvers.ts",
+      "modernization/runtime/world/dayevent.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/skip-move.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/kiss.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/date-outfit-resolvers.ts",
+      "modernization/runtime/world/dayevent.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/skip-move.ts"
     ]
@@ -398,10 +767,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/relationship.ts",
       "modernization/runtime/world/date-appointments.ts",
       "modernization/runtime/world/dynamic-characters.ts",
-      "modernization/runtime/world/onabare.ts"
+      "modernization/runtime/world/onabare.ts",
+      "modernization/runtime/world/seasonal-events.ts"
     ],
     "consumers": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/comf/make-comf-handler.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
       "modernization/runtime/command/handlers/cleaning.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/cook.ts",
@@ -410,6 +783,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/reading.ts",
       "modernization/runtime/command/handlers/souvenir-shop.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/debug/kojo-probe.ts",
@@ -422,6 +796,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/relationship.ts",
       "modernization/runtime/state/sekuhara.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/date-session.ts",
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/fall-states.ts",
@@ -432,7 +807,10 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/visit-flags.ts"
     ],
     "references": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/comf/make-comf-handler.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
       "modernization/runtime/command/handlers/cleaning.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/cook.ts",
@@ -441,6 +819,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/reading.ts",
       "modernization/runtime/command/handlers/souvenir-shop.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/debug/kojo-probe.ts",
@@ -453,6 +832,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/relationship.ts",
       "modernization/runtime/state/sekuhara.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/date-session.ts",
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/fall-states.ts",
@@ -464,6 +844,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "directAccesses": [
       "modernization/runtime/command/comf/make-comf-handler.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
       "modernization/runtime/command/handlers/cleaning.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/cook.ts",
@@ -472,6 +853,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/reading.ts",
       "modernization/runtime/command/handlers/souvenir-shop.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
@@ -482,6 +864,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/state/relationship.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/date-session.ts",
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/free-action-companion.ts",
@@ -505,9 +888,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/relationship.ts",
       "modernization/runtime/world/date-appointments.ts",
       "modernization/runtime/world/dynamic-characters.ts",
-      "modernization/runtime/world/onabare.ts"
+      "modernization/runtime/world/onabare.ts",
+      "modernization/runtime/world/seasonal-events.ts"
     ],
     "consumers": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/white-day.ts",
@@ -524,10 +910,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/onabare.ts",
+      "modernization/runtime/world/seasonal-events.ts",
       "modernization/runtime/world/work/work-system.ts",
       "web/app/game/MorningMenuScreen.tsx"
     ],
     "references": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/white-day.ts",
@@ -544,6 +933,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/onabare.ts",
+      "modernization/runtime/world/seasonal-events.ts",
       "modernization/runtime/world/work/work-system.ts",
       "web/app/game/MorningMenuScreen.tsx"
     ],
@@ -560,6 +950,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/dynamic-characters.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/onabare.ts",
+      "modernization/runtime/world/seasonal-events.ts",
       "modernization/runtime/world/work/work-system.ts"
     ]
   },
@@ -668,9 +1059,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "web/app/state/game-state-store.ts"
     ],
     "consumers": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/ai-state/dialogue-action.ts",
+      "modernization/runtime/ai-state/h-scene-context.ts",
+      "modernization/runtime/ai-state/relationship.ts",
       "modernization/runtime/command/comf/compile-gate.ts",
       "modernization/runtime/command/comf/defs/comf307.ts",
       "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf411.ts",
       "modernization/runtime/command/comf/defs/comf412.ts",
       "modernization/runtime/command/comf/defs/comf441.ts",
@@ -697,6 +1093,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
@@ -710,9 +1107,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/souvenir-shop.ts",
       "modernization/runtime/command/handlers/stall.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
@@ -721,7 +1121,15 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/dialogue-context.ts",
       "modernization/runtime/state/dish.ts",
       "modernization/runtime/state/domain-transition.ts",
+      "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/story/attendance.ts",
+      "modernization/runtime/story/dialogue-hook.ts",
+      "modernization/runtime/story/interaction-progress.ts",
+      "modernization/runtime/story/storylet-runtime.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
+      "modernization/runtime/world/banquet.ts",
       "modernization/runtime/world/chara-sleep.ts",
       "modernization/runtime/world/date-appointments.ts",
       "modernization/runtime/world/date-session.ts",
@@ -731,6 +1139,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/first-meeting.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/free-action.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/room-lock.ts",
       "modernization/runtime/world/scheduler.ts",
@@ -738,12 +1147,18 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/roam-advanced.ts",
       "modernization/runtime/world/work/work-system.ts",
-      "web/app/ai/ambient-eligibility.ts"
+      "web/app/ai/ambient-eligibility.ts",
+      "web/app/ai/kojo-runtime.ts"
     ],
     "references": [
+      "modernization/runtime/ai-state/context.ts",
+      "modernization/runtime/ai-state/dialogue-action.ts",
+      "modernization/runtime/ai-state/h-scene-context.ts",
+      "modernization/runtime/ai-state/relationship.ts",
       "modernization/runtime/command/comf/compile-gate.ts",
       "modernization/runtime/command/comf/defs/comf307.ts",
       "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf411.ts",
       "modernization/runtime/command/comf/defs/comf412.ts",
       "modernization/runtime/command/comf/defs/comf441.ts",
@@ -770,6 +1185,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
@@ -784,9 +1200,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/souvenir-shop.ts",
       "modernization/runtime/command/handlers/stall.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
@@ -795,7 +1214,15 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/dialogue-context.ts",
       "modernization/runtime/state/dish.ts",
       "modernization/runtime/state/domain-transition.ts",
+      "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/story/attendance.ts",
+      "modernization/runtime/story/dialogue-hook.ts",
+      "modernization/runtime/story/interaction-progress.ts",
+      "modernization/runtime/story/storylet-runtime.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
+      "modernization/runtime/world/banquet.ts",
       "modernization/runtime/world/chara-sleep.ts",
       "modernization/runtime/world/configured-schedule.ts",
       "modernization/runtime/world/date-appointments.ts",
@@ -806,6 +1233,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/first-meeting.ts",
       "modernization/runtime/world/free-action-companion.ts",
       "modernization/runtime/world/free-action.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/room-lock.ts",
       "modernization/runtime/world/scheduler.ts",
@@ -815,9 +1243,15 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/work/roam-advanced.ts",
       "modernization/runtime/world/work/work-system.ts",
       "web/app/ai/ambient-eligibility.ts",
+      "web/app/ai/kojo-runtime.ts",
       "web/app/state/game-state-store.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/ai-state/dialogue-action.ts",
+      "modernization/runtime/ai-state/h-scene-context.ts",
+      "modernization/runtime/ai-state/relationship.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/semantic-gate.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/bath.ts",
@@ -840,6 +1274,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
       "modernization/runtime/command/handlers/rukoto-420.ts",
@@ -849,6 +1284,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/serve-meal.ts",
       "modernization/runtime/command/handlers/souvenir-shop.ts",
       "modernization/runtime/command/handlers/sweets-617.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
@@ -859,7 +1295,15 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/commission.ts",
       "modernization/runtime/state/dialogue-context.ts",
       "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/story/attendance.ts",
+      "modernization/runtime/story/dialogue-hook.ts",
+      "modernization/runtime/story/interaction-progress.ts",
+      "modernization/runtime/story/storylet-runtime.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
+      "modernization/runtime/world/banquet.ts",
       "modernization/runtime/world/chara-sleep.ts",
       "modernization/runtime/world/configured-schedule.ts",
       "modernization/runtime/world/date-appointments.ts",
@@ -876,7 +1320,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/roam-advanced.ts",
       "modernization/runtime/world/work/work-system.ts",
-      "web/app/ai/ambient-eligibility.ts"
+      "web/app/ai/ambient-eligibility.ts",
+      "web/app/ai/kojo-runtime.ts"
     ]
   },
   {
@@ -889,26 +1334,36 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "none",
     "producers": [
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/mood.ts"
     ],
     "consumers": [
+      "modernization/runtime/command/reverse/endure.ts",
+      "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/domain-transition.ts",
       "modernization/runtime/state/mood.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
       "modernization/runtime/world/chara-sleep.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/sneak-in.ts"
     ],
     "references": [
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/domain-transition.ts",
       "modernization/runtime/state/mood.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
       "modernization/runtime/world/chara-sleep.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/sneak-in.ts"
     ],
@@ -916,9 +1371,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/mood.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
       "modernization/runtime/world/chara-sleep.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/sneak-in.ts"
     ]
@@ -937,17 +1395,129 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "consumers": [
       "modernization/runtime/command/source-check.ts",
-      "modernization/runtime/state/attitude.ts"
+      "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts"
     ],
     "references": [
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/mood.ts"
     ],
     "directAccesses": [
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/mood.ts"
+    ]
+  },
+  {
+    "key": "CFLAG:恶作剧",
+    "namespace": "CFLAG",
+    "name": "恶作剧",
+    "id": 331,
+    "lifecycle": "save",
+    "authority": "character-state",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/world/chara-awake.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/command/comf/compile-gate.ts",
+      "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf126.ts",
+      "modernization/runtime/command/comf/defs/comf189.ts",
+      "modernization/runtime/command/comf/defs/comf191.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf65.ts",
+      "modernization/runtime/command/comf/defs/comf66.ts",
+      "modernization/runtime/command/comf/defs/comf67.ts",
+      "modernization/runtime/command/comf/defs/comf68.ts",
+      "modernization/runtime/command/comf/defs/comf69.ts",
+      "modernization/runtime/command/comf/defs/comf70.ts",
+      "modernization/runtime/command/comf/defs/comf96.ts",
+      "modernization/runtime/command/comf/semantic-gate.ts",
+      "modernization/runtime/command/display-name.ts",
+      "modernization/runtime/command/handlers/diary-406.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/go-out.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-toggles.ts",
+      "modernization/runtime/command/handlers/omaneki-698.ts",
+      "modernization/runtime/command/handlers/omaneki-699.ts",
+      "modernization/runtime/command/handlers/undress.ts",
+      "modernization/runtime/command/handlers/white-day.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/kojo/palam-dispatch.ts",
+      "modernization/runtime/kojo/static-router.ts",
+      "modernization/runtime/state/named-stats.ts",
+      "modernization/runtime/state/standing-sex.ts",
+      "modernization/runtime/world/first-meeting.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/comf/compile-gate.ts",
+      "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf126.ts",
+      "modernization/runtime/command/comf/defs/comf189.ts",
+      "modernization/runtime/command/comf/defs/comf191.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf65.ts",
+      "modernization/runtime/command/comf/defs/comf66.ts",
+      "modernization/runtime/command/comf/defs/comf67.ts",
+      "modernization/runtime/command/comf/defs/comf68.ts",
+      "modernization/runtime/command/comf/defs/comf69.ts",
+      "modernization/runtime/command/comf/defs/comf70.ts",
+      "modernization/runtime/command/comf/defs/comf96.ts",
+      "modernization/runtime/command/comf/semantic-gate.ts",
+      "modernization/runtime/command/display-name.ts",
+      "modernization/runtime/command/handlers/diary-406.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/go-out.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-toggles.ts",
+      "modernization/runtime/command/handlers/omaneki-698.ts",
+      "modernization/runtime/command/handlers/omaneki-699.ts",
+      "modernization/runtime/command/handlers/undress.ts",
+      "modernization/runtime/command/handlers/white-day.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/kojo/palam-dispatch.ts",
+      "modernization/runtime/kojo/static-router.ts",
+      "modernization/runtime/state/named-stats.ts",
+      "modernization/runtime/state/standing-sex.ts",
+      "modernization/runtime/world/chara-awake.ts",
+      "modernization/runtime/world/first-meeting.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf126.ts",
+      "modernization/runtime/command/comf/defs/comf189.ts",
+      "modernization/runtime/command/comf/defs/comf191.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf65.ts",
+      "modernization/runtime/command/comf/defs/comf66.ts",
+      "modernization/runtime/command/comf/defs/comf67.ts",
+      "modernization/runtime/command/comf/defs/comf68.ts",
+      "modernization/runtime/command/comf/defs/comf69.ts",
+      "modernization/runtime/command/comf/defs/comf70.ts",
+      "modernization/runtime/command/comf/semantic-gate.ts",
+      "modernization/runtime/command/display-name.ts",
+      "modernization/runtime/command/handlers/diary-406.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-toggles.ts",
+      "modernization/runtime/command/handlers/white-day.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/kojo/palam-dispatch.ts",
+      "modernization/runtime/kojo/static-router.ts",
+      "modernization/runtime/state/named-stats.ts",
+      "modernization/runtime/state/standing-sex.ts",
+      "modernization/runtime/world/chara-awake.ts"
     ]
   },
   {
@@ -962,7 +1532,10 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/sentinels.ts"
     ],
     "consumers": [
+      "modernization/runtime/command/comf/compile-gate.ts",
       "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf11.ts",
+      "modernization/runtime/command/comf/defs/comf12.ts",
       "modernization/runtime/command/comf/defs/comf126.ts",
       "modernization/runtime/command/comf/defs/comf181.ts",
       "modernization/runtime/command/comf/defs/comf182.ts",
@@ -974,6 +1547,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf189.ts",
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf192.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf67.ts",
       "modernization/runtime/command/comf/defs/comf68.ts",
       "modernization/runtime/command/comf/defs/comf69.ts",
@@ -982,15 +1557,31 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf89.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
       "modernization/runtime/command/command-kojo.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/handlers/bug-catching.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/hip-thrust.ts",
+      "modernization/runtime/command/handlers/insertion-derived.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/self-pleasure-433.ts",
       "modernization/runtime/command/handlers/undress.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts"
+      "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
+      "modernization/runtime/world/h-scene-prose.ts"
     ],
     "references": [
+      "modernization/runtime/command/comf/compile-gate.ts",
       "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf11.ts",
+      "modernization/runtime/command/comf/defs/comf12.ts",
       "modernization/runtime/command/comf/defs/comf126.ts",
       "modernization/runtime/command/comf/defs/comf181.ts",
       "modernization/runtime/command/comf/defs/comf182.ts",
@@ -1002,6 +1593,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf189.ts",
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf192.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf67.ts",
       "modernization/runtime/command/comf/defs/comf68.ts",
       "modernization/runtime/command/comf/defs/comf69.ts",
@@ -1010,13 +1603,26 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf89.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
       "modernization/runtime/command/command-kojo.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/handlers/bug-catching.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/hip-thrust.ts",
+      "modernization/runtime/command/handlers/insertion-derived.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/self-pleasure-433.ts",
       "modernization/runtime/command/handlers/sentinels.ts",
       "modernization/runtime/command/handlers/undress.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts"
+      "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
+      "modernization/runtime/world/h-scene-prose.ts"
     ],
     "directAccesses": [
       "modernization/runtime/command/comf/defs/comf107.ts",
@@ -1031,6 +1637,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf189.ts",
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf192.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf67.ts",
       "modernization/runtime/command/comf/defs/comf68.ts",
       "modernization/runtime/command/comf/defs/comf69.ts",
@@ -1039,13 +1647,23 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf89.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
       "modernization/runtime/command/command-kojo.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/handlers/bug-catching.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/hip-thrust.ts",
+      "modernization/runtime/command/handlers/insertion-derived.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/self-pleasure-433.ts",
       "modernization/runtime/command/handlers/sentinels.ts",
       "modernization/runtime/command/handlers/undress.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts"
+      "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/world/assemble-for-meal.ts"
     ]
   },
   {
@@ -1058,16 +1676,31 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "none",
     "producers": [],
     "consumers": [
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/body-info.ts"
     ],
     "references": [
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/body-info.ts"
     ],
     "directAccesses": [
       "modernization/runtime/state/attitude.ts"
     ]
+  },
+  {
+    "key": "EXP:異常経験",
+    "namespace": "EXP",
+    "name": "異常経験",
+    "id": 53,
+    "lifecycle": "save",
+    "authority": "mark-settlement",
+    "resetOwner": "none",
+    "producers": [],
+    "consumers": [],
+    "references": [],
+    "directAccesses": []
   },
   {
     "key": "FLAG:時間停止",
@@ -1082,8 +1715,11 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/sentinels.ts"
     ],
     "consumers": [
+      "modernization/runtime/ai-state/dialogue-action.ts",
       "modernization/runtime/command/comf/compile-gate.ts",
       "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf11.ts",
+      "modernization/runtime/command/comf/defs/comf12.ts",
       "modernization/runtime/command/comf/defs/comf126.ts",
       "modernization/runtime/command/comf/defs/comf181.ts",
       "modernization/runtime/command/comf/defs/comf182.ts",
@@ -1096,6 +1732,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf191.ts",
       "modernization/runtime/command/comf/defs/comf192.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf441.ts",
       "modernization/runtime/command/comf/defs/comf67.ts",
       "modernization/runtime/command/comf/defs/comf68.ts",
@@ -1105,6 +1743,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf89.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
       "modernization/runtime/command/command-kojo.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/h-mode.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/bath.ts",
@@ -1128,12 +1767,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/h-remainder.ts",
       "modernization/runtime/command/handlers/hip-thrust.ts",
+      "modernization/runtime/command/handlers/insertion-derived.ts",
       "modernization/runtime/command/handlers/item-use.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/magic-five-orgasm.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
       "modernization/runtime/command/handlers/meal.ts",
       "modernization/runtime/command/handlers/moriya-omikuji.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/omaneki-699.ts",
@@ -1155,25 +1796,37 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/tennokoe-422.ts",
       "modernization/runtime/command/handlers/undress.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/water-drawing.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/state/named-stats.ts",
-      "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/story/dialogue-hook.ts",
+      "modernization/runtime/story/interaction-progress.ts",
+      "modernization/runtime/story/storylet-runtime.ts",
       "modernization/runtime/weather/background-color.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
       "modernization/runtime/world/clock.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/mobs.ts",
       "modernization/runtime/world/scene-prose.ts",
       "modernization/runtime/world/scheduler.ts"
     ],
     "references": [
+      "modernization/runtime/ai-state/dialogue-action.ts",
       "modernization/runtime/command/comf/compile-gate.ts",
       "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf11.ts",
+      "modernization/runtime/command/comf/defs/comf12.ts",
       "modernization/runtime/command/comf/defs/comf126.ts",
       "modernization/runtime/command/comf/defs/comf181.ts",
       "modernization/runtime/command/comf/defs/comf182.ts",
@@ -1186,6 +1839,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf191.ts",
       "modernization/runtime/command/comf/defs/comf192.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf441.ts",
       "modernization/runtime/command/comf/defs/comf67.ts",
       "modernization/runtime/command/comf/defs/comf68.ts",
@@ -1195,6 +1850,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf89.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
       "modernization/runtime/command/command-kojo.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/h-mode.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/bath.ts",
@@ -1218,12 +1874,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/h-remainder.ts",
       "modernization/runtime/command/handlers/hip-thrust.ts",
+      "modernization/runtime/command/handlers/insertion-derived.ts",
       "modernization/runtime/command/handlers/item-use.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/magic-five-orgasm.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
       "modernization/runtime/command/handlers/meal.ts",
       "modernization/runtime/command/handlers/moriya-omikuji.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/omaneki-699.ts",
@@ -1245,25 +1903,37 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/tennokoe-422.ts",
       "modernization/runtime/command/handlers/undress.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/water-drawing.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/state/named-stats.ts",
-      "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/story/dialogue-hook.ts",
+      "modernization/runtime/story/interaction-progress.ts",
+      "modernization/runtime/story/storylet-runtime.ts",
       "modernization/runtime/weather/background-color.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
       "modernization/runtime/world/clock.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/mobs.ts",
       "modernization/runtime/world/scene-prose.ts",
       "modernization/runtime/world/scheduler.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/ai-state/dialogue-action.ts",
       "modernization/runtime/command/comf/compile-gate.ts",
       "modernization/runtime/command/comf/defs/comf107.ts",
+      "modernization/runtime/command/comf/defs/comf11.ts",
+      "modernization/runtime/command/comf/defs/comf12.ts",
       "modernization/runtime/command/comf/defs/comf126.ts",
       "modernization/runtime/command/comf/defs/comf181.ts",
       "modernization/runtime/command/comf/defs/comf182.ts",
@@ -1276,6 +1946,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf191.ts",
       "modernization/runtime/command/comf/defs/comf192.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/comf/defs/comf441.ts",
       "modernization/runtime/command/comf/defs/comf67.ts",
       "modernization/runtime/command/comf/defs/comf68.ts",
@@ -1285,6 +1957,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf89.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
       "modernization/runtime/command/command-kojo.ts",
+      "modernization/runtime/command/counter/counter.ts",
       "modernization/runtime/command/h-mode.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/bath.ts",
@@ -1308,12 +1981,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/grope-butt.ts",
       "modernization/runtime/command/handlers/h-remainder.ts",
       "modernization/runtime/command/handlers/hip-thrust.ts",
+      "modernization/runtime/command/handlers/insertion-derived.ts",
       "modernization/runtime/command/handlers/item-use.ts",
       "modernization/runtime/command/handlers/listen-complaints.ts",
       "modernization/runtime/command/handlers/magic-five-orgasm.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
       "modernization/runtime/command/handlers/meal.ts",
       "modernization/runtime/command/handlers/moriya-omikuji.ts",
+      "modernization/runtime/command/handlers/mushi-battle-483.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/omaneki-699.ts",
@@ -1335,17 +2010,25 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/sweets-617.ts",
       "modernization/runtime/command/handlers/tennokoe-422.ts",
       "modernization/runtime/command/handlers/undress.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/village-shop.ts",
       "modernization/runtime/command/handlers/water-drawing.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/handlers/work.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/state/named-stats.ts",
-      "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/state/portrait-outfit-context.ts",
+      "modernization/runtime/story/dialogue-hook.ts",
+      "modernization/runtime/story/interaction-progress.ts",
+      "modernization/runtime/story/storylet-runtime.ts",
       "modernization/runtime/weather/background-color.ts",
+      "modernization/runtime/world/assemble-for-meal.ts",
       "modernization/runtime/world/clock.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/mobs.ts",
       "modernization/runtime/world/scene-prose.ts",
       "modernization/runtime/world/scheduler.ts"
@@ -1363,22 +2046,36 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "web/app/state/game-state-store.ts"
     ],
     "consumers": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf314.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/state/attitude.ts"
     ],
     "references": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf314.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/state/attitude.ts",
       "web/app/state/game-state-store.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf314.ts",
+      "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
       "web/app/state/game-state-store.ts"
     ]
   },
@@ -1393,6 +2090,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "producers": [],
     "consumers": [
       "modernization/runtime/command/handlers/omaneki-698.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/named-stats.ts",
@@ -1402,6 +2101,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "references": [
       "modernization/runtime/command/handlers/omaneki-698.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/named-stats.ts",
@@ -1411,6 +2112,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "directAccesses": [
       "modernization/runtime/command/handlers/omaneki-698.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/named-stats.ts",
       "modernization/runtime/world/kick-out.ts",
@@ -1419,60 +2121,79 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ]
   },
   {
-    "key": "MARK:快乐",
+    "key": "MARK:苦痛刻印",
     "namespace": "MARK",
-    "name": "快乐",
+    "name": "苦痛刻印",
+    "id": 0,
+    "lifecycle": "save",
+    "authority": "mark-settlement",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/h-settlement-receipt.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/state/named-stats.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "MARK:快楽刻印",
+    "namespace": "MARK",
+    "name": "快楽刻印",
     "id": 1,
     "lifecycle": "save",
     "authority": "mark-settlement",
     "resetOwner": "none",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [
-      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/world/date-event.ts"
     ],
     "references": [
-      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/h-settlement-receipt.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/training-marks.ts",
       "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/ability-grid.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/state/named-stats.ts",
+      "modernization/runtime/world/date-event.ts"
     ],
     "directAccesses": [
-      "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/kojo/static-router.ts"
     ]
   },
   {
-    "key": "MARK:不埒",
+    "key": "MARK:不埒刻印",
     "namespace": "MARK",
-    "name": "不埒",
+    "name": "不埒刻印",
     "id": 2,
     "lifecycle": "save",
     "authority": "mark-settlement",
     "resetOwner": "none",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [
-      "modernization/runtime/command/comf/can-com.ts",
-      "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/world/date-event.ts"
     ],
     "references": [
-      "modernization/runtime/command/comf/can-com.ts",
-      "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/ability-grid.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/command/h-settlement-receipt.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/state/named-stats.ts",
+      "modernization/runtime/world/date-event.ts"
     ],
-    "directAccesses": [
-      "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
-    ]
+    "directAccesses": []
   },
   {
     "key": "MARK:反発刻印",
@@ -1484,40 +2205,52 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "none",
     "producers": [
       "modernization/runtime/command/source-check.ts",
-      "modernization/runtime/state/named-stats.ts"
+      "modernization/runtime/state/named-stats.ts",
+      "modernization/runtime/world/date-event.ts"
     ],
     "consumers": [
       "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/talk.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/domain-transition.ts",
+      "modernization/runtime/state/insect-foraging.ts",
       "modernization/runtime/state/named-stats.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "references": [
       "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/talk.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/domain-transition.ts",
+      "modernization/runtime/state/insect-foraging.ts",
       "modernization/runtime/state/named-stats.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/talk.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/domain-transition.ts",
+      "modernization/runtime/state/insect-foraging.ts",
       "modernization/runtime/state/named-stats.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/outing-events.ts"
     ]
   },
@@ -1543,29 +2276,28 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ]
   },
   {
-    "key": "MARK:时奸",
+    "key": "MARK:時姦刻印",
     "namespace": "MARK",
-    "name": "时奸",
+    "name": "時姦刻印",
     "id": 5,
     "lifecycle": "save",
     "authority": "mark-settlement",
     "resetOwner": "none",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [
-      "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/training-marks.ts"
     ],
     "references": [
-      "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/ability-grid.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/command/h-settlement-receipt.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/command/training-marks.ts"
     ],
     "directAccesses": [
-      "modernization/runtime/kojo/static-router.ts",
-      "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/domain-transition.ts"
+      "modernization/runtime/command/handlers/family7.ts"
     ]
   },
   {
@@ -1581,31 +2313,53 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/juel.ts"
     ],
     "consumers": [
+      "modernization/runtime/ai-state/h-scene-context.ts",
       "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/kojo/text-renderer.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/after-affair.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
       "modernization/runtime/world/semen-residue.ts"
     ],
     "references": [
+      "modernization/runtime/ai-state/h-scene-context.ts",
+      "modernization/runtime/ai-state/h-scene-prompt.ts",
       "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/kojo/text-renderer.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/juel.ts",
       "modernization/runtime/state/named-stats.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
       "modernization/runtime/world/ablup.ts",
+      "modernization/runtime/world/after-affair.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
       "modernization/runtime/world/semen-residue.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/ai-state/h-scene-context.ts",
       "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/handlers/family7.ts",
+      "modernization/runtime/kojo/text-renderer.ts",
       "modernization/runtime/state/attitude.ts",
-      "modernization/runtime/state/portrait-expression-core.ts"
+      "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/after-affair.ts"
     ]
   },
   {
@@ -1622,16 +2376,19 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "consumers": [
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/source-check.ts",
-      "modernization/runtime/state/attitude.ts"
+      "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/world/date-event.ts"
     ],
     "references": [
+      "modernization/runtime/ai-state/h-scene-prompt.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/juel.ts",
       "modernization/runtime/state/named-stats.ts",
-      "modernization/runtime/world/ablup.ts"
+      "modernization/runtime/world/ablup.ts",
+      "modernization/runtime/world/date-event.ts"
     ],
     "directAccesses": [
       "modernization/runtime/state/attitude.ts"
@@ -1651,6 +2408,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/fall-states.ts"
     ],
     "consumers": [
+      "modernization/runtime/agent/daily-ledger.ts",
       "modernization/runtime/command/comf/can-com.ts",
       "modernization/runtime/command/comf/defs/comf121.ts",
       "modernization/runtime/command/comf/defs/comf140.ts",
@@ -1659,6 +2417,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf20.ts",
       "modernization/runtime/command/comf/defs/comf306.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/comf/defs/comf320.ts",
       "modernization/runtime/command/comf/defs/comf322.ts",
       "modernization/runtime/command/comf/defs/comf323.ts",
@@ -1680,33 +2439,44 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf93.ts",
       "modernization/runtime/command/comf/defs/comf94.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/cook.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-remainder.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/dialogue-context.ts",
+      "modernization/runtime/state/dish.ts",
       "modernization/runtime/state/gifts.ts",
+      "modernization/runtime/state/insect-foraging.ts",
       "modernization/runtime/state/juel.ts",
       "modernization/runtime/state/personal-history.ts",
       "modernization/runtime/state/sekuhara.ts",
       "modernization/runtime/world/ablup.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/chara-sleep-resident.ts",
       "modernization/runtime/world/chara-sleep-visitor.ts",
       "modernization/runtime/world/chara-sleep.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/date-outfit-resolvers.ts",
       "modernization/runtime/world/encounter.ts",
       "modernization/runtime/world/fall-states.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/map-can-move.ts",
       "modernization/runtime/world/onabare.ts",
@@ -1721,6 +2491,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "web/app/game/MorningMenuScreen.tsx"
     ],
     "references": [
+      "modernization/runtime/agent/daily-ledger.ts",
       "modernization/runtime/command/comf/can-com.ts",
       "modernization/runtime/command/comf/defs/comf121.ts",
       "modernization/runtime/command/comf/defs/comf140.ts",
@@ -1729,6 +2500,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf190.ts",
       "modernization/runtime/command/comf/defs/comf20.ts",
       "modernization/runtime/command/comf/defs/comf306.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/comf/defs/comf320.ts",
       "modernization/runtime/command/comf/defs/comf322.ts",
       "modernization/runtime/command/comf/defs/comf323.ts",
@@ -1750,38 +2522,50 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/comf/defs/comf93.ts",
       "modernization/runtime/command/comf/defs/comf94.ts",
       "modernization/runtime/command/comf/defs/comf96.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/cook.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-remainder.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/white-day.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/domain-transition-dialogue.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/dialogue-context.ts",
+      "modernization/runtime/state/dish.ts",
       "modernization/runtime/state/domain-transition.ts",
       "modernization/runtime/state/gifts.ts",
+      "modernization/runtime/state/insect-foraging.ts",
       "modernization/runtime/state/juel.ts",
       "modernization/runtime/state/personal-history.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
       "modernization/runtime/state/sekuhara.ts",
       "modernization/runtime/state/talent-categories.ts",
       "modernization/runtime/world/ablup.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/chara-sleep-resident.ts",
       "modernization/runtime/world/chara-sleep-visitor.ts",
       "modernization/runtime/world/chara-sleep.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/date-outfit-resolvers.ts",
+      "modernization/runtime/world/date-session.ts",
       "modernization/runtime/world/encounter.ts",
       "modernization/runtime/world/fall-states.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/map-can-move.ts",
       "modernization/runtime/world/onabare.ts",
@@ -1793,32 +2577,43 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/whereabouts.ts",
       "modernization/runtime/world/work/job-prose.ts",
       "modernization/runtime/world/work/work-manifest.ts",
+      "web/app/ai/kojo-runtime.ts",
       "web/app/game/MorningMenuScreen.tsx"
     ],
     "directAccesses": [
+      "modernization/runtime/agent/daily-ledger.ts",
       "modernization/runtime/command/comf/can-com.ts",
       "modernization/runtime/command/comf/defs/comf189.ts",
       "modernization/runtime/command/comf/defs/comf190.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/cook.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/grope-butt.ts",
+      "modernization/runtime/command/handlers/h-remainder.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/white-day.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/dialogue-context.ts",
+      "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/insect-foraging.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/chara-sleep-resident.ts",
       "modernization/runtime/world/chara-sleep-visitor.ts",
       "modernization/runtime/world/chara-sleep.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-outfit-resolvers.ts",
       "modernization/runtime/world/fall-states.ts",
+      "modernization/runtime/world/h-scene-prose.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/map-can-move.ts",
       "modernization/runtime/world/onabare.ts",
@@ -1840,11 +2635,15 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "authority": "character-state",
     "resetOwner": "none",
     "producers": [
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/kojo/domain-transition-dialogue.ts",
       "modernization/runtime/world/fall-states.ts"
     ],
     "consumers": [
+      "modernization/runtime/agent/daily-ledger.ts",
       "modernization/runtime/command/comf/defs/comf306.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/cook.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
@@ -1852,14 +2651,18 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/dialogue-context.ts",
+      "modernization/runtime/state/dish.ts",
       "modernization/runtime/state/personal-history.ts",
       "modernization/runtime/state/sekuhara.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/encounter.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/map-can-move.ts",
@@ -1870,26 +2673,35 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/whereabouts.ts"
     ],
     "references": [
+      "modernization/runtime/agent/daily-ledger.ts",
       "modernization/runtime/command/comf/defs/comf306.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/cook.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/domain-transition-dialogue.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/dialogue-context.ts",
+      "modernization/runtime/state/dish.ts",
       "modernization/runtime/state/domain-transition.ts",
       "modernization/runtime/state/personal-history.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
       "modernization/runtime/state/sekuhara.ts",
       "modernization/runtime/state/talent-categories.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/date-session.ts",
       "modernization/runtime/world/encounter.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/map-can-move.ts",
@@ -1897,23 +2709,156 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/onanism.ts",
       "modernization/runtime/world/outing-events.ts",
       "modernization/runtime/world/visit-flags.ts",
-      "modernization/runtime/world/whereabouts.ts"
+      "modernization/runtime/world/whereabouts.ts",
+      "web/app/ai/kojo-runtime.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/agent/daily-ledger.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/cook.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/dialogue-context.ts",
+      "modernization/runtime/state/dish.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/date-appointments.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/outing-events.ts",
       "modernization/runtime/world/whereabouts.ts"
+    ]
+  },
+  {
+    "key": "TALENT:胆量",
+    "namespace": "TALENT",
+    "name": "胆量",
+    "id": 10,
+    "lifecycle": "save",
+    "authority": "character-state",
+    "resetOwner": "none",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/reverse/endure.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/state/sekuhara.ts",
+      "modernization/runtime/world/onabare.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/reverse/endure.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/state/sekuhara.ts",
+      "modernization/runtime/world/onabare.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/world/onabare.ts"
+    ]
+  },
+  {
+    "key": "TALENT:自制心",
+    "namespace": "TALENT",
+    "name": "自制心",
+    "id": 20,
+    "lifecycle": "save",
+    "authority": "character-state",
+    "resetOwner": "none",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/reverse/endure.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/onanism.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/comf/can-com.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/reverse/endure.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts",
+      "modernization/runtime/world/date-event.ts",
+      "modernization/runtime/world/onanism.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/command/comf/can-com.ts"
+    ]
+  },
+  {
+    "key": "TALENT:感情缺乏",
+    "namespace": "TALENT",
+    "name": "感情缺乏",
+    "id": 22,
+    "lifecycle": "save",
+    "authority": "character-state",
+    "resetOwner": "none",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TALENT:擅長用針",
+    "namespace": "TALENT",
+    "name": "擅長用針",
+    "id": 53,
+    "lifecycle": "save",
+    "authority": "character-state",
+    "resetOwner": "none",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TALENT:施虐狂",
+    "namespace": "TALENT",
+    "name": "施虐狂",
+    "id": 82,
+    "lifecycle": "save",
+    "authority": "character-state",
+    "resetOwner": "none",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/command/counter/counter-actions.ts"
     ]
   },
   {
@@ -1926,12 +2871,16 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "none",
     "producers": [],
     "consumers": [
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts"
     ],
     "references": [
+      "modernization/runtime/command/counter/counter-type.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
@@ -1939,6 +2888,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/talent-categories.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
@@ -1958,6 +2908,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/fall-states.ts"
     ],
     "consumers": [
+      "modernization/runtime/agent/daily-ledger.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
@@ -1968,6 +2920,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/commission.ts",
       "modernization/runtime/state/gifts.ts",
       "modernization/runtime/state/personal-history.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/date-appointments.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/kick-out.ts",
@@ -1978,6 +2931,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "web/app/game/MorningMenuScreen.tsx"
     ],
     "references": [
+      "modernization/runtime/agent/daily-ledger.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
@@ -1992,16 +2947,20 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/gifts.ts",
       "modernization/runtime/state/personal-history.ts",
       "modernization/runtime/state/portrait-expression-core.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/date-appointments.ts",
+      "modernization/runtime/world/date-session.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/kick-out.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
       "modernization/runtime/world/sneak-in.ts",
       "modernization/runtime/world/whereabouts.ts",
+      "web/app/ai/kojo-runtime.ts",
       "web/app/game/MorningMenuScreen.tsx"
     ],
     "directAccesses": [
+      "modernization/runtime/agent/daily-ledger.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/invite-local-date.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
@@ -2009,6 +2968,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/chara-info-state.ts",
       "modernization/runtime/state/commission.ts",
+      "modernization/runtime/world/after-affair.ts",
       "modernization/runtime/world/date-appointments.ts",
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/kick-out.ts",
@@ -2028,12 +2988,16 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "none",
     "producers": [
       "modernization/runtime/command/handlers/confession.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/kojo/domain-transition-dialogue.ts",
       "modernization/runtime/world/fall-states.ts"
     ],
     "consumers": [
+      "modernization/runtime/agent/daily-ledger.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
       "modernization/runtime/state/gifts.ts",
@@ -2043,9 +3007,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/whereabouts.ts"
     ],
     "references": [
+      "modernization/runtime/agent/daily-ledger.ts",
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
+      "modernization/runtime/command/reverse/endure.ts",
       "modernization/runtime/kojo/domain-transition-dialogue.ts",
       "modernization/runtime/kojo/static-router.ts",
       "modernization/runtime/state/attitude.ts",
@@ -2056,9 +3024,11 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/world/fall-states.ts",
       "modernization/runtime/world/onabare.ts",
       "modernization/runtime/world/onanism.ts",
-      "modernization/runtime/world/whereabouts.ts"
+      "modernization/runtime/world/whereabouts.ts",
+      "web/app/ai/kojo-runtime.ts"
     ],
     "directAccesses": [
+      "modernization/runtime/agent/daily-ledger.ts",
       "modernization/runtime/command/handlers/confession.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/omaneki-698.ts",
@@ -2082,15 +3052,18 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "consumers": [
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/body-info.ts"
     ],
     "references": [
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/state/body-info.ts",
       "modernization/runtime/world/fall-states.ts"
     ],
     "directAccesses": [
       "modernization/runtime/state/attitude.ts",
+      "modernization/runtime/state/base-natural-drift.ts",
       "modernization/runtime/world/fall-states.ts"
     ]
   },
@@ -2106,6 +3079,75 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "consumers": [],
     "references": [],
     "directAccesses": []
+  },
+  {
+    "key": "TCVAR:絶頂余韻_BUFFER",
+    "namespace": "TCVAR",
+    "name": "絶頂余韻_BUFFER",
+    "id": 206,
+    "lifecycle": "save",
+    "authority": "world-clock",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/command/orgasm-settlement.ts",
+      "modernization/runtime/state/h-afterglow.ts"
+    ]
+  },
+  {
+    "key": "TCVAR:絶頂余韻_DECAY_REMAINDER",
+    "namespace": "TCVAR",
+    "name": "絶頂余韻_DECAY_REMAINDER",
+    "id": 207,
+    "lifecycle": "save",
+    "authority": "world-clock",
+    "resetOwner": "none",
+    "producers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "references": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/state/h-afterglow.ts"
+    ]
+  },
+  {
+    "key": "TCVAR:INITIAL_VISITATION_POINT",
+    "namespace": "TCVAR",
+    "name": "INITIAL_VISITATION_POINT",
+    "id": 916,
+    "lifecycle": "save",
+    "authority": "visitor-navigation",
+    "resetOwner": "visitor-arrival-or-destination-reached",
+    "producers": [
+      "modernization/runtime/world/scheduler.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/world/qol-visitors.ts",
+      "modernization/runtime/world/scheduler.ts"
+    ],
+    "references": [
+      "modernization/runtime/world/qol-visitors.ts",
+      "modernization/runtime/world/scheduler.ts"
+    ],
+    "directAccesses": [
+      "modernization/runtime/world/qol-visitors.ts",
+      "modernization/runtime/world/scheduler.ts"
+    ]
   },
   {
     "key": "TFLAG:破瓜抑制FLAG",
@@ -2134,9 +3176,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "lifecycle": "turn",
     "authority": "turn-context",
     "resetOwner": "command-completed",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [],
-    "references": [],
+    "references": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "directAccesses": []
   },
   {
@@ -2148,10 +3194,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "authority": "turn-context",
     "resetOwner": "command-completed",
     "producers": [
+      "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/mark-kojo.ts"
     ],
     "consumers": [],
     "references": [
+      "modernization/runtime/command/source-check.ts",
       "modernization/runtime/kojo/mark-kojo.ts"
     ],
     "directAccesses": []
@@ -2164,9 +3212,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "lifecycle": "turn",
     "authority": "turn-context",
     "resetOwner": "command-completed",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [],
-    "references": [],
+    "references": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "directAccesses": []
   },
   {
@@ -2177,9 +3229,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "lifecycle": "turn",
     "authority": "turn-context",
     "resetOwner": "command-completed",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [],
-    "references": [],
+    "references": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "directAccesses": []
   },
   {
@@ -2190,9 +3246,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "lifecycle": "turn",
     "authority": "turn-context",
     "resetOwner": "command-completed",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [],
-    "references": [],
+    "references": [
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "directAccesses": []
   },
   {
@@ -2203,9 +3263,121 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "lifecycle": "turn",
     "authority": "turn-context",
     "resetOwner": "command-completed",
-    "producers": [],
+    "producers": [
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts"
+    ],
     "consumers": [],
-    "references": [],
+    "references": [
+      "modernization/runtime/command/source-check.ts",
+      "modernization/runtime/command/training-marks.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:口使用中",
+    "namespace": "TFLAG",
+    "name": "口使用中",
+    "id": 60,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:手使用中",
+    "namespace": "TFLAG",
+    "name": "手使用中",
+    "id": 61,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/comf/defs/comf314.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/comf/defs/comf314.ts",
+      "modernization/runtime/command/counter/counter-actions.ts",
+      "modernization/runtime/command/handlers/grope-butt.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:Ｃ使用中",
+    "namespace": "TFLAG",
+    "name": "Ｃ使用中",
+    "id": 62,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:Ｖ使用中",
+    "namespace": "TFLAG",
+    "name": "Ｖ使用中",
+    "id": 63,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:Ａ使用中",
+    "namespace": "TFLAG",
+    "name": "Ａ使用中",
+    "id": 64,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:Ｂ使用中",
+    "namespace": "TFLAG",
+    "name": "Ｂ使用中",
+    "id": 65,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
     "directAccesses": []
   },
   {
@@ -2224,6 +3396,43 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "references": [
       "modernization/runtime/command/handlers/date-meal.ts",
       "modernization/runtime/command/handlers/sweets-617.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:キス合意取得",
+    "namespace": "TFLAG",
+    "name": "キス合意取得",
+    "id": 88,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [
+      "modernization/runtime/command/comf/defs/comf312.ts"
+    ],
+    "consumers": [],
+    "references": [
+      "modernization/runtime/command/comf/defs/comf312.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:理性削り",
+    "namespace": "TFLAG",
+    "name": "理性削り",
+    "id": 90,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [
+      "modernization/runtime/command/comf/defs/comf312.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/command/source-check.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/source-check.ts"
     ],
     "directAccesses": []
   },
@@ -2292,6 +3501,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/danmaku.ts",
       "modernization/runtime/command/handlers/hip-thrust.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "web/app/state/game-state-store.ts"
     ],
     "consumers": [],
@@ -2299,6 +3509,7 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/danmaku.ts",
       "modernization/runtime/command/handlers/hip-thrust.ts",
       "modernization/runtime/command/handlers/perform-music.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "web/app/state/game-state-store.ts"
     ],
     "directAccesses": []
@@ -2337,9 +3548,11 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
       "modernization/runtime/command/handlers/reading.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/work.ts"
     ],
     "consumers": [
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/work.ts"
     ],
     "references": [
@@ -2347,8 +3560,22 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/mamemaki.ts",
       "modernization/runtime/command/handlers/reading.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/command/handlers/work.ts"
     ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:调教中COMABLE管理",
+    "namespace": "TFLAG",
+    "name": "调教中COMABLE管理",
+    "id": 100,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [],
+    "references": [],
     "directAccesses": []
   },
   {
@@ -2360,14 +3587,37 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "authority": "turn-context",
     "resetOwner": "command-completed",
     "producers": [
-      "modernization/runtime/command/comf/defs/comf495.ts"
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/comf/defs/comf495.ts",
+      "modernization/runtime/command/handlers/family7.ts"
     ],
     "consumers": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/kojo/static-router.ts"
     ],
     "references": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/comf/defs/comf495.ts",
+      "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/kojo/static-router.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:Ｐ挿入中",
+    "namespace": "TFLAG",
+    "name": "Ｐ挿入中",
+    "id": 106,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-actions.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/counter/counter-actions.ts"
     ],
     "directAccesses": []
   },
@@ -2382,8 +3632,11 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "producers": [
       "modernization/runtime/state/game-state-migration.ts"
     ],
-    "consumers": [],
+    "consumers": [
+      "modernization/runtime/command/counter/counter-type.ts"
+    ],
     "references": [
+      "modernization/runtime/command/counter/counter-type.ts",
       "modernization/runtime/state/game-state-migration.ts"
     ],
     "directAccesses": []
@@ -2413,6 +3666,25 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "directAccesses": []
   },
   {
+    "key": "TFLAG:接吻マーク",
+    "namespace": "TFLAG",
+    "name": "接吻マーク",
+    "id": 120,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/reverse/endure.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
+      "modernization/runtime/command/reverse/endure.ts"
+    ],
+    "directAccesses": []
+  },
+  {
     "key": "TFLAG:套套内",
     "namespace": "TFLAG",
     "name": "套套内",
@@ -2430,6 +3702,23 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "references": [
       "modernization/runtime/command/comf/defs/comf89.ts",
       "modernization/runtime/state/game-state-migration.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:パール期限",
+    "namespace": "TFLAG",
+    "name": "パール期限",
+    "id": 124,
+    "lifecycle": "turn",
+    "authority": "turn-context",
+    "resetOwner": "command-completed",
+    "producers": [],
+    "consumers": [
+      "modernization/runtime/command/reverse/endure.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/reverse/endure.ts"
     ],
     "directAccesses": []
   },
@@ -2456,6 +3745,25 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "directAccesses": []
   },
   {
+    "key": "TFLAG:前回のASSIPLAYの履歴",
+    "namespace": "TFLAG",
+    "name": "前回のASSIPLAYの履歴",
+    "id": 150,
+    "lifecycle": "session",
+    "authority": "turn-context",
+    "resetOwner": "session-owner",
+    "producers": [
+      "modernization/runtime/command/source-check.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/command/source-check.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/source-check.ts"
+    ],
+    "directAccesses": []
+  },
+  {
     "key": "TFLAG:口上によるCOM成否判定",
     "namespace": "TFLAG",
     "name": "口上によるCOM成否判定",
@@ -2465,11 +3773,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "command-completed",
     "producers": [],
     "consumers": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/state/dialogue-context.ts"
     ],
     "references": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/work.ts",
       "modernization/runtime/state/dialogue-context.ts"
@@ -2486,11 +3796,13 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "resetOwner": "command-completed",
     "producers": [
       "modernization/runtime/command/comf/defs/comf89.ts",
+      "modernization/runtime/command/comf/make-comf-handler.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/fishing.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
+      "modernization/runtime/command/handlers/item-use.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/reading.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
@@ -2505,12 +3817,14 @@ export const GENERATED_STATE_FIELD_USAGE = [
     ],
     "references": [
       "modernization/runtime/command/comf/defs/comf89.ts",
+      "modernization/runtime/command/comf/make-comf-handler.ts",
       "modernization/runtime/command/handlers/apologize.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/family7.ts",
       "modernization/runtime/command/handlers/fishing.ts",
       "modernization/runtime/command/handlers/foreplay-extra.ts",
       "modernization/runtime/command/handlers/hip-thrust.ts",
+      "modernization/runtime/command/handlers/item-use.ts",
       "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/reading.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
@@ -2532,6 +3846,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "producers": [
       "modernization/runtime/command/handlers/cook.ts",
       "modernization/runtime/command/handlers/fishing.ts",
+      "modernization/runtime/command/handlers/item-use.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts"
     ],
     "consumers": [
@@ -2540,6 +3856,8 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "references": [
       "modernization/runtime/command/handlers/cook.ts",
       "modernization/runtime/command/handlers/fishing.ts",
+      "modernization/runtime/command/handlers/item-use.ts",
+      "modernization/runtime/command/handlers/oshitaoshi.ts",
       "modernization/runtime/command/handlers/serve-drink.ts",
       "modernization/runtime/state/dialogue-context.ts"
     ],
@@ -2574,10 +3892,11 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "authority": "turn-context",
     "resetOwner": "day-end",
     "producers": [
+      "modernization/runtime/command/h-v-a-settlement.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
-      "modernization/runtime/command/handlers/hip-thrust.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/world/daily-event.ts",
       "modernization/runtime/world/daily-mess.ts",
       "modernization/runtime/world/onabare.ts",
@@ -2589,14 +3908,16 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/date-meal.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/sleep.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "references": [
+      "modernization/runtime/command/h-v-a-settlement.ts",
       "modernization/runtime/command/handlers/clinic-616.ts",
       "modernization/runtime/command/handlers/date-meal.ts",
-      "modernization/runtime/command/handlers/hip-thrust.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
       "modernization/runtime/command/handlers/sleep.ts",
+      "modernization/runtime/command/handlers/unique-443.ts",
       "modernization/runtime/world/daily-event.ts",
       "modernization/runtime/world/daily-mess.ts",
       "modernization/runtime/world/onabare.ts",
@@ -2653,16 +3974,23 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "authority": "turn-context",
     "resetOwner": "command-completed",
     "producers": [
+      "modernization/runtime/command/handlers/omikuji.ts",
       "modernization/runtime/state/dish.ts"
     ],
     "consumers": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
+      "modernization/runtime/command/handlers/omikuji.ts",
+      "modernization/runtime/state/insect-foraging.ts",
       "modernization/runtime/world/free-activity-events.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
     "references": [
+      "modernization/runtime/command/comf/defs/comf312.ts",
       "modernization/runtime/command/handlers/omaneki-697.ts",
+      "modernization/runtime/command/handlers/omikuji.ts",
       "modernization/runtime/state/dish.ts",
+      "modernization/runtime/state/insect-foraging.ts",
       "modernization/runtime/world/free-activity-events.ts",
       "modernization/runtime/world/outing-events.ts"
     ],
@@ -2735,9 +4063,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/world/date-session.ts"
     ],
-    "consumers": [],
+    "consumers": [
+      "modernization/runtime/world/date-event.ts"
+    ],
     "references": [
       "modernization/runtime/state/game-state-migration.ts",
+      "modernization/runtime/world/date-event.ts",
       "modernization/runtime/world/date-session.ts"
     ],
     "directAccesses": []
@@ -2795,10 +4126,12 @@ export const GENERATED_STATE_FIELD_USAGE = [
       "modernization/runtime/command/handlers/item-use.ts"
     ],
     "consumers": [
-      "modernization/runtime/command/handlers/item-use.ts"
+      "modernization/runtime/command/handlers/item-use.ts",
+      "modernization/runtime/command/reverse/endure.ts"
     ],
     "references": [
-      "modernization/runtime/command/handlers/item-use.ts"
+      "modernization/runtime/command/handlers/item-use.ts",
+      "modernization/runtime/command/reverse/endure.ts"
     ],
     "directAccesses": []
   },
@@ -2824,7 +4157,6 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "authority": "turn-context",
     "resetOwner": "session-owner",
     "producers": [
-      "modernization/runtime/command/handlers/date-meal.ts",
       "modernization/runtime/command/handlers/sansaku-604.ts",
       "modernization/runtime/state/game-state-migration.ts",
       "modernization/runtime/world/date-session.ts",
@@ -2865,6 +4197,26 @@ export const GENERATED_STATE_FIELD_USAGE = [
     "references": [
       "modernization/runtime/command/comf/defs/comf330.ts",
       "modernization/runtime/world/daily-event.ts"
+    ],
+    "directAccesses": []
+  },
+  {
+    "key": "TFLAG:膝枕した",
+    "namespace": "TFLAG",
+    "name": "膝枕した",
+    "id": 231,
+    "lifecycle": "session",
+    "authority": "turn-context",
+    "resetOwner": "session-owner",
+    "producers": [
+      "modernization/runtime/command/comf/defs/comf336.ts"
+    ],
+    "consumers": [
+      "modernization/runtime/command/comf/compile-gate.ts"
+    ],
+    "references": [
+      "modernization/runtime/command/comf/compile-gate.ts",
+      "modernization/runtime/command/comf/defs/comf336.ts"
     ],
     "directAccesses": []
   },

@@ -1,10 +1,21 @@
 import type { GameState, KojoExecutionFrame, TurnContext } from "./game-state.js";
+import { BASE_ID } from "./settlement.js";
 
 export const TFLAG_ID = {
+  /** Upstream TFLAG:120 接吻マーク, used by reverse-entry exclusion. */
+  接吻マーク: 120,
+  /** Upstream TFLAG:88 — COMF312 marks that the kiss-consent line was reached. */
+  キス合意取得: 88,
+  /** Upstream TFLAG:124 パール期限, hard-blocks ENDURE while active. */
+  パール期限: 124,
+  /** Upstream TFLAG:150 previous ASSIPLAY history; suppresses the rebellion brand check. */
+  前回のASSIPLAYの履歴: 150,
   /** DAILY_EV5 trigger correction set by COM421's OPPAI wish. */
   OPPAI: 221,
   /** DAILY_EV16 cumulative skirt-flip counter; persists for the day. */
   skirtFlipCount: 230,
+  /** COMF336 lap-pillow timestamp read by COM_ABLE336's 45-minute cooldown. */
+  膝枕した: 231,
   破瓜抑制FLAG: 2,
   /** Upstream `TFLAG:50`: selected special-command id; nonzero dispatches
    * personal dialogue through `MESSAGE_SCOM` instead of `MESSAGE_COM`. */
@@ -21,8 +32,23 @@ export const TFLAG_ID = {
   口上特殊補正: 93,
   好感度BONUS: 95,
   好感度减少: 96,
+  /** Upstream TFLAG:90 — halves 反感 SOURCE for 体目当て during 理性削り. */
+  理性削り: 90,
   信頼度管理: 98,
+  /** Upstream TFLAG:100 — Act_COM action-selection phase.  433's
+   *  @COM_ABLE checks this explicitly, so it must not remain a raw literal
+   *  in the command handler. */
+  调教中COMABLE管理: 100,
   COMABLE管理: 102,
+  /** EVENT_COUNTER's per-command master body-part usage latches (DIM.ERH:40-45). */
+  口使用中: 60,
+  手使用中: 61,
+  Ｃ使用中: 62,
+  Ｖ使用中: 63,
+  Ａ使用中: 64,
+  Ｂ使用中: 65,
+  /** Upstream TFLAG:106 — master P is currently inserted in the target. */
+  Ｐ挿入中: 106,
   抱住模式: 107,
   /** 套套内 — semen volume held in the current condom for COM89. It must
    * survive command boundaries inside a training session until consumed. */
@@ -63,8 +89,12 @@ export interface TflagFieldDefinition {
 }
 
 export const TFLAG_FIELD_REGISTRY: readonly TflagFieldDefinition[] = [
+  { id: TFLAG_ID.キス合意取得, name: "キス合意取得", lifecycle: "turn" },
+  { id: TFLAG_ID.接吻マーク, name: "接吻マーク", lifecycle: "turn" },
+  { id: TFLAG_ID.パール期限, name: "パール期限", lifecycle: "turn" },
   { id: TFLAG_ID.OPPAI, name: "OPPAI", lifecycle: "day" },
   { id: TFLAG_ID.skirtFlipCount, name: "skirtFlipCount", lifecycle: "day" },
+  { id: TFLAG_ID.膝枕した, name: "膝枕した", lifecycle: "session" },
   { id: TFLAG_ID.破瓜抑制FLAG, name: "破瓜抑制FLAG", lifecycle: "turn" },
   { id: TFLAG_ID.時姦刻印取得, name: "時姦刻印取得", lifecycle: "turn" },
   { id: TFLAG_ID.反発刻印取得, name: "反発刻印取得", lifecycle: "turn" },
@@ -72,14 +102,24 @@ export const TFLAG_FIELD_REGISTRY: readonly TflagFieldDefinition[] = [
   { id: TFLAG_ID.快楽刻印取得, name: "快楽刻印取得", lifecycle: "turn" },
   { id: TFLAG_ID.屈服刻印取得, name: "屈服刻印取得", lifecycle: "turn" },
   { id: TFLAG_ID.刻印従順変化, name: "刻印従順変化", lifecycle: "turn" },
+  { id: TFLAG_ID.前回のASSIPLAYの履歴, name: "前回のASSIPLAYの履歴", lifecycle: "session" },
   { id: TFLAG_ID.授乳コマンド, name: "授乳コマンド", lifecycle: "turn" },
   { id: TFLAG_ID.情緒上昇抑制, name: "情緒上昇抑制", lifecycle: "turn" },
   { id: TFLAG_ID.情緒BONUS, name: "情緒BONUS", lifecycle: "turn" },
   { id: TFLAG_ID.口上特殊補正, name: "口上特殊補正", lifecycle: "turn" },
   { id: TFLAG_ID.好感度BONUS, name: "好感度BONUS", lifecycle: "turn" },
   { id: TFLAG_ID.好感度减少, name: "好感度减少", lifecycle: "turn" },
+  { id: TFLAG_ID.理性削り, name: "理性削り", lifecycle: "turn" },
   { id: TFLAG_ID.信頼度管理, name: "信頼度管理", lifecycle: "turn" },
+  { id: TFLAG_ID.调教中COMABLE管理, name: "调教中COMABLE管理", lifecycle: "turn" },
   { id: TFLAG_ID.COMABLE管理, name: "COMABLE管理", lifecycle: "turn" },
+  { id: TFLAG_ID.口使用中, name: "口使用中", lifecycle: "turn" },
+  { id: TFLAG_ID.手使用中, name: "手使用中", lifecycle: "turn" },
+  { id: TFLAG_ID.Ｃ使用中, name: "Ｃ使用中", lifecycle: "turn" },
+  { id: TFLAG_ID.Ｖ使用中, name: "Ｖ使用中", lifecycle: "turn" },
+  { id: TFLAG_ID.Ａ使用中, name: "Ａ使用中", lifecycle: "turn" },
+  { id: TFLAG_ID.Ｂ使用中, name: "Ｂ使用中", lifecycle: "turn" },
+  { id: TFLAG_ID.Ｐ挿入中, name: "Ｐ挿入中", lifecycle: "turn" },
   { id: TFLAG_ID.口上によるCOM成否判定, name: "口上によるCOM成否判定", lifecycle: "turn" },
   { id: TFLAG_ID.SELECTCOM的分岐, name: "SELECTCOM的分岐", lifecycle: "turn" },
   {
@@ -140,18 +180,31 @@ export function beginKojoExecutionFrame(
   commandNo: number,
 ): KojoExecutionFrame {
   const previousCommandNo = state.turnContext?.prevCom;
+  const baseBeforeByChara: Record<number, { stamina: number; will: number }> = {};
+  for (const slot of [state.master, ...Object.values(state.charas)]) {
+    baseBeforeByChara[slot.charaNum] = {
+      stamina: slot.state.BASE[BASE_ID.体力] ?? 0,
+      will: slot.state.BASE[BASE_ID.気力] ?? 0,
+    };
+  }
   const frame: KojoExecutionFrame = {
     actor,
     target,
     participants: [...new Set([actor, target])],
     commandNo,
     ...(previousCommandNo === undefined ? {} : { previousCommandNo }),
+    elapsedMinutes: 0,
+    sourceCheckTimeApplied: false,
+    baseBeforeByChara,
+    fatigueAppliedByChara: {},
     sourceByChara: {},
     nowExByChara: {},
     args: [],
     results: [],
     roleAliases: { MASTER: 0, PLAYER: 0, TARGET: target },
     doubleMessageBlockedByChara: {},
+    counterFiredByChara: {},
+    trainingMarkCupsByChara: {},
   };
   state.turnContext ??= createTurnContext(commandNo, previousCommandNo);
   state.turnContext.frame = frame;
@@ -219,10 +272,25 @@ export function beginTurnContext(
   state: Readonly<GameState>,
   selectCom: number,
 ): GameState {
+  const turnContext = createTurnContext(selectCom, state.turnContext?.selectCom);
+  // USERCOM opens the action-selection phase before it probes/executes a
+  // command. Keep the phase marker in the authoritative turn context so
+  // handlers can distinguish a real command turn from an arbitrary state
+  // mutation or a stale continuation.
+  turnContext.tflags[TFLAG_ID.调教中COMABLE管理] = 1;
   return {
     ...state,
-    turnContext: createTurnContext(selectCom, state.turnContext?.selectCom),
+    turnContext,
   } as GameState;
+}
+
+/** Whether the current state represents USERCOM's action-selection phase.
+ *  A state without an open turn context is a legacy/menu snapshot and is
+ *  treated as selectable for read-only availability probes. Once a turn
+ *  context exists, the explicit TFLAG:100 value is authoritative. */
+export function isCommandActionPhase(state: Readonly<GameState>): boolean {
+  if (!state.turnContext) return true;
+  return getTflag(state, TFLAG_ID.调教中COMABLE管理) !== 0;
 }
 
 export function clearTurnContext(state: GameState): void {

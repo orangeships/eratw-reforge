@@ -40,6 +40,7 @@ import {
 import { makeComfHandler } from "../make-comf-handler.js";
 import type { ComfDef } from "../comf-def.js";
 import { STAIN_PART } from "../../../state/stain.js";
+import { finishTrainingSession } from "../../training-session.js";
 
 export const comf127Def: ComfDef = {
   commandNo: 127,
@@ -52,8 +53,9 @@ export const comf127Def: ComfDef = {
 
   timeCost: 0,
 
-  // Target drain handled in body().
+  // Target DOWNBASE uses the shared resource preflight.
   downbase: {},
+  targetDownbase: { [BASE_ID.体力]: 100, [BASE_ID.気力]: 150 },
 
   buildSources: (c) => {
     const sources: Record<number, number> = {
@@ -79,18 +81,19 @@ export const comf127Def: ComfDef = {
   body: (c) => {
     // A珠 is an in-session action. H cleanup belongs only to the explicit
     // escape/end commands; keeping this state is required for follow-up acts.
-    // ERB 23-24: target 体力 100 / 気力 150 drain.
-    c.t.state.BASE[BASE_ID.体力] =
-      (c.t.state.BASE[BASE_ID.体力] ?? 0) - 100;
-    c.t.state.BASE[BASE_ID.気力] =
-      (c.t.state.BASE[BASE_ID.気力] ?? 0) - 150;
-
     // ERB 44-45: 汚れ移動 — target 手 ⇔ master Ａ (mutual OR).
     const t1 = c.t.state.STAIN[STAIN_PART.手] ?? 0;
     const ma = c.master.state.STAIN[STAIN_PART.Ａ] ?? 0;
     c.t.state.STAIN[STAIN_PART.手] = t1 | ma;
     c.master.state.STAIN[STAIN_PART.Ａ] = ma | t1;
+
   },
+
+  // COM127 ends with ENDUFUFU_ALL. Close only after this action's SOURCE and
+  // dialogue have settled, so any new edging is cleared with the old balance.
+  afterSettlement: (c) => finishTrainingSession(c.next, "exit-command") > 0
+    ? "训练结束，未吸收的寸止积累已清除。"
+    : undefined,
 
   narration: (_c, favorDelta) =>
     `%CALLNAME:TARGET% %CALLNAME:TARGET%把肛门拉珠塞入了%CALLNAME:MASTER%体内 — Ａパールを入れられる；好感度 ${

@@ -45,7 +45,8 @@ import type {
   PendingKojoChoice,
   StringTemplatePart,
 } from "./types.js";
-import { applyKojoEffects } from "./effects.js";
+import { applyKojoEffects, applyKojoEffectsInPlace } from "./effects.js";
+import { recordKojoResolve } from "./stats.js";
 import { validateKojoLines } from "./text-validation.js";
 import {
   selectTextrAlternatives,
@@ -55,9 +56,10 @@ import {
   type KojoNameResolver,
 } from "./text-renderer.js";
 import { getTflag, TFLAG_ID } from "../state/tflag.js";
+import { canBringCommissionClient } from "../state/commission.js";
 import { ABL_ID, BASE_ID, CFLAG_ID, FLAG_ID, MARK_ID, PALAM_ID, TALENT_ID, TCVAR_ID, TEQUIP_ID } from "../state/settlement.js";
 import { alcoholFace, alcoholIntoxication, alcoholTaste } from "../state/alcohol.js";
-import { hasItem, ITEM_ID } from "../state/items.js";
+import { canNormalSex, canStandingSex } from "../state/standing-sex.js";
 import { locationToRoomId } from "../world/room-id-location.js";
 import { privateRoomOwner } from "../world/private-room.js";
 import { OMANEKIBEYA_ID } from "../world/omaneki.js";
@@ -83,6 +85,52 @@ type ChoiceHandler = (node: ChoiceNode) => { descend: KojoNode | null; stop: boo
  *  kept as a separate type so the two pause flavours can evolve
  *  independently. */
 type InputHandler = (node: InputNode) => { descend: KojoNode | null; stop: boolean };
+
+/**
+ * Whether an UPDATE_K body contains player-visible interaction or a state
+ * change.  A surprising number of upstream character files only declare an
+ * empty hook (`RETURN 1`), sometimes behind SKIPSTART/SKIPEND.  Those hooks
+ * are authoring placeholders, not initialization work, and must not produce a
+ * fake "adjusting" step in the new-game screen.
+ */
+export function hasActionableKojoNode(node: KojoNode): boolean {
+  switch (node.type) {
+    case "lines":
+      return node.lines.length > 0;
+    case "seq":
+      // `RETURN 1` terminates the upstream function. Some legacy files keep
+      // later event bodies in the same source slice, so do not mistake those
+      // unreachable lines for UPDATE_K work.
+      for (const child of node.children) {
+        if (hasActionableKojoNode(child)) return true;
+        if (child.type === "return") return false;
+      }
+      return false;
+    case "if":
+      return node.arms.some((arm) => hasActionableKojoNode(arm.body));
+    case "rand":
+      return node.cases.some(hasActionableKojoNode);
+    case "select":
+      return node.cases.some((entry) => hasActionableKojoNode(entry.body))
+        || (node.defaultCase !== null && hasActionableKojoNode(node.defaultCase));
+    case "for":
+    case "repeat":
+    case "while":
+      return hasActionableKojoNode(node.body);
+    case "choice":
+    case "input":
+    case "diary-page-setting":
+    case "effect":
+    case "unsupported-effect":
+      return true;
+    case "break":
+    case "continue":
+    case "local-set":
+    case "result-set":
+    case "return":
+      return false;
+  }
+}
 
 interface KojoFunctionControl {
   returned: boolean;
@@ -136,6 +184,8 @@ export interface KojoResolveContext {
   subjectAliases?: Readonly<Record<string, number>>;
   /** Explicit CSTR bridge. Returning null keeps the authored route unsupported. */
   resolveCstr?: (subject: number, key: string) => string | null;
+  /** Optional resource probe. Omit it to preserve fail-closed routing. */
+  resourceExists?: (key: string) => boolean | null;
   /** Typed shared host contract. Prefer this over the legacy nullable CSTR bridge. */
   hostRegistry?: KojoHostRegistry;
   /** Internal bounded VM state; never persisted to GameState. */
@@ -143,6 +193,10 @@ export interface KojoResolveContext {
   /** Internal transaction sink used by source functions that mutate while
    * returning a value. Callers must not provide this directly. */
   effectSink?: KojoStagedEffect[];
+  /** Read-only probe walk (AI voice sampling, AI-PREPARE-PERF-PLAN.md §4.A)：
+   * 跳过效果暂存与内联工作态写入（FIRSTTIME 按 update:false 的 peek 语义
+   * 求值），walk 因此 provably 无副作用，入口不再做防御 clone。 */
+  probeReadonly?: boolean;
 }
 import type { GameState } from "../state/index.js";
 import type { Rng } from "../command/types.js";
@@ -166,7 +220,7 @@ import { odekakeDestinationForMap } from "../world/odekake.js";
 import { findKickoutDestination } from "../world/kick-out.js";
 import { roomIdToLocation } from "../world/room-id-location.js";
 import { placeFlagsOf } from "../world/location-predicates.js";
-import { hasPlace, PLACE_BATH, PLACE_FUTON, PLACE_MOON, PLACE_REST, PLACE_STUDY, PLACE_TRAINING } from "../world/place-flags.js";
+import { hasPlace, PLACE_FUTON, PLACE_MOON, PLACE_STUDY, PLACE_TRAINING } from "../world/place-flags.js";
 import { getYogore } from "../state/yogore.js";
 import { getUwakiHistory } from "../state/uwaki.js";
 import { festivalNow, youbiMatch } from "../world/calendar.js";
@@ -459,8 +513,11 @@ function readVar(
       ? scope
       : scope === "MASTER" ? 0 : charaNum;
     if (subject === null) return null;
+    // Like NOWEX below, SOURCE is command-local and cleared by its
+    // settlement pipeline — the true no-frame value is 0, so a missing
+    // frame or entry soft-falls back instead of silencing the route.
     const source = state.turnContext?.frame?.sourceByChara[subject];
-    return source ? (source[id] ?? 0) : null;
+    return source ? (source[id] ?? 0) : 0;
   }
   if (ns === "TFLAG") {
     return getTflag(state, id);
@@ -471,13 +528,13 @@ function readVar(
       ? scope
       : scope === "MASTER" ? 0 : charaNum;
     if (subject === null) return null;
-    // A command frame is the authoritative NOWEX scope.  Once the frame
-    // exists, an omitted per-character entry means the command produced no
-    // such transient event (the upstream value is zero), not an unknown
-    // namespace.  Keep the no-frame case fail-closed for direct probes and
-    // save-loaded dialogue that is not attached to a command.
+    // A command frame is the authoritative NOWEX scope.  Outside a frame
+    // (save-loaded dialogue, ambient probes) the upstream value is still 0:
+    // NOWEX is command-local and the settlement pipeline clears it after
+    // every command (game-state.ts:841), so soft-falling back to 0 mirrors
+    // Emuera instead of silencing the route.
     const frame = state.turnContext?.frame;
-    if (!frame) return null;
+    if (!frame) return 0;
     return frame.nowExByChara[subject]?.[id] ?? 0;
   }
   if (scope === "GLOBAL") return null;
@@ -601,40 +658,6 @@ function slotForScope(
 ) {
   const subject = typeof scope === "number" ? scope : scope === "MASTER" ? 0 : charaNum;
   return subject === 0 ? state.master : state.charas[subject];
-}
-
-/** `CAN_STANDING_SEX(COM_ID)` from ADD_STANDING_SEX.ERB:5-33. */
-function canStandingSex(state: Readonly<GameState>, charaNum: number, commandNo: number): boolean | null {
-  const target = charaNum === 0 ? state.master : state.charas[charaNum];
-  if (!target) return null;
-  if (
-    (commandNo >= 60 && commandNo <= 63) ||
-    commandNo === 79 ||
-    commandNo === 92 ||
-    commandNo === 93 ||
-    commandNo === 130 ||
-    commandNo === 131
-  ) {
-    return true;
-  }
-  if ((commandNo >= 67 && commandNo <= 70) || commandNo === 83) {
-    const masterSize = state.master.state.TALENT[TALENT_ID.体型] ?? 0;
-    const targetSize = target.state.TALENT[TALENT_ID.体型] ?? 0;
-    return masterSize > targetSize || (state.master.state.TALENT[TALENT_ID.力持ち] ?? 0) !== 0;
-  }
-  return false;
-}
-
-/** `CAN_NORMAL_SEX(COM_ID)` from ADD_STANDING_SEX.ERB:39-48. */
-function canNormalSex(state: Readonly<GameState>): boolean {
-  const location = state.master.location;
-  const flags = placeFlagsOf(location);
-  return (
-    hasPlace(flags, PLACE_FUTON) ||
-    (hasPlace(flags, PLACE_BATH) && hasItem(state, ITEM_ID.プレイマット)) ||
-    openPlace(state, location) !== 0 ||
-    hasPlace(flags, PLACE_REST)
-  );
 }
 
 function evaluateValue(
@@ -1345,8 +1368,9 @@ function evaluateValue(
         set("TALENT", TALENT_ID.羞恥心, 0);
         set("TALENT", TALENT_ID.服従, 0);
       }
+      if (context.probeReadonly) return { value: form, unsupported: [] };
       context.effectSink.push(...staged);
-      Object.assign(state, applyKojoEffects(state, staged));
+      applyKojoEffectsInPlace(state, staged);
       return { value: form, unsupported: [] };
     }
     case "nemuke":
@@ -1400,7 +1424,10 @@ function evaluateValue(
       const session = state.dateSession;
       if (!session) return { value: 0, text: "", unsupported: [] };
       if (value.field === "spot") {
-        if (session.phase === "traveling" || getTflag(state, TFLAG_ID.约会道中) !== 0) {
+        // `@DATENAME_SPOT` (DATE_CMN.ERB:29-37) returns "途中" while
+        // `TFLAG:约会道中` is set. The road stage is retired, so this only
+        // fires for a legacy save that still carries the flag.
+        if (getTflag(state, TFLAG_ID.约会道中) !== 0) {
           return { value: 1, text: "道中", unsupported: [] };
         }
         const text = state.master.location.split(":").at(-1) ?? state.master.location;
@@ -1994,10 +2021,10 @@ function evaluateValue(
       const subjectNum = subject.value === 0 ? charaNum : subject.value;
       const slot = subjectNum === 0 ? state.master : state.charas[subjectNum];
       if (!slot) {
-        return {
-          value: 0,
-          unsupported: [`K2_${value.helper.toUpperCase()}(missing ${subjectNum})`],
-        };
+        // An absent chara can never satisfy the mating/frankness conditions
+        // (SHIRAHU=0 short-circuits upstream); return 0 supported so the
+        // route resolves instead of going fail-closed.
+        return { value: 0, unsupported: [] };
       }
 
       const excessiveStatureGap = (): number => {
@@ -2126,7 +2153,10 @@ function evaluateValue(
         };
       }
       const slot = subject.value === 0 ? state.master : state.charas[subject.value];
-      if (!slot) return { value: 0, unsupported: [`SHIRAHU(${subject.value})`] };
+      // A chara absent from the roster is inert — same convention as readVar
+      // (missing slot → 0), so the gate takes the not-responsive branch
+      // instead of silencing the whole route.
+      if (!slot) return { value: 0, unsupported: [] };
       const cflag = slot.state.CFLAG;
       if (
         (state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
@@ -2331,8 +2361,8 @@ function evaluateValue(
       const masterAnal = readTequipOptional(state.master, TEQUIP_ID.Ａ性交);
       return {
         value:
-          targetVaginal === 0 ||
-          targetAnal === 0 ||
+          (targetVaginal !== undefined && targetVaginal === 0) ||
+          (targetAnal !== undefined && targetAnal === 0) ||
           masterVaginal === subject.value ||
           masterAnal === subject.value
             ? 1
@@ -2584,7 +2614,26 @@ function evaluateValue(
       return { value: atPlayerBase(state, subject.value) ? 1 : 0, unsupported: [] };
     }
     case "date_now": {
-      const mapId = evaluateValue(value.mapId, charaNum, state, rng, args, context);
+      let mapId = evaluateValue(value.mapId, charaNum, state, rng, args, context);
+      // EVENT_MESSAGE_COM_セクハラ's fork-authored date gate reads
+      // `CFLAG:LOCAL:约会中` outside any loop — the upstream original reads
+      // TARGET, and the static-route context has no LOCAL frame. Fall back
+      // to the command TARGET instead of suppressing the whole route.
+      if (
+        mapId.unsupported.some((u) => u.startsWith("LOCAL:")) &&
+        value.mapId.kind === "var" &&
+        typeof value.mapId.scope === "object" &&
+        value.mapId.scope.kind === "local"
+      ) {
+        mapId = evaluateValue(
+          { ...value.mapId, scope: "TARGET" },
+          charaNum,
+          state,
+          rng,
+          args,
+          context,
+        );
+      }
       return mapId.unsupported.length > 0
         ? { value: 0, unsupported: mapId.unsupported }
         : { value: chkDateNow(mapId.value) ? 1 : 0, unsupported: [] };
@@ -2778,6 +2827,29 @@ function evaluatePredicate(
         // #15 will register real bindings).
         const softVar = evaluateUnknownVarPredicate(pred.raw);
         if (softVar) return softVar;
+        // Function-call-shaped raw (e.g. `CHK_DATENOW(CFLAG:LOCAL:约会中)`)
+        // that the parser could not promote: consult the same registry the
+        // structured function-call path uses, so registered helpers rescue
+        // these stranded routes too. A false result still lets the ELSE
+        // arm fire — only an unknown helper suppresses the route.
+        const fnShape = /^([A-Z_][A-Z0-9_]*)\s*\((.*)\)\s*$/is.exec(pred.raw.trim());
+        if (fnShape) {
+          const handler = FUNCTION_CALL_PREDICATE_REGISTRY[fnShape[1]!.toUpperCase()];
+          if (handler) {
+            const rawArgs = fnShape[2]!.trim()
+              ? fnShape[2]!.split(",").map((a) => a.trim())
+              : [];
+            return handler({
+              pred: { kind: "function-call", name: fnShape[1]!, args: rawArgs },
+              charaNum,
+              state,
+              rng,
+              args: [],
+              context,
+              effects,
+            });
+          }
+        }
         return { value: false, unsupported: [pred.raw] };
       }
       return evaluatePredicate(promoted, charaNum, state, rng, args, context, effects);
@@ -2939,10 +3011,10 @@ function evaluatePredicate(
           ? state.kojoMemory?.[memoryCharaNum]?.firstTime
           : state.kojoMemory?.[memoryCharaNum]?.once;
       if (bucket?.[key]) return { value: false, unsupported: [] };
-      if (pred.update === false) return { value: true, unsupported: [] };
+      if (pred.update === false || context.probeReadonly) return { value: true, unsupported: [] };
       const effect: KojoStagedEffect = { kind: "memory", memory: pred.memory, charaNum: memoryCharaNum, key };
       effects.push(effect);
-      Object.assign(state, applyKojoEffects(state, [effect]));
+      applyKojoEffectsInPlace(state, [effect]);
       return { value: true, unsupported: [] };
     }
     case "system_var_compare": {
@@ -3818,6 +3890,23 @@ function registerFirsttimeHandler(): void {
   registerFunctionCallPredicate("FIRSTTIME", () => ({ value: false, unsupported: [] }));
 }
 
+/** `RM_RESOURCECHECK(key)` asks Emuera's resource manager whether an optional
+ * image exists. Callers must opt into a deterministic resource probe; all
+ * ordinary kojo routes remain fail-closed when no probe is available. */
+function registerResourceCheckHandler(): void {
+  registerFunctionCallPredicate("RM_RESOURCECHECK", ({ pred, context }) => {
+    if (!context.resourceExists) {
+      return { value: false, unsupported: ["unknown-function:RM_RESOURCECHECK"] };
+    }
+    const rawKey = pred.args[0]?.trim() ?? "";
+    const key = rawKey.replace(/^"|"$/g, "");
+    const exists = context.resourceExists(key);
+    return exists === null
+      ? { value: false, unsupported: ["resource availability unresolved"] }
+      : { value: exists, unsupported: [] };
+  });
+}
+
 /** `CHK_FOCUS(chara, room, target)` — sight / focus check between two
  *  characters in a room. Author-ware; we register as no-op so the
  *  route count stays supported. */
@@ -3831,10 +3920,14 @@ function registerMoonWatchPointHandler(): void {
   registerFunctionCallPredicate("MOON_WATCH_POINT", () => ({ value: false, unsupported: [] }));
 }
 
-/** `CAN_IRAI_CHARA_GO_TOGATHER(target)` — whether the named character
- *  can join the player's outing. Author-ware; no-op fallback. */
+/** `CAN_IRAI_CHARA_GO_TOGATHER(target)` — whether the named character can be
+ *  brought along (FUNC_IRAI.ERB:227-256). Modeled via the commission slots:
+ *  an ACTIVE canTakeAlong commission whose client is the chara (问题4). */
 function registerCanIraiHandler(): void {
-  registerFunctionCallPredicate("CAN_IRAI_CHARA_GO_TOGATHER", () => ({ value: false, unsupported: [] }));
+  registerFunctionCallPredicate("CAN_IRAI_CHARA_GO_TOGATHER", (ctx) => {
+    const target = ctx.args[0] ?? ctx.charaNum;
+    return { value: canBringCommissionClient(ctx.state, target), unsupported: [] };
+  });
 }
 
 /** `CHAPTER_*` (K31) — chapter progress queries. */
@@ -4315,6 +4408,7 @@ function initializeFunctionCallRegistry(): void {
   registerGetMonthHandler();
   registerIsWeekdayHandler();
   registerFirsttimeHandler();
+  registerResourceCheckHandler();
   registerChkFocusHandler();
   registerMoonWatchPointHandler();
   registerCanIraiHandler();
@@ -4381,9 +4475,8 @@ function resolveEffectTarget(
     return { target: null, unsupported: [`${target.ns}: invalid subject ${subject}`] };
   }
 
-  // Global stores have no character owner.  Every other namespace must point
-  // at an existing master/character slot before it is allowed into the
-  // transaction; otherwise a stale ARG/LOCAL could silently become a no-op.
+  // Global stores have no character owner. Per-character namespaces accept
+  // any integer subject; absent owners no-op at apply time (see below).
   const globalNamespace = target.ns === "FLAG" || target.ns === "ITEM" ||
     target.ns === "TFLAG" || target.ns === "MONEY" || target.ns === "TIME";
   const diaryNamespace = target.ns === "DIARY" || target.ns === "MAX_DIARY_PAGE" || target.ns === "PAGESET";
@@ -4403,12 +4496,15 @@ function resolveEffectTarget(
   if (diaryNamespace) return { target: { ...target, scope: subject }, unsupported: [] };
   const slot = subject === 0 ? state.master : state.charas[subject];
   if (!slot) {
-    // Toyohime's authored first-meeting branch clears Yorihime's private
-    // CFLAG:98:1221 even when Yorihime is not materialized in the current
-    // sparse roster. Keep that cross-character cleanup as a no-op rather
-    // than rejecting the otherwise complete greeting; applyKojoEffects
-    // already ignores writes whose owner is absent.
-    if (target.ns === "CFLAG" && subject === 98 && target.id === 1221) {
+    // Authored routes routinely touch charas outside the current sparse
+    // roster with a literal subject (Toyohime's first-meeting branch clears
+    // Yorihime's private CFLAG:98:1221; K2/映姫 routes write 39/40/44).
+    // A literal-subject write to an absent owner stays supported as a no-op
+    // rather than rejecting the otherwise complete route — applyKojoEffects
+    // already ignores writes whose owner is absent. A *dynamic* subject
+    // (ARG/LOCAL alias) keeps the fail-closed guard: a stale alias silently
+    // no-oping would hide authoring bugs.
+    if (typeof target.scope === "number") {
       return { target: { ...target, scope: subject }, unsupported: [] };
     }
     return { target: null, unsupported: [`${target.ns}: missing subject ${subject}`] };
@@ -4907,9 +5003,9 @@ function emit(
     }
     case "effect": {
       const staged = stageEffect(node.effect, charaNum, state, rng, args, context);
-      if (staged.effect) {
+      if (staged.effect && !context.probeReadonly) {
         effects.push(staged.effect);
-        Object.assign(state, applyKojoEffects(state, [staged.effect]));
+        applyKojoEffectsInPlace(state, [staged.effect]);
       }
       for (const entry of staged.unsupported) unsupportedEffects.add(entry);
       return false;
@@ -5035,6 +5131,7 @@ export function resolveKojoFunctionDetailed(
   args: readonly number[] = [],
   context: KojoResolveContext = {},
 ): KojoFunctionResolution {
+  const statsStartedAt = performance.now();
   const out: KojoLine[] = [];
   const unsupported = new Set<string>();
   const effects: KojoStagedEffect[] = [];
@@ -5046,7 +5143,9 @@ export function resolveKojoFunctionDetailed(
     resultSlots: {},
     loopSignal: null,
   };
-  const workingState = applyKojoEffects(state, []);
+  const workingState = context.probeReadonly
+    ? state as GameState
+    : applyKojoEffects(state, []);
   const vm = context.vm ?? {
     locals: [...(state.turnContext?.locals ?? [])],
     result: [...(state.turnContext?.result ?? [])],
@@ -5077,6 +5176,7 @@ export function resolveKojoFunctionDetailed(
     stop: false,
   }), noopInput, unsupported, effects, unsupportedEffects, functionControl, vmContext);
   const finalized = finalizeResolution(out, effects, unsupported, unsupportedEffects);
+  recordKojoResolve(performance.now() - statsStartedAt);
   return {
     ...finalized,
     status:
@@ -5109,6 +5209,7 @@ export function resolveKojoNodeWithChoices(
   choices: readonly number[] = [],
   context: KojoResolveContext = {},
 ): import("./types.js").InteractiveKojoResolution {
+  const statsStartedAt = performance.now();
   const out: KojoLine[] = [];
   const unsupported = new Set<string>();
   const effects: KojoStagedEffect[] = [];
@@ -5120,7 +5221,9 @@ export function resolveKojoNodeWithChoices(
     resultSlots: {},
     loopSignal: null,
   };
-  const workingState = applyKojoEffects(state, []);
+  const workingState = context.probeReadonly
+    ? state as GameState
+    : applyKojoEffects(state, []);
   const vm = context.vm ?? {
     locals: [...(state.turnContext?.locals ?? [])],
     result: [...(state.turnContext?.result ?? [])],
@@ -5165,6 +5268,7 @@ export function resolveKojoNodeWithChoices(
     return { descend: null, stop: true };
   }, unsupported, effects, unsupportedEffects, functionControl, vmContext);
   const finalized = finalizeResolution(out, effects, unsupported, unsupportedEffects);
+  recordKojoResolve(performance.now() - statsStartedAt);
   return {
     status: finalized.status === "not-authored" ? "gated" : finalized.status,
     lines: finalized.lines,

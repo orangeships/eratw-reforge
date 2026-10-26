@@ -7,15 +7,21 @@ import type {
 import type { ObservationEvent } from "../../schemas/types.js";
 import type { Rng } from "../command/types.js";
 import { cloneGameState } from "../state/game-state.js";
+import { CFLAG_ID } from "../state/settlement.js";
 import { applyRelationshipDelta } from "../state/relationship.js";
 import { getWeatherState } from "../state/weather-state.js";
 import { regionIdOfLocation } from "../weather/region-system.js";
 import { compileEventOpportunitySet, consumeEventRanking, type EventOpportunitySet } from "./event-ranking.js";
 import { recordDateBanquetSignal } from "../agent/recorder.js";
+import { recordAgentDailyLocationVisit } from "../agent/daily-ledger.js";
 
 // Keep the world-event module dependency-light: settlement.ts imports the
 // clock, which projects banquets. These are the canonical ids used by the
 // settlement layer and match the upstream AutoConst headers.
+// Keep these local to avoid settlement/work-manifest import cycles when
+// migration/day-end imports the banquet module. They mirror the canonical
+// AutoConst ids (BASE:仕事量=13; CFLAG action/workplace/job/location/banquet
+// =325/326/350/300/20).
 const BASE_WORK = 13;
 const CFLAG_ACTION = 325;
 const CFLAG_WORKPLACE = 326;
@@ -81,17 +87,20 @@ export interface BanquetTemplate {
   dateRange?: readonly [number, number];
   requiredHostNames?: readonly string[];
   requiredGuestNames?: readonly string[];
+  /** Upstream ENKAI_ENTRY_CHARALIST rates for non-listed characters. */
+  residentRate?: number;
+  visitorRate?: number;
 }
 
 export const BANQUET_TEMPLATES: readonly BanquetTemplate[] = Object.freeze([
-  { id: 1, name: "灵梦的随兴酒宴", weight: 100, venue: "神社:境内", scale: (rng) => 1000 + rng.int(1500), startHour: 0, forced: false, requiresSunny: true },
-  { id: 2, name: "幻想乡年忘会", weight: 0, venue: "人間之里:居間", scale: 6000, startHour: 15, forced: true, season: 4, dateRange: [25, 30], requiredGuestNames: ["P9"] },
-  { id: 3, name: "月见酒", weight: 0, venue: "永遠亭:走廊", scale: (rng) => 2000 + rng.int(1000), startHour: 19, forced: true, season: 3, dateRange: [1, 14], requiredGuestNames: ["P409"], requiresSunny: true },
-  { id: 4, name: "收获祭", weight: 0, venue: "人間之里:中央広場", scale: (rng) => 2000 + rng.int(3000), startHour: 9, forced: true, season: 3, dateRange: [16, 26], requiredGuestNames: ["静叶", "穰子"] },
-  { id: 7, name: "畜生界的和平亲睦会", weight: 50, venue: "畜生界:组织首领宅", scale: 1200, startHour: 18, forced: false, season: 1, dateRange: [4, 4], requiredGuestNames: ["八千慧", "早鬼", "尤魔", "ちやり", "美天", "慧ノ子"] },
-  { id: 8, name: "住所不定者的集会", weight: 50, venue: "山麓:大蛤蟆之池", scale: (rng) => 1001 + rng.int(500), startHour: 19, forced: false, dateRange: [10, 10] },
-  { id: 10, name: "姐姐聚会", weight: 100, venue: "人間之里:小料理屋", scale: (rng) => 1201 + rng.int(500), startHour: 19, forced: false, season: 2, dateRange: [3, 3], requiredGuestNames: ["蕾米莉亚", "露娜萨", "觉", "静叶", "丰姬", "白莲", "幻月", "紫苑"] },
-  { id: 11, name: "正邪的一人宴会", weight: 100, venue: "山麓:玄武之泽", scale: (rng) => 1000 + rng.int(200), startHour: 21, forced: false, season: 1, dateRange: [8, 8], requiredHostNames: ["正邪"] },
+  { id: 1, name: "灵梦的随兴酒宴", weight: 100, venue: "神社:境内", scale: (rng) => 1000 + rng.int(1500), startHour: 0, forced: false, requiresSunny: true, residentRate: 7, visitorRate: 7 },
+  { id: 2, name: "幻想乡年忘会", weight: 0, venue: "人間之里:居間", scale: 6000, startHour: 15, forced: true, season: 4, dateRange: [25, 30], requiredGuestNames: ["P9"], residentRate: 20, visitorRate: 20 },
+  { id: 3, name: "月见酒", weight: 0, venue: "永遠亭:走廊", scale: (rng) => 2000 + rng.int(1000), startHour: 19, forced: true, season: 3, dateRange: [1, 14], requiredGuestNames: ["P409"], requiresSunny: true, residentRate: 33, visitorRate: 9 },
+  { id: 4, name: "收获祭", weight: 0, venue: "人間之里:中央広場", scale: (rng) => 2000 + rng.int(3000), startHour: 9, forced: true, season: 3, dateRange: [16, 26], requiredGuestNames: ["静叶", "穰子"], residentRate: 0, visitorRate: 8 },
+  { id: 7, name: "畜生界的和平亲睦会", weight: 50, venue: "畜生界:组织首领宅", scale: 1200, startHour: 18, forced: false, season: 1, dateRange: [4, 4], requiredGuestNames: ["八千慧", "早鬼", "尤魔", "ちやり", "美天", "慧ノ子"], residentRate: 0, visitorRate: 0 },
+  { id: 8, name: "住所不定者的集会", weight: 50, venue: "山麓:大蛤蟆之池", scale: (rng) => 1001 + rng.int(500), startHour: 19, forced: false, dateRange: [10, 10], residentRate: 3, visitorRate: 3 },
+  { id: 10, name: "姐姐聚会", weight: 100, venue: "人間之里:小料理屋", scale: (rng) => 1201 + rng.int(500), startHour: 19, forced: false, season: 2, dateRange: [3, 3], requiredGuestNames: ["蕾米莉亚", "露娜萨", "觉", "静叶", "丰姬", "白莲", "幻月", "紫苑"], residentRate: 0, visitorRate: 0 },
+  { id: 11, name: "正邪的一人宴会", weight: 100, venue: "山麓:玄武之泽", scale: (rng) => 1000 + rng.int(200), startHour: 21, forced: false, season: 1, dateRange: [8, 8], requiredHostNames: ["正邪"], residentRate: 0, visitorRate: 0 },
 ]);
 
 export function banquetOpportunitySet(state: Readonly<GameState>): EventOpportunitySet {
@@ -211,8 +220,17 @@ function participantsFor(state: GameState, template: BanquetTemplate, venue: str
   }
   if (diagnostics.length > 0) return { participants: [], hosts, guests, excluded, diagnostics };
   const selected = new Set([...hosts, ...guests]);
-  const candidates = Object.values(state.charas).filter((slot) => !excluded.includes(slot.charaNum) && !selected.has(slot.charaNum) && slot.location.includes(venue.split(":")[0]!));
-  for (const slot of candidates.sort((a, b) => a.charaNum - b.charaNum)) if (rng.int(100) < 50) selected.add(slot.charaNum);
+  const venueMap = venue.split(":")[0]!;
+  const residentRate = template.residentRate ?? 0;
+  const visitorRate = template.visitorRate ?? 8;
+  // ENKAI_ENTRY_CHARALIST classifies by fixed 自宅位置, not wherever a
+  // character happened to be when the future event was scheduled. This is
+  // important for nocturnal residents such as Remilia.
+  const candidates = Object.values(state.charas).filter((slot) => !excluded.includes(slot.charaNum) && !selected.has(slot.charaNum));
+  for (const slot of candidates.sort((a, b) => a.charaNum - b.charaNum)) {
+    const resident = (slot.homeLocation ?? "").startsWith(venueMap);
+    if (rng.int(100) < (resident ? residentRate : visitorRate)) selected.add(slot.charaNum);
+  }
   return { participants: [...selected].sort((a, b) => a - b), hosts, guests, excluded, diagnostics };
 }
 
@@ -264,6 +282,17 @@ function namesFor(state: GameState, ids: readonly number[]): string {
   return names.length > 0 ? names.join("、") : "宾客们";
 }
 
+function attendingParticipants(state: GameState, instance: BanquetEventInstance, ids: readonly number[]): number[] {
+  return ids.filter((id) => {
+    const slot = state.charas[id];
+    return !!slot &&
+      (slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) === 0 &&
+      slot.state.CFLAG[CFLAG_JOB] === JOB_PARTICIPATE &&
+      slot.state.CFLAG[CFLAG_ACTION] === 5 &&
+      slot.location === instance.venue;
+  });
+}
+
 const AUTHORED_PROSE: Record<number, Partial<Record<BanquetBeat["kind"], string>>> = {
   7: { arrival: "剑拔弩张的气氛中，畜生界三大组织的和平酒会正式开始了。", toast: "三方首领举杯时仍互相盯着彼此，和平二字显得格外可疑。", social: "部下们围着熟人落座，争抢邻座的眼神几乎擦出火花。", performance: "宴席热闹到高潮，组织间的较劲暂时变成了拼酒。", incident: "外面突然传来警察扫荡的喊声，满场宾客默契地四散奔逃。", feature: "自称警察的小兔姬追着众人冲过会场，亲睦会彻底变成了逃亡。", closing: "会场渐渐空无一人，只剩空酒瓶和脏碗碟；三大组织的酒会结束了。" },
   8: { arrival: "没有固定住处的人们在大蛤蟆之池边陆续聚齐。", toast: "平时难得见到的面孔举杯互认，这场临时集会正式开始。", social: "没有住所可谈，众人便聊起各自最近落脚的地方。", performance: "有人从随身行李里翻出乐器和零食，池边很快热闹起来。", incident: "风吹乱了临时铺开的席子，大家七手八脚把东西抢救回来。", feature: "短暂相聚让这些漂泊者交换了下一次见面的约定。", closing: "人们各自带走行囊，池边恢复了原来的安静。" },
@@ -273,12 +302,13 @@ const AUTHORED_PROSE: Record<number, Partial<Record<BanquetBeat["kind"], string>
 
 function applyBeat(state: GameState, instance: BanquetEventInstance, program: BanquetProgram, beat: BanquetBeat, events: ObservationEvent[]): void {
   const template = templateForInstance(instance);
-  const names = namesFor(state, beat.participants);
+  const attendees = attendingParticipants(state, instance, beat.participants);
+  const names = namesFor(state, attendees);
   const authored = AUTHORED_PROSE[template.id]?.[beat.kind];
   if (authored) {
     beat.outcome = beat.kind === "incident" ? "tension" : beat.kind === "performance" || beat.kind === "feature" ? "applause" : "warmth";
     program.momentum += beat.kind === "incident" ? -3 : 8;
-    if (beat.kind === "social") for (const id of beat.participants) applyRelationshipDelta(state, id, 10, 5);
+    if (beat.kind === "social") for (const id of attendees) applyRelationshipDelta(state, id, 10, 5);
     if (beat.kind === "closing") instance.finalScale = Math.max(0, instance.initialScale + program.momentum * 10);
     events.push(narration(state, authored));
     return;
@@ -297,7 +327,7 @@ function applyBeat(state: GameState, instance: BanquetEventInstance, program: Ba
     case "social":
       beat.outcome = "warmth";
       program.momentum += 10;
-      for (const id of beat.participants) applyRelationshipDelta(state, id, 10, 5);
+      for (const id of attendees) applyRelationshipDelta(state, id, 10, 5);
       events.push(narration(state, `${names}围坐交谈，彼此的距离明显拉近了。`));
       return;
     case "performance":
@@ -310,7 +340,7 @@ function applyBeat(state: GameState, instance: BanquetEventInstance, program: Ba
       if (mishap) {
         beat.outcome = "tension";
         program.momentum -= 8;
-        for (const id of beat.participants.slice(0, 2)) applyRelationshipDelta(state, id, -2, -1);
+        for (const id of attendees.slice(0, 2)) applyRelationshipDelta(state, id, -2, -1);
         events.push(narration(state, "席间发生了一个小插曲，短暂的尴尬让谈话停了一拍。"));
       } else {
         beat.outcome = "recovery";
@@ -322,7 +352,7 @@ function applyBeat(state: GameState, instance: BanquetEventInstance, program: Ba
     case "feature":
       beat.outcome = "applause";
       program.momentum += 15;
-      for (const id of beat.participants.slice(0, 1)) applyRelationshipDelta(state, id, 8, 3);
+      for (const id of attendees.slice(0, 1)) applyRelationshipDelta(state, id, 8, 3);
       events.push(narration(state, `${beat.title}成为今晚的焦点，宾客们留下了深刻印象。`));
       return;
     case "closing":
@@ -362,10 +392,26 @@ function moveToVenue(slot: GameState["master"], venue: string): void {
 }
 
 function restoreOrigin(slot: GameState["master"], instance: BanquetEventInstance): void {
-  const origin = instance.originLocations?.[slot.charaNum] ?? slot.homeLocation;
-  if (origin) slot.location = origin;
-  const originRoomId = instance.originRoomIds?.[slot.charaNum];
-  if (originRoomId !== undefined) slot.state.CFLAG[CFLAG_LOCATION] = originRoomId;
+  // Only restore a snapshot when this character actually entered the banquet.
+  // A scheduled invitee can be asleep, excluded, or missing when the event is
+  // resolved; falling back to home in that case silently teleports them.
+  const originLocations = instance.originLocations;
+  if (originLocations && Object.prototype.hasOwnProperty.call(originLocations, slot.charaNum)) {
+    const origin = originLocations[slot.charaNum];
+    if (origin) slot.location = origin;
+  }
+  const originRoomIds = instance.originRoomIds;
+  if (originRoomIds && Object.prototype.hasOwnProperty.call(originRoomIds, slot.charaNum)) {
+    const originRoomId = originRoomIds[slot.charaNum];
+    if (originRoomId !== undefined) slot.state.CFLAG[CFLAG_LOCATION] = originRoomId;
+  }
+}
+
+function captureOrigin(instance: BanquetEventInstance, slot: GameState["master"]): void {
+  instance.originLocations ??= {};
+  instance.originRoomIds ??= {};
+  if (!(slot.charaNum in instance.originLocations)) instance.originLocations[slot.charaNum] = slot.location;
+  if (!(slot.charaNum in instance.originRoomIds)) instance.originRoomIds[slot.charaNum] = slot.state.CFLAG[CFLAG_LOCATION] ?? 0;
 }
 
 function clearBanquetFlags(state: GameState): void {
@@ -383,6 +429,7 @@ function clearParticipantState(state: GameState, instance: BanquetEventInstance)
     slot.state.BASE[BASE_WORK] = 0;
     slot.state.MAXBASE[BASE_WORK] = 0;
     restoreOrigin(slot, instance);
+    recordAgentDailyLocationVisit(state, slot.charaNum, slot.location);
   }
 }
 
@@ -391,7 +438,20 @@ function prepareHosts(state: GameState, instance: BanquetEventInstance, venueId:
   for (const id of instance.hosts) {
     const slot = state.charas[id];
     if (!slot) continue;
+    captureOrigin(instance, slot);
+    if ((slot.state.CFLAG[313] ?? 0) !== 0) {
+      // Keep the job pending while sleep owns the character's home location;
+      // reprojectSchedules will move the awake worker through workLoc later.
+      slot.state.CFLAG[CFLAG_JOB] = JOB_PREPARE;
+      slot.state.CFLAG[CFLAG_WORKPLACE] = venueId;
+      slot.state.CFLAG[CFLAG_ACTION] = 5;
+      slot.state.BASE[BASE_WORK] = preparationWork;
+      slot.state.MAXBASE[BASE_WORK] = preparationWork;
+      continue;
+    }
+    if ((slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) continue;
     moveToVenue(slot, instance.venue);
+    recordAgentDailyLocationVisit(state, slot.charaNum, instance.venue);
     slot.state.CFLAG[CFLAG_JOB] = JOB_PREPARE;
     slot.state.CFLAG[CFLAG_WORKPLACE] = venueId;
     slot.state.CFLAG[CFLAG_ACTION] = 5;
@@ -401,17 +461,70 @@ function prepareHosts(state: GameState, instance: BanquetEventInstance, venueId:
 }
 
 function startParticipants(state: GameState, instance: BanquetEventInstance, venueId: number): void {
+  const pendingParticipants = [...instance.participants];
+  const pendingHosts = [...instance.hosts];
+  const pendingGuests = [...instance.guests];
+  const pendingWork = { ...instance.workRemaining };
+  const pendingCleanup = { ...instance.cleanupRemaining };
+  // A sleeping character cannot be made an active daytime banquet worker.
+  // Re-check at the actual start because the event is scheduled days ahead.
+  const awakeParticipants = instance.participants.filter((id) => {
+    const slot = state.charas[id];
+    return slot && (slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) === 0;
+  });
+  const awakeHosts = instance.hosts.filter((id) => awakeParticipants.includes(id));
+  instance.participants = awakeParticipants;
+  instance.hosts = awakeHosts;
+  instance.guests = instance.guests.filter((id) => awakeParticipants.includes(id));
+  instance.workRemaining = Object.fromEntries(
+    Object.entries(instance.workRemaining).filter(([id]) => awakeParticipants.includes(Number(id))),
+  );
+  instance.cleanupRemaining = Object.fromEntries(
+    Object.entries(instance.cleanupRemaining).filter(([id]) => awakeHosts.includes(Number(id))),
+  );
+  const program = ensureProgram(instance);
+  const pendingBeatParticipants = program.beats.map((beat) => [...beat.participants]);
+  for (const beat of program.beats) {
+    beat.participants = beat.participants.filter((id) => awakeParticipants.includes(id));
+  }
+  // Keep sleeping invitees pending rather than deleting them at the scheduled
+  // start. They are admitted by the next call after their wake transition.
+  instance.participants = pendingParticipants;
+  instance.hosts = pendingHosts;
+  instance.guests = pendingGuests;
+  instance.workRemaining = pendingWork;
+  instance.cleanupRemaining = pendingCleanup;
+  program.beats.forEach((beat, index) => { beat.participants = pendingBeatParticipants[index] ?? beat.participants; });
   for (const id of instance.participants) {
     const slot = state.charas[id];
     if (!slot) continue;
+    if ((slot.state.CFLAG[313] ?? 0) !== 0) continue;
+    if ((slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) continue;
     instance.originLocations ??= {};
     instance.originRoomIds ??= {};
     if (!(id in instance.originLocations)) instance.originLocations[id] = slot.location;
     if (!(id in instance.originRoomIds)) instance.originRoomIds[id] = slot.state.CFLAG[CFLAG_LOCATION] ?? 0;
     moveToVenue(slot, instance.venue);
+    recordAgentDailyLocationVisit(state, slot.charaNum, instance.venue);
     recordDateBanquetSignal(state, id, `宴会开始 #${instance.templateId}`);
     slot.state.CFLAG[CFLAG_BANQUET] = instance.hosts.includes(id) ? 2 : 1;
     slot.state.CFLAG[CFLAG_LOCATION] = venueId || slot.state.CFLAG[CFLAG_LOCATION] || 0;
+    slot.state.CFLAG[CFLAG_WORKPLACE] = venueId;
+    slot.state.CFLAG[CFLAG_JOB] = JOB_PARTICIPATE;
+    slot.state.CFLAG[CFLAG_ACTION] = 5;
+    slot.state.BASE[BASE_WORK] = instance.workRemaining[id] ?? 0;
+    slot.state.MAXBASE[BASE_WORK] = instance.initialScale;
+  }
+  // Sleeping invitees remain in the event roster and keep their sleep/home
+  // projection. Mark them as pending event work so the next wake projection
+  // moves them through the normal scheduler path; do not teleport them here.
+  for (const id of instance.participants) {
+    const slot = state.charas[id];
+    if (!slot || (slot.state.CFLAG[313] ?? 0) === 0) continue;
+    captureOrigin(instance, slot);
+    // Upstream's banquet worker exits immediately while sleeping, so leave
+    // the visible banquet flag clear until the wake transition is observed.
+    slot.state.CFLAG[CFLAG_BANQUET] = 0;
     slot.state.CFLAG[CFLAG_WORKPLACE] = venueId;
     slot.state.CFLAG[CFLAG_JOB] = JOB_PARTICIPATE;
     slot.state.CFLAG[CFLAG_ACTION] = 5;
@@ -434,7 +547,20 @@ function beginCleanup(state: GameState, instance: BanquetEventInstance, venueId:
   for (const id of instance.hosts) {
     const slot = state.charas[id];
     if (!slot) continue;
+    captureOrigin(instance, slot);
+    if ((slot.state.CFLAG[313] ?? 0) !== 0) {
+      // Sleep owns the character's home location until the normal scheduler
+      // observes the wake transition; never teleport a sleeper to cleanup.
+      slot.state.CFLAG[CFLAG_BANQUET] = 2;
+      slot.state.CFLAG[CFLAG_JOB] = JOB_CLEANUP;
+      slot.state.CFLAG[CFLAG_WORKPLACE] = venueId;
+      slot.state.CFLAG[CFLAG_ACTION] = 5;
+      slot.state.BASE[BASE_WORK] = instance.cleanupRemaining[id] ?? 0;
+      slot.state.MAXBASE[BASE_WORK] = Math.min(Math.floor(instance.initialScale / 6), 1200);
+      continue;
+    }
     moveToVenue(slot, instance.venue);
+    recordAgentDailyLocationVisit(state, slot.charaNum, instance.venue);
     slot.state.CFLAG[CFLAG_BANQUET] = 2;
     slot.state.CFLAG[CFLAG_JOB] = JOB_CLEANUP;
     slot.state.CFLAG[CFLAG_WORKPLACE] = venueId;
@@ -472,7 +598,11 @@ export function scheduleBanquet(state: GameState, rng: Rng): BanquetResult {
   const scale = typeof template.scale === "function" ? template.scale(rng) : template.scale;
   const date = next.time.date ?? 1;
   const dayOffset = template.id === 1 ? 1 : template.id === 2 ? 31 - date : template.id === 3 ? 15 - date : 27 - date;
-  const startDay = next.time.dayIndex + Math.max(0, dayOffset);
+  // `tickValue` is the canonical elapsed-time source.  `dayIndex` can lag
+  // after imported saves, which would schedule a banquet in the past and
+  // make its first command phase visible too early.
+  const currentDay = Math.floor(next.time.tickValue / 1440);
+  const startDay = currentDay + Math.max(0, dayOffset);
   const startMinute = template.id === 1 ? 1360 - Math.floor(scale / 10) : template.startHour * 60;
   const startTick = startDay * 1440 + startMinute;
   const program = buildBanquetProgram(template, selection.participants, selection.hosts, selection.guests, scale);
@@ -487,8 +617,11 @@ export function scheduleBanquet(state: GameState, rng: Rng): BanquetResult {
     workRemaining: Object.fromEntries(selection.participants.map((id) => [id, Math.max(0, scale)])),
     cleanupRemaining: Object.fromEntries(selection.hosts.map((id) => [id, cleanupWork])),
     initialScale: scale, finalScale: scale, program,
-    originLocations: Object.fromEntries(selection.participants.map((id) => [id, next.charas[id]?.location ?? ""])),
-    originRoomIds: Object.fromEntries(selection.participants.map((id) => [id, next.charas[id]?.state.CFLAG[CFLAG_LOCATION] ?? 0])),
+    // Capture lazily immediately before a character first enters a banquet.
+    // The event is often scheduled days ahead, so a schedule-time snapshot
+    // can restore a stale location after ordinary movement in the meantime.
+    originLocations: {},
+    originRoomIds: {},
   };
   scheduleFlags(next, instance);
   next.worldEvents = [...(next.worldEvents ?? []).filter((event) => event.kind !== "banquet" || event.phase === "resolved" || event.phase === "cancelled"), instance];
@@ -521,14 +654,38 @@ export function advanceBanquets(state: GameState, elapsedMinutes = 1): BanquetRe
       prepareHosts(next, instance, venueId);
       advanceProgram(next, instance, events);
     }
+    // Preparation can span a sleep interval. Re-run the assignment while the
+    // event is waiting so a host who wakes before the start is picked up by
+    // the ordinary scheduler without any forced movement while asleep.
+    if (instance.phase === "preparing" && tick < instance.scheduledStartTick) {
+      prepareHosts(next, instance, venueId);
+    }
     if (instance.phase === "preparing" && tick >= instance.scheduledStartTick) {
       instance.phase = "active";
       startParticipants(next, instance, venueId);
       advanceProgram(next, instance, events);
     }
     if (instance.phase === "active") {
+      // Admit invitees who woke after the scheduled start. Their job/workplace
+      // projection was installed above while they slept; this is the point at
+      // which the visible banquet flag and arrival signal become authoritative.
+      for (const id of instance.participants) {
+        const slot = next.charas[id];
+        if (!slot || (slot.state.CFLAG[313] ?? 0) !== 0) continue;
+        if (slot.state.CFLAG[CFLAG_JOB] !== JOB_PARTICIPATE || slot.state.CFLAG[CFLAG_ACTION] !== 5) continue;
+        if ((slot.state.CFLAG[CFLAG_BANQUET] ?? 0) === 0) {
+          slot.state.CFLAG[CFLAG_BANQUET] = instance.hosts.includes(id) ? 2 : 1;
+          recordDateBanquetSignal(next, id, `宴会开始 #${instance.templateId}`);
+        }
+      }
       advanceProgram(next, instance, events);
-      for (const id of instance.participants) instance.workRemaining[id] = Math.max(0, (instance.workRemaining[id] ?? 0) - workDelta);
+      for (const id of instance.participants) {
+        const slot = next.charas[id];
+        // A sleeping invitee remains pending at home.  Its banquet work only
+        // advances once the scheduler wakes it and projects it to the venue.
+        if (!slot || (slot.state.CFLAG[313] ?? 0) !== 0 || slot.state.CFLAG[CFLAG_JOB] !== JOB_PARTICIPATE || slot.state.CFLAG[CFLAG_ACTION] !== 5 || slot.location !== instance.venue) continue;
+        instance.workRemaining[id] = Math.max(0, (instance.workRemaining[id] ?? 0) - workDelta);
+      }
       for (const id of instance.participants) {
         const slot = next.charas[id];
         if (slot) slot.state.BASE[BASE_WORK] = instance.workRemaining[id] ?? 0;
@@ -540,7 +697,13 @@ export function advanceBanquets(state: GameState, elapsedMinutes = 1): BanquetRe
     }
     if (instance.phase === "cleanup") {
       beginCleanup(next, instance, venueId);
-      for (const id of instance.hosts) instance.cleanupRemaining[id] = Math.max(0, (instance.cleanupRemaining[id] ?? 0) - workDelta);
+      for (const id of instance.hosts) {
+        const slot = next.charas[id];
+        // As with setup/participation, cleanup waits for a sleeping host to
+        // wake instead of consuming work while it remains at home.
+        if (!slot || (slot.state.CFLAG[313] ?? 0) !== 0 || slot.state.CFLAG[CFLAG_JOB] !== JOB_CLEANUP || slot.state.CFLAG[CFLAG_ACTION] !== 5 || slot.location !== instance.venue) continue;
+        instance.cleanupRemaining[id] = Math.max(0, (instance.cleanupRemaining[id] ?? 0) - workDelta);
+      }
       for (const id of instance.hosts) {
         const slot = next.charas[id];
         if (slot) slot.state.BASE[BASE_WORK] = instance.cleanupRemaining[id] ?? 0;
@@ -609,6 +772,13 @@ export function applyBanquetStateProjection(target: GameState, source: GameState
 
 /** Apply banquet changes without replacing the caller's GameState object. */
 export function advanceBanquetsInPlace(state: GameState, elapsedMinutes = 1): BanquetResult {
+  // Ordinary commands also advance this hook. With no live banquet there is
+  // nothing to project, so avoid copying the complete save and event history.
+  if (!(state.worldEvents ?? []).some((event) =>
+    event.kind === "banquet" && event.phase !== "resolved" && event.phase !== "cancelled",
+  )) {
+    return { state, events: [], diagnostics: [] };
+  }
   const result = advanceBanquets(state, elapsedMinutes);
   applyBanquetStateProjection(state, result.state);
   return { ...result, state };

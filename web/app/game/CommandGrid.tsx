@@ -10,6 +10,7 @@
  * Presentation-only: the parent owns the intent dispatch.
  */
 
+import { Fragment } from "react";
 import type { SceneExit } from "../../../modernization/runtime/scene/index.js";
 
 /**
@@ -30,6 +31,9 @@ export interface CommandGridAction {
   /** A deliberately prominent, currently relevant action (COM351: take
    * the focused character along). */
   highlighted?: boolean;
+  /** One-shot L3 opening command. It is rendered in bright gold and never
+   * enters the deterministic command resolver. */
+  narrativeOpening?: boolean;
 }
 
 /** A labeled group of actions (one command family). */
@@ -46,6 +50,8 @@ export interface CommandGridProps {
   /** Family-grouped actions; each renders under its own label header. When
    *  present, takes precedence over `actions`. */
   actionGroups?: ReadonlyArray<CommandGridGroup>;
+  /** Hide the default action-family headings while keeping all actions in one grid. */
+  showActionGroupLabels?: boolean;
   onExit: (commandNo: number) => void;
   onAction: (commandNo: number) => void;
   /** Parity QA P-22 — when a colored map exists for the current location,
@@ -65,35 +71,55 @@ export interface CommandGridProps {
    *  original Act_COM / Ex_COM split (eratw_ui_mock.html). Standalone callers
    *  (and CommandGrid's own tests) keep the default exit group. */
   showExits?: boolean;
+  /** Dedicated presentation-only AI chat affordance. It is inserted directly
+   * after COM300 and is absent unless the owning shell explicitly enables it. */
+  aiChatEnabled?: boolean;
+  onAiChat?: () => void;
 }
 
 function ActionButtons(props: {
   items: ReadonlyArray<CommandGridAction>;
   onAction: (commandNo: number) => void;
+  aiChatEnabled?: boolean;
+  onAiChat?: () => void;
 }) {
   return (
     <>
       {props.items.map((action) => (
-        <button
-          key={action.commandNo}
-          type="button"
-          className={
-            "command-grid__btn command-grid__btn--action" +
-            (action.usable ? "" : " command-grid__btn--blocked") +
-            (action.deferred ? " command-grid__btn--deferred" : "") +
-            (action.highlighted ? " command-grid__btn--highlighted" : "")
-          }
-          data-testid="action-button"
-          data-command-no={action.commandNo}
-          data-usable={action.usable}
-          data-deferred={action.deferred ? "true" : "false"}
-          data-highlighted={action.highlighted ? "true" : "false"}
-          disabled={!action.usable}
-          title={action.usable ? (action.deferred ? "尚未建模（未实现）" : undefined) : action.reason}
-          onClick={() => props.onAction(action.commandNo)}
-        >
-          {action.label}{action.deferred ? "（未实现）" : ""}
-        </button>
+        <Fragment key={action.commandNo}>
+          <button
+            type="button"
+            className={
+              "command-grid__btn command-grid__btn--action" +
+              (action.usable ? "" : " command-grid__btn--blocked") +
+              (action.deferred ? " command-grid__btn--deferred" : "") +
+              (action.highlighted ? " command-grid__btn--highlighted" : "") +
+              (action.narrativeOpening ? " command-grid__btn--narrative-opening" : "")
+            }
+            data-testid="action-button"
+            data-command-no={action.commandNo}
+            data-usable={action.usable}
+            data-deferred={action.deferred ? "true" : "false"}
+            data-highlighted={action.highlighted ? "true" : "false"}
+            data-narrative-opening={action.narrativeOpening ? "true" : "false"}
+            disabled={!action.usable}
+            title={action.usable ? (action.deferred ? "尚未建模（未实现）" : undefined) : action.reason}
+            onClick={() => props.onAction(action.commandNo)}
+          >
+            {action.label}{action.deferred ? "（未实现）" : ""}
+          </button>
+          {action.commandNo === 300 && props.aiChatEnabled && props.onAiChat && (
+            <button
+              type="button"
+              className="command-grid__btn command-grid__btn--action command-grid__btn--ai-chat"
+              data-testid="ai-chat-button"
+              title="输入任意对话语义；只生成角色回应，不进行游戏结算"
+              onClick={props.onAiChat}
+            >
+              对话（AI）
+            </button>
+          )}
+        </Fragment>
       ))}
     </>
   );
@@ -114,8 +140,15 @@ export default function CommandGrid(props: CommandGridProps) {
           data-family-id={g.id}
           key={g.id ?? g.label}
         >
-          <span className="command-grid__label">{g.label}</span>
-          <ActionButtons items={g.items} onAction={props.onAction} />
+          {props.showActionGroupLabels !== false && (
+            <span className="command-grid__label">{g.label}</span>
+          )}
+          <ActionButtons
+            items={g.items}
+            onAction={props.onAction}
+            aiChatEnabled={props.aiChatEnabled}
+            onAiChat={props.onAiChat}
+          />
         </div>
       ))}
 

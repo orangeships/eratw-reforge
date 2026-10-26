@@ -6,11 +6,13 @@ import {
   type GameState,
 } from "../state/game-state.js";
 import { createRng } from "../command/rng.js";
-import { ABL_ID, BASE_ID, CFLAG_ID, TALENT_ID } from "../state/settlement.js";
+import { ABL_ID, BASE_ID, CFLAG_ID, TALENT_ID, TCVAR_ID } from "../state/settlement.js";
 import { mapKeyOf } from "./location-predicates.js";
 import { locationToRoomId } from "./room-id-location.js";
 import { isTimeStopped } from "../command/h-mode.js";
-import { generateMobPortrait } from "./dynamic-portraits.js";
+import { generateMobPortrait, mobClothForSpecies } from "./dynamic-portraits.js";
+import { seedMobOutfit } from "./mob-clothing.js";
+import { somatometry } from "../state/make-size.js";
 
 export const MAX_REMEMBERED_MOB_GIRLS = 20;
 export const FIRST_DYNAMIC_CHARA_NUM = 10_000;
@@ -19,6 +21,11 @@ export const STONE_CONTEST_CLERK_HOME = "彼岸:賽の河原";
 export const RINNOSUKE_ROLE = "kourindou-shopkeeper";
 export const RINNOSUKE_HOME = "魔法之森:香霖堂";
 export const ARCHIVED_DYNAMIC_LOCATION = "隙間:路人档案";
+
+/** Dynamic authored residents still need a real alcohol ceiling: the
+ * drunkenness thresholds use MAXBASE:酒气, and an omitted ceiling collapses
+ * both the 80% enter and 40% recovery thresholds to zero. */
+const RINNOSUKE_MAX_ALCOHOL = 1_000;
 
 /** Exact `@CAN_NANPA` room ids from COMF444. A whole map is not eligible:
  * private homes such as 大妖精の家 and 稗田邸 share a map with public rooms. */
@@ -142,7 +149,8 @@ export function generateMobGirl(
   const region = mapKeyOf(state.master.location);
   const speciesPool = mobGirlSpeciesForLocation(state.master.location);
   if (speciesPool.length === 0) throw new Error(`No MOBGIRL species for ${state.master.location}`);
-  const species = rng.pick(speciesPool);
+  const raceBuffed = state.mobRaceBuff !== undefined && rng.int(2) === 0;
+  const species = raceBuffed ? state.mobRaceBuff!.race : rng.pick(speciesPool);
   const callName = rng.pick(GIVEN_NAMES);
   const portrait = generateMobPortrait(seed, species);
   const slot: CharaSlot = {
@@ -164,11 +172,30 @@ export function generateMobGirl(
   slot.state.ABL[ABL_ID.技巧] = rng.int(4);
   slot.state.ABL[ABL_ID.奉仕精神] = rng.int(4);
   slot.state.ABL[ABL_ID.战斗能力] = species === "鬼" ? 3 + rng.int(3) : 1 + rng.int(3);
+  let raceBuffBattleBonus: number | undefined;
+  if (raceBuffed) {
+    const enemyBattle = slot.state.ABL[ABL_ID.战斗能力] ?? 0;
+    const masterBattle = state.master.state.ABL[ABL_ID.战斗能力] ?? 0;
+    raceBuffBattleBonus = 1 + rng.int(Math.max(2, masterBattle - enemyBattle));
+    slot.state.ABL[ABL_ID.战斗能力] = enemyBattle + raceBuffBattleBonus;
+    slot.state.TCVAR[TCVAR_ID.発情] = 1;
+    const desire = slot.state.ABL[ABL_ID.欲望] ?? 0;
+    const accumulation = (10 + rng.int(20) + rng.int(20) + rng.int(20)) * desire;
+    slot.state.CFLAG[CFLAG_ID.溜まってる度] = Math.min(1000, Math.max(200, accumulation));
+  }
   slot.state.CFLAG[CFLAG_ID.好感度] = rng.int(101);
   slot.state.CFLAG[CFLAG_ID.信頼度] = rng.int(21);
   slot.state.TALENT[TALENT_ID.性別] = 1;
   slot.state.TALENT[TALENT_ID.路人] = 1;
   applySpeciesTalents(slot, species);
+  // Upstream MOBGIRL_GENERATOR.ERB:1232-1270 — the girl arrives DRESSED and
+  // measured: 生理周期 = RAND:9+1 (adults only; mob girls never roll 幼稚),
+  // 身体測定=1 + MAKE_SIZE, then portrait cloth → 衣装セット → EQUIP +
+  // CLOTHES_SETTING_TRAIN. Without this the status panel shows ＜全裸＞ and
+  // the H strip chain no-ops on a girl whose portrait is fully clothed.
+  slot.state.CFLAG[CFLAG_ID.生理周期] = rng.int(9) + 1;
+  somatometry(slot, rng.next);
+  seedMobOutfit(slot, species, mobClothForSpecies(species));
   const encounterSummary = `${callName}：第${state.time.dayIndex}日在${region}相遇的${species}`;
   return {
     slot,
@@ -182,6 +209,9 @@ export function generateMobGirl(
       encounterSummary,
       createdDay: state.time.dayIndex,
       portrait,
+      ...(raceBuffBattleBonus !== undefined
+        ? { raceBuffBattleBonus, raceBuffHandicapMultiplier: 1.1 }
+        : {}),
     },
   };
 }
@@ -361,7 +391,7 @@ function ensureAuthoredResident(
  * row for him, so conservative deterministic defaults fill the missing slot
  * state while his known identity and home remain explicit metadata. */
 export function ensureRinnosuke(state: GameState): CharaSlot {
-  return ensureAuthoredResident(state, {
+  const slot = ensureAuthoredResident(state, {
     role: RINNOSUKE_ROLE,
     callName: "霖之助",
     homeLocation: RINNOSUKE_HOME,
@@ -370,8 +400,10 @@ export function ensureRinnosuke(state: GameState): CharaSlot {
     initializeState: (slot) => {
       slot.state.BASE[BASE_ID.体力] = 1_500;
       slot.state.BASE[BASE_ID.気力] = 1_700;
+      slot.state.BASE[BASE_ID.酒気] = 0;
       slot.state.MAXBASE[BASE_ID.体力] = 1_500;
       slot.state.MAXBASE[BASE_ID.気力] = 1_700;
+      slot.state.MAXBASE[BASE_ID.酒気] = RINNOSUKE_MAX_ALCOHOL;
       slot.state.TALENT[TALENT_ID.性別] = 2;
       slot.state.ABL[ABL_ID.話術技能] = 2;
       slot.state.ABL[ABL_ID.战斗能力] = 1;
@@ -381,6 +413,17 @@ export function ensureRinnosuke(state: GameState): CharaSlot {
       slot.state.CFLAG[CFLAG_ID.认识] = 0;
     },
   });
+
+  // Older saves materialized Rinnosuke without BASE/MAXBASE:酒气. Repair
+  // that malformed state and clear the stale drunk marker created by the
+  // zero-ceiling thresholds. A resident with a valid ceiling keeps its live
+  // alcohol value, so this does not erase a future legitimate alcohol state.
+  if ((slot.state.MAXBASE[BASE_ID.酒気] ?? 0) <= 0) {
+    slot.state.BASE[BASE_ID.酒気] = 0;
+    slot.state.MAXBASE[BASE_ID.酒気] = RINNOSUKE_MAX_ALCOHOL;
+    slot.state.TCVAR[TCVAR_ID.泥酔] = 0;
+  }
+  return slot;
 }
 
 /** Lazily materializes COM633's authored adult resident. Unlike generated mob

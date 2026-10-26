@@ -9,7 +9,7 @@
  */
 
 import type { CommandContext, ExecCheck } from "../types.js";
-import { CFLAG_ID, FLAG_ID, getMasterBase } from "../../state/settlement.js";
+import { BASE_ID, CFLAG_ID, FLAG_ID, getMasterBase } from "../../state/settlement.js";
 import { computeShinchitsu } from "../../state/attitude.js";
 import { nemuke } from "../../state/nemuke.js";
 import { roomProps } from "../comable/room-props.js";
@@ -21,6 +21,9 @@ import { COMABLE_GATES } from "./comable-gates.generated.js";
 import { getTflag } from "../../state/tflag.js";
 import { evaluateSemanticGateExpression } from "./semantic-gate.js";
 
+// Banquet job fields use the same canonical settlement ids as the world
+// scheduler, so a stale JOB_49 projection cannot expose a command outside an
+// active banquet.
 const BASE_気力 = 1; // BASE_ID.気力 (settlement.ts).
 const ABL_性別 = 2; // TALENT:2 — gender bitfield (bit0 = female).
 
@@ -70,11 +73,20 @@ export function compileGate(
     // of 好感/信頼/親密. Derive it on demand instead, exactly like COMF350
     // 押し倒す does (`computeShinchitsu(target, master)`); the single-target
     // command context collapses master 亲热 to the focused target's.
-    if (gate.minIntimacy !== undefined) {
+    const minIntimacyOutsideBypassStates = gate.minIntimacyOutsideBypassStates;
+    const conditionalIntimacyGateActive =
+      minIntimacyOutsideBypassStates !== undefined &&
+      ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) === 0 ||
+        cflag(CFLAG_ID.時間停止行動) === 1) &&
+      cflag(CFLAG_ID.睡眠) === 0 &&
+      (cflag(CFLAG_ID.潜伏状態) & 1) === 0;
+    const minIntimacy = gate.minIntimacy ??
+      (conditionalIntimacyGateActive ? minIntimacyOutsideBypassStates : undefined);
+    if (minIntimacy !== undefined) {
       const shinchitsu = t
         ? computeShinchitsu(t, ctx.state.master, ctx.state)
         : 0;
-      if (shinchitsu < gate.minIntimacy) return block("亲热度不足。");
+      if (shinchitsu < minIntimacy) return block("亲热度不足。");
     }
     if (gate.notWhileTargetSleeping && cflag(CFLAG_ID.睡眠) !== 0)
       return block("目标正在睡觉。");
@@ -92,6 +104,11 @@ export function compileGate(
       return block("诶嘿嘿中无法进行。");
     if (gate.cooldown && timeProgress(ctx.state, t?.state.TCVAR[gate.cooldown.tcvarId] ?? 0) < gate.cooldown.minutes)
       return block("还需要等一会儿。");
+    if (
+      gate.tflagCooldown &&
+      timeProgress(ctx.state, getTflag(ctx.state, gate.tflagCooldown.tflagId)) <
+        gate.tflagCooldown.minutes
+    ) return block("还需要等一会儿。");
     // Location-based gates (read the MASTER's current room).
     if (
       gate.requiresIndoor || gate.notWhileBath ||
@@ -135,8 +152,19 @@ export function compileGate(
     if (gate.requiresDrunkTarget) return block("对方现在不需要照料。");
     // 碰杯 requires a banquet-participant target (CFLAG:職種==JOB_宴会参加=49).
     // The world banquet scheduler projects JOB_宴会参加 while the event is active.
-    if (gate.requiresBanquetParticipant && cflag(CFLAG_ID.职种) !== 49)
-      return block("对方没有在参加宴会。");
+    // MUST also verify the banquet is actually in "active" phase, not preparing.
+    if (gate.requiresBanquetParticipant) {
+      const banquet = (ctx.state.worldEvents ?? []).find((event) =>
+        event.kind === "banquet" &&
+        event.phase === "active" &&
+        event.participants.includes(ctx.target));
+      if (!banquet) return block("宴会还未正式开始。");
+      if (cflag(CFLAG_ID.职种) !== 49) return block("对方没有在参加宴会。");
+      if (cflag(CFLAG_ID.睡眠) !== 0) return block("对方正在睡觉。");
+      if (cflag(CFLAG_ID.行动) !== 5) return block("对方尚未到宴会场。");
+      if ((t?.state.BASE[BASE_ID.仕事量] ?? 0) <= 0) return block("对方已经结束宴会工作。");
+      if (t && banquet.kind === "banquet" && banquet.venue !== t.location) return block("对方不在宴会场地。");
+    }
     // 戦闘訓練 etc. blocked while target is in partner-led (逆推) H-mode.
     if (gate.notWhilePartnerLedH && cflag(CFLAG_ID.诶嘿嘿) === 2)
       return block("对方正主导中，无法进行。");

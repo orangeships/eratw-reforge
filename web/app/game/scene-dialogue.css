@@ -1,0 +1,105 @@
+.game-client__command-surface { display: contents; }
+.game-client--scene-dialogue .game-client__command-surface:disabled button { color: #6c6c6c; cursor: wait; }
+
+/* One central stage. The transcript floats in the space above the portraits;
+   it occupies no grid row and paints no window frame. */
+.game-client__scene-slot--dialogue { --scene-dialogue-portrait-height: min(32dvh, 280px); }
+.game-client__scene-slot--dialogue > .scene-dialogue {
+  position: absolute;
+  z-index: 5;
+  top: 6.75em;
+  bottom: calc(var(--scene-dialogue-portrait-height) - min(8dvh, 64px) + 1.5em);
+  left: 5%;
+  right: 5%;
+  min-width: 0;
+  min-height: 0;
+}
+.scene-dialogue {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: .4em;
+  overflow: hidden;
+  pointer-events: none;
+  color: #e8e8e8;
+  font-family: var(--era-mono);
+  font-size: var(--era-fs);
+  line-height: 1.35;
+  letter-spacing: -.08em;
+  opacity: 1;
+}
+.scene-dialogue__transcript { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; pointer-events: auto; }
+.scene-dialogue__content { display: flow-root; }
+.scene-dialogue__afterimage { cursor: pointer; }
+.scene-dialogue .interaction-box__scene { overflow: visible; }
+.game-client--scene-dialogue .scene-dialogue .interaction-box--scene {
+  display: block;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+.game-client--scene-dialogue .scene-dialogue .interaction-box__body { display: block; overflow: visible; }
+.game-client--scene-dialogue .scene-dialogue .interaction-box__stream {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.game-client.game-client--scene-dialogue .scene-dialogue .interaction-box__line,
+.game-client.game-client--scene-dialogue .scene-dialogue__line {
+  margin: .12em 0;
+  padding: .1em .6ch;
+  width: fit-content;
+  max-width: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: rgba(0, 0, 0, .32);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  font: inherit;
+  line-height: 1.35;
+  letter-spacing: -.08em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 3px #000, 0 0 8px #000;
+  transition: opacity .35s ease;
+}
+.scene-dialogue__name { color: #c8c8c8; font-size: .85em; margin-right: .35ch; }
+.game-client--scene-dialogue .scene-dialogue .interaction-box__line { animation: none; }
+.game-client--scene-dialogue .scene-dialogue .interaction-box__ai-pending { margin: .25em .6ch; font-size: .8em; opacity: .65; }
+.game-client--scene-dialogue .scene-dialogue .interaction-box__controls { max-height: none; overflow: visible; padding: 0; background: transparent; }
+.game-client--scene-dialogue .scene-dialogue .interaction-box__grid { display: flex; justify-content: flex-end; padding: 0; }
+.scene-dialogue .interaction-box__grid:empty { display: none; }
+.scene-dialogue .interaction-box__btn,
+.scene-dialogue__skip { pointer-events: auto; font: inherit; font-size: .8em; border: 0; border-radius: 0; padding: .25em .6ch; background: rgba(0,0,0,.35); color: #c8c8c8; cursor: pointer; box-shadow: none; }
+.scene-dialogue__skip { align-self: flex-end; }
+.scene-dialogue .interaction-box__choice { max-height: none; padding: .3em 0; background: rgba(0,0,0,.3); border: 0; }
+.scene-dialogue .interaction-box__ai-chat-input { padding: .4em .6ch; background: rgba(0,0,0,.45); }
+.scene-dialogue .interaction-box__ai-chat-input textarea { min-width: 0; background: rgba(0,0,0,.4); }
+
+@media (min-width: 801px) and (max-width: 1080px) {
+  .game-client--immersive.game-client--scene-dialogue { grid-template-rows: auto minmax(0,1fr) auto auto; }
+  .game-client--immersive.game-client--scene-dialogue .game-client__middle { grid-template-columns: minmax(20ch,.6fr) minmax(0,1.8fr) minmax(18ch,.6fr); overflow: hidden; }
+  .game-client--immersive.game-client--scene-dialogue .game-client__scene-slot--dialogue,
+  .game-client--scene-dialogue .text-game-right { min-height: 0; }
+  .game-client--scene-dialogue .text-game-info { overflow-y: auto; }
+}
+@media (max-width: 800px) {
+  .game-client.game-client--immersive.game-client--scene-dialogue .game-client__middle { display: flex; flex-direction: column; overflow-y: auto; }
+  .game-client.game-client--immersive.game-client--scene-dialogue .game-client__scene-slot--dialogue { order: -1; flex: 0 0 clamp(370px,48dvh,440px); min-height: 0; }
+  .game-client__scene-slot--dialogue { --scene-dialogue-portrait-height: 140px; }
+  .game-client__scene-slot--dialogue > .scene-dialogue { top: 7em; bottom: calc(var(--scene-dialogue-portrait-height) + 1em); left: 3%; right: 3%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-dialogue, .scene-dialogue * { transition: none; animation: none; }
+}

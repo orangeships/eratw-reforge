@@ -126,7 +126,8 @@ export function runSourceAblup(
   return events;
 }
 /** Full one-shot bridge called by a fresh `buildInitialState`, never by save
- * migration/load. Returns the original visible initialization transcript. */
+ * migration/load. Returned events are diagnostic output for a dedicated setup
+ * surface; callers must not append them to the playable-world history. */
 export function runNewGameInitialLevelSync(
   state: GameState,
   deps: { now: () => number },

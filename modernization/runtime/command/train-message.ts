@@ -3,6 +3,15 @@ import { resolveKojoNodeDetailed } from "../kojo/static-router.js";
 import type { KojoLine, KojoNode } from "../kojo/types.js";
 import type { GameState } from "../state/index.js";
 import type { Rng } from "./types.js";
+import { substituteKojoStateFormatters } from "../kojo/text-renderer.js";
+import {
+  ABL_ID,
+  BASE_ID,
+  CFLAG_ID,
+  FLAG_ID,
+  TALENT_ID,
+  TCVAR_ID,
+} from "../state/settlement.js";
 
 export interface TrainMessageBundle {
   generatedAt?: string;
@@ -17,6 +26,25 @@ export interface TrainMessageRouter {
     state: Readonly<GameState>,
     rng: Rng,
   ): KojoLine[];
+  collectDetailed?: (
+    commandNo: number,
+    target: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+  ) => TrainMessageCollection;
+}
+
+export interface TrainMessageDiagnostic {
+  readonly commandNo: number;
+  readonly line: number;
+  readonly formatter: string;
+  readonly approximate: boolean;
+  readonly detail: string;
+}
+
+export interface TrainMessageCollection {
+  readonly lines: KojoLine[];
+  readonly diagnostics: readonly TrainMessageDiagnostic[];
 }
 
 export interface TrainMessageRouterOptions {
@@ -34,7 +62,7 @@ const VAR_RE = /^(TALENT|CFLAG|TCVAR|ABL|BASE|FLAG)(?::(TARGET|MASTER))?:(.+)$/;
 // TRAIN_MESSAGE owns the source-verified inline ternary/TEXTR subset. A
 // COND_STR condition needs a formatter bridge that this route does not own;
 // letting the shared renderer choose a branch would fabricate authored prose.
-const UNSUPPORTED_TRAIN_FORMATTER_RE = /%COND_STR\s*\(/i;
+const FORMATTER_RE = /%([A-Z][A-Z0-9_]*)(?:\(([^%\r\n]*)\))?%/gi;
 
 const NAME_IDS: Partial<Record<string, Record<string, number>>> = {
   TALENT: {
@@ -49,6 +77,19 @@ const NAME_IDS: Partial<Record<string, Record<string, number>>> = {
   },
 };
 
+// Fallback name→id lookup over the settlement ID tables (same canonical
+// Simplified-Chinese keys). Keeps inline ternary conditions like
+// `CFLAG:TARGET:陪睡中` evaluable without per-name entries in NAME_IDS;
+// names absent from both stay fail-closed as before.
+const SETTLEMENT_ID_TABLES: Partial<Record<string, Record<string, number>>> = {
+  TALENT: TALENT_ID,
+  CFLAG: CFLAG_ID,
+  TCVAR: TCVAR_ID,
+  ABL: ABL_ID,
+  BASE: BASE_ID,
+  FLAG: FLAG_ID,
+};
+
 function readStateVar(
   ref: string,
   target: number,
@@ -61,7 +102,7 @@ function readStateVar(
   const rawId = m[3]!.trim();
   const id = /^\d+$/.test(rawId)
     ? Number(rawId)
-    : NAME_IDS[ns]?.[rawId];
+    : (NAME_IDS[ns]?.[rawId] ?? SETTLEMENT_ID_TABLES[ns as keyof typeof SETTLEMENT_ID_TABLES]?.[rawId]);
   if (id === undefined) return null;
   if (ns === "FLAG" || scope === "GLOBAL") return state.flagStore[id] ?? 0;
   const subject = scope === "MASTER" ? 0 : target;
@@ -107,6 +148,10 @@ function renderTrainText(
   raw: string,
   target: number,
   state: Readonly<GameState>,
+  commandNo: number,
+  line: number,
+  rng: Rng,
+  diagnostics: TrainMessageDiagnostic[],
 ): string | null {
   let out = raw;
   let unsupported = false;
@@ -121,12 +166,25 @@ function renderTrainText(
     return pickYes ? yes : no;
   });
 
-  // HIP(TARGET) is a large upstream randomized formatter. Until its exact
-  // state/RNG table is ported, it is not safe to invent an adjective here.
-  if (/%HIP\(TARGET\)%/i.test(out)) unsupported = true;
-  if (UNSUPPORTED_TRAIN_FORMATTER_RE.test(out)) unsupported = true;
-
-  return unsupported ? null : out.replace(/\s+/g, " ").trim();
+  // %HIP(TARGET)% expands through substituteKojoStateFormatters' verbatim
+  // @HIP port (text-renderer.ts) — the TRAIN_MESSAGE route only feeds it
+  // the deterministic per-line RNG.
+  const before = out;
+  out = substituteKojoStateFormatters(out, { state, charaNum: target, rng });
+  for (const match of before.matchAll(FORMATTER_RE)) {
+    const name = match[1]!.toUpperCase();
+    if (["TEXTR", "HIP", "SLIT", "OPPAI_DESCRIPTION", "NIPPLE_DESCRIPTION", "SAMEN_DESCRIPTION", "SHOW_TOP", "SHOW_BOTTOM", "SHOW_上半身内衣", "SHOW_下半身内衣", "TINKO", "PANTSNAME", "CSTR", "NICKNAME", "COND_STR"].includes(name)) continue;
+    diagnostics.push({ commandNo, line, formatter: name, approximate: false, detail: "unsupported TRAIN_MESSAGE formatter" });
+    out = out.replace(match[0], "");
+    unsupported = true;
+  }
+  if (/%COND_STR\s*\(/i.test(out)) {
+    diagnostics.push({ commandNo, line, formatter: "COND_STR", approximate: false, detail: "condition bridge unavailable in TRAIN_MESSAGE" });
+    out = out.replace(/%COND_STR\([^%]*\)%/gi, "");
+    unsupported = true;
+  }
+  const normalized = out.replace(/\s+/g, " ").trim();
+  return normalized || (unsupported ? null : normalized);
 }
 
 function shouldFlushLine(form: KojoLine["form"]): boolean {
@@ -175,17 +233,23 @@ export function createTrainMessageRouter(
 ): TrainMessageRouter {
   return {
     collect(commandNo, target, state, rng) {
+      return this.collectDetailed!(commandNo, target, state, rng).lines;
+    },
+    collectDetailed(commandNo, target, state, rng) {
       const node = bundle.byCommand[String(commandNo)];
-      if (!node) return [];
+      if (!node) return { lines: [], diagnostics: [] };
+      const diagnostics: TrainMessageDiagnostic[] = [];
+      let transformLine = 0;
       const resolved = resolveKojoNodeDetailed(node, target, state, rng, [], {
         commandNo,
-        lineTransform: (text) => renderTrainText(text, target, state),
+        lineTransform: (text) => renderTrainText(text, target, state, commandNo, ++transformLine, rng, diagnostics),
         nameResolver: (reference) =>
           typeof reference === "number" ? opts.callNames?.[reference] : undefined,
         masterName: opts.masterName,
         targetName: opts.callNames?.[target],
       });
-      return normalizeTrainLines(resolved.lines);
+      const lines = normalizeTrainLines(resolved.lines);
+      return { lines, diagnostics };
     },
   };
 }
@@ -198,6 +262,10 @@ export function trainLinesToNarrationEvents(
     kind: "NARRATION" as const,
     timestamp: now(),
     text: line.text,
+    origin: "train-message" as const,
+    // TRAIN_MESSAGE/MESSAGE_COM is the command's authored public prose. It
+    // belongs in the active command transcript before personal kojo; genuine
+    // scheduler/world ambience remains on the separate ambient lane.
     presentation: "inline" as const,
   }));
 }

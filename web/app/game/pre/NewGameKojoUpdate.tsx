@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type {
   NewGameKojoUpdateCandidate,
   NewGameKojoUpdateResult,
@@ -30,10 +30,17 @@ const STATUS_LABEL: Record<RowStatus, string> = {
 };
 
 export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
+  // UPDATE_K effects can change the router's authored-route availability. The
+  // parent therefore may hand us a shorter live candidate list after the first
+  // resolution. Keep the roster that was present when the player started so a
+  // completed effect cannot make the remaining rows disappear mid-session.
+  const rosterRef = useRef<readonly NewGameKojoUpdateCandidate[] | null>(null);
   const [started, setStarted] = useState(false);
+  const [roster, setRoster] = useState<readonly NewGameKojoUpdateCandidate[] | null>(null);
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<number[]>([]);
   const [current, setCurrent] = useState<NewGameKojoUpdateResult | null>(null);
+  const [visibleLineStart, setVisibleLineStart] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [statuses, setStatuses] = useState<Record<number, RowStatus>>({});
 
@@ -41,28 +48,57 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
     setStatuses((previous) => ({ ...previous, [charaNum]: status }));
   };
 
+  const candidates = rosterRef.current ?? roster ?? props.candidates;
+
   const finishEntry = (
     candidate: NewGameKojoUpdateCandidate,
     result: NewGameKojoUpdateResult,
   ): void => {
-    if (result.lines.length > 0) {
+    const diagnosticLines = result.status === "unsupported"
+      ? result.diagnostics.map((detail) => `初始化未写入：${detail}`)
+      : [];
+    const lines = [...result.lines.map((line) => line.text), ...diagnosticLines];
+    if (lines.length > 0) {
       setHistory((previous) => [
         ...previous,
         {
           charaNum: candidate.charaNum,
           callName: candidate.callName,
-          lines: result.lines.map((line) => line.text),
+          lines,
         },
       ]);
     }
   };
 
-  const advanceFrom = (startIndex: number): void => {
+  const resolveSafely = (
+    candidate: NewGameKojoUpdateCandidate,
+    selectedChoices: readonly number[],
+  ): NewGameKojoUpdateResult | null => {
+    try {
+      return props.onResolve(candidate.charaNum, selectedChoices);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      setHistory((previous) => [
+        ...previous,
+        {
+          charaNum: candidate.charaNum,
+          callName: candidate.callName,
+          lines: [`初始化发生错误，已安全跳过：${detail}`],
+        },
+      ]);
+      return null;
+    }
+  };
+
+  const advanceFrom = (
+    startIndex: number,
+    source: readonly NewGameKojoUpdateCandidate[] = candidates,
+  ): void => {
     let cursor = startIndex;
-    while (cursor < props.candidates.length) {
-      const candidate = props.candidates[cursor]!;
+    while (cursor < source.length) {
+      const candidate = source[cursor]!;
       setRowStatus(candidate.charaNum, "active");
-      const result = props.onResolve(candidate.charaNum, []);
+      const result = resolveSafely(candidate, []);
       if (!result) {
         setRowStatus(candidate.charaNum, "unsupported");
         cursor += 1;
@@ -72,6 +108,7 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
         setIndex(cursor);
         setChoices([]);
         setCurrent(result);
+        setVisibleLineStart(0);
         return;
       }
 
@@ -84,38 +121,48 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
       cursor += 1;
     }
 
-    setIndex(props.candidates.length);
+    setIndex(source.length);
     setChoices([]);
     setCurrent(null);
   };
 
   const choose = (choiceIndex: number): void => {
-    const candidate = props.candidates[index];
+    const candidate = candidates[index];
     if (!candidate) return;
     const nextChoices = [...choices, choiceIndex];
-    const result = props.onResolve(candidate.charaNum, nextChoices);
+    const result = resolveSafely(candidate, nextChoices);
     if (!result) {
       setRowStatus(candidate.charaNum, "unsupported");
       advanceFrom(index + 1);
       return;
     }
     if (result.status === "pending") {
+      const previousLines = current?.lines ?? [];
+      let commonPrefix = 0;
+      while (
+        commonPrefix < previousLines.length &&
+        commonPrefix < result.lines.length &&
+        previousLines[commonPrefix]?.text === result.lines[commonPrefix]?.text
+      ) commonPrefix += 1;
       setChoices(nextChoices);
       setCurrent(result);
+      setVisibleLineStart(commonPrefix);
       return;
     }
 
     finishEntry(candidate, result);
     setRowStatus(candidate.charaNum, result.status === "unsupported" ? "unsupported" : "done");
     setCurrent(null);
+    setVisibleLineStart(0);
     setChoices([]);
     advanceFrom(index + 1);
   };
 
   const skipCurrent = (): void => {
-    const candidate = props.candidates[index];
+    const candidate = candidates[index];
     if (candidate) setRowStatus(candidate.charaNum, "skipped");
     setCurrent(null);
+    setVisibleLineStart(0);
     setChoices([]);
     advanceFrom(index + 1);
   };
@@ -123,18 +170,19 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
   const skipRemaining = (): void => {
     setStatuses((previous) => {
       const next = { ...previous };
-      for (let cursor = index; cursor < props.candidates.length; cursor += 1) {
-        next[props.candidates[cursor]!.charaNum] = "skipped";
+      for (let cursor = index; cursor < candidates.length; cursor += 1) {
+        next[candidates[cursor]!.charaNum] = "skipped";
       }
       return next;
     });
-    setIndex(props.candidates.length);
+    setIndex(candidates.length);
     setCurrent(null);
+    setVisibleLineStart(0);
     setChoices([]);
   };
 
-  const complete = started && index >= props.candidates.length;
-  const candidate = props.candidates[index];
+  const complete = started && index >= candidates.length;
+  const candidate = candidates[index];
   const pendingChoices = current?.pending?.options.length
     ? current.pending.options.map((option, choiceIndex) => ({
         choiceIndex,
@@ -154,7 +202,7 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
 
       <div className="kojo-update__layout">
         <ol className="kojo-update__roster" aria-label="角色初始化进度">
-          {props.candidates.map((entry) => {
+          {candidates.map((entry) => {
             const status = statuses[entry.charaNum] ?? "waiting";
             return (
               <li key={entry.charaNum} data-status={status}>
@@ -163,7 +211,7 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
               </li>
             );
           })}
-          {props.candidates.length === 0 && <li>当前启用的角色剧本没有开局调整。</li>}
+          {candidates.length === 0 && <li>当前启用的角色剧本没有开局调整。</li>}
         </ol>
 
         <div className="kojo-update__dialogue" aria-live="polite">
@@ -177,7 +225,7 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
           {candidate && current?.status === "pending" && (
             <div className="kojo-update__entry kojo-update__entry--active">
               <strong>{candidate.callName}</strong>
-              {current.lines.map((line, lineIndex) => <p key={lineIndex}>{line.text}</p>)}
+              {current.lines.slice(visibleLineStart).map((line, lineIndex) => <p key={visibleLineStart + lineIndex}>{line.text}</p>)}
               <div className="pre-screen__menu pre-screen__menu--stack">
                 {pendingChoices.map((option) => (
                   <button
@@ -208,8 +256,11 @@ export default function NewGameKojoUpdate(props: NewGameKojoUpdateProps) {
             className="pre-screen__primary"
             data-testid="kojo-update-start"
             onClick={() => {
+              const snapshot = [...props.candidates];
+              rosterRef.current = snapshot;
+              setRoster(snapshot);
               setStarted(true);
-              advanceFrom(0);
+              advanceFrom(0, snapshot);
             }}
           >
             开始检查

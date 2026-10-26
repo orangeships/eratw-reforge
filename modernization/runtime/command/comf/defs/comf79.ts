@@ -77,6 +77,8 @@ const com79Check: ExecCheck = (ctx) => {
 
 export const comf79Def: ComfDef = {
   commandNo: 79,
+  downbase: { [BASE_ID.体力]: 20, [BASE_ID.気力]: 40 },
+  targetDownbase: { [BASE_ID.体力]: 250, [BASE_ID.気力]: 200 },
   label: "小人オナホ",
 
   maxRoll: 100,
@@ -135,11 +137,7 @@ export const comf79Def: ComfDef = {
 
   body: (c) => {
     // DOWNBASE master 体力 20 / 気力 40.
-    c.master.state.BASE[BASE_ID.体力] = (c.master.state.BASE[BASE_ID.体力] ?? 0) - 20;
-    c.master.state.BASE[BASE_ID.気力] = (c.master.state.BASE[BASE_ID.気力] ?? 0) - 40;
     // DOWNBASE target 体力 250 / 気力 200.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 250;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 200;
 
     // EXP: PLAYER 挿入経験 ++; target Ｖ性交経験 ++, Ｖ拡張経験 ++.
     c.master.state.EXP[EXP_ID.挿入経験] = (c.master.state.EXP[EXP_ID.挿入経験] ?? 0) + 1;

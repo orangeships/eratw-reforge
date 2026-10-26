@@ -6,6 +6,7 @@ import type { HandlerEntry } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
 import { advanceTimeTicks } from "../../state/settlement.js";
 import { setSlotLocation } from "../../world/room-id-location.js";
+import { followCompanions } from "../../state/companion-follow.js";
 import { endOdekakeIfReturningHome } from "../../world/odekake.js";
 import { leaveOdekake } from "../../world/odekake.js";
 import { runOutingReturnEvents } from "../../world/outing-events.js";
@@ -28,6 +29,7 @@ export const moveToHomeHandlerEntry: HandlerEntry = {
     next.master.homeLocation = homeLocation;
     setSlotLocation(next.master, homeLocation);
     advanceTimeTicks(next, 5);
+    followCompanions(next, 5);
     const activityEvents = pitfallArrivalEvents(next, homeLocation, ctx.now());
     const tail = endedDate ? " 约会结束了。" : "";
     return {

@@ -21,8 +21,8 @@
 import { emptyCharaSlotState, type CharaSlotState, type GameState } from "./game-state.js";
 import { ABL_ID, BASE_ID, CFLAG_ID, FLAG_ID, MARK_ID, PALAM_ID, TCVAR_ID } from "./settlement.js";
 import { charaCstrOf } from "./chara-data.js";
-import { weekdayName } from "../world/calendar.js";
-import { JOB_LABEL, WORK_MANIFEST, resolveWorkEntry, type WorkEntry } from "../world/work/work-manifest.js";
+import { weekdayLabelZh } from "../world/calendar.js";
+import { JOB_LABEL, WORK_MANIFEST, localizeWorkInfoText, resolveWorkEntry, type WorkEntry } from "../world/work/work-manifest.js";
 
 export interface NamedStat {
   value: number;
@@ -110,6 +110,29 @@ export function getRebellionBrand(slot: CharaSlotState): { tier: number; max: nu
   return { tier: Math.max(0, Math.min(3, tier)), max: 3 };
 }
 
+export interface TrainingMarkTier {
+  id: 0 | 1 | 2 | 3;
+  label: "苦痛" | "快乐" | "不埒" | "反发";
+  tier: number;
+  max: 3;
+}
+
+const TRAINING_MARKS = [
+  { id: MARK_ID.苦痛刻印, label: "苦痛" },
+  { id: MARK_ID.快楽刻印, label: "快乐" },
+  { id: MARK_ID.不埒刻印, label: "不埒" },
+  { id: MARK_ID.反発刻印, label: "反发" },
+] as const;
+
+/** Current player-visible levels for the four ordinary H training marks. */
+export function getTrainingMarkTiers(slot: CharaSlotState): TrainingMarkTier[] {
+  return TRAINING_MARKS.map(({ id, label }) => {
+    const raw = (slot.MARK ?? {})[id] ?? 0;
+    const tier = Number.isFinite(raw) ? Math.trunc(raw) : 0;
+    return { id, label, tier: Math.max(0, Math.min(3, tier)), max: 3 };
+  });
+}
+
 /** Seed the rebellion brand (0..3). Mutates + returns the slot. */
 export function seedRebellionBrand(slot: CharaSlotState, tier: number): CharaSlotState {
   slot.MARK ??= {} as CharaSlotState["MARK"];
@@ -119,12 +142,10 @@ export function seedRebellionBrand(slot: CharaSlotState, tier: number): CharaSlo
 
 /**
  * 今日の運勢 — `CFLAG:今日の運勢` (id 378), a 0-999 daily-luck score. eraTW
- * shows it on the status line as `<今日运势：N>` per INFO.ERB. The data layer
- * is NOT yet wired (no writer seeds/updates it — see settlement.ts:165
- * "Consumer not yet ported"), so this reads 0 until that lands. The UI shows
- * a placeholder when the value is 0 AND it was never seeded, but we cannot
- * distinguish "0 fortune" from "unseeded" from the value alone — so callers
- * should treat 0 as "unseeded" for display (a real fortune is always ≥1).
+ * shows it on the status line as `<今日运势：N>` per INFO.ERB. BEFORETRAIN
+ * seeds it and COMF434/FORTUNE rewrites it after a shrine draw. The UI still
+ * treats 0 as an unseeded placeholder because the field itself has no
+ * separate initialization bit.
  *
  * Namespace-free (UI may not spell CFLAG) — same posture as getRelationStat.
  */
@@ -295,16 +316,16 @@ function condDayLabel(state: GameState, entry: WorkEntry): string {
     if (entry.cond({ state: probe, dayIndex })) matches.push(dayIndex);
   }
   const weekdays = [0, 1, 2, 3, 4];
-  if (matches.length === 7) return "毎日";
+  if (matches.length === 7) return "每天";
   if (weekdays.every((d) => matches.includes(d)) && matches.length === weekdays.length) {
-    return "平日";
+    return "工作日";
   }
-  if (matches.length > 0 && matches.length <= 3) return matches.map(weekdayName).join("/");
-  return "今日";
+  if (matches.length > 0 && matches.length <= 3) return matches.map(weekdayLabelZh).join("、");
+  return "今天";
 }
 
 function cstrHudWorkInfo(state: GameState, charaNum: number): HudWorkInfo | null {
-  const kind = charaCstrOf(charaNum, "工作情報").trim();
+  const kind = localizeWorkInfoText(charaCstrOf(charaNum, "工作情報").trim());
   const place = (charaCstrOf(charaNum, "職場") || charaCstrOf(charaNum, "2")).trim();
   if (!kind && !place) return null;
   const slot = state.charas[charaNum];
@@ -335,7 +356,7 @@ export function getHudWorkInfo(state: GameState, charaNum: number): HudWorkInfo 
   const slot = state.charas[charaNum];
   const active = (slot?.state.CFLAG[CFLAG_ID.行动] ?? 0) === WORKING_ACTION;
   return {
-    kind: JOB_LABEL[entry.jobType] ?? "仕事",
+    kind: JOB_LABEL[entry.jobType] ?? "工作",
     day: condDayLabel(state, entry),
     hours: `${formatClock(entry.startMin)}~${formatClock(entry.endMin)}`,
     place: roomLabel(entry.location),

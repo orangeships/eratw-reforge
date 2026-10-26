@@ -87,6 +87,8 @@ export interface CommandContext {
    * handler falls back to its canned NARRATION.
    */
   readonly dialogueRouter?: DialogueRouter;
+  /** Shell requests generated expression for an accepted hook; rules still own settlement. */
+  readonly narrativeHookGeneration?: boolean;
   /**
    * Optional B9 prompt answer (Phase 7 Wave 2c). When a `HandlerEntry`
    * declares a `prompt`, the UI captures the player's choice and attaches
@@ -124,6 +126,10 @@ export interface CommandResult {
    * deliberately owns a deferred scene-specific dispatch such as fishing).
    * The resolver uses this to avoid duplicate dialogue/effect commits. */
   readonly kojoHandled?: boolean;
+  /** The route resolution that produced this command's personal kojo
+   * (AI-PREPARE-PERF-PLAN.md §4.C)：surfaced so AI eligibility can reuse it
+   * instead of re-resolving the same command against the post-state. */
+  readonly commandKojoResolution?: import("../kojo/types.js").KojoResolution;
   readonly transitions?: readonly DomainTransition[];
 }
 

@@ -53,6 +53,7 @@ export const comf1Def: ComfDef = {
   failThreshold: 101,
 
   timeCost: 0,
+  targetDownbase: { [BASE_ID.体力]: 5, [BASE_ID.気力]: 50 },
 
   buildSources: (c) => {
     // ERB 51-55: base sources.
@@ -104,10 +105,6 @@ export const comf1Def: ComfDef = {
   }),
 
   body: (c) => {
-    // ERB 48-49: target 体力 5 / 気力 50 drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 5;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 50;
-
     // ERB 97: 口淫経験 PLAYER++.
     c.master.state.EXP[EXP_ID.口淫経験] =
       (c.master.state.EXP[EXP_ID.口淫経験] ?? 0) + 1;
@@ -120,7 +117,7 @@ export const comf1Def: ComfDef = {
   },
 
   narration: (_c, favorDelta) =>
-    `%CALLNAME:MASTER% 对%CALLNAME:TARGET%用了クンニ；好感度 ${
+    `%CALLNAME:MASTER% 舐弄了%CALLNAME:TARGET%；好感度 ${
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };

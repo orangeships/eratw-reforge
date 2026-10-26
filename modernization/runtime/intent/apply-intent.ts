@@ -89,6 +89,12 @@ let liveCallNames: Record<number, string> = {};
 /** Master/player callName for `%CALLNAME:MASTER%`. */
 let liveMasterName = "玩家";
 
+/** Shared counter narration asset for the EVENT_COUNTER pipeline. */
+let liveCounterSharedAssets: import("../kojo/counter-dispatch.js").SharedCounterDialogueAssets | undefined;
+/** Counter presentation requires an installed personal-kojo router. */
+let liveCounterEnabled = true;
+let availableCommandsCache = new WeakMap<object, Map<string, CommandAvailability[]>>();
+
 export interface IntentDeps {
   catalog?: CommandCatalog;
   dialogueRouter?: DialogueRouter;
@@ -97,6 +103,10 @@ export interface IntentDeps {
   callNames?: Record<number, string>;
   /** Override the player callName (default "玩家"). */
   masterName?: string;
+  /** Shared counter narration asset (EVENT_COUNTER pipeline). */
+  counterSharedAssets?: import("../kojo/counter-dispatch.js").SharedCounterDialogueAssets;
+  /** Keep EVENT_COUNTER off while the shell is still using its no-op router. */
+  counterEnabled?: boolean;
 }
 
 /** Wire the live runtime deps. Idempotent: calling twice replaces
@@ -108,6 +118,9 @@ export function configureIntent(deps: IntentDeps): void {
   if (deps.trainMessageRouter) liveTrainMessageRouter = deps.trainMessageRouter;
   if (deps.callNames) liveCallNames = deps.callNames;
   if (deps.masterName) liveMasterName = deps.masterName;
+  if (deps.counterSharedAssets) liveCounterSharedAssets = deps.counterSharedAssets;
+  if (deps.counterEnabled !== undefined) liveCounterEnabled = deps.counterEnabled;
+  availableCommandsCache = new WeakMap();
 }
 
 /** Read-only access for tests / debug. */
@@ -115,12 +128,16 @@ export function currentIntentDeps(): {
   catalog: CommandCatalog;
   router: DialogueRouter;
   trainMessageRouter: TrainMessageRouter;
+  counterSharedAssets?: import("../kojo/counter-dispatch.js").SharedCounterDialogueAssets;
+  counterEnabled: boolean;
   callNames: Record<number, string>;
 } {
   return {
     catalog: liveCatalog,
     router: liveRouter,
     trainMessageRouter: liveTrainMessageRouter,
+    counterSharedAssets: liveCounterSharedAssets,
+    counterEnabled: liveCounterEnabled,
     callNames: liveCallNames,
   };
 }
@@ -139,7 +156,17 @@ export function liveAvailableCommands(
   target: number,
   mode: CommandAvailabilityMode = "normal",
 ): CommandAvailability[] {
-  return availableCommands(liveCatalog, state, target, () => 0, mode);
+  const key = `${target}:${mode}`;
+  let byQuery = availableCommandsCache.get(state as object);
+  if (!byQuery) {
+    byQuery = new Map();
+    availableCommandsCache.set(state as object, byQuery);
+  }
+  const cached = byQuery.get(key);
+  if (cached) return cached;
+  const computed = availableCommands(liveCatalog, state, target, () => 0, mode);
+  byQuery.set(key, computed);
+  return computed;
 }
 
 /** Result of an applyIntent call. Mirrors the eventLog delta for callers. */
@@ -156,6 +183,9 @@ export interface ApplyIntentResult {
   commandOutcome?: Outcome;
   /** Why a command was blocked/no-op. Kept out of presentation heuristics. */
   commandFailReason?: FailReason;
+  /** The command kojo resolution that produced the authored transcript
+   *  (AI-PREPARE-PERF-PLAN.md §4.C) — AI eligibility reuses it. */
+  commandKojoResolution?: import("../kojo/types.js").KojoResolution;
 }
 
 /**
@@ -239,8 +269,9 @@ export function applyIntent(
   state: GameState,
   intent: AgentIntent,
   now: Now = defaultNow,
+  presentation?: { narrativeHookGeneration?: boolean },
 ): ApplyIntentResult {
-  const raw = applyIntentCore(state, intent, now);
+  const raw = applyIntentCore(state, intent, now, presentation);
   const transitions = mergeDomainTransitions(
     raw.transitions,
     detectDomainTransitions(state, raw.state),
@@ -262,6 +293,7 @@ function applyIntentCore(
   state: GameState,
   intent: AgentIntent,
   now: Now = defaultNow,
+  presentation?: { narrativeHookGeneration?: boolean },
 ): ApplyIntentResult {
   const validation = validateIntent(intent);
   const ts = now();
@@ -346,7 +378,10 @@ function applyIntentCore(
           rngSeed: intent.commandNo * 100003 + state.time.tickValue,
           now,
           dialogueRouter: liveRouter,
+          narrativeHookGeneration: presentation?.narrativeHookGeneration,
           trainMessageRouter: liveTrainMessageRouter,
+          counterSharedAssets: liveCounterSharedAssets,
+          counterEnabled: liveCounterEnabled,
         };
         const oldTick = state.time.tickValue;
         const result = resolveCommand(intent, state, resolverDeps);
@@ -375,7 +410,13 @@ function applyIntentCore(
             (event) => event.kind === "DIALOGUE_LINE" && event.charaNum > 0,
           );
           if (dialogueEvent?.kind === "DIALOGUE_LINE") {
-            recordDialogueSignal(postState, dialogueEvent.charaNum, `COM#${intent.commandNo} dialogue`);
+            recordDialogueSignal(
+              postState,
+              dialogueEvent.charaNum,
+              `COM#${intent.commandNo} dialogue`,
+              dialogueEvent.text,
+              oldTick,
+            );
           }
         }
         const appended = [evt, ...result.events, ...post.events];
@@ -392,6 +433,7 @@ function applyIntentCore(
           transitions,
           commandOutcome: result.outcome,
           commandFailReason: result.failReason,
+          ...(result.commandKojoResolution ? { commandKojoResolution: result.commandKojoResolution } : {}),
         };
       }
 

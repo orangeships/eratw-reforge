@@ -33,6 +33,8 @@ import type {
   Rng,
 } from "./types.js";
 import type { CommandCatalog } from "./catalog.js";
+import { isPlayerDisabledCommand } from "./player-command-policy.js";
+import { CFLAG_ID } from "../state/settlement.js";
 import {
   extractedGateAuditFor,
   type ExtractedCommandGateAudit,
@@ -41,6 +43,8 @@ import {
   hModeBlockReason,
   isCleanHModeBaselineCommand,
   isHMode,
+  isSelfPleasureCommand,
+  isSelfPleasureSessionActive,
   requiresHMode,
 } from "./h-mode.js";
 import {
@@ -130,6 +134,7 @@ export function availableCommands(
 ): CommandAvailability[] {
   const out: CommandAvailability[] = [];
   for (const entry of catalog.list()) {
+    if (isPlayerDisabledCommand(entry.commandNo)) continue;
     if (entry.commandNo >= SYNTHETIC_FLOOR) continue;
     const gateAudit = gateAuditFor(entry);
     const gateFields = {
@@ -174,15 +179,30 @@ export function availableCommands(
       rng: PROBE_RNG,
       now,
     };
-    if (isHMode(state, target) && !isCleanHModeBaselineCommand(entry.commandNo)) {
+    const selfPleasureActive =
+      isSelfPleasureSessionActive(state) && isSelfPleasureCommand(entry.commandNo);
+    if (
+      (isHMode(state, target) || selfPleasureActive) &&
+      !isCleanHModeBaselineCommand(entry.commandNo)
+    ) {
       const hOnly = requiresHMode(entry.commandNo);
-      const stateCheck = hOnly ? entry.hModeMenuCheck?.(ctx) : undefined;
+      // An active 433 session is its own H-family entry path. Its commands
+      // still run their explicit execution checks below, but must not be
+      // rejected by the partner-oriented H menu gate.
+      const stateCheck = selfPleasureActive
+        ? undefined
+        : hOnly ? entry.hModeMenuCheck?.(ctx) : undefined;
       // A complete extracted @COM_ABLE is already the authoritative state
       // predicate and will run as execCheck below. Incomplete H gates remain
       // fail-closed unless the handler supplies an explicit audited menu gate.
       const missingTrustedGate =
-        hOnly && !entry.hModeMenuCheck && gateAudit.status !== "complete";
-      if ((stateCheck && !stateCheck.ok) || missingTrustedGate || !hOnly) {
+        !selfPleasureActive && hOnly && !entry.hModeMenuCheck && gateAudit.status !== "complete";
+      // GLOBAL_COMABLE explicitly permits 310/311 in player-led H mode;
+      // the blanket daily-command wall must not erase these touch actions.
+      const partnerLed = (state.charas[target]?.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) === 2;
+      const hEverydayTouch = entry.commandNo === 310 || entry.commandNo === 311 ||
+        (partnerLed && (entry.commandNo === 330 || entry.commandNo === 350));
+      if ((stateCheck && !stateCheck.ok) || missingTrustedGate || (!hOnly && !hEverydayTouch)) {
         out.push({
           commandNo: entry.commandNo,
           ...gateFields,
@@ -204,7 +224,8 @@ export function availableCommands(
     if (
       mode === "normal" &&
       gateAudit.status !== "complete" &&
-      !entry.execCheck
+      !entry.execCheck &&
+      !selfPleasureActive
     ) {
       out.push({
         commandNo: entry.commandNo,

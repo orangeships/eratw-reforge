@@ -1,0 +1,292 @@
+@font-face { font-family: "Gensokyo Pixel"; src: url("/fonts/map-gothic.woff2") format("woff2"); font-display: swap; }
+
+/* Only these two activities and their shop use this palette and pixel frame. */
+.pixel-minigame, .pixel-tackle-shop__scrim {
+  --pixel-unit: clamp(1px, min(.078125vw, .138889dvh), 3px);
+}
+.pixel-minigame {
+  --pixel-ink: #101e29;
+  --pixel-panel: #1d3039;
+  --pixel-line: #536765;
+  --pixel-text: #e5dfc7;
+  --pixel-muted: #9daea4;
+  --pixel-gold: #e0c48b;
+  --pixel-green: #91bb9a;
+  color: var(--pixel-text);
+  font: calc(16 * var(--pixel-unit))/1.5 "Gensokyo Pixel", "Cascadia Mono", "Microsoft YaHei", monospace;
+  font-synthesis: none;
+  letter-spacing: .025em;
+  color-scheme: dark;
+}
+.pixel-minigame *, .pixel-minigame *::before, .pixel-minigame *::after { box-sizing: border-box; }
+.pixel-minigame .pixel-sprite { display: block; width: calc(48 * var(--pixel-unit)); height: calc(48 * var(--pixel-unit)); flex: none; image-rendering: pixelated; overflow: visible; }
+.pixel-minigame button { font: inherit; cursor: pointer; touch-action: manipulation; }
+.pixel-minigame .pixel-button {
+  display: inline-flex; justify-content: center; align-items: center; gap: calc(12 * var(--pixel-unit));
+  min-height: calc(42 * var(--pixel-unit)); padding: calc(8 * var(--pixel-unit)) calc(22 * var(--pixel-unit)); color: #f4e8c6; background: #405e5b;
+  border: calc(2 * var(--pixel-unit)) solid #b8b997; border-bottom-color: #6b8775;
+  border-radius: 0; box-shadow: inset 0 calc(2 * var(--pixel-unit)) #c5ceb326, calc(3 * var(--pixel-unit)) calc(3 * var(--pixel-unit)) #101e29;
+  text-shadow: none; transition: none;
+}
+.pixel-minigame .pixel-button:hover { color: #fff2cf; background: #53766a; border-color: #e0c48b; }
+.pixel-minigame .pixel-button:active { transform: translate(calc(2 * var(--pixel-unit)), calc(2 * var(--pixel-unit))); box-shadow: calc(1 * var(--pixel-unit)) calc(1 * var(--pixel-unit)) #101e29; }
+.pixel-minigame .pixel-button--quiet { background: #23363f; border-color: #627873; color: #c0cbbb; }
+.pixel-minigame :is(button, [tabindex]):focus-visible { outline: calc(3 * var(--pixel-unit)) solid #f2d599; outline-offset: calc(4 * var(--pixel-unit)); }
+.pixel-minigame kbd { font: inherit; font-size: .75em; color: #b1c3ba; }
+.pixel-minigame .pixel-dialog {
+  width: min(calc(500 * var(--pixel-unit)), 100%); max-height: 100%; overflow: auto; padding: clamp(calc(22 * var(--pixel-unit)), 4vh, calc(42 * var(--pixel-unit)));
+  display: flex; flex-direction: column; align-items: center; gap: calc(14 * var(--pixel-unit));
+  background: #1d3039; border: calc(3 * var(--pixel-unit)) solid #9b9d80; outline: calc(3 * var(--pixel-unit)) solid #111f29;
+  box-shadow: inset 0 0 0 calc(4 * var(--pixel-unit)) #2d454b, calc(7 * var(--pixel-unit)) calc(7 * var(--pixel-unit)) #0b171dcc;
+  border-radius: 0; color: var(--pixel-text); text-align: center;
+}
+.pixel-minigame .pixel-dialog > .pixel-sprite { width: calc(92 * var(--pixel-unit)); height: calc(92 * var(--pixel-unit)); }
+.pixel-minigame .pixel-dialog h2 { margin: 0; font: inherit; font-size: clamp(calc(26 * var(--pixel-unit)), 3.6vw, calc(40 * var(--pixel-unit))); font-weight: 700; letter-spacing: .08em; text-shadow: calc(3 * var(--pixel-unit)) calc(3 * var(--pixel-unit)) #101e29; }
+.pixel-minigame .pixel-dialog small { color: #b8c3ac; font-size: calc(13 * var(--pixel-unit)); letter-spacing: .12em; }
+.pixel-minigame .pixel-dialog p { margin: 0; line-height: 1.8; }
+.pixel-minigame .pixel-dialog__rule { width: calc(96 * var(--pixel-unit)); height: calc(4 * var(--pixel-unit)); background: #9b9d80; box-shadow: calc(8 * var(--pixel-unit)) calc(4 * var(--pixel-unit)) #455b5b, calc(-8 * var(--pixel-unit)) calc(-4 * var(--pixel-unit)) #455b5b; }
+
+/* Spell-card field: a fixed 480 × 640 authority, scaled as one surface. */
+.pixel-minigame.danmaku-battle {
+  position: fixed; inset: 0; z-index: 500; display: grid;
+  grid-template-columns: minmax(calc(150 * var(--pixel-unit)), calc(220 * var(--pixel-unit))) minmax(0, calc(600 * var(--pixel-unit))) minmax(calc(150 * var(--pixel-unit)), calc(220 * var(--pixel-unit)));
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "title title title" "player stage boss" ". controls .";
+  justify-content: center; align-items: center; gap: calc(16 * var(--pixel-unit)) calc(26 * var(--pixel-unit));
+  padding: max(calc(20 * var(--pixel-unit)), env(safe-area-inset-top)) max(calc(24 * var(--pixel-unit)), env(safe-area-inset-right)) max(calc(16 * var(--pixel-unit)), env(safe-area-inset-bottom)) max(calc(24 * var(--pixel-unit)), env(safe-area-inset-left));
+  overflow: hidden; background: #101b26; perspective: none; font-family: "Gensokyo Pixel", "Microsoft YaHei", monospace;
+  background-image: repeating-linear-gradient(90deg, #19273144 0 calc(2 * var(--pixel-unit)), transparent calc(2 * var(--pixel-unit)) calc(48 * var(--pixel-unit))), repeating-linear-gradient(0deg, #19273144 0 calc(2 * var(--pixel-unit)), transparent calc(2 * var(--pixel-unit)) calc(48 * var(--pixel-unit)));
+}
+.pixel-minigame .danmaku-battle__title {
+  grid-area: title; position: static; display: flex; align-items: center; justify-content: space-between;
+  transform: none; font: inherit; font-style: normal; color: var(--pixel-text); text-shadow: none;
+  width: 100%; padding: 0 0 calc(12 * var(--pixel-unit)); border-bottom: calc(2 * var(--pixel-unit)) solid #3d5357; letter-spacing: .08em;
+}
+.pixel-minigame .danmaku-battle__title small { display: block; color: var(--pixel-muted); font: inherit; font-size: calc(12 * var(--pixel-unit)); transform: none; }
+.pixel-minigame .danmaku-battle__title h1 { margin: 0; font: inherit; font-weight: 700; font-size: calc(24 * var(--pixel-unit)); color: var(--pixel-gold); }
+.pixel-minigame .danmaku-battle__title .pixel-button { min-height: calc(38 * var(--pixel-unit)); font-size: calc(14 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__stage {
+  grid-area: stage; width: min(100%, calc((100dvh - calc(156 * var(--pixel-unit))) * .75)); height: auto; max-height: none;
+  aspect-ratio: 3 / 4; justify-self: center; align-self: center; position: relative;
+  background: #182a34; border: calc(3 * var(--pixel-unit)) solid #71827b; box-shadow: 0 0 0 calc(3 * var(--pixel-unit)) #17252d, 0 0 0 calc(5 * var(--pixel-unit)) #344b50, calc(6 * var(--pixel-unit)) calc(6 * var(--pixel-unit)) #0b141b;
+  overflow: hidden; transform: none; animation: pixel-field-in 180ms steps(3) both; touch-action: none;
+}
+.pixel-minigame .danmaku-battle__canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.pixel-minigame .danmaku-battle__stats { position: static; width: 100%; min-width: 0; display: grid; gap: calc(16 * var(--pixel-unit)); padding: calc(18 * var(--pixel-unit)); border: calc(2 * var(--pixel-unit)) solid #465d60; background: #1b2e38; font: inherit; color: var(--pixel-text); }
+.pixel-minigame .danmaku-battle__stats--player { grid-area: player; align-self: end; }
+.pixel-minigame .danmaku-battle__stats--boss { grid-area: boss; align-self: start; text-align: left; }
+.pixel-minigame .danmaku-battle__portrait { display: flex; flex-direction: column; align-items: center; gap: calc(8 * var(--pixel-unit)); padding-bottom: calc(14 * var(--pixel-unit)); border-bottom: calc(2 * var(--pixel-unit)) solid #3a5056; font-size: calc(18 * var(--pixel-unit)); color: var(--pixel-gold); }
+.pixel-minigame .danmaku-battle__portrait > .pixel-sprite { width: calc(96 * var(--pixel-unit)); height: calc(96 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__identity { color: var(--pixel-muted); font-size: calc(12 * var(--pixel-unit)); letter-spacing: 0; }
+.pixel-minigame .danmaku-meter { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: calc(5 * var(--pixel-unit)) calc(8 * var(--pixel-unit)); font-size: calc(13 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-meter > span { color: #b2c5b9; }
+.pixel-minigame .danmaku-meter b { grid-column: 2; grid-row: 1; color: #e1dfc9; font-size: calc(12 * var(--pixel-unit)); font-weight: 400; font-variant-numeric: tabular-nums; }
+.pixel-minigame .danmaku-meter__track { grid-column: 1 / -1; grid-row: 2; height: calc(12 * var(--pixel-unit)); border: calc(2 * var(--pixel-unit)) solid #11212c; background: #11212c; box-shadow: 0 calc(1 * var(--pixel-unit)) #54706d; }
+.pixel-minigame .danmaku-meter__track i { display: block; height: 100%; background: #91bb9a; box-shadow: inset 0 calc(2 * var(--pixel-unit)) #c3d3a5; transition: none; }
+.pixel-minigame .danmaku-meter--boss .danmaku-meter__track i { background: #c47c83; box-shadow: inset 0 calc(2 * var(--pixel-unit)) #e7ada3; }
+.pixel-minigame .danmaku-meter--concealed .danmaku-meter__track { background: repeating-linear-gradient(90deg, #3c3d50 0 calc(8 * var(--pixel-unit)), #242c3d calc(8 * var(--pixel-unit)) calc(16 * var(--pixel-unit))); }
+.pixel-minigame .danmaku-battle__phase { padding: calc(8 * var(--pixel-unit)) 0; border-top: calc(2 * var(--pixel-unit)) solid #3a5056; color: #dfc48c; font-size: calc(14 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__numbers { display: grid; gap: calc(8 * var(--pixel-unit)); margin: 0; font-size: calc(14 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__numbers > div { display: flex; justify-content: space-between; align-items: center; gap: calc(12 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__numbers dt { color: var(--pixel-muted); }
+.pixel-minigame .danmaku-battle__numbers dd { margin: 0; color: var(--pixel-gold); font-size: calc(19 * var(--pixel-unit)); font-variant-numeric: tabular-nums; }
+.pixel-minigame .danmaku-battle__small-rule { height: calc(2 * var(--pixel-unit)); background: #3a5056; }
+.pixel-minigame .danmaku-battle__rule { margin: 0; color: #b9c9b8; font-size: calc(13 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__rule span { color: #7f9997; font-size: calc(12 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__kojo { margin: 0; padding: calc(12 * var(--pixel-unit)); max-height: calc(200 * var(--pixel-unit)); overflow: auto; background: #14252f; border: 0; border-left: calc(3 * var(--pixel-unit)) solid #b8a579; font: inherit; }
+.pixel-minigame .danmaku-battle__kojo b { color: #b4cbb6; font-size: calc(12 * var(--pixel-unit)); letter-spacing: 0; }
+.pixel-minigame .danmaku-battle__kojo p { margin: calc(4 * var(--pixel-unit)) 0 0; color: #e1dfc9; font-size: calc(14 * var(--pixel-unit)); line-height: 1.7; overflow-wrap: anywhere; }
+.pixel-minigame .danmaku-battle__boss, .pixel-minigame .danmaku-battle__player { position: absolute; z-index: 1; transform: translate(-50%, -50%); pointer-events: none; text-shadow: none; }
+.pixel-minigame .danmaku-battle__boss { width: 16%; }
+.pixel-minigame .danmaku-battle__boss > .pixel-sprite { width: 100%; height: auto; }
+.pixel-minigame .danmaku-battle__player { width: 9%; }
+.pixel-minigame .danmaku-battle__player > .pixel-sprite { width: 100%; height: auto; }
+.pixel-minigame .danmaku-battle__hitbox { display: none; position: absolute; left: 50%; top: 50%; width: calc(5 * var(--pixel-unit)); height: calc(5 * var(--pixel-unit)); margin: calc(-2.5 * var(--pixel-unit)); background: #fff1d2; box-shadow: 0 0 0 calc(2 * var(--pixel-unit)) #2e3654; }
+.pixel-minigame .danmaku-battle__player[data-focus="true"] .danmaku-battle__hitbox { display: block; }
+.pixel-minigame .danmaku-battle__controls { grid-area: controls; display: flex; justify-content: center; flex-wrap: wrap; gap: calc(4 * var(--pixel-unit)) calc(18 * var(--pixel-unit)); font-size: calc(12 * var(--pixel-unit)); color: #8da5a0; }
+.pixel-minigame .danmaku-battle__controls kbd { font-size: calc(12 * var(--pixel-unit)); color: #c9d0ba; }
+.pixel-minigame .danmaku-battle__entry, .pixel-minigame .danmaku-battle__overlay { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: calc(28 * var(--pixel-unit)); overflow: auto; background: #0b1825d9; animation: pixel-field-in 160ms steps(3) both; }
+.pixel-minigame .danmaku-battle__entry { z-index: 9; pointer-events: none; }
+.pixel-minigame .danmaku-battle__entry :is(h2, p, span) { transform: none; font-style: normal; text-shadow: none; }
+.pixel-minigame .danmaku-battle__entry h2 { color: #f1dec2; letter-spacing: .08em; }
+.pixel-minigame .danmaku-battle__entry p { font: inherit; font-size: calc(14 * var(--pixel-unit)); color: var(--pixel-muted); letter-spacing: 0; }
+.pixel-minigame .danmaku-battle__overlay .pixel-button { min-width: calc(160 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__victory-kojo { width: 100%; margin: 0; padding: calc(14 * var(--pixel-unit)); background: #13252e; border: 0; border-top: calc(2 * var(--pixel-unit)) solid #526361; color: #dfdbc5; text-align: left; white-space: pre-wrap; font: inherit; }
+.pixel-minigame .danmaku-battle__victory-kojo b { font-size: calc(13 * var(--pixel-unit)); color: var(--pixel-green); }
+.pixel-minigame .danmaku-battle__victory-kojo p { font-size: calc(15 * var(--pixel-unit)); line-height: 1.8; text-shadow: none; }
+.pixel-minigame .danmaku-battle__result-numbers { width: 100%; display: flex; justify-content: space-evenly; gap: calc(12 * var(--pixel-unit)); margin: 0; padding: calc(14 * var(--pixel-unit)) 0; border-block: calc(2 * var(--pixel-unit)) solid #40565b; }
+.pixel-minigame .danmaku-battle__result-numbers dt { color: var(--pixel-muted); font-size: calc(12 * var(--pixel-unit)); }
+.pixel-minigame .danmaku-battle__result-numbers dd { margin: 0; font-size: calc(24 * var(--pixel-unit)); color: var(--pixel-gold); }
+.pixel-minigame.danmaku-battle--hit::before { background: #df8a7522; animation: pixel-hit 160ms steps(2) both; }
+.pixel-minigame.danmaku-battle--hit .danmaku-battle__stage { animation: pixel-impact 160ms steps(3) both; }
+.pixel-minigame.danmaku-battle--finished .danmaku-battle__overlay::after { content: none; }
+.pixel-minigame.danmaku-battle--leaving { animation: pixel-field-out 520ms steps(5) forwards; }
+.game-client.game-client--battle-exit { perspective: none; animation: pixel-field-out 760ms steps(6) forwards; }
+.game-client.game-client--battle-exit > * { animation: none; transform: none; }
+.game-client.game-client--battle-exit::after { background: #101b26; animation: none; opacity: 0; }
+.game-client.game-client--battle-return { animation: pixel-field-in 560ms steps(5) both; }
+
+/* Fishing uses exactly the canvas rectangle for pointer → Runtime projection. */
+.pixel-minigame.fishing-screen {
+  position: fixed; inset: 0; z-index: 500; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: calc(12 * var(--pixel-unit)); padding: max(calc(22 * var(--pixel-unit)), env(safe-area-inset-top)) max(calc(26 * var(--pixel-unit)), env(safe-area-inset-right)) max(calc(18 * var(--pixel-unit)), env(safe-area-inset-bottom)) max(calc(26 * var(--pixel-unit)), env(safe-area-inset-left));
+  overflow: hidden; background: #182a30; color: var(--pixel-text); cursor: default; animation: pixel-field-in 180ms steps(3) both;
+  font-family: "Gensokyo Pixel", "Microsoft YaHei", monospace;
+}
+.pixel-minigame.fishing-screen::before { content: none; }
+.pixel-minigame .fishing-hud { position: static; width: min(calc(1280 * var(--pixel-unit)), 100%); margin: 0 auto; z-index: 2; }
+.pixel-minigame .fishing-hud--top { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: calc(22 * var(--pixel-unit)); padding: 0 0 calc(12 * var(--pixel-unit)); border: 0; border-bottom: calc(2 * var(--pixel-unit)) solid #465e60; }
+.pixel-minigame .fishing-hud__location { display: flex; align-items: center; gap: calc(14 * var(--pixel-unit)); min-width: 0; }
+.pixel-minigame .fishing-hud__location .pixel-sprite { width: calc(44 * var(--pixel-unit)); height: calc(44 * var(--pixel-unit)); }
+.pixel-minigame .fishing-hud small { color: var(--pixel-muted); font-size: calc(12 * var(--pixel-unit)); letter-spacing: .06em; }
+.pixel-minigame .fishing-hud h1 { margin: 0; color: var(--pixel-gold); font: inherit; font-size: clamp(calc(22 * var(--pixel-unit)), 2.3vw, calc(32 * var(--pixel-unit))); font-weight: 700; letter-spacing: .08em; overflow-wrap: anywhere; }
+.pixel-minigame .fishing-hud__phase { display: flex; align-items: center; gap: calc(10 * var(--pixel-unit)); min-width: 0; padding: calc(9 * var(--pixel-unit)) calc(14 * var(--pixel-unit)); border: calc(2 * var(--pixel-unit)) solid #415b5e; background: #20383e; text-align: left; }
+.pixel-minigame .fishing-hud__phase strong { display: inline; padding: 0; font-size: calc(15 * var(--pixel-unit)); font-weight: 400; color: #cfdbbb; letter-spacing: 0; }
+.pixel-minigame .fishing-phase-dot { width: calc(6 * var(--pixel-unit)); height: calc(6 * var(--pixel-unit)); background: #8ab99c; box-shadow: calc(2 * var(--pixel-unit)) calc(2 * var(--pixel-unit)) #13262b; }
+.pixel-minigame .fishing-phase-dot.is-biting { background: #f4cd78; animation: pixel-bite 500ms steps(2) infinite; }
+.pixel-minigame .fishing-gear-readout { position: static; z-index: 1; display: flex; align-items: center; flex-wrap: wrap; gap: calc(8 * var(--pixel-unit)) calc(24 * var(--pixel-unit)); width: min(calc(1280 * var(--pixel-unit)), 100%); margin: 0 auto; text-align: left; font-size: calc(13 * var(--pixel-unit)); color: #b9c8b8; letter-spacing: 0; }
+.pixel-minigame .fishing-gear-readout > span { display: inline-flex; align-items: center; gap: calc(8 * var(--pixel-unit)); }
+.pixel-minigame .fishing-gear-readout .pixel-sprite { width: calc(26 * var(--pixel-unit)); height: calc(26 * var(--pixel-unit)); }
+.pixel-minigame .fishing-gear-readout__density { margin-left: auto; color: #a1b6ac; }
+.pixel-minigame .fishing-gear-readout__density b { font: inherit; color: var(--pixel-gold); }
+.pixel-minigame .fishing-water { position: relative; min-width: 0; min-height: 0; width: min(calc(1280 * var(--pixel-unit)), 100%); margin: 0 auto; border: calc(3 * var(--pixel-unit)) solid #799185; box-shadow: 0 0 0 calc(2 * var(--pixel-unit)) #10232a, calc(4 * var(--pixel-unit)) calc(4 * var(--pixel-unit)) #10232a; background: #3a7580; overflow: hidden; }
+.pixel-minigame .fishing-water canvas { position: static; display: block; width: 100%; height: 100%; transform: none; image-rendering: pixelated; touch-action: none; cursor: crosshair; }
+.pixel-minigame .fishing-bite-banner { position: absolute; top: calc(20 * var(--pixel-unit)); left: 50%; transform: translateX(-50%); padding: calc(9 * var(--pixel-unit)) calc(22 * var(--pixel-unit)); color: #f6e8b8; background: #263c43; border: calc(2 * var(--pixel-unit)) solid #e1bd79; box-shadow: calc(3 * var(--pixel-unit)) calc(3 * var(--pixel-unit)) #1a3036; pointer-events: none; white-space: nowrap; animation: pixel-bite 500ms steps(2) infinite; }
+.pixel-minigame .fishing-hud--bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: calc(12 * var(--pixel-unit)) calc(30 * var(--pixel-unit)); padding: calc(14 * var(--pixel-unit)) calc(18 * var(--pixel-unit)); border: calc(2 * var(--pixel-unit)) solid #445e5f; background: #20363c; }
+.pixel-minigame .fishing-hud--bottom > p { grid-column: 1 / -1; margin: 0; text-align: center; color: #a5bbb0; font-size: calc(13 * var(--pixel-unit)); line-height: 1.5; letter-spacing: 0; }
+.pixel-minigame .fishing-meter { grid-template-columns: auto 1fr auto; gap: calc(8 * var(--pixel-unit)); }
+.pixel-minigame .fishing-meter > span { font-size: calc(12 * var(--pixel-unit)); color: #c2cdb8; letter-spacing: 0; }
+.pixel-minigame .fishing-meter > div { height: calc(12 * var(--pixel-unit)); border: calc(2 * var(--pixel-unit)) solid #112830; background: #142a31; }
+.pixel-minigame .fishing-meter i { height: 100%; background: #8fbb94; box-shadow: inset 0 calc(2 * var(--pixel-unit)) #bdcea1; transition: none; }
+.pixel-minigame .fishing-meter b { font-size: calc(13 * var(--pixel-unit)); color: #e0d7b7; }
+.pixel-minigame .fishing-meter--danger i { background: #d4807d; box-shadow: inset 0 calc(2 * var(--pixel-unit)) #e7a891; }
+.pixel-minigame .fishing-direction { border: 0; padding: 0; grid-template-columns: 1fr auto; gap: calc(8 * var(--pixel-unit)); }
+.pixel-minigame .fishing-direction span { font-size: calc(12 * var(--pixel-unit)); letter-spacing: 0; color: #aabeb2; }
+.pixel-minigame .fishing-direction strong { font-size: calc(16 * var(--pixel-unit)); letter-spacing: .04em; color: #e39886; }
+.pixel-minigame .fishing-direction.is-aligned strong { color: #c8d6a3; }
+.pixel-minigame .fishing-signal { grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; gap: calc(10 * var(--pixel-unit)); color: #d8d8b6; font-size: calc(15 * var(--pixel-unit)); letter-spacing: .04em; animation: none; }
+.pixel-minigame .fishing-signal .pixel-sprite { width: calc(28 * var(--pixel-unit)); height: calc(28 * var(--pixel-unit)); }
+.pixel-minigame .fishing-result { position: absolute; z-index: 8; inset: 0; display: grid; place-items: center; padding: calc(24 * var(--pixel-unit)); overflow: auto; background: #10232bc9; animation: pixel-field-in 160ms steps(3) both; }
+.pixel-minigame .fishing-catch-card { width: min(calc(580 * var(--pixel-unit)), 100%); margin: 0; filter: none; }
+.pixel-minigame .fishing-catch-card::before, .pixel-minigame .fishing-catch-card::after { content: none; }
+.pixel-minigame .fishing-catch-card__pixel-art { display: grid; place-items: center; width: calc(170 * var(--pixel-unit)); height: calc(120 * var(--pixel-unit)); background: #14272f; box-shadow: inset 0 calc(-4 * var(--pixel-unit)) #344e50; }
+.pixel-minigame .fishing-catch-card__pixel-art .pixel-sprite { width: calc(144 * var(--pixel-unit)); height: calc(90 * var(--pixel-unit)); animation: pixel-idle 2400ms steps(2) infinite; }
+.pixel-minigame .fishing-catch-card h2 { font-size: clamp(calc(28 * var(--pixel-unit)), 4vw, calc(40 * var(--pixel-unit))); }
+.pixel-minigame .fishing-catch-card > strong { display: block; margin: 0; font-size: calc(30 * var(--pixel-unit)); font-weight: 400; color: var(--pixel-gold); letter-spacing: .04em; }
+.pixel-minigame .fishing-catch-card > strong small { font-size: calc(13 * var(--pixel-unit)); }
+.pixel-minigame .fishing-catch-card > em { display: flex; align-items: center; gap: calc(8 * var(--pixel-unit)); margin: 0; padding: calc(3 * var(--pixel-unit)) calc(12 * var(--pixel-unit)); border: 0; background: #4b4b39; color: #eed496; font-size: calc(13 * var(--pixel-unit)); letter-spacing: .08em; }
+.pixel-minigame .fishing-catch-card > em .pixel-sprite { width: calc(24 * var(--pixel-unit)); height: calc(24 * var(--pixel-unit)); }
+.pixel-minigame .fishing-catch-card__description { margin: 0; max-width: 100%; color: #bac9bb; font-size: calc(14 * var(--pixel-unit)); line-height: 1.8; letter-spacing: 0; overflow-wrap: anywhere; }
+.pixel-minigame .fishing-result-kojo { width: 100%; margin: 0; padding: calc(12 * var(--pixel-unit)) 0; border-block: calc(2 * var(--pixel-unit)) solid #415a5c; background: transparent; }
+.pixel-minigame .fishing-result-kojo p { margin: calc(5 * var(--pixel-unit)) 0; font: inherit; font-size: calc(15 * var(--pixel-unit)); line-height: 1.8; letter-spacing: 0; overflow-wrap: anywhere; }
+.pixel-minigame .fishing-result-kojo b { display: block; margin: 0; color: #a9c6b5; font: inherit; font-size: calc(12 * var(--pixel-unit)); }
+.pixel-minigame .fishing-catch-card footer { display: grid; justify-items: center; gap: calc(10 * var(--pixel-unit)); margin: 0; color: var(--pixel-muted); font-size: calc(12 * var(--pixel-unit)); letter-spacing: 0; animation: none; }
+.pixel-minigame .fishing-failed-card h2 { font: inherit; font-size: calc(30 * var(--pixel-unit)); }
+.pixel-minigame .fishing-failed-card p { margin: 0; letter-spacing: 0; animation: none; }
+
+/* A real shop surface, deliberately outside the old ASCII popup selectors. */
+.pixel-tackle-shop__scrim { position: fixed; z-index: 700; inset: 0; display: grid; place-items: center; padding: max(calc(20 * var(--pixel-unit)), env(safe-area-inset-top)) max(calc(20 * var(--pixel-unit)), env(safe-area-inset-right)) max(calc(20 * var(--pixel-unit)), env(safe-area-inset-bottom)) max(calc(20 * var(--pixel-unit)), env(safe-area-inset-left)); background: #0a1924d9; }
+.pixel-tackle-shop.pixel-minigame { width: min(calc(1020 * var(--pixel-unit)), 100%); max-height: 100%; min-width: 0; display: flex; flex-direction: column; overflow: hidden; background: #273b3d; border: calc(3 * var(--pixel-unit)) solid #b19d76; outline: calc(3 * var(--pixel-unit)) solid #15272f; box-shadow: inset 0 0 0 calc(4 * var(--pixel-unit)) #405250, calc(6 * var(--pixel-unit)) calc(6 * var(--pixel-unit)) #0b181fcc; }
+.pixel-tackle-shop.pixel-minigame > header { display: flex; justify-content: space-between; align-items: center; gap: calc(20 * var(--pixel-unit)); padding: calc(22 * var(--pixel-unit)) calc(28 * var(--pixel-unit)) calc(16 * var(--pixel-unit)); border-bottom: calc(2 * var(--pixel-unit)) solid #52645c; }
+.pixel-tackle-shop.pixel-minigame > header small { color: #b2bd9f; font-size: calc(12 * var(--pixel-unit)); }
+.pixel-tackle-shop.pixel-minigame h2 { margin: 0; font: inherit; font-weight: 700; font-size: calc(28 * var(--pixel-unit)); color: #edd4a0; letter-spacing: .1em; }
+.pixel-tackle-shop.pixel-minigame > header strong { display: grid; justify-items: end; font-size: calc(20 * var(--pixel-unit)); font-weight: 400; color: #e3d19b; white-space: nowrap; }
+.pixel-tackle-shop.pixel-minigame > header strong span { color: #a6b5a2; font-size: calc(12 * var(--pixel-unit)); }
+.pixel-tackle-shop.pixel-minigame .pixel-tackle-shop__shelf { display: flex; flex: none; justify-content: space-evenly; align-items: end; height: calc(92 * var(--pixel-unit)); margin: 0 calc(28 * var(--pixel-unit)); padding: calc(12 * var(--pixel-unit)) calc(14 * var(--pixel-unit)) calc(10 * var(--pixel-unit)); border-bottom: calc(6 * var(--pixel-unit)) solid #8e7659; background: repeating-linear-gradient(90deg, #14272b 0 calc(2 * var(--pixel-unit)), #1c3033 calc(2 * var(--pixel-unit)) calc(90 * var(--pixel-unit))); box-shadow: 0 calc(4 * var(--pixel-unit)) #192e33; }
+.pixel-tackle-shop.pixel-minigame .pixel-tackle-shop__shelf > .pixel-sprite { width: calc(62 * var(--pixel-unit)); height: calc(62 * var(--pixel-unit)); }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__message { margin: calc(16 * var(--pixel-unit)) calc(28 * var(--pixel-unit)) calc(6 * var(--pixel-unit)); padding: calc(10 * var(--pixel-unit)) calc(14 * var(--pixel-unit)); border: 0; border-left: calc(3 * var(--pixel-unit)) solid #9fb89b; background: #1d3238; color: #cbd1b8; font-size: calc(14 * var(--pixel-unit)); line-height: 1.7; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns { display: grid; grid-template-columns: 1fr 1fr; gap: calc(24 * var(--pixel-unit)); padding: calc(12 * var(--pixel-unit)) calc(28 * var(--pixel-unit)) calc(16 * var(--pixel-unit)); min-height: 0; overflow: auto; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns h3 { display: flex; align-items: center; gap: calc(8 * var(--pixel-unit)); margin: 0 0 calc(10 * var(--pixel-unit)); padding-bottom: calc(6 * var(--pixel-unit)); border-bottom: calc(2 * var(--pixel-unit)) solid #53685f; font: inherit; color: #cfcca5; font-size: calc(16 * var(--pixel-unit)); }
+.pixel-tackle-shop.pixel-minigame h3 .pixel-sprite { width: calc(28 * var(--pixel-unit)); height: calc(28 * var(--pixel-unit)); }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button { display: grid; grid-template-columns: calc(42 * var(--pixel-unit)) minmax(0, 1fr) auto; gap: calc(10 * var(--pixel-unit)); align-items: center; width: 100%; margin: 0 0 calc(10 * var(--pixel-unit)); padding: calc(12 * var(--pixel-unit)) calc(10 * var(--pixel-unit)); border: calc(2 * var(--pixel-unit)) solid #4c635c; border-radius: 0; background: #20353a; box-shadow: calc(2 * var(--pixel-unit)) calc(2 * var(--pixel-unit)) #17292f; text-align: left; color: #dedbc0; font-size: calc(14 * var(--pixel-unit)); }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button > .pixel-sprite { width: calc(40 * var(--pixel-unit)); height: calc(46 * var(--pixel-unit)); }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button > span { display: grid; gap: calc(4 * var(--pixel-unit)); min-width: 0; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button b { color: #e3d9b7; font-size: calc(15 * var(--pixel-unit)); font-weight: 400; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns b::before { content: none; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button small { color: #a8b9a9; font-size: calc(12 * var(--pixel-unit)); overflow-wrap: anywhere; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button em { font-size: calc(11 * var(--pixel-unit)); color: #92b4a0; font-style: normal; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button > strong { max-width: calc(105 * var(--pixel-unit)); color: #e2c88d; font-size: calc(12 * var(--pixel-unit)); font-weight: 400; white-space: normal; text-align: right; }
+.pixel-tackle-shop.pixel-minigame .tackle-shop__columns button:is(:hover, .is-equipped) { background: #304d49; border-color: #adc09b; }
+.pixel-tackle-shop.pixel-minigame > footer { display: flex; flex: none; justify-content: flex-end; padding: calc(12 * var(--pixel-unit)) calc(28 * var(--pixel-unit)) calc(20 * var(--pixel-unit)); border-top: calc(2 * var(--pixel-unit)) solid #435c55; }
+
+.pixel-minigame .danmaku-battle__touch-control, .pixel-minigame .fishing-touch-control { border-radius: 0; border: calc(2 * var(--pixel-unit)) solid #d5d7ae99; background: #16333a88; box-shadow: inset 0 0 0 calc(4 * var(--pixel-unit)) #adc8b51a; }
+.pixel-minigame .danmaku-battle__touch-control > span, .pixel-minigame .fishing-touch-control > span { border-radius: 0; background: #c3d5bc88; border: calc(2 * var(--pixel-unit)) solid #e4e5c499; box-shadow: none; }
+.pixel-minigame .fishing-touch-control { position: fixed; }
+@keyframes pixel-field-in { from { opacity: .3; } to { opacity: 1; } }
+@keyframes pixel-field-out { to { opacity: 0; } }
+@keyframes pixel-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(-4 * var(--pixel-unit))); } }
+@keyframes pixel-bite { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+@keyframes pixel-hit { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pixel-impact { 0%, 100% { transform: none; } 33% { transform: translate(calc(-2 * var(--pixel-unit)), 0); } 66% { transform: translate(calc(2 * var(--pixel-unit)), 0); } }
+
+@media (max-width: 850px) {
+  .pixel-minigame.danmaku-battle { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: "title" "boss" "stage" "player" "controls"; padding: max(calc(12 * var(--pixel-unit)), env(safe-area-inset-top)) calc(16 * var(--pixel-unit)) max(calc(10 * var(--pixel-unit)), env(safe-area-inset-bottom)); gap: calc(10 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__title { padding-bottom: calc(8 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__title h1 { font-size: calc(20 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__title small { font-size: calc(10 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__title .pixel-button { min-height: calc(38 * var(--pixel-unit)); padding: calc(6 * var(--pixel-unit)) calc(12 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__stage { width: min(100%, calc((100dvh - calc(310 * var(--pixel-unit))) * .75)); }
+  .pixel-minigame .danmaku-battle__stats { padding: calc(9 * var(--pixel-unit)) calc(12 * var(--pixel-unit)); gap: calc(6 * var(--pixel-unit)) calc(12 * var(--pixel-unit)); font-size: calc(12 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__stats--boss { grid-template-columns: calc(70 * var(--pixel-unit)) minmax(0, 1fr); align-items: center; }
+  .pixel-minigame .danmaku-battle__stats--boss .danmaku-battle__portrait { grid-column: 1; grid-row: 1 / 3; gap: calc(3 * var(--pixel-unit)); padding: 0; border: 0; font-size: calc(12 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__stats--boss .danmaku-battle__portrait .pixel-sprite { width: calc(40 * var(--pixel-unit)); height: calc(40 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__identity { display: none; }
+  .pixel-minigame .danmaku-battle__phase { grid-column: 2; grid-row: 2; padding: 0; border: 0; font-size: calc(11 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__stats--boss .danmaku-battle__kojo { grid-column: 1 / -1; max-height: calc(48 * var(--pixel-unit)); padding: calc(3 * var(--pixel-unit)) calc(7 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__kojo b { display: none; }
+  .pixel-minigame .danmaku-battle__kojo p { margin: 0; font-size: calc(12 * var(--pixel-unit)); line-height: 1.5; }
+  .pixel-minigame .danmaku-battle__stats--player { grid-template-columns: 1fr 1.3fr; align-items: center; }
+  .pixel-minigame .danmaku-battle__stats--player .danmaku-battle__portrait, .pixel-minigame .danmaku-battle__small-rule, .pixel-minigame .danmaku-battle__rule { display: none; }
+  .pixel-minigame .danmaku-battle__numbers { display: flex; justify-content: space-around; gap: calc(8 * var(--pixel-unit)); font-size: calc(10 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__numbers > div { display: grid; gap: 0; justify-items: center; }
+  .pixel-minigame .danmaku-battle__numbers dd { font-size: calc(15 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__controls { font-size: calc(10 * var(--pixel-unit)); gap: 0 calc(10 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__controls kbd { font-size: calc(10 * var(--pixel-unit)); }
+  .pixel-minigame.fishing-screen { gap: calc(10 * var(--pixel-unit)); padding: max(calc(14 * var(--pixel-unit)), env(safe-area-inset-top)) calc(16 * var(--pixel-unit)) max(calc(14 * var(--pixel-unit)), env(safe-area-inset-bottom)); }
+  .pixel-minigame .fishing-hud--top { gap: calc(10 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud__location { gap: calc(8 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud__location > .pixel-sprite { display: none; }
+  .pixel-minigame .fishing-hud h1 { font-size: calc(22 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud__phase { padding: calc(7 * var(--pixel-unit)); gap: calc(6 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud__phase strong { font-size: calc(12 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud--top .pixel-button { padding: calc(6 * var(--pixel-unit)) calc(10 * var(--pixel-unit)); font-size: calc(12 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud--top kbd { display: none; }
+  .pixel-minigame .fishing-gear-readout { gap: calc(4 * var(--pixel-unit)) calc(14 * var(--pixel-unit)); font-size: calc(11 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-gear-readout .pixel-sprite { width: calc(20 * var(--pixel-unit)); height: calc(20 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud--bottom { padding: calc(10 * var(--pixel-unit)); grid-template-columns: 1fr 1fr; gap: calc(8 * var(--pixel-unit)) calc(16 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-direction { grid-column: 1 / -1; justify-content: center; grid-template-columns: auto auto; gap: calc(14 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-hud--bottom > p { font-size: calc(11 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-meter { gap: calc(4 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-meter > span { font-size: calc(10 * var(--pixel-unit)); }
+  .pixel-minigame .fishing-signal { font-size: calc(13 * var(--pixel-unit)); }
+  .pixel-tackle-shop__scrim { padding: calc(16 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame .tackle-shop__columns { grid-template-columns: 1fr; gap: calc(12 * var(--pixel-unit)); padding: calc(12 * var(--pixel-unit)) calc(16 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame > header { padding: calc(16 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame h2 { font-size: calc(23 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame > header strong { font-size: calc(16 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame .pixel-tackle-shop__shelf { height: calc(68 * var(--pixel-unit)); margin-inline: calc(16 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame .pixel-tackle-shop__shelf .pixel-sprite { width: calc(42 * var(--pixel-unit)); height: calc(42 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame .tackle-shop__message { margin: calc(12 * var(--pixel-unit)) calc(16 * var(--pixel-unit)) 0; font-size: calc(12 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame > footer { padding: calc(12 * var(--pixel-unit)) calc(16 * var(--pixel-unit)); }
+}
+@media (max-height: 600px) and (min-width: 600px) {
+  .pixel-minigame.danmaku-battle { padding-block: calc(10 * var(--pixel-unit)); gap: calc(8 * var(--pixel-unit)) calc(20 * var(--pixel-unit)); }
+  .pixel-minigame.danmaku-battle { grid-template-columns: minmax(140px, 220px) minmax(0, 600px) minmax(140px, 220px); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "title title title" "player stage boss" ". controls ."; }
+  .pixel-minigame .danmaku-battle__stage { width: min(100%, calc((100dvh - calc(126 * var(--pixel-unit))) * .75)); }
+  .pixel-minigame .danmaku-battle__portrait { flex-direction: row; font-size: calc(14 * var(--pixel-unit)); gap: calc(10 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__portrait > .pixel-sprite { width: calc(50 * var(--pixel-unit)); height: calc(50 * var(--pixel-unit)); }
+  .pixel-minigame .danmaku-battle__stats { padding: calc(10 * var(--pixel-unit)); gap: calc(8 * var(--pixel-unit)); max-height: calc(100dvh - 110px); overflow: auto; }
+  .pixel-minigame .danmaku-battle__stats--boss, .pixel-minigame .danmaku-battle__stats--player { grid-template-columns: 1fr; }
+  .pixel-minigame .danmaku-battle__stats--boss .danmaku-battle__portrait { grid-column: auto; grid-row: auto; display: flex; flex-direction: row; }
+  .pixel-minigame .danmaku-battle__phase, .pixel-minigame .danmaku-battle__stats--boss .danmaku-battle__kojo { grid-column: auto; grid-row: auto; }
+  .pixel-minigame .danmaku-battle__kojo { max-height: calc(70 * var(--pixel-unit)); }
+}
+@media (max-height: 600px) {
+  .pixel-tackle-shop.pixel-minigame .pixel-tackle-shop__shelf { display: none; }
+  .pixel-tackle-shop.pixel-minigame > header { padding: calc(10 * var(--pixel-unit)) calc(16 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame h2 { font-size: calc(22 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame .tackle-shop__message { margin: calc(8 * var(--pixel-unit)) calc(16 * var(--pixel-unit)) 0; padding-block: calc(6 * var(--pixel-unit)); font-size: calc(12 * var(--pixel-unit)); }
+  .pixel-tackle-shop.pixel-minigame > footer { padding: calc(8 * var(--pixel-unit)) calc(16 * var(--pixel-unit)); }
+}
+@media (prefers-reduced-motion: reduce) { .pixel-minigame, .pixel-minigame *, .pixel-minigame *::before, .pixel-minigame *::after, .game-client.game-client--battle-exit, .game-client.game-client--battle-return { animation: none !important; } }
+html[data-ui-motion="reduced"] .pixel-minigame, html[data-ui-motion="reduced"] .pixel-minigame *, html[data-ui-motion="reduced"] .pixel-minigame *::before, html[data-ui-motion="reduced"] .pixel-minigame *::after, html[data-ui-motion="reduced"] .game-client.game-client--battle-exit, html[data-ui-motion="reduced"] .game-client.game-client--battle-return { animation: none !important; }

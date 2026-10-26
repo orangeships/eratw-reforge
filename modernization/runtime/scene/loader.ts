@@ -1,10 +1,9 @@
 /**
  * Phase 4.5A — SceneAsset loader (S2).
  *
- * `parseSceneAsset` is pure (parsed scene.json + ascii string -> a
- * validated `SceneAsset`) so it can be unit-tested without disk IO.
- * `loadSceneAsset` / `loadAllScenes` do the filesystem read against
- * `modernization/scenes/<id>/{scene.json,background.txt}`.
+ * `parseSceneAsset` is pure (parsed scene.json -> a validated `SceneAsset`)
+ * so it can be unit-tested without disk IO. `loadSceneAsset` / `loadAllScenes`
+ * do the filesystem read against `modernization/scenes/<id>/scene.json`.
  *
  * Validation is strict and throws descriptive errors: a malformed
  * scene asset is a build-time authoring bug, not a silent skip.
@@ -12,7 +11,11 @@
 
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
-import type { SceneAsset, SceneExit } from "./types.js";
+import {
+  SCENE_INTRO_DIAGNOSTIC_PREFIX,
+  type SceneAsset,
+  type SceneExit,
+} from "./types.js";
 
 function stripBom(s: string): string {
   return s.charCodeAt(0) === 0xfeff ? s.slice(1) : s;
@@ -26,10 +29,11 @@ function asNonEmptyString(value: unknown, field: string, sceneHint: string): str
 }
 
 /**
- * Merge a parsed `scene.json` object with its `background.txt` text
- * into a validated `SceneAsset`. Pure — throws on any malformed field.
+ * Validate a parsed `scene.json` object into a `SceneAsset`. Pure — throws on
+ * any malformed field. Backdrops are optional: a scene with neither
+ * `backgroundImage` nor authored art simply has none.
  */
-export function parseSceneAsset(raw: unknown, ascii: string): SceneAsset {
+export function parseSceneAsset(raw: unknown): SceneAsset {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     throw new Error("scene.json must be a JSON object");
   }
@@ -43,13 +47,8 @@ export function parseSceneAsset(raw: unknown, ascii: string): SceneAsset {
   // Surface the missing upstream MAP_COMM prose explicitly instead of showing
   // invented location text as if it were authored narration.
   const intro = rawIntro === `${location}。`
-    ? `[not-authored: MAP_COMM location prose unavailable for ${location}]`
+    ? `${SCENE_INTRO_DIAGNOSTIC_PREFIX}${location}】`
     : rawIntro;
-
-  const asciiText = stripBom(ascii).replace(/\r\n/g, "\n");
-  if (asciiText.trim().length === 0) {
-    throw new Error(`scene "${id}": background.txt is empty`);
-  }
 
   if (!Array.isArray(obj.exits)) {
     throw new Error(`scene "${id}": "exits" must be an array`);
@@ -72,22 +71,25 @@ export function parseSceneAsset(raw: unknown, ascii: string): SceneAsset {
   const variant =
     obj.variant === undefined ? undefined : asNonEmptyString(obj.variant, "variant", id);
 
-  return { id, location, displayName, ascii: asciiText, intro, exits, variant };
+  // Optional real-image backdrop. Undefined for scenes with no authored art.
+  const backgroundImage =
+    obj.backgroundImage === undefined
+      ? undefined
+      : asNonEmptyString(obj.backgroundImage, "backgroundImage", id);
+
+  return { id, location, displayName, intro, exits, variant, backgroundImage };
 }
 
-/** Read one scene directory's `scene.json` + `background.txt`. */
+/** Read one scene directory's `scene.json`. */
 export async function loadSceneAsset(sceneDir: string): Promise<SceneAsset> {
-  const [jsonText, ascii] = await Promise.all([
-    fs.readFile(path.join(sceneDir, "scene.json"), "utf-8"),
-    fs.readFile(path.join(sceneDir, "background.txt"), "utf-8"),
-  ]);
+  const jsonText = await fs.readFile(path.join(sceneDir, "scene.json"), "utf-8");
   let raw: unknown;
   try {
     raw = JSON.parse(stripBom(jsonText));
   } catch (e) {
     throw new Error(`scene dir "${sceneDir}": scene.json is not valid JSON: ${String(e)}`);
   }
-  return parseSceneAsset(raw, ascii);
+  return parseSceneAsset(raw);
 }
 
 /** Load every scene under `scenesRoot`, sorted by directory name. */

@@ -15,6 +15,8 @@ dist/
 .agents/
 .claude/
 .codex/
+AGENTS.md
+CLAUDE.md
 .code-review-graph/
 .tmp-tools/
 .vs/
@@ -30,3 +32,21 @@ release/
 
 # Development-only Kojo VM oracle shards (not used by the player bootstrap)
 web/public/kojo-vm/
+
+# Private development records and reproducible generated output
+modernization/.hermes/
+modernization/docs/
+modernization/fixtures/
+modernization/glossary/
+modernization/local-model-tasks/
+modernization/oracle/
+modernization/out/
+modernization/scenes/
+modernization/scripts/
+modernization/tests/
+skills/
+scripts/
+
+# Local one-off API probes must never carry credentials into a public branch
+**/*uuapi*.py
+**/test-uuapi-*.py

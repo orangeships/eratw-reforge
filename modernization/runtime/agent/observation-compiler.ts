@@ -1,17 +1,22 @@
 import type { GameState } from "../state/game-state.js";
 import type { AgentObservation } from "./types.js";
 import { ensureAgentRuntime, ensureCognitiveState, COGNITIVE_CAPS } from "./init.js";
+import { getVisibleExperiences } from "../experience.js";
 
-/** Max new observations per character per night. */
-const MAX_NEW_PER_NIGHT = 24;
+/** Max new observations per character per projection pass. */
+const MAX_NEW_PER_PROJECTION = 24;
 
 /**
  * Compile observations for a single character from the day's events.
- * Reads `daySettlementReport`, `nightReport`, and engagement signals.
+ * Reads accepted Experience and deterministic interaction signals. Raw
+ * settlement strings (EXP/ABL/numeric deltas) are intentionally excluded;
+ * relationship changes belong to the structured daily-ledger evidence.
  * Merges with existing buffer and trims to `COGNITIVE_CAPS.observations`.
  *
- * Only call this at night (during `finishPlayerSleep`), when the day
- * is fully settled and `daySettlementReport` is available.
+ * The projection is safe to call during the day as well as at Night.  It only
+ * consumes accepted experiences and structured interaction signals; callers
+ * decide whether the returned observations are queued for an optional L2
+ * reaction or simply made available to L1/L3.
  */
 export function compileObservations(
   state: GameState,
@@ -30,65 +35,66 @@ export function compileObservations(
   const newObs: AgentObservation[] = [];
   const knownSources = new Set(existing.flatMap((entry) => entry.sourceEventIds));
 
-  const append = (observation: Omit<AgentObservation, "id">): void => {
+  const append = (observation: Omit<AgentObservation, "id">, stableId?: string): void => {
     if (observation.sourceEventIds.some((id) => knownSources.has(id))) return;
     for (const id of observation.sourceEventIds) knownSources.add(id);
     newObs.push({
       ...observation,
-      id: `obs-${charaNum}-${dayIndex}-${tick}-${seq++}`,
+      id: stableId ?? `obs-${charaNum}-${dayIndex}-${tick}-${seq++}`,
     });
   };
 
-  // ── 1. Day settlement report entries ───────────────────────
-  const report = state.daySettlementReport ?? [];
-  const charaReport = report.find((e) => e.charaNum === charaNum);
-  if (charaReport && charaReport.changes.length > 0) {
-    for (const [index, change] of charaReport.changes.slice(0, 12).entries()) {
-      if (newObs.length >= MAX_NEW_PER_NIGHT) break;
-      append({
-        tick,
-        dayIndex,
-        kind: "daily_change",
-        text: `${charaReport.name}: ${change}`,
-        participants: [charaNum],
-        location,
-        witnessCharaNums: [charaNum],
-        factTags: ["daily-change"],
-        sourceEventIds: [`settlement:${dayIndex}:${charaNum}:${index}`],
-        baseImportance: 4,
-      });
-    }
-  }
-
-  // ── 2. Night report events involving the character ──────────
-  const nightEvents = state.nightReport ?? [];
-  for (const [index, evt] of nightEvents.entries()) {
-    if (newObs.length >= MAX_NEW_PER_NIGHT) break;
-    // Check if this event mentions the character
-    const text = textOfEvent(evt);
-    if (!text) continue;
-    const slotName = slot?.callName ?? `#${charaNum}`;
-    if (!text.includes(slotName) && !text.includes(`#${charaNum}`)) continue;
+  // Accepted Experience is projected first. Observation.tick is the time the
+  // observer learns the fact; Experience retains the event's start/end ticks.
+  for (const experience of getVisibleExperiences(state.acceptedExperiences ?? [], charaNum)) {
+    if (newObs.length >= MAX_NEW_PER_PROJECTION) break;
     append({
       tick,
       dayIndex,
-      kind: eventKind(evt),
-      text: text.slice(0, 200),
+      kind: `experience:${experience.kind}`,
+      text: experience.payload.summary,
+      participants: [...experience.participantIds],
+      location: experience.locationIds[0] ?? location,
+      witnessCharaNums: [charaNum],
+      factTags: ["accepted-experience", experience.factClass, experience.kind],
+      sourceEventIds: [`experience:${experience.id}`, ...experience.sourceIds],
+      baseImportance: experience.factClass === "runtime-hard" ? 7 : 4,
+    }, `obs-experience:${charaNum}:${experience.id}`);
+  }
+
+  // A successful free-chat exchange is a deterministic, character-private
+  // episode.  Project the bounded transcript as evidence too, so an optional
+  // daytime L2 reaction can understand what was actually said instead of
+  // receiving only the generic `dialogue` engagement signal.  The episode is
+  // still not a world fact and never grants knowledge to another observer.
+  for (const episode of (cog.pendingEpisodes ?? [])
+    .filter((entry) => entry.dayIndex <= dayIndex)
+    .slice(-12)) {
+    if (newObs.length >= MAX_NEW_PER_PROJECTION) break;
+    const text = episode.lines
+      .map((line) => `${line.speaker === "player" ? "玩家" : "角色"}：${line.text}`)
+      .join(" / ")
+      .slice(0, 1200);
+    append({
+      tick: episode.updatedTick,
+      dayIndex: episode.dayIndex,
+      kind: "player-dialogue",
+      text,
       participants: [charaNum],
       location,
       witnessCharaNums: [charaNum],
-      factTags: [eventKind(evt)],
-      sourceEventIds: [`night:${dayIndex}:${index}`],
-      baseImportance: 5,
-    });
+      factTags: ["player-dialogue", "pending-episode"],
+      sourceEventIds: [`episode:${episode.id}`],
+      baseImportance: Math.min(10, Math.max(1, episode.heat + 3)),
+    }, `obs-episode:${charaNum}:${episode.id}`);
   }
 
-  // ── 3. Engagement signals ──────────────────────────────────
+  // ── 1. Deterministic interaction signals ───────────────────
   const eng = runtime.engagements[charaNum];
   if (eng) {
-    const recentSignals = eng.signals.filter((s) => s.dayIndex === dayIndex);
+    const recentSignals = eng.signals.filter((s) => s.dayIndex === dayIndex && s.kind !== "relation_delta");
     for (const [index, signal] of recentSignals.entries()) {
-      if (newObs.length >= MAX_NEW_PER_NIGHT) break;
+      if (newObs.length >= MAX_NEW_PER_PROJECTION) break;
       append({
         tick: signal.tick,
         dayIndex: signal.dayIndex,
@@ -104,9 +110,9 @@ export function compileObservations(
     }
   }
 
-  // ── 4. Commission decision (A5) ────────────────────────────
+  // ── 2. Commission decision (A5) ────────────────────────────
   const commDecision = cog.commissionDecision;
-  if (commDecision && newObs.length < MAX_NEW_PER_NIGHT) {
+  if (commDecision && newObs.length < MAX_NEW_PER_PROJECTION) {
     if (commDecision.action === "propose" && commDecision.candidateId) {
       append({
         tick,
@@ -144,21 +150,4 @@ export function compileObservations(
     cog.observations = merged;
   }
   return newObs;
-}
-
-function textOfEvent(evt: unknown): string {
-  if (!evt || typeof evt !== "object") return "";
-  const e = evt as Record<string, unknown>;
-  if (typeof e.text === "string" && e.text) return e.text;
-  if (typeof e.summary === "string" && e.summary) return e.summary;
-  if (typeof e.message === "string" && e.message) return e.message;
-  return "";
-}
-
-function eventKind(evt: unknown): string {
-  if (!evt || typeof evt !== "object") return "unknown";
-  const e = evt as Record<string, unknown>;
-  if (typeof e.kind === "string") return e.kind;
-  if (typeof e.type === "string") return e.type;
-  return "night_event";
 }

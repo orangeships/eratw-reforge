@@ -25,12 +25,13 @@
  * line — i.e. they return the outermost WORN piece, and the TEQUIP-branch
  * below that RETURNF is dead legacy code. So the faithful (live) read is
  * TEQUIP-independent: the outermost worn layer. `TEQUIP` is kept in state for
- * P1 (脱衣) but the Phase 0 read API does not consult it (matching QoL).
+ * P1 (脱衣); the read API consults removal markers only for 固有 underwear,
+ * whose authored names are not stored in EQUIP.
  */
 
 import type { CharaSlot } from "./game-state.js";
 import { charaOutfit, type CharaOutfit, type SlotName } from "./clothing-outfits.js";
-import { CFLAG_ID, EQUIP_SLOT } from "./settlement.js";
+import { CFLAG_ID, EQUIP_SLOT, TEQUIP_ID } from "./settlement.js";
 import { clothingName, type EquipPart } from "./clothing-catalog.js";
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,13 @@ const LOWER_UNDER_ORDER: readonly SlotName[] = ["ボディースーツ", "レオ
 /** The two slots whose piece is the chara's 固有 (unique) underwear. */
 const LOWER_UNDERWEAR_SLOT: SlotName = "下半身内衣２";
 const UPPER_UNDERWEAR_SLOT: SlotName = "上半身内衣２";
+
+function hasCommittedFullTopStrip(chara: CharaSlot): boolean {
+  return (
+    (chara.state.TEQUIP[TEQUIP_ID.上衣脱衣完毕] ?? 0) !== 0 &&
+    (chara.state.TEQUIP[TEQUIP_ID.上半身裸露状態] ?? 0) === 0
+  );
+}
 
 /** Slot id (`CSV/Equip.csv` value of `EQUIP_SLOT[name]`). */
 function slotId(name: SlotName): EquipPart {
@@ -75,7 +83,9 @@ function wearsSlot(chara: CharaSlot, outfit: CharaOutfit, slot: SlotName): boole
     if ((chara.state.CFLAG[CFLAG_ID.没穿内裤] ?? 0) !== 0) return false;
     return Boolean(outfit.lowerUnderwear);
   }
-  if (slot === UPPER_UNDERWEAR_SLOT) return Boolean(outfit.upperUnderwear);
+  if (slot === UPPER_UNDERWEAR_SLOT) {
+    return !hasCommittedFullTopStrip(chara) && Boolean(outfit.upperUnderwear);
+  }
   const equipId = chara.state.EQUIP[slotId(slot)];
   if (equipId !== undefined) return equipId !== 0; // 0 = explicitly stripped
   return outfit.wear[slot] != null; // legacy: no seed → use outfit default
@@ -90,7 +100,9 @@ function pieceNameInSlot(chara: CharaSlot, outfit: CharaOutfit, slot: SlotName):
     if ((chara.state.CFLAG[CFLAG_ID.没穿内裤] ?? 0) !== 0) return "";
     return outfit.lowerUnderwear ?? "";
   }
-  if (slot === UPPER_UNDERWEAR_SLOT) return outfit.upperUnderwear ?? "";
+  if (slot === UPPER_UNDERWEAR_SLOT) {
+    return hasCommittedFullTopStrip(chara) ? "" : (outfit.upperUnderwear ?? "");
+  }
   const equipId = chara.state.EQUIP[slotId(slot)];
   if (equipId !== undefined) {
     if (equipId === 0) return ""; // stripped
@@ -113,8 +125,18 @@ function cover(chara: CharaSlot, outfit: CharaOutfit, order: readonly SlotName[]
 // state.TEQUIP → exposure bits for P1).
 // ---------------------------------------------------------------------------
 
+/**
+ * The outfit lookup for a slot. Bundled charas get their `CHARA_OUTFITS`
+ * entry; charas WITHOUT one (dynamic characters — generated mob girls,
+ * authored residents like 霖之助 — and the master) get a synthetic empty
+ * outfit so the EQUIP-first read path still works: their worn set lives
+ * entirely in `state.EQUIP` (seeded by `mob-clothing.ts` for mob girls).
+ * Without this fallback a fully-EQUIP'd mob girl read as ＜全裸＞.
+ */
+const EMPTY_OUTFIT: CharaOutfit = { wear: {} };
+
 function outfitOf(chara: CharaSlot): CharaOutfit | undefined {
-  return charaOutfit(chara.charaNum);
+  return charaOutfit(chara.charaNum) ?? EMPTY_OUTFIT;
 }
 
 /** `@SHOW_TOP` — the outermost worn upper garment name ("" if none/naked). */

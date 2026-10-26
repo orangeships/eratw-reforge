@@ -22,9 +22,9 @@
  *
  * **DEFERRED (documented):**
  *   - Time-stop branch (ERB 23-26) — TSP drain, single 苦痛 SOURCE.
- *   - TCVAR:指令Ｖ補正 = 2 * (ABL:受虐属性 - 1) (ERB 48)
- *   - TCVAR:指令Ａ補正 = 4 * (ABL:受虐属性 - 1) (ERB 49) — mid-scene V/A
- *     amplifier signals; downstream consumers not modeled.
+ *   - Other commands' TCVAR 指令Ｃ/Ｖ/Ａ/Ｂ/Ｍ correction producers and their
+ *     command-specific branches remain to be audited. This command's V/A
+ *     producer is wired into the shared SOURCE_CHECK consumer.
  *   - HETEROSEX EXP writes (ERB 54-63) — gender-pair helper deferred.
  *   - 下半身着衣 / 睡眠姦中 / ASSI:従順 gates (ERB 81-91) — COMABLE layer.
  *   - COM100_DISPLAY swaps label to "お尻ぺんぺん" if 幼稚 (ERB 5-10) — display
@@ -41,6 +41,7 @@ import {
   PALAM_ID,
   SOURCE_ID,
   TALENT_ID,
+  TCVAR_ID,
 } from "../../../state/settlement.js";
 import { palamLevel } from "../../../state/settlement.js";
 import { makeComfHandler } from "../make-comf-handler.js";
@@ -101,6 +102,12 @@ export const comf100Def: ComfDef = {
     // ERB 65: 嗜虐快楽経験 PLAYER++.
     c.master.state.EXP[EXP_ID.嗜虐快楽経験] =
       (c.master.state.EXP[EXP_ID.嗜虐快楽経験] ?? 0) + 1;
+    // ERB 48-49: command-local V/A pleasure correction. SOURCE_CHECK
+    // consumes these transient slots after the ordinary converters and
+    // before ORGASM_ADD, matching SOURCE_CBVA.ERB:749-753.
+    const masochism = c.tAbl(ABL_ID.受虐属性);
+    c.t.state.TCVAR[TCVAR_ID.指令Ｖ補正] = 2 * (masochism - 1);
+    c.t.state.TCVAR[TCVAR_ID.指令Ａ補正] = 4 * (masochism - 1);
   },
 
   narration: (_c, favorDelta) =>
@@ -108,9 +115,5 @@ export const comf100Def: ComfDef = {
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };
-
-// Avoid unused-import linter warning for 受虐属性 ABL read (used only in
-// TCVAR 指令補正, which is deferred).
-void ABL_ID.受虐属性;
 
 export const comf100HandlerEntry: HandlerEntry = makeComfHandler(comf100Def);

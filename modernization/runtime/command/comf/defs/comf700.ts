@@ -49,6 +49,7 @@
 import type { HandlerEntry } from "../../types.js";
 import {
   BASE_ID,
+  CFLAG_ID,
   EXP_ID,
   SOURCE_ID,
   TALENT_ID,
@@ -71,6 +72,7 @@ export const comf700Def: ComfDef = {
   // No target — this is a self-pleasure command. `hasTarget: false` lets the
   // factory skip target gates; the master acts alone.
   requiresTarget: false,
+  settleSourcesOnMaster: true,
 
   // ERB 17-18: master 体力 5 / 気力 50.
   downbase: { [BASE_ID.体力]: 5, [BASE_ID.気力]: 50 },
@@ -133,8 +135,8 @@ export const comf700Def: ComfDef = {
     c.master.state.EXP[EXP_ID.手淫経験] =
       (c.master.state.EXP[EXP_ID.手淫経験] ?? 0) + 1;
     // ERB 78: 自慰过了 PLAYER++.
-    c.master.state.CFLAG[/*自慰过了*/ 347] =
-      (c.master.state.CFLAG[347] ?? 0) + 1;
+    c.master.state.CFLAG[CFLAG_ID.自慰过了] =
+      (c.master.state.CFLAG[CFLAG_ID.自慰过了] ?? 0) + 1;
   },
 
   narration: (_c, favorDelta) =>

@@ -310,16 +310,18 @@ export const KOJO_CATEGORY_ROUTES: readonly KojoCategoryRoute[] =
     "category": "DAILY",
     "sourceDispatch": true,
     "sourceLine": 779,
-    "indexed": false,
-    "bundled": false,
-    "resolver": "not-supported",
+    "indexed": true,
+    "bundled": true,
+    "resolver": "structured",
     "requires": [
-      "dispatcher-category",
+      "daily-event-id",
       "target",
+      "args",
+      "variant",
       "state"
     ],
-    "indexedEntries": 0,
-    "bundledEntries": 0
+    "indexedEntries": 218,
+    "bundledEntries": 203
   },
   {
     "category": "DIARY",

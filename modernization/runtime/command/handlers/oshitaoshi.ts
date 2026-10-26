@@ -9,14 +9,12 @@
  * **Faithful core ported** (`ERB/コマンド関連/COMF/日常系/COMF350 押し倒す.ERB`,
  * the normal-branch path: no 時停, no 潜伏, single target, sober):
  *
- *   1. `@COM_ABLE350` core (ERB line 355-432), simplified to what we can
- *      evaluate in our runtime:
- *        - target present (resolver contract; `ctx.target > 0`)
- *        - target not sleeping (`CFLAG:313 != 1`)
- *        - master 気力 > 0 (`BASE:1 > 0`)
- *      Defer: 甲斐性無 (`FLAG:1040`), 约会-location gate (情人旅館 /
- *      情人用宿屋 / OMANEKIBEYA — line 418), 特殊诶嘿嘿条件 (line 311),
- *      時停/潜伏 bypass (lines 100-196).
+ *   1. `@COM_ABLE350` single-target gate (ERB line 355-432): co-presence,
+ *      no repeated player-led H entry, kiss/co-sleep/work/struggle walls,
+ *      home-map or hotel/guest/special-event location, sleep/stamina/courage.
+ *      Frozen and hidden targets bypass only the original normal branch.
+ *      Unmodeled multi-target, JOBFUCKING and GMF option modes remain deferred;
+ *      consent and atmosphere are execution results, not invented menu gates.
  *
  *   2. Consent gate (ERB line 132 / 221): `GETBIT(CFLAG:既成事實, 1) ||
  *      TALENT:合意誤認`. Without consent → blocked (`抱き寄せ` flow
@@ -37,9 +35,10 @@
  *      record (line 301-304) — WorldScheduler Phase 8 will own the
  *      H-mode session envelope; TFLAG:COMABLE管理 = 2 (line 296).
  *
- *   5. On blocked (ERB line 275-281):
+ *   5. On mood-blocked (ERB line 275-281):
  *        - `DOWNBASE:MASTER:気力 = 50`
  *        - `BASE:TARGET:情緒 /= 2` (truncating int divide)
+ *        - `TFLAG:194 = 4`, selecting the original MESSAGE_COM350 refusal
  *      Defer: `CALL ENDUFUFU_ALL` (line 276), `TFLAG:102 = 0` (line 279).
  *
  * **Subsystem used.** This handler reads `computeConsentJudgement`,
@@ -68,10 +67,8 @@
  *   - **EYEWITNESS / DATUI_SHOES / UWAKI_RECORD / UFUFU_START_*:**
  *     side-effect helpers from ERB that map to scheduler / log
  *     concerns (Phase 8).
- *   - **TFLAG:194 (refusal code) / TFLAG:102 / TFLAG:COMABLE管理:**
- *     TFLAG namespace is not yet a modeled GameState namespace.
- *   - **`FLAG:70` (時間停止) and `FLAG:99` (潜伏) bypass arms:**
- *     same defer.
+ *   - **TFLAG:102 / TFLAG:COMABLE管理:** ending a failed session and its
+ *     command-availability phase are still owned by the broader lifecycle.
  *   - **好感度 gains on success:** 抱き寄せ / success arms add
  *     `SOURCE:情愛` (CASE 6 in 抱き寄せ, line 250) which then routes
  *     through `applySourceCheck`. We skip settlement entirely (no
@@ -89,6 +86,7 @@ import {
   CFLAG_ID,
   FLAG_ID,
   TALENT_ID,
+  TCVAR_ID,
   advanceTimeTicks,
   getMasterBase,
   setCharaBase,
@@ -102,7 +100,10 @@ import {
   hConsentAcquired,
   liftedConsentJudgement,
 } from "../../state/attitude.js";
-import { TFLAG_ID, setTflag } from "../../state/tflag.js";
+import { TFLAG_ID, getTflag, setTflag } from "../../state/tflag.js";
+import { isHMode } from "../h-mode.js";
+import { MAIN_MAP_ID, mapIdOfLocation } from "../../world/location-predicates.js";
+import { ROOM_CATALOG_BY_LOCATION } from "../../world/room-catalog.js";
 import { collectCommandKojo } from "../command-kojo.js";
 import { applyKojoEffects } from "../../kojo/effects.js";
 
@@ -154,6 +155,36 @@ function checkOshitaoshiEligible(
   if (!targetSlot) {
     return { ok: false, reason: { kind: "precondition", message: "目标角色不存在。" } };
   }
+  const block = (message: string) => ({ ok: false as const, reason: { kind: "precondition" as const, message } });
+  if (targetSlot.location !== ctx.state.master.location) return block("推倒需要目标角色在同一地点。");
+  // GLOBAL_COMABLE: TFLAG:102==2 disallows repeating the H entry action.
+  // Partner-led H (==3) retains the original takeover route.
+  if (isHMode(ctx.state, ctx.target) && (targetSlot.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) !== 2) {
+    return block("已经处于调教状态。");
+  }
+  const stopped = (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
+    (targetSlot.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) !== 1;
+  const hiddenH = ((targetSlot.state.CFLAG[CFLAG_ID.潜伏状態] ?? 0) & 1) !== 0;
+  // COM_ABLE350:369-422. Frozen/hidden targets bypass this whole branch,
+  // but never bypass the final sleep, stamina and cowardice checks.
+  if (!stopped && !hiddenH) {
+    const kissTarget = getTflag(ctx.state, TFLAG_ID.接吻マーク);
+    if (kissTarget !== 0 && kissTarget !== ctx.target) return block("正在与其他角色接吻。");
+    if ((targetSlot.state.CFLAG[CFLAG_ID.陪睡中] ?? 0) !== 0) return block("目标正在陪睡。");
+    if ((targetSlot.state.CFLAG[CFLAG_ID.行动] ?? 0) === 5 &&
+        (targetSlot.state.TCVAR[TCVAR_ID.泥酔] ?? 0) === 0) return block("目标正在工作。");
+    if (((targetSlot.state.TCVAR[TCVAR_ID.随便] ?? 0) & 1) !== 0) return block("当前无法取得主导权。");
+    // @GMF_AT_LARGE_MAP's ordinary mode uses MAIN_MAP (or the selected
+    // residence map); outings need a love hotel/guest room or authored event.
+    const mainMap = mapIdOfLocation(ctx.state.homeLocation ?? ctx.state.master.homeLocation ?? "") ?? MAIN_MAP_ID;
+    const room = ROOM_CATALOG_BY_LOCATION[ctx.state.master.location];
+    // PLACE_ERH: P225情人用宿屋 / P935情人旅館 / local room 98待客室.
+    const intimateRoom = room?.roomId === 225 || room?.roomId === 935 || room?.localNumber === 98;
+    if (mapIdOfLocation(ctx.state.master.location) !== mainMap && !intimateRoom &&
+        (targetSlot.state.TCVAR[TCVAR_ID.特殊事件] ?? 0) === 0) {
+      return block("外出地点只能在情人旅馆、待客室或特殊事件中推倒。");
+    }
+  }
   // ERB line 424-425: target must not be sleeping.
   if ((targetSlot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) {
     return { ok: false, reason: { kind: "precondition", message: "目标正在睡觉。" } };
@@ -162,6 +193,7 @@ function checkOshitaoshiEligible(
   if ((getMasterBase(ctx.state, BASE_ID.気力) ?? 0) <= 0) {
     return { ok: false, reason: { kind: "precondition", message: "気力不足，无法行动。" } };
   }
+  if ((ctx.state.flagStore[FLAG_ID.甲斐性無] ?? 0) !== 0) return block("没有那份胆量（甲斐性無）。");
   return { ok: true };
 }
 
@@ -179,6 +211,9 @@ export const oshitaoshiHandlerEntry: HandlerEntry = {
     const next = cloneGameState(ctx.state);
     const target = next.charas[ctx.target]!;
     const master = next.master;
+    // TFLAG:194 selects MESSAGE_COM350's authored result line. Clear it at
+    // the command boundary so a previous attempt cannot leak its refusal.
+    setTflag(next, TFLAG_ID.SOURCEなどに影響しないSELECTCOMの分岐, 0);
     const frozenTarget =
       (next.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
       (target.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
@@ -212,16 +247,14 @@ export const oshitaoshiHandlerEntry: HandlerEntry = {
           (target.state.CFLAG[CFLAG_ID.既成事実] ?? 0) | H_CONSENT_BIT;
       } else {
         setTflag(next, TFLAG_ID.SELECTCOM的分岐, -1);
-        const kojo = collectOshitaoshiKojo(ctx, next);
         return {
-          state: kojo.state,
+          state: next,
           events: [
             {
               kind: "NARRATION",
               timestamp: ctx.now(),
-              text: `%CALLNAME:TARGET%拒绝了靠近。（合意判定 ${goodwill} / 需要 ${resistance}）`,
+              text: `%CALLNAME:TARGET%拒绝了你的拥抱。`,
             },
-            ...kojo.events,
           ],
           outcome: "blocked",
           kojoHandled: true,
@@ -238,10 +271,13 @@ export const oshitaoshiHandlerEntry: HandlerEntry = {
     // Bypass arms (ERB line 158-159): 風騷 TALENT, 守矢约会 target,
     // CFLAG:诶嘿嘿 already, FLAG:催眠強度 > 75 — these GOTO OK without
     // the gate check (era's "she's so lewd it doesn't matter" path).
-    // For our slice we model the 風騷 TALENT bypass only (the others are
-    // deferred subsystems: 守矢约会 lottery, time-stop 催眠, and re-entry).
+    // These normal-branch bypasses are all represented by canonical state:
+    // Moriya lottery target, 風騷, re-entering an existing H state, and hypnosis.
     const bypass =
-      (target.state.TALENT[TALENT_ID.風騷] ?? 0) > 0;
+      (next.flagStore[FLAG_ID.守矢神簽約会的対象] ?? 0) === ctx.target ||
+      (target.state.TALENT[TALENT_ID.風騷] ?? 0) > 0 ||
+      (target.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) !== 0 ||
+      (next.flagStore[FLAG_ID.催眠強度] ?? 0) > 75;
 
     // The faithful OR: blocked if EITHER 情緒 < 300 OR 亲热 < 2. Note
     // 亲热 is the TARGET's per INFO.ERB (single-target collapse).
@@ -258,19 +294,13 @@ export const oshitaoshiHandlerEntry: HandlerEntry = {
       //    "consent-acquired → blocked on mood" path? Re-reading the
       //    ERB — no: 既成事實 bit 1 is only lifted inside 抱き寄せ
       //    (line 178), not in the $OK/$不让推倒 arms (line 261-269).
-      //    We just record the failed attempt.
-      const kojo = collectOshitaoshiKojo(ctx, next);
+      //    We just record the failed attempt. Upstream handles this command
+      //    (RETURN 1) and routes its text through MESSAGE_COM350 via TFLAG:194.
+      setTflag(next, TFLAG_ID.SOURCEなどに影響しないSELECTCOMの分岐, 4);
       return {
-        state: kojo.state,
-        events: [
-          {
-            kind: "NARRATION",
-            timestamp: ctx.now(),
-            text: `%CALLNAME:MASTER% 试着推倒 %CALLNAME:TARGET%，但气氛不对、被打断了。`,
-          },
-          ...kojo.events,
-        ],
-        outcome: "blocked",
+        state: next,
+        events: [],
+        outcome: "ok",
         kojoHandled: true,
         failReason: {
           kind: "precondition",
@@ -284,9 +314,8 @@ export const oshitaoshiHandlerEntry: HandlerEntry = {
     setCharaCflag(next, ctx.target, CFLAG_ID.诶嘿嘿, 1);
     // 2. Master 诶嘿嘿 = 1 (line 295 of COMF350).
     setMasterCflag(next, CFLAG_ID.诶嘿嘿, 1);
-    // 3. Target 情緒 floor to 300 (line 263-264). Only reachable via
-    //    the 風騷 bypass arm — the gate above already requires
-    //    情緒 ≥ 300, so this clamp is bypass-only.
+    // 3. Target 情緒 floor to 300 (line 263-264). The regular gate already
+    //    requires 情緒 ≥ 300, so this clamp is reached only through a bypass.
     if (bypass && seicho < 300) {
       setCharaBase(next, ctx.target, BASE_ID.情緒, 300);
     }

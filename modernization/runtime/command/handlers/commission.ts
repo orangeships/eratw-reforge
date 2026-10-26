@@ -6,20 +6,25 @@
  * - COMF630 ホフゴブリンに依頼 / 霍布哥布林代办服务
  *
  * V1 ports the real request state machine and a conservative source-read
- * catalog. Personal commission kojo is routed through `resolveIraiKojo`; when
- * no source body exists, it stays silent (no generated fallback prose).
+ * catalog. Personal commission kojo is routed through `resolveIraiKojo` and
+ * exposes its detailed route status to the shell-side L1 fallback boundary.
  */
 
 import type { ObservationEvent } from "../../../schemas/types.js";
-import type { GameState } from "../../state/game-state.js";
+import type { CommissionSlot, GameState } from "../../state/game-state.js";
 import { cloneGameState } from "../../state/game-state.js";
+import { getYogore } from "../../state/yogore.js";
+import { GATHERING_SPOT_1_ITEMS } from "../../state/gathering.js";
 import {
   COMMISSION_PROGRESS,
+  ITEM_CHEAP_INGREDIENT,
+  ITEM_HIGH_INGREDIENT,
   acceptCommission,
   canAcceptCommission,
   clearCommissionSlot,
   commissionActName,
   commissionContent,
+  commissionRequestDialogLines,
   commissionStatus,
   commissionTitleForTarget,
   describeCommission,
@@ -28,6 +33,7 @@ import {
   findSlotByClient,
   reportCommission,
   searchActiveCommissionSlot,
+  setCommissionProgress,
   setCommissionExecutionResult,
   iraiIdToClient,
   type CommissionScene,
@@ -35,6 +41,8 @@ import {
 import { itemCount } from "../../state/items.js";
 import { canAfford, formatMoney, pay } from "../../state/money.js";
 import { CFLAG_ID, FLAG_ID, advanceTimeTicks } from "../../state/settlement.js";
+import { mergeIraiKojoResolutions } from "../../kojo/irai-kojo.js";
+import type { KojoResolution } from "../../kojo/types.js";
 import { pickOne, requirePickOne, type PromptSpec } from "../prompt.js";
 import type { CommandContext, CommandResult, HandlerEntry } from "../types.js";
 
@@ -65,6 +73,7 @@ function kojoEvents(
   scene: CommissionScene,
   iraiId: number,
   state: Readonly<GameState>,
+  resolutions: KojoResolution[],
 ): ObservationEvent[] {
   const role =
     scene === "依頼報告不要"
@@ -72,14 +81,21 @@ function kojoEvents(
       : charaNum === iraiIdToClient(iraiId)
         ? "CLIENT"
         : "TARGET";
-  const lines = ctx.dialogueRouter?.resolveIraiKojo?.(
-    charaNum,
-    role,
-    scene,
-    iraiId,
-    state,
-    ctx.rng,
+  const detailed = ctx.dialogueRouter?.resolveIraiKojoDetailed?.(
+    charaNum, role, scene, iraiId, state, ctx.rng,
+  );
+  const lines = detailed?.lines ?? ctx.dialogueRouter?.resolveIraiKojo?.(
+    charaNum, role, scene, iraiId, state, ctx.rng,
   ) ?? [];
+  resolutions.push(detailed ?? (lines.length > 0
+    ? {
+        status: "resolved", lines, effects: [], unsupportedPredicates: [],
+        unsupportedEffects: [], diagnostics: [],
+      }
+    : {
+        status: "unsupported", lines: [], effects: [], unsupportedPredicates: [],
+        unsupportedEffects: [], diagnostics: [{ code: "unresolved-text", detail: "IRAI router did not expose a detailed route status" }],
+      }));
   return lines.map((line) => ({
     kind: "DIALOGUE_LINE" as const,
     timestamp: ctx.now(),
@@ -89,8 +105,63 @@ function kojoEvents(
   }));
 }
 
+function withCommissionKojo(result: CommandResult, resolutions: readonly KojoResolution[]): CommandResult {
+  return resolutions.length > 0
+    ? { ...result, commandKojoResolution: mergeIraiKojoResolutions(resolutions) }
+    : result;
+}
+
 function narration(text: string, ctx: CommandContext): ObservationEvent {
   return { kind: "NARRATION", timestamp: ctx.now(), text };
+}
+
+function reportRewardEvents(
+  slot: CommissionSlot,
+  state: GameState,
+  beforeMoney: number,
+  beforeItems: Readonly<Record<number, number>>,
+  materials: readonly { id: number; name: string }[],
+  ctx: CommandContext,
+): ObservationEvent[] {
+  if (slot.kind !== "common") return [];
+  // Letter rewards are drawn with replacement and must retain draw order.
+  if (slot.localId === 8) return materials.map(({ name }) => narration(`获得了${name}`, ctx));
+  const events: ObservationEvent[] = [];
+  const moneyGain = state.money - beforeMoney;
+  // 一般依頼17/18 大成功 → the client tops the fee up on top of the listed
+  // reward (`一般17.ERB:195-201` / `一般18.ERB:281-287`). Report the two
+  // payments separately so the bonus line lands between them.
+  if (slot.bonus && (slot.localId === 17 || slot.localId === 18) && moneyGain > 0) {
+    const listed = slot.localId === 17 ? 2500 : 2000;
+    if (moneyGain > listed) {
+      const callName = state.charas[slot.clientId]?.callName ?? "对方";
+      events.push(narration(`获得了${formatMoney(listed)}`, ctx));
+      events.push(narration(
+        slot.localId === 17 ? `${callName}支付了奖金！` : `${callName}追加了打赏！`,
+        ctx,
+      ));
+      events.push(narration(`获得了${formatMoney(moneyGain - listed)}`, ctx));
+      return events;
+    }
+  }
+  if (moneyGain > 0) events.push(narration(`获得了${formatMoney(moneyGain)}`, ctx));
+  for (const [key, count] of Object.entries(state.items ?? {})) {
+    const id = Number(key);
+    const gain = count - (beforeItems[id] ?? 0);
+    if (gain <= 0) continue;
+    const name = id === ITEM_CHEAP_INGREDIENT ? "平价食材"
+      : id === ITEM_HIGH_INGREDIENT ? "高级食材"
+        : GATHERING_SPOT_1_ITEMS.find((item) => item.id === id)?.name ?? `道具${id}`;
+    events.push(narration(`获得了${name}${gain > 1 ? `×${gain}` : ""}`, ctx));
+  }
+  return events;
+}
+
+function settleReportWithVisibleRewards(state: GameState, slot: CommissionSlot, ctx: CommandContext): ObservationEvent[] {
+  const beforeMoney = state.money;
+  const beforeItems = { ...state.items };
+  const materials = reportCommission(state, slot, ctx.rng);
+  return reportRewardEvents(slot, state, beforeMoney, beforeItems, materials, ctx);
 }
 
 function commission366Prompt(ctx: CommandContext): PromptSpec | null {
@@ -162,6 +233,7 @@ export const comf366HandlerEntry: HandlerEntry = {
     const status = commissionStatus(next, target);
     const iraiId = commissionContent(next, target);
     const events: ObservationEvent[] = [];
+    const kojoResolutions: KojoResolution[] = [];
 
     if (status === COMMISSION_PROGRESS.Offered) {
       const spec = commission366Prompt(ctx);
@@ -176,14 +248,18 @@ export const comf366HandlerEntry: HandlerEntry = {
       }
 
       events.push(narration("看来%CALLNAME:TARGET%有事想拜托%CALLNAME:MASTER%。", ctx));
-      events.push(...kojoEvents(ctx, target, "依頼提示時", iraiId, next));
+      events.push(...kojoEvents(ctx, target, "依頼提示時", iraiId, next, kojoResolutions));
       events.push(...describeCommission(next, target).map((line) => narration(line, ctx)));
 
       if (picked === "decline") {
         events.push(narration("%CALLNAME:MASTER%郑重地拒绝了。", ctx));
-        events.push(...kojoEvents(ctx, target, "依頼非受託時", iraiId, next));
+        events.push(...kojoEvents(ctx, target, "依頼非受託時", iraiId, next, kojoResolutions));
         events.push(narration("%CALLNAME:TARGET%露出了遗憾的神情。", ctx));
-        return { state: next, events, outcome: "noop" };
+        // IRAI_HAPPEN's pending offer is temporary.  Refusal clears both the
+        // CFLAG pair and the serialized CommissionOffer, so the next morning
+        // can generate a fresh request instead of replaying the old one.
+        setCommissionProgress(next, target, 0);
+        return withCommissionKojo({ state: next, events, outcome: "noop" }, kojoResolutions);
       }
 
       const slot = acceptCommission(next, target);
@@ -196,8 +272,11 @@ export const comf366HandlerEntry: HandlerEntry = {
         };
       }
       events.push(narration("%CALLNAME:MASTER%接受了%CALLNAME:TARGET%的委托。", ctx));
-      events.push(...kojoEvents(ctx, target, "依頼受託時", slot.iraiId, next));
-      return { state: next, events, outcome: "ok" };
+      events.push(...kojoEvents(ctx, target, "依頼受託時", slot.iraiId, next, kojoResolutions));
+      // COMF366 依頼を聞く.ERB:127-135 — the accepted request is spelled out
+      // right here (一般依頼17 only; 18 shows its order in the detail panel).
+      events.push(...commissionRequestDialogLines(next, target).map((line) => narration(line, ctx)));
+      return withCommissionKojo({ state: next, events, outcome: "ok" }, kojoResolutions);
     }
 
     if (status === COMMISSION_PROGRESS.Active) {
@@ -222,15 +301,15 @@ export const comf366HandlerEntry: HandlerEntry = {
         };
       }
 
-      events.push(...kojoEvents(ctx, target, "依頼確認時", slot.iraiId, next));
+      events.push(...kojoEvents(ctx, target, "依頼確認時", slot.iraiId, next, kojoResolutions));
       events.push(...describeCommission(next, target).map((line) => narration(line, ctx)));
       if (picked === "abandon") {
-        events.push(...kojoEvents(ctx, target, "依頼破棄時", slot.iraiId, next));
+        events.push(...kojoEvents(ctx, target, "依頼破棄時", slot.iraiId, next, kojoResolutions));
         events.push(narration("已放弃委托。", ctx));
         clearCommissionSlot(next, slot, COMMISSION_PROGRESS.EndedFailed);
-        return { state: next, events, outcome: "ok" };
+        return withCommissionKojo({ state: next, events, outcome: "ok" }, kojoResolutions);
       }
-      return { state: next, events, outcome: "noop" };
+      return withCommissionKojo({ state: next, events, outcome: "noop" }, kojoResolutions);
     }
 
     if (
@@ -249,10 +328,13 @@ export const comf366HandlerEntry: HandlerEntry = {
         };
       }
       const success = status === COMMISSION_PROGRESS.Completed;
-      events.push(...kojoEvents(ctx, target, success ? "成功報告時" : "失敗報告時", slot.iraiId, next));
-      reportCommission(next, slot, ctx.rng);
-      events.push(narration(success ? "已报告委托结果。" : "已报告委托失败。", ctx));
-      return { state: next, events, outcome: "ok" };
+      events.push(...kojoEvents(ctx, target, success ? "成功報告時" : "失敗報告時", slot.iraiId, next, kojoResolutions));
+      const rewards = settleReportWithVisibleRewards(next, slot, ctx);
+      events.push(...rewards);
+      if (!success || rewards.length === 0) {
+        events.push(narration(success ? "已报告委托结果。" : "已报告委托失败。", ctx));
+      }
+      return withCommissionKojo({ state: next, events, outcome: "ok" }, kojoResolutions);
     }
 
     return {
@@ -268,11 +350,43 @@ function commission367Check(ctx: CommandContext): CheckResult {
   return slot ? { ok: true } : block("没有可以在这里执行的委托。");
 }
 
-function executionSummary(slotLocalId: number, slotKind: "common" | "unique", clientId?: number): string {
-  const def = findCommissionDef(slotKind, slotLocalId, clientId);
-  return def
-    ? `%CALLNAME:MASTER%执行了「${def.name}」。`
-    : "%CALLNAME:MASTER%执行了委托。";
+/** Source-backed action lines; complex choice scenes keep a short action line. */
+function executionNarration(slot: CommissionSlot, state: GameState): string[] {
+  const master = "%CALLNAME:MASTER%";
+  const target = "%CALLNAME:TARGET%";
+  const client = `%CALLNAME:${slot.clientId}%`;
+  const dish = state.dish?.name ?? "料理";
+  const cleanRoom = getYogore(state, slot.targetLocation ?? state.master.location) < 1000;
+  if (slot.kind === "common") {
+    switch (slot.localId) {
+      case 1: return [cleanRoom ? `${target}的房间变得十分干净` : `${master}和${target}一起清扫了房间`];
+      case 2: return [`${master}给${client}家里的盆栽和植物浇了水`];
+      case 3: return [`${master}陪${target}一起玩`];
+      case 4: return [`${master}和${target}一起制作着${dish}`];
+      case 5: return [`${master}和${target}进行着弹幕游戏的特训`];
+      case 6: return [`${master}回答了${target}的疑问`];
+      case 7: return [cleanRoom ? `${target}的房间十分干净` : `${master}和${target}合作彻底清扫了房间`];
+      case 8: return [`${master}把保管着的信交给了${target}`];
+      case 9: return [`${master}把保管着的遗失物交给了${target}`];
+      case 10: return [`一直在寻找的${master}终于发现了遗失物`];
+      case 11: return [`一直在打听的${master}终于发现了遗失物`];
+      case 12: return [`成功惩罚${target}了！`];
+      case 13: return [`${master}把美味的鱼交给了${target}`, "总感觉活下去的希望涌出来了。"];
+      case 14: return [
+        `${master}交付了木柴`,
+        ...(state.time.season === 4 ? [`${target}高兴地表示这样就不用在寒冷中发抖了`] : []),
+      ];
+      case 15: return [`${master}牵起了${client}的手`];
+      case 16: return [`${target}对${master}的回答很满意！`];
+      case 17:
+      case 18:
+        // 一般依頼17/18 依頼実行時 (:109-111 / :191-193): the delivery callout
+        // first, then the hand-over line naming the ordered dish.
+        return [`「这是您点的${dish}」`, `${master}将${target}点的<${dish}>交给了${target}`];
+    }
+  }
+  const def = findCommissionDef(slot.kind, slot.localId, slot.clientId);
+  return [def ? `${master}执行了「${def.name}」。` : `${master}执行了委托。`];
 }
 
 export const comf367HandlerEntry: HandlerEntry = {
@@ -298,8 +412,9 @@ export const comf367HandlerEntry: HandlerEntry = {
     }
 
     const events: ObservationEvent[] = [];
-    events.push(...kojoEvents(ctx, ctx.target, "依頼実行直前", slot.iraiId, next));
-    events.push(narration(executionSummary(slot.localId, slot.kind, slot.clientId), ctx));
+    const kojoResolutions: KojoResolution[] = [];
+    events.push(...kojoEvents(ctx, ctx.target, "依頼実行直前", slot.iraiId, next, kojoResolutions));
+    events.push(...executionNarration(slot, next).map((text) => narration(text, ctx)));
 
     const executed = executeCommissionCore(next, slot, ctx.rng);
     events.push(...executed.events.map((event) => ({ ...event, timestamp: ctx.now() })));
@@ -312,22 +427,25 @@ export const comf367HandlerEntry: HandlerEntry = {
     }
 
     setCommissionExecutionResult(next, slot, executed.result);
-    events.push(...kojoEvents(ctx, ctx.target, "依頼実行直後", slot.iraiId, next));
+    events.push(...kojoEvents(ctx, ctx.target, "依頼実行直後", slot.iraiId, next, kojoResolutions));
 
     if (executed.result === "unresolved") {
-      return { state: next, events, outcome: "ok" };
+      return withCommissionKojo({ state: next, events, outcome: "ok" }, kojoResolutions);
     }
 
     if (ctx.target === slot.clientId) {
       const success = executed.result === "success";
-      events.push(...kojoEvents(ctx, slot.clientId, success ? "成功報告時" : "失敗報告時", slot.iraiId, next));
-      reportCommission(next, slot, ctx.rng);
-      events.push(narration(success ? "已报告委托结果。" : "已报告委托失败。", ctx));
+      events.push(...kojoEvents(ctx, slot.clientId, success ? "成功報告時" : "失敗報告時", slot.iraiId, next, kojoResolutions));
+      const rewards = settleReportWithVisibleRewards(next, slot, ctx);
+      events.push(...rewards);
+      if (!success || rewards.length === 0) {
+        events.push(narration(success ? "已报告委托结果。" : "已报告委托失败。", ctx));
+      }
     } else {
       events.push(narration(`别忘了向%CALLNAME:${slot.clientId}%报告。`, ctx));
     }
 
-    return { state: next, events, outcome: "ok" };
+    return withCommissionKojo({ state: next, events, outcome: "ok" }, kojoResolutions);
   },
 };
 

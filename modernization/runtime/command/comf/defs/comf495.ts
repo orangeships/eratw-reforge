@@ -31,6 +31,7 @@ import type { HandlerEntry } from "../../types.js";
 import { makeComfHandler } from "../make-comf-handler.js";
 import type { ComfDef } from "../comf-def.js";
 import { TFLAG_ID, setTflag } from "../../../state/tflag.js";
+import { skySceneTextFromState } from "../../../state/weather.js";
 
 export const comf495Def: ComfDef = {
   commandNo: 495,
@@ -53,14 +54,9 @@ export const comf495Def: ComfDef = {
     setTflag(c.next, TFLAG_ID.COMABLE管理, 0);
   },
 
-  // Upstream only advances TIME here. Keep the modern feedback deliberately
-  // weather-neutral: default weather state used to leak "少云" into every
-  // night glance before the weather simulation had a meaningful sample.
-  narration: (c) => {
-    const hour = c.ctx.state.time.hourOfDay;
-    const night = hour >= 18 || hour < 5;
-    return `%CALLNAME:MASTER%看向天空。${night ? "星星在闪烁。" : "天空静静地延展开来。"}`;
-  },
+  // @MESSAGE_COM495 describes the sky according to weather. The migrated
+  // command uses the current regional weather as its compact fallback prose.
+  narration: (c) => `%CALLNAME:MASTER%看向天空。${skySceneTextFromState(c.ctx.state)}`,
 };
 
 export const comf495HandlerEntry: HandlerEntry = makeComfHandler(comf495Def);

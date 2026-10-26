@@ -6,6 +6,7 @@ import type { HandlerEntry } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
 import { advanceTimeTicks } from "../../state/settlement.js";
 import { setSlotLocation } from "../../world/room-id-location.js";
+import { followCompanions } from "../../state/companion-follow.js";
 import { pitfallArrivalEvents } from "../../world/free-activity-events.js";
 
 export const moveToVillageHandlerEntry: HandlerEntry = {
@@ -14,6 +15,7 @@ export const moveToVillageHandlerEntry: HandlerEntry = {
     const next = cloneGameState(ctx.state);
     setSlotLocation(next.master, "人間之里");
     advanceTimeTicks(next, 5);
+    followCompanions(next, 5);
     const activityEvents = pitfallArrivalEvents(next, "人間之里", ctx.now());
     return {
       state: next,

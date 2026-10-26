@@ -13,6 +13,7 @@ export type {
   CharaSlotState,
   SleepSession,
   DailyEventSession,
+  FestivalEventSession,
   EventPromptLine,
   EventPromptSpec,
   MobMealSession,
@@ -37,7 +38,9 @@ export type {
   TrainingSummary,
   DailySettlementEntry,
   CommissionKind,
+  CommissionOffer,
   CommissionProgress,
+  CommissionSearchReveal,
   CommissionSlot,
   FarmPlot,
   CommissionState,
@@ -160,12 +163,25 @@ export {
   type FishingStepResult,
 } from "./fishing-game.js";
 export { cloneGameState, diffGameState, emptyCharaSlotState, snapshotCharaStates } from "./game-state.js";
+export { hasActiveStealthSession, repairOrphanStealthSummary } from "./stealth.js";
 export {
   bodyFillRate,
   type BodyFillPart,
 } from "./body-fill-rate.js";
 export { estrusCategory } from "./estrus-cycle.js";
+export {
+  effectivePortraitCharaNum,
+  portraitVariantOf,
+  renderedPortraitVariant,
+  clampPortraitVariant,
+  setPortraitVariant,
+  type PortraitVariantAvailability,
+} from "./portrait-variant.js";
 export { getHBodyStats, type HBodyStats } from "./h-body-stats.js";
+export {
+  readHCurrentBodyState, readHInsertionRelation, isPlayerHInsertionActive,
+  type HCurrentBodyState, type HInsertionRelation, type HInsertionSite,
+} from "./h-interaction-state.js";
 export {
   GAME_STATE_SCHEMA_VERSION,
   migrateGameState,
@@ -345,6 +361,15 @@ export {
   type CommissionExecutionResult,
   type CommissionScene,
 } from "./commission.js";
+export {
+  INSECT_FORAGING_REGIONS,
+  insectForagingFee,
+  isForagingRegion,
+  startInsectForaging,
+  changeInsectForagingRegion,
+  settleInsectForagingMorning,
+  type InsectForagingContract,
+} from "./insect-foraging.js";
 
 // 角色情报看板（PAGE 0..6 + Personal History）— 切片 1 数据基座
 export {

@@ -1,4 +1,5 @@
 import { cloneGameState, type GameState } from "../state/index.js";
+import { recordKojoClone } from "./stats.js";
 import type { KojoStagedEffect } from "./types.js";
 import type { DialogueRouter, KojoLine } from "./types.js";
 import type { Rng } from "../command/types.js";
@@ -218,16 +219,31 @@ export function applyKojoEffects(
   state: Readonly<GameState>,
   effects: readonly KojoStagedEffect[],
 ): GameState {
+  const cloneStartedAt = performance.now();
   const next = cloneGameState(state as GameState);
+  recordKojoClone(performance.now() - cloneStartedAt);
+  applyKojoEffectsInPlace(next, effects);
+  return next;
+}
+
+/** Apply staged effects directly into `state` (mutates, no clone). The walk
+ * state at the inline-apply sites is already a private clone, so the old
+ * `Object.assign(state, applyKojoEffects(state, [effect]))` per-effect
+ * full re-clone was redundant — one write pass is equivalent
+ * (AI-PREPARE-PERF-PLAN.md §4.A fix1). */
+export function applyKojoEffectsInPlace(
+  state: GameState,
+  effects: readonly KojoStagedEffect[],
+): void {
   for (const effect of effects) {
     if (effect.kind === "memory") {
-      memoryBucket(next, effect.charaNum, effect.memory)[effect.key] = true;
+      memoryBucket(state, effect.charaNum, effect.memory)[effect.key] = true;
     } else if (effect.kind === "display-name") {
-      next.displayNames ??= {};
-      next.displayNames[effect.observer] ??= {};
-      next.displayNames[effect.observer]![effect.subject] = effect.value;
+      state.displayNames ??= {};
+      state.displayNames[effect.observer] ??= {};
+      state.displayNames[effect.observer]![effect.subject] = effect.value;
     } else if (effect.kind === "fish-ledger") {
-      const gear = ensureFishingGear(next);
+      const gear = ensureFishingGear(state);
       const bag = effect.field === "count" ? gear.catchCounts : gear.bestSizes;
       bag[effect.fishId] = effect.op === "add"
         ? (bag[effect.fishId] ?? 0) + effect.value
@@ -238,17 +254,16 @@ export function applyKojoEffects(
       // cycle and is reset between commands. Missing frame ⇒ producer
       // skipped `beginKojoExecutionFrame`; fail closed by ignoring the bit
       // rather than writing into the long-lived schema.
-      const frame = next.turnContext?.frame;
+      const frame = state.turnContext?.frame;
       if (!frame) continue;
       const bag = (frame.doubleMessageBlockedByChara ??= {});
       bag[effect.target] = (bag[effect.target] ?? 0) | (1 << effect.bit);
     } else if (effect.kind === "string-set") {
-      writeStringEffect(next, effect);
+      writeStringEffect(state, effect);
     } else {
-      writeDirectEffect(next, effect);
+      writeDirectEffect(state, effect);
     }
   }
-  return next;
 }
 
 /** Authoritative EVENT-arm helper. It keeps legacy routers working while

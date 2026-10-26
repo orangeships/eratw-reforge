@@ -103,7 +103,7 @@ export const comf143Def: ComfDef = {
   },
 
   narration: (_c, favorDelta) =>
-    `%CALLNAME:MASTER% 両穴フィスト %CALLNAME:TARGET%；好感度 ${
+    `%CALLNAME:MASTER% 对%CALLNAME:TARGET%进行了双穴拳交；好感度 ${
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };

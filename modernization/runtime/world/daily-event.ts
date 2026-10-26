@@ -4,6 +4,8 @@ import type { ObservationEvent } from "../../schemas/types.js";
 import { isObservationEvent } from "../../schemas/validator.js";
 import type { PromptAnswer, PromptSpec } from "../command/prompt.js";
 import type { Rng } from "../command/types.js";
+import type { DialogueRouter, KojoLine } from "../kojo/types.js";
+import { applyKojoEffects } from "../kojo/effects.js";
 import {
   cloneGameState,
   type DailyEventSession,
@@ -18,7 +20,6 @@ import { TFLAG_ID, getTflag, setTflagBit } from "../state/tflag.js";
 import { createGift } from "../state/gifts.js";
 import { ABL_ID, BASE_ID, CFLAG_ID, FLAG_ID, TALENT_ID, EVENT_FLAG_ALIASES as EVENT_FLAGS, recoverBase } from "../state/settlement.js";
 import { getYogore, setYogore } from "../state/yogore.js";
-import { getWeatherState } from "../state/weather-state.js";
 import { ABNORMAL_WEATHER } from "../weather/abnormal-weather.js";
 import { WEATHER_ID } from "../weather/constants.js";
 import {
@@ -39,6 +40,7 @@ import {
 } from "./event-ranking.js";
 import { ev5Condition, ev5PromptView, runEv5 } from "./daily-event-ev5.js";
 import { ev23Condition, ev23PromptView, runEv23 } from "./daily-event-ev23.js";
+import { mapIdOfLocation } from "./location-predicates.js";
 
 export const DAILY_EVENT_SLOT_COUNT = 40;
 
@@ -52,6 +54,8 @@ export interface DailyEventEffectContext {
   now: () => number;
   sleepSeed: number;
   answer?: PromptAnswer;
+  router?: DialogueRouter;
+  session?: DailyEventSession | null;
 }
 
 export type DailyEventEffectOutcome =
@@ -93,16 +97,90 @@ export interface DailyEventRunOptions {
   sleepSeed: number;
   now?: () => number;
   answer?: PromptAnswer;
+  router?: DialogueRouter;
 }
 
 function narration(now: () => number, text: string): ObservationEvent {
   return { kind: "NARRATION", timestamp: now(), text };
 }
 
+function dialogueEvents(now: () => number, charaNum: number, lines: readonly KojoLine[]): ObservationEvent[] {
+  return lines.map((line) => ({
+    kind: "DIALOGUE_LINE" as const,
+    timestamp: now(),
+    charaNum,
+    text: line.text,
+    form: line.form,
+  }));
+}
+
+function fisherYatesCharaNums(state: Readonly<GameState>, rng: Rng): number[] {
+  const ids = [0, ...Object.keys(state.charas).map(Number).filter(Number.isFinite)].sort((a, b) => a - b);
+  for (let i = ids.length - 1; i > 0; i -= 1) {
+    const j = rng.int(i + 1);
+    [ids[i], ids[j]] = [ids[j]!, ids[i]!];
+  }
+  return ids;
+}
+
+function dailyKojoChoicePath(context: DailyEventEffectContext): number[] {
+  const encoded = context.session?.kind === "daily-kojo" && typeof context.session.data?.choices === "string"
+    ? context.session.data.choices
+    : "";
+  const choices = encoded.length > 0
+    ? encoded.split(",").map(Number).filter(Number.isFinite)
+    : [];
+  const answer = context.answer;
+  if (answer?.kind === "pick_one" && Number.isFinite(Number(answer.value))) choices.push(Number(answer.value));
+  else if (answer?.kind === "ask_yn") choices.push(answer.value ? 1 : 0);
+  return choices;
+}
+
+function resolveDailyPersonalKojo(
+  state: GameState,
+  rng: Rng,
+  context: DailyEventEffectContext,
+  eventId: 2 | 4,
+  charaNum: number,
+  fallback: ObservationEvent[],
+): DailyEventEffectOutcome {
+  const router = context.router;
+  if (!router) return { kind: "applied", events: fallback };
+  const choices = dailyKojoChoicePath(context);
+  const interactive = router.resolveDailyKojoInteractive?.(charaNum, eventId, state, rng, [], choices);
+  if (interactive?.pending) {
+    const values = interactive.pending.values ?? interactive.pending.options.map((_option, index) => index);
+    if (!values.every((value) => typeof value === "number" && Number.isFinite(value))) {
+      return { kind: "applied", events: fallback };
+    }
+    const kojoEvents = dialogueEvents(context.now, charaNum, interactive.lines);
+    return {
+      kind: "needs-input",
+      events: kojoEvents.length > 0 ? kojoEvents : fallback,
+      prompt: {
+        kind: "pick_one",
+        question: "请选择回应。",
+        options: interactive.pending.options.map((option, index) => ({ id: values[index] as number, label: option.label })),
+      },
+      session: {
+        kind: "daily-kojo",
+        eventId,
+        eventDay: state.time.dayIndex,
+        sleepSeed: context.sleepSeed,
+        phase: "kojo-choice",
+        data: { charaNum, choices: choices.join(",") },
+      },
+    };
+  }
+  const detailed = interactive ?? router.resolveDailyKojoDetailed?.(charaNum, eventId, state, rng, []);
+  if (!detailed || detailed.status !== "resolved") return { kind: "applied", events: fallback };
+  if (detailed.effects.length > 0) Object.assign(state, applyKojoEffects(state, detailed.effects));
+  const authored = dialogueEvents(context.now, charaNum, detailed.lines);
+  return { kind: "applied", events: authored.length > 0 ? authored : fallback };
+}
+
 function regionForLocation(location: string): number {
-  const prefixes = ["神社", "人間之里", "永遠亭", "魔法の森", "紅魔館", "地底", "彼岸", "天界", "月都", "魔界", "夢"];
-  const index = prefixes.findIndex((prefix) => location.includes(prefix));
-  return index < 0 ? 0 : index;
+  return mapIdOfLocation(location) ?? 0;
 }
 
 function forceClearRegionalWeather(state: GameState): void {
@@ -232,23 +310,38 @@ const BUILTIN_EVENTS: readonly DailyEventDefinition[] = [
       setTflagBit(state, TFLAG_ID.一日一回, 8);
       state.master.state.BASE[BASE_ID.精力] = Math.max(0, (state.master.state.BASE[BASE_ID.精力] ?? 0) - 500);
       state.master.state.EXP[11] = (state.master.state.EXP[11] ?? 0) + 1;
-      const events = [
+      const events: ObservationEvent[] = [
         narration(context.now, `${state.master.callName ?? "主人公"}半夜在幸福的感觉中醒了……`),
-        narration(context.now, "糟了！是梦遗！"),
+        narration(context.now, "总感觉胯下温热的……"),
+        narration(context.now, "！！！！　糟了！是梦遗！"),
+        narration(context.now, `如果能更有意义地射出去就好了……${state.master.callName ?? "主人公"}深感后悔。`),
       ];
       if (rng.int(10) === 0 && !hasItem(state, ITEM_ID.奇跡之石)) {
         addItem(state, ITEM_ID.奇跡之石, 1);
         events.push(narration(context.now, "奇迹之石落在了枕边。"));
       } else {
-        const homeRegion = regionForLocation(state.master.location);
-        const recipient = Object.values(state.charas).find((slot) =>
-          regionForLocation(slot.location) === homeRegion &&
-          (slot.state.CFLAG[DAILY_CFLAG.shrineResident] ?? 0) !== 0 &&
-          (slot.state.CFLAG[DAILY_CFLAG.banned] ?? 0) === 0,
-        );
+        const masterHome = state.homeLocation ?? state.master.homeLocation ?? state.master.location;
+        const homeRegion = regionForLocation(masterHome);
+        const recipientId = fisherYatesCharaNums(state, rng).find((charaNum) => {
+          if (charaNum === 0) return false;
+          const slot = state.charas[charaNum];
+          if (!slot) return false;
+          const initial = slot.homeLocation ?? slot.location;
+          return regionForLocation(initial) === homeRegion &&
+            (slot.state.CFLAG[DAILY_CFLAG.shrineResident] ?? 0) !== 0 &&
+            (slot.state.CFLAG[DAILY_CFLAG.banned] ?? 0) === 0;
+        });
+        const recipient = recipientId === undefined ? undefined : state.charas[recipientId];
         if (recipient) {
           recipient.state.JUEL[11] = (recipient.state.JUEL[11] ?? 0) + 1000;
-          events.push(narration(context.now, `${recipient.callName ?? "某人"}在梦中收到了神秘的宝珠。`));
+          const fallback = [
+            narration(context.now, `${state.master.callName ?? "主人公"}清洗被梦遗弄脏的衣服时，${recipient.callName ?? "某人"}飞了过来。`),
+            narration(context.now, `${recipient.callName ?? "某人"}抗议不要把这种东西和其他衣服一起洗，并抢走了内衣。`),
+            narration(context.now, `${recipient.callName ?? "某人"}　情欲之珠＋1000`),
+          ];
+          const personal = resolveDailyPersonalKojo(state, rng, context, 2, recipient.charaNum, fallback);
+          if (personal.kind === "needs-input") return { ...personal, events: [...events, ...personal.events] };
+          if (personal.kind === "applied") events.push(...personal.events);
         }
       }
       return { kind: "applied", events };
@@ -280,20 +373,19 @@ const BUILTIN_EVENTS: readonly DailyEventDefinition[] = [
       );
     },
     effect: (state, rng, context) => {
-      const candidates = Object.values(state.charas).filter((slot) =>
-        (slot.state.ABL[ABL_ID.親密] ?? 0) >= 5 &&
-        (slot.state.CFLAG[DAILY_CFLAG.shrineResident] ?? 0) === 0,
-      );
-      const target = candidates[rng.int(candidates.length)];
+      const targetId = fisherYatesCharaNums(state, rng).find((charaNum) => {
+        const slot = charaByNum(state, charaNum);
+        return !!slot &&
+          (slot.state.ABL[ABL_ID.親密] ?? 0) >= 5 &&
+          (slot.state.CFLAG[DAILY_CFLAG.shrineResident] ?? 0) === 0;
+      });
+      const target = targetId === undefined ? undefined : charaByNum(state, targetId);
       if (!target) return { kind: "unsupported", reason: "EV4 target disappeared" };
       target.state.CFLAG[DAILY_CFLAG.nextVisit] = 1;
-      return {
-        kind: "applied",
-        events: [
-          narration(context.now, `思考结束后，${target.callName ?? "某人"}注意到自己总是不知不觉地想着${state.master.callName ?? "主人公"}。`),
-          narration(context.now, `${target.callName ?? "某人"}决定明天来见${state.master.callName ?? "主人公"}。`),
-        ],
-      };
+      return resolveDailyPersonalKojo(state, rng, context, 4, target.charaNum, [
+        narration(context.now, `结束了思考的${target.callName ?? "某人"}，注意到自己会在不知不觉中想着${state.master.callName ?? "主人公"}。`),
+        narration(context.now, `${target.callName ?? "某人"}决定明天去见${state.master.callName ?? "主人公"}。`),
+      ]);
     },
   },
   {
@@ -321,46 +413,58 @@ const BUILTIN_EVENTS: readonly DailyEventDefinition[] = [
     effect: (state, rng, context) => {
       const yuugi = rng.int(4) === 0;
       const drinkers = 1 + rng.int(5);
-      let rounds = 1 + drinkers;
+      let rounds = 1;
+      for (let i = 0; i < drinkers; i += 1) rounds += rng.int(3);
       if (yuugi) rounds += rng.int(3) + rng.int(3);
       const alcoholGains = [200, 400, 700];
+      const alcoholLabels = ["普通的酒", "相当烈的酒", "烈得过头的酒"];
       let collapsed = false;
-      let nausea = false;
+      const group = yuugi ? "勇仪她们" : "鬼们";
+      const events = [
+        narration(context.now, `${state.master.callName ?? "主人公"}正要睡觉时，${drinkers}个喝醉的鬼闯了进来！${yuugi ? "勇仪也在其中。" : ""}`),
+        narration(context.now, `${state.master.callName ?? "主人公"}破罐子破摔地接受了${group}，酒宴就这样开始了。`),
+      ];
+      const yuugiSlot = state.charas[64];
+      const room = state.master.homeLocation ?? state.master.location;
       for (let i = 0; i < rounds; i += 1) {
-        const gain = alcoholGains[rng.int(alcoholGains.length)]!;
+        const drink = rng.int(alcoholGains.length);
+        const gain = alcoholGains[drink]!;
+        events.push(narration(context.now, `${state.master.callName ?? "主人公"}被强行灌下了${alcoholLabels[drink]}。`));
         const current = (state.master.state.BASE[BASE_ID.酒気] ?? 0) + gain;
         const max = state.master.state.MAXBASE[BASE_ID.酒気] ?? 0;
         state.master.state.BASE[BASE_ID.酒気] = current;
+        if (yuugiSlot) {
+          yuugiSlot.state.CFLAG[DAILY_CFLAG.favor] = (yuugiSlot.state.CFLAG[DAILY_CFLAG.favor] ?? 0) + 3;
+          yuugiSlot.state.CFLAG[DAILY_CFLAG.trust] = (yuugiSlot.state.CFLAG[DAILY_CFLAG.trust] ?? 0) + 1;
+        }
         if (max > 0 && current > max) {
-          setYogore(state, state.master.location, getYogore(state, state.master.location) + 1500);
+          events.push(narration(context.now, `${state.master.callName ?? "主人公"}终于吐了，${group}却哈哈大笑。`));
+          setYogore(state, room, getYogore(state, room) + 1500);
           state.master.state.BASE[BASE_ID.気力] = (state.master.state.BASE[BASE_ID.気力] ?? 0) - 500;
           state.master.state.MAXBASE[BASE_ID.酒気] = max + 3;
           if ((state.master.state.BASE[BASE_ID.気力] ?? 0) < 0) {
             state.master.state.BASE[BASE_ID.気力] -= 1000;
             collapsed = true;
+            events.push(narration(context.now, `${state.master.callName ?? "主人公"}直挺挺地倒下了。`));
             break;
           }
           state.master.state.BASE[BASE_ID.酒気] = Math.trunc(current / 2);
         } else if (max > 0 && current > (max * 3) / 4) {
-          nausea = true;
+          events.push(narration(context.now, "酒劲涌了上来，感觉越来越恶心……"));
         }
       }
-      const yuugiSlot = state.charas[64];
       if (yuugi && !collapsed && yuugiSlot) {
         yuugiSlot.state.CFLAG[DAILY_CFLAG.favor] = (yuugiSlot.state.CFLAG[DAILY_CFLAG.favor] ?? 0) + 150;
         yuugiSlot.state.CFLAG[DAILY_CFLAG.trust] = (yuugiSlot.state.CFLAG[DAILY_CFLAG.trust] ?? 0) + 100;
       }
       if (!collapsed) {
         state.master.state.MAXBASE[BASE_ID.酒気] = (state.master.state.MAXBASE[BASE_ID.酒気] ?? 0) + 20;
+        events.push(narration(context.now, `${state.master.callName ?? "主人公"}完全经受住了无情的灌酒。`));
       }
       state.master.state.CFLAG[CFLAG_ID.徹夜] = 1;
-      setYogore(state, state.master.location, getYogore(state, state.master.location) + 1000);
+      setYogore(state, room, getYogore(state, room) + 1000);
       state.master.state.MAXBASE[BASE_ID.酒気] = Math.max(1500, Math.min(3000, state.master.state.MAXBASE[BASE_ID.酒気] ?? 0));
-      const events = [
-        narration(context.now, `${state.master.callName ?? "主人公"}正要睡觉时，喝醉的${yuugi ? "鬼们和勇仪" : "鬼们"}闯了进来。`),
-        narration(context.now, collapsed ? "被强行灌酒的主人公终于倒下了。" : "一场失控的酒宴直到黎明才结束。"),
-      ];
-      if (nausea && !collapsed) events.push(narration(context.now, "酒劲上来了，感觉有些恶心……"));
+      events.push(narration(context.now, `黎明时${group}离开了，只留下大量空瓶${collapsed ? "和充满呕吐物气味的" : "与一片狼藉的"}房间。`));
       return { kind: "applied", events };
     },
   },
@@ -408,10 +512,16 @@ const BUILTIN_EVENTS: readonly DailyEventDefinition[] = [
       state.flagStore[FLAG_ID.異常気象] = rng.int(2) === 0
         ? ABNORMAL_WEATHER.SKIRT
         : ABNORMAL_WEATHER.PANTSU;
+      const effect = state.flagStore[FLAG_ID.異常気象] === ABNORMAL_WEATHER.SKIRT
+        ? "女孩子被掀起裙子后，越是厌恶对方却越会感到舒服。"
+        : "强风开始把胖次吹得到处都是。";
       forceClearRegionalWeather(state);
       return {
         kind: "applied",
-        events: [narration(context.now, "外界的环境变化影响了幻想乡，一场异常气象开始了。")],
+        events: [
+          narration(context.now, "全球变暖、环境污染、疫情和长时间加班……外界的各种问题也无可避免地影响到了幻想乡。"),
+          narration(context.now, `由于外界影响，天气发生了异变：${effect}`),
+        ],
       };
     },
   },
@@ -443,12 +553,20 @@ const BUILTIN_EVENTS: readonly DailyEventDefinition[] = [
       (state.flagStore[FLAG_ID.異常気象] ?? 0) === ABNORMAL_WEATHER.NONE && rng.int(20) === 0,
     effect: (state, rng, context) => {
       state.flagStore[FLAG_ID.異常気象] = ABNORMAL_WEATHER.C_SENSITIVE + rng.int(5);
+      const effect = [
+        "大家的阴蒂变敏感了。",
+        "大家的阴部变敏感了。",
+        "大家的肛门变敏感了。",
+        "大家的胸部变敏感了。",
+        "大家的嘴唇变敏感了。",
+      ][state.flagStore[FLAG_ID.異常気象] - ABNORMAL_WEATHER.C_SENSITIVE]!;
       forceClearRegionalWeather(state);
       return {
         kind: "applied",
         events: [
           narration(context.now, "永远亭的配药室发生了爆炸。"),
           narration(context.now, "气化的药品与工房煤烟反应，未知化合物扩散到了空气中。"),
+          narration(context.now, effect),
         ],
       };
     },
@@ -641,12 +759,12 @@ const BUILTIN_EVENTS: readonly DailyEventDefinition[] = [
   {
     id: 33,
     label: "市場の神",
-    condition: (state) => getWeatherState(state).gensokyoWeatherSystem[0] === 1,
-    effect: (state, _rng, context) => {
+    condition: (state) => (state.flagStore[EVENT_FLAGS.marketGod] ?? 0) === 1,
+    effect: (state, rng, context) => {
       state.flagStore[EVENT_FLAGS.marketGod] = 2;
       const gifts = [];
       for (let i = 0; i < 20; i += 1) {
-        const gift = createGift(() => (i * 29 + state.time.dayIndex * 17) % 100 / 100, null);
+        const gift = createGift(() => rng.next(), null);
         if (gift) gifts.push(gift);
       }
       state.marketGifts = gifts;
@@ -787,7 +905,7 @@ export function runDailyEventTick(
   const day = state.time.dayIndex;
   const now = options.now ?? (() => 0);
   const replaySession = state.dailyEventSession ?? undefined;
-  prepareDailyEventMarkers(state);
+  const markerEvents = prepareDailyEventMarkers(state, now);
   if (!replaySession && state.dailyEventLastRunDay === day) {
     return { events: [], diagnostics: [] };
   }
@@ -795,7 +913,7 @@ export function runDailyEventTick(
   const finishWithoutEffect = (diagnostic?: DailyEventDiagnostic): DailyEventDispatchResult => {
     state.dailyEventLastRunDay = day;
     state.dailyEventSession = undefined;
-    return { events: [], diagnostics: diagnostic ? [diagnostic] : [] };
+    return { events: markerEvents, diagnostics: diagnostic ? [diagnostic] : [] };
   };
 
   if (replaySession && replaySession.eventDay !== day) {
@@ -847,6 +965,8 @@ export function runDailyEventTick(
         now,
         sleepSeed: options.sleepSeed,
         answer: options.answer,
+        router: options.router,
+        session: replaySession,
       });
     } catch (error) {
       return finishWithoutEffect({
@@ -877,7 +997,7 @@ export function runDailyEventTick(
         pending: {
           eventId: id,
           prompt: outcome.prompt,
-          previewEvents: outcome.events,
+          previewEvents: [...markerEvents, ...outcome.events],
           session,
         },
         diagnostics: [],
@@ -889,7 +1009,7 @@ export function runDailyEventTick(
     finalizeDailyEventMarkers(candidate, id);
     replaceGameState(state, candidate);
     consumeEventRanking(state, opportunity);
-    return { events: outcome.events, firedEventId: id, diagnostics: [] };
+    return { events: [...markerEvents, ...outcome.events], firedEventId: id, diagnostics: [] };
   }
 
   if (replaySession) {
@@ -924,27 +1044,58 @@ export function registerDailyEvent(definition: DailyEventDefinition): () => void
 }
 
 /** Apply the fixed AFTERTRA ordering around the event table. */
-export function prepareDailyEventMarkers(state: GameState): void {
-  if (state.dailyEventLastRunDay === state.time.dayIndex) return;
+export function prepareDailyEventMarkers(state: GameState, now: () => number = () => state.time.tickValue): ObservationEvent[] {
+  if (state.dailyEventLastRunDay === state.time.dayIndex) return [];
+  const events: ObservationEvent[] = [];
   if (state.mobRaceBuff) {
     const days = state.mobRaceBuff.days - 1;
-    state.mobRaceBuff = days > 0 ? { ...state.mobRaceBuff, days } : undefined;
+    if (days > 0) state.mobRaceBuff = { ...state.mobRaceBuff, days };
+    else {
+      const race = state.mobRaceBuff.race;
+      state.mobRaceBuff = undefined;
+      const endings: Record<string, string> = {
+        白狼天狗: "哨戒天狗被分配了别的任务，强化指标不了了之。",
+        鴉天狗: "鸦天狗们结束了新闻竞争，活动恢复了平静。",
+        河童: "河童们的开发竞赛告一段落。",
+        山童: "山童们的竞赛热潮平息了。",
+        因幡: "因幡们的集体训练结束了。",
+        玉兎: "玉兔们结束了临时强化训练。",
+        妖怪狐: "妖怪狐的扰民抗争告一段落。",
+        妖怪狸: "妖怪狸的扰民抗争告一段落。",
+      };
+      events.push(narration(now, endings[race] ?? `${race}的强化热潮平息了。`));
+    }
   }
+  const alcoholBoost = state.flagStore[FLAG_ID.酒屋買取強化] ?? 0;
+  if (alcoholBoost > 0) state.flagStore[FLAG_ID.酒屋買取強化] = Math.max(0, alcoholBoost - 1);
   const blessing = state.flagStore[EVENT_FLAGS.blessing] ?? 0;
   if (blessing !== 0) {
     state.flagStore[EVENT_FLAGS.blessing] = 0;
     state.dailyBlessingExpId = undefined;
     state.dailyBlessingDay = undefined;
+    events.push(narration(now, "神的加护效果消失了。"));
   }
   const sale = state.flagStore[EVENT_FLAGS.souvenirSale] ?? 0;
   if (sale >= 100 && sale < 1110) state.flagStore[EVENT_FLAGS.souvenirSale] = 0;
   if ((state.flagStore[EVENT_FLAGS.marketGod] ?? 0) === 10) {
     state.flagStore[EVENT_FLAGS.marketGod] = 0;
     state.marketGifts = [];
+    events.push(narration(now, "明月照耀下的虹光正在闭合……土特产店的货物种类恢复了原样。"));
   }
   const abnormal = state.flagStore[FLAG_ID.異常気象] ?? 0;
-  if (abnormal >= 1 && abnormal <= 8) state.flagStore[FLAG_ID.異常気象] = 0;
-  state.gatheringSeason = undefined;
+  if (abnormal >= 1 && abnormal <= 8) {
+    state.flagStore[FLAG_ID.異常気象] = 0;
+    events.push(narration(now, "异常气象消失了。"));
+  }
+  if ((state.flagStore[DAILY_FLAG.ファッション] ?? 0) !== 0) {
+    state.flagStore[DAILY_FLAG.ファッション] = 0;
+    events.push(narration(now, "追求时尚的热潮平息了。"));
+  }
+  if (state.gatheringSeason !== undefined) {
+    state.gatheringSeason = undefined;
+    events.push(narration(now, "采集季节恢复了原样。"));
+  }
+  return events;
 }
 
 export function finalizeDailyEventMarkers(state: GameState, firedEventId?: number): void {

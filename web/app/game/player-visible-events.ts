@@ -17,6 +17,17 @@ export function isPlayerVisibleEvent(event: ObservationEvent): boolean {
   return !isSyntheticComfNarration(event);
 }
 
+/** Player-facing narrative surfaces omit deterministic bookkeeping. Classic
+ * creator/debug history deliberately keeps those rows, so this is a separate
+ * predicate rather than a change to isPlayerVisibleEvent. */
+export function isNarrativePresentationEvent(event: ObservationEvent): boolean {
+  return isPlayerVisibleEvent(event) &&
+    event.kind !== "STATUS_MESSAGE" &&
+    event.kind !== "COMMAND_ISSUED" &&
+    event.kind !== "STATE_DELTA" &&
+    event.kind !== "FLAG_CHANGED";
+}
+
 /** Ambient prose belongs to the scene/history but never pauses a command. */
 export function isInteractionVisibleEvent(event: ObservationEvent): boolean {
   return isPlayerVisibleEvent(event) && !(event.kind === "NARRATION" && event.presentation === "ambient");

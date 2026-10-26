@@ -12,7 +12,7 @@ import { useGameStateStore } from "../state/game-state-store.js";
 import {
   cancelSceneAmbientRequest,
   generateSceneAmbient,
-  prepareSceneAmbientRequest,
+  prepareSceneAmbientRequestAsync,
   recordSceneAmbientHistory,
   resetSceneAmbientRuntime,
 } from "./ambient-runtime.js";
@@ -147,12 +147,15 @@ export function useSceneAmbient(input: UseSceneAmbientInput): SceneAmbientEntry 
   const attemptSerial = useRef(0);
   const attemptRef = useRef<(trigger: AmbientInitiativeTrigger) => void>(() => undefined);
   const scheduledAttemptCancelRef = useRef<(() => void) | null>(null);
+  const preparationRef = useRef<AbortController | null>(null);
   stateRef.current = input.state;
   blockedRef.current = input.formalInteractionActive || input.exclusiveSurfaceActive;
 
   const cancelScheduledAttempt = (): void => {
     scheduledAttemptCancelRef.current?.();
     scheduledAttemptCancelRef.current = null;
+    preparationRef.current?.abort("cancelled");
+    preparationRef.current = null;
   };
 
   const scheduleAmbientAttempt = (trigger: AmbientInitiativeTrigger): void => {
@@ -210,41 +213,52 @@ export function useSceneAmbient(input: UseSceneAmbientInput): SceneAmbientEntry 
       requestInFlight: liveSession.requestId !== null,
     });
     if (!opportunity) return;
-    const prepared = prepareSceneAmbientRequest({
+    if (preparationRef.current) return;
+    const preparationController = new AbortController();
+    preparationRef.current = preparationController;
+    void prepareSceneAmbientRequestAsync({
       sceneEpoch: liveSession.sceneEpoch,
       state,
       opportunity,
       router: input.router,
       seed,
       visibleFacts: publicFacts(state.eventLog),
-    });
-    if (!prepared) return;
-    startRequest(prepared.requestId, opportunity);
-    void generateSceneAmbient(prepared, (lines) => {
-      if (requestStillCurrent(
-        prepared.requestId,
-        prepared.sceneEpoch,
-        prepared.opportunity.location,
-        prepared.opportunity.participantIds,
-        blockedRef.current,
-      )) updatePartial(prepared.requestId, lines);
-    }).then((lines) => {
-      const current = requestStillCurrent(
-        prepared.requestId,
-        prepared.sceneEpoch,
-        prepared.opportunity.location,
-        prepared.opportunity.participantIds,
-        blockedRef.current,
-      );
-      if (!current) {
+    }, preparationController.signal).then(async (prepared) => {
+      if (!prepared || preparationController.signal.aborted || blockedRef.current) return;
+      const currentSession = useSceneAmbientStore.getState().session;
+      if (!currentSession || currentSession.requestId !== null || currentSession.location !== state.master.location) return;
+      startRequest(prepared.requestId, opportunity);
+      try {
+        const lines = await generateSceneAmbient(prepared, (partialLines) => {
+          if (requestStillCurrent(
+            prepared.requestId,
+            prepared.sceneEpoch,
+            prepared.opportunity.location,
+            prepared.opportunity.participantIds,
+            blockedRef.current,
+          )) updatePartial(prepared.requestId, partialLines);
+        });
+        const current = requestStillCurrent(
+          prepared.requestId,
+          prepared.sceneEpoch,
+          prepared.opportunity.location,
+          prepared.opportunity.participantIds,
+          blockedRef.current,
+        );
+        if (!current) {
+          failRequest(prepared.requestId);
+          return;
+        }
+        completeRequest(prepared.requestId, lines, Date.now());
+        recordSceneAmbientHistory({ prepared, state: current, lines });
+      } catch {
+        // All failures are intentionally silent and drop partial output.
         failRequest(prepared.requestId);
-        return;
       }
-      completeRequest(prepared.requestId, lines, Date.now());
-      recordSceneAmbientHistory({ prepared, state: current, lines });
     }).catch(() => {
-      // All failures are intentionally silent and drop partial output.
-      failRequest(prepared.requestId);
+      // Preparation cancellation/failure is intentionally silent.
+    }).finally(() => {
+      if (preparationRef.current === preparationController) preparationRef.current = null;
     });
   };
 

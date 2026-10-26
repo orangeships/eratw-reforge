@@ -73,6 +73,7 @@ export const comf746Def: ComfDef = {
 
   timeCost: 5,
   requiresTarget: false,
+  settleSourcesOnMaster: true,
 
   downbase: { [BASE_ID.体力]: 60, [BASE_ID.気力]: 150 },
 

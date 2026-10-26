@@ -47,10 +47,16 @@
  *   - TALENT/MARK/DLC personality modifiers
  */
 
-import type { HandlerEntry } from "../../types.js";
-import { ABL_ID, BASE_ID, SOURCE_ID } from "../../../state/settlement.js";
+import type { CommandContext, HandlerEntry } from "../../types.js";
+import { ABL_ID, BASE_ID, CFLAG_ID, FLAG_ID, SOURCE_ID, TCVAR_ID, TEQUIP_ID } from "../../../state/settlement.js";
 import { makeComfHandler } from "../make-comf-handler.js";
 import { MUL_NONE, type ComfDef } from "../comf-def.js";
+import { isTimeStopped } from "../../h-mode.js";
+import { activeDatePartner } from "../../../world/date-session.js";
+import { OMANEKI_PLACE } from "../../../world/omaneki.js";
+import { getTflag, TFLAG_ID } from "../../../state/tflag.js";
+import { isEquipped, readTequipOptional } from "../../../state/tequip.js";
+import { readTouchPart, TOUCH_COMPONENT, TOUCH_DEPTH, TOUCH_PART } from "../../../state/touch-state.js";
 import { STAIN_PART } from "../../../state/stain.js";
 
 /** ABL id for 指 (finger technique). Not yet in ABL_ID enum. */
@@ -60,17 +66,67 @@ const TALENT_JIKOAI = 31;
 /** TALENT id for 抵抗 (resistance). */
 const TALENT_TEIKOU = 32;
 
+/** The remaining COM_ABLE314 branches that the shared gate extractor cannot
+ * express. Keep those checks explicit so this H-only command can be offered
+ * in a valid session without bypassing its upstream busy/date restrictions. */
+function com314HModeMenuCheck(ctx: CommandContext) {
+  const target = ctx.state.charas[ctx.target];
+  if (!target || ctx.target <= 0) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "需要在场的对象。" } };
+  }
+
+  // The COM314 time-stop settlement arm has not been ported yet. Keep its
+  // command hidden until that separate SOURCE path is available.
+  if (isTimeStopped(ctx.state)) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "现在无法使用这项行为。" } };
+  }
+
+  const targetCflag = target.state.CFLAG;
+  const stealthHidden = ((targetCflag[CFLAG_ID.潜伏状態] ?? 0) & 1) !== 0;
+  if (!stealthHidden) {
+    if (activeDatePartner(ctx.state) === ctx.target && target.location !== OMANEKI_PLACE) {
+      return { ok: false as const, reason: { kind: "precondition" as const, message: "约会中不能进行这项行为。" } };
+    }
+    if ((ctx.state.flagStore[FLAG_ID.甲斐性無] ?? 0) !== 0 && (targetCflag[CFLAG_ID.诶嘿嘿] ?? 0) === 0) {
+      return { ok: false as const, reason: { kind: "precondition" as const, message: "当前状态下无法进行这项行为。" } };
+    }
+  }
+
+  // TEQUIP:51 is the current A-intercourse partner. An absent sparse slot is
+  // the upstream -1 (no partner); 0 is a real value (the player).
+  const analPartner = readTequipOptional(target, TEQUIP_ID.Ａ性交);
+  if (analPartner !== undefined && analPartner >= 0) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "肛门已在使用中。" } };
+  }
+
+  // These two upstream routes intentionally bypass the ordinary hand-use
+  // checks after the active-A-partner check above.
+  if ((target.state.TCVAR[TCVAR_ID.Counter行動] ?? 0) === 72 || isEquipped(target, TEQUIP_ID.六九式)) {
+    return { ok: true as const };
+  }
+
+  const masterFingerOnTargetA =
+    readTouchPart(target, TOUCH_COMPONENT.Ａ, TOUCH_DEPTH.現在) === TOUCH_PART.指;
+  if (getTflag(ctx.state, TFLAG_ID.手使用中) !== 0 && !masterFingerOnTargetA) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "双手正在进行其他行为。" } };
+  }
+  if (((ctx.state.master.state.TCVAR[TCVAR_ID.MASTER_COUNTER制御] ?? 0) & (1 << 4)) !== 0) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "这项行为本轮已经使用过。" } };
+  }
+  return { ok: true as const };
+}
+
 export const comf314Def: ComfDef = {
   commandNo: 314,
   label: "アナル愛撫",
+  hModeMenuCheck: com314HModeMenuCheck,
   // @COM_ABLE314 (Slice 7): only 気力>0 is an unconditional modelable gate;
   // the 亲热<2/睡眠/行動/陪睡中/約會/甲斐性無 cluster is all inside the
   // !FLAG:70 branch (skipped during time-stop), and the rest are TEQUIP/
   // TCVAR:20 counter gates — deferred.
   gate: {
     requiresMasterStamina: true,
-    deferredGates:
-      "亲热<2/睡眠/行動==5/陪睡中/約會/甲斐性無 (!FLAG:70-conditional); TEQUIP:51 挿入中; TCVAR:20==72",
+    deferredGates: "TFLAG:100/GLOBAL_COMABLE common preamble defaults to enabled; the time-stop settlement arm remains deferred.",
   },
   timeCost: 5,
   maxRoll: 100,

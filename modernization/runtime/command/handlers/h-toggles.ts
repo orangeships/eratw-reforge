@@ -18,9 +18,11 @@
  *   gets 诶嘿嘿 = 2 (skip those at 0, to avoid pulling bystanders in during
  *   潜伏). `TIME += 5`, `RETURN 1`.
  *
- * **DEFERRED:** @COM_ABLE gates (TFLAG:100, HAS_PENIS, TEQUIP:Ｖ/Ａセックス,
- * 欲情 ≥ 5 GETPALAMLV, SHIRAHU/延迟/TEQUIP equipment locks) — COMABLE layer;
- * TCVAR:116 行為者 marker; 24's `SETBIT TCVAR:随便,1` per-partner marker;
+ * **DEFERRED:** the common @COM_ABLE preamble (TFLAG:100/GLOBAL_COMABLE),
+ * COMF51's fuller target/medicine gate, and COMF24's `SETBIT TCVAR:随便,1`
+ * marker. COMF50's command-specific `HAS_PENIS` and simultaneous V/A
+ * insertion locks are implemented below from the upstream predicate;
+ * TCVAR:116 行為者 marker; 24's per-partner `SETBIT TCVAR:随便,1` marker;
  * the display-name variants (50 "コンドームを外す").
  */
 
@@ -31,11 +33,15 @@ import { hasItem, removeItem, itemCount } from "../../state/items.js";
 import { selectPresentCharas } from "../../scene/presence.js";
 import {
   CFLAG_ID,
+  EX_ID,
+  TALENT_ID,
+  TCVAR_ID,
   TEQUIP_ID,
   advanceTimeTicks,
 } from "../../state/settlement.js";
-import { isEquipped, setEquipped } from "../../state/tequip.js";
-import { isHMode } from "../h-mode.js";
+import { isEquipped, readTequip, setEquipped } from "../../state/tequip.js";
+import { isPlayerHInsertionActive } from "../../state/h-interaction-state.js";
+import { isHMode, isTimeStopped } from "../h-mode.js";
 
 /** TEQUIP slot for the condom (TEQUIP.csv id 35 避孕套). Master-side. */
 const EQUIP_CONDOM = TEQUIP_ID.避孕套;
@@ -48,12 +54,134 @@ const TCVAR_PILL_TAKEN = 109;
 /** 诶嘿嘿 initiative value: 2 = partner-led (COMF24). */
 const UFUFU_PARTNER_LED = 2;
 
+const EDGING_EX_IDS = [
+  EX_ID.Ｃ寸止め,
+  EX_ID.Ｖ寸止め,
+  EX_ID.Ａ寸止め,
+  EX_ID.Ｂ寸止め,
+  EX_ID.Ｍ寸止め,
+] as const;
+
+/**
+ * USERCOM.ERB:826's shared gate.  The menu reaches this command from the
+ * training branch, while FLAG:70 also keeps the upstream time-stop escape
+ * hatch available.  The command itself never advances time.
+ */
+const com826Check: ExecCheck = (ctx) => {
+  const target = ctx.state.charas[ctx.target];
+  if (!target) {
+    return {
+      ok: false as const,
+      reason: { kind: "precondition" as const, message: "目标角色必须在场。" },
+    };
+  }
+  const masterInTraining = (ctx.state.master.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) !== 0;
+  const masterPrank = (ctx.state.master.state.CFLAG[CFLAG_ID.恶作剧] ?? 0) !== 0;
+  if (!isTimeStopped(ctx.state) && (!masterInTraining || masterPrank)) {
+    return {
+      ok: false as const,
+      reason: { kind: "precondition" as const, message: "当前不能使用挑逗开关。" },
+    };
+  }
+  return { ok: true as const };
+};
+
+/** COMF826 — 挑逗 / 结束挑逗.  This is a free toggle (no TIME advance). */
+export const teasing826HandlerEntry: HandlerEntry = {
+  commandNo: 826,
+  execCheck: com826Check,
+  hModeMenuCheck: com826Check,
+  handler: (ctx: CommandContext) => {
+    const next = cloneGameState(ctx.state);
+    const target = next.charas[ctx.target];
+    if (!target) {
+      return {
+        state: next,
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "目标角色不在场。" }],
+        outcome: "noop" as const,
+      };
+    }
+
+    if (readTequip(target, TEQUIP_ID.挑逗モード) !== 0) {
+      target.state.TEQUIP[TEQUIP_ID.挑逗モード] = 0;
+      return {
+        state: next,
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "结束挑逗。" }],
+        outcome: "noop" as const,
+      };
+    }
+
+    if ((next.master.state.TCVAR[TCVAR_ID.要去了] ?? 0) !== 0) {
+      return {
+        state: next,
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "已经没有那么做的余裕了！" }],
+        outcome: "noop" as const,
+      };
+    }
+
+    if (EDGING_EX_IDS.some((id) => (target.state.EX[id] ?? 0) > 0)) {
+      return {
+        state: next,
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "在挑逗中" }],
+        outcome: "noop" as const,
+      };
+    }
+
+    target.state.TEQUIP[TEQUIP_ID.挑逗モード] = 1;
+    return {
+      state: next,
+      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "开始挑逗。" }],
+      outcome: "noop" as const,
+    };
+  },
+};
+
 // ---------------------------------------------------------------------------
 // COMF50 — ゴム装着 (condom toggle)
 // ---------------------------------------------------------------------------
 
+/**
+ * `COM_ABLE50` command-specific gate.
+ *
+ * Upstream allows removal unconditionally once the condom is worn.  For the
+ * put-on branch it requires ITEM:45, a penis on PLAYER, and rejects the
+ * malformed/unsupported state where the selected target has both V and A
+ * intercourse links pointing at PLAYER.  The common TFLAG:100 and
+ * GLOBAL_COMABLE preamble is owned by the command system and is intentionally
+ * not duplicated here (see comf-def.ts).
+ */
+const com50Check: ExecCheck = (ctx) => {
+  if (isEquipped(ctx.state.master, EQUIP_CONDOM)) {
+    return { ok: true as const };
+  }
+  if (!hasItem(ctx.state, ITEM_CONDOM, 1)) {
+    return {
+      ok: false as const,
+      reason: { kind: "precondition" as const, message: "没有避孕套了。" },
+    };
+  }
+  if (((ctx.state.master.state.TALENT[TALENT_ID.性別] ?? 0) & 2) === 0) {
+    return {
+      ok: false as const,
+      reason: { kind: "precondition" as const, message: "当前角色没有可装着避孕套的阴茎。" },
+    };
+  }
+
+  const targetHasForwardV = isPlayerHInsertionActive(ctx.state, ctx.target, "v");
+  const targetHasForwardA = isPlayerHInsertionActive(ctx.state, ctx.target, "a");
+  if (targetHasForwardV && targetHasForwardA) {
+    return {
+      ok: false as const,
+      reason: { kind: "precondition" as const, message: "正在同时进行 V/A 插入，不能在此时装着避孕套。" },
+    };
+  }
+  return { ok: true as const };
+};
+
 export const condom50HandlerEntry: HandlerEntry = {
   commandNo: 50,
+  execCheck: com50Check,
+  hModeMenuCheck: com50Check,
   handler: (ctx: CommandContext) => {
     const next: GameState = cloneGameState(ctx.state);
     const worn = isEquipped(next.master, EQUIP_CONDOM);

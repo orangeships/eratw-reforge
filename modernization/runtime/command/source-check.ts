@@ -26,8 +26,7 @@
  * `LOCAL`-from-SOURCE core + the `ABL` base term → `CFLAG:好感度`.
  *
  * **DEFERRED to Phase 7 (documented, NOT silently dropped):**
- *   - The whole 日常時 BASE block in FAVOR_CALC (情緒/理性/憤怒 lines
- *     197-307), and the remaining DLC/personal modifiers.
+ *   - The remaining DLC/personal modifiers in the 日常時 BASE block.
  *   - FAVOR_CALC's TALENT/MARK/继承/DLC personality modifiers
  *     (lines 26-152, 309-409) — all 0 for a clean chara; the floor we
  *     apply is the `MARK:反発刻印 == 0 → max(0, …)` arm only.
@@ -48,6 +47,7 @@ import {
   ABL_ID,
   BASE_ID,
   CFLAG_ID,
+  EX_ID,
   EXP_ID,
   MARK_ID,
   PALAM_ID,
@@ -55,6 +55,7 @@ import {
   TALENT_ID,
   TCVAR_ID,
   TEQUIP_ID,
+  EQUIP_SLOT,
   FLAG_ID,
   getRevision,
   getRevision3,
@@ -64,8 +65,21 @@ import {
   expLv,
   sourceRevision1,
   sourceRevision2,
+  advanceTimeTicks,
+  SAVEDATA_KEY,
 } from "../state/settlement.js";
 import { readTequip } from "../state/tequip.js";
+import { readHInsertionRelation } from "../state/h-interaction-state.js";
+import { applyOrgasmAdd } from "./orgasm-settlement.js";
+import {
+  accumulateTrainingMarkCups,
+  applyTrainingMarkAcquisitionChecks,
+  type TrainingMarkCupTotals,
+} from "./training-marks.js";
+import { getTflag, setTflag, TFLAG_ID } from "../state/tflag.js";
+import { isTimeStopped } from "./h-mode.js";
+import { readCurrentTouchPose } from "../state/touch-state.js";
+import { applyCharaAwake, planCharaAwake } from "../world/chara-awake.js";
 
 export interface SourceCheckResult {
   /** Net 好感度 change written to the target (ERB `TFLAG:97`). */
@@ -74,6 +88,41 @@ export interface SourceCheckResult {
   readonly events: readonly ObservationEvent[];
   /** Named state changes produced by this settlement. */
   readonly transitions: readonly DomainTransition[];
+  /** Formula-level diagnostics for the target's daily 憤怒 arm. */
+  readonly angerDiagnostics: AngerDiagnostics | null;
+  /** Rebellion mark reached during this settlement, if any. */
+  readonly rebellionMark?: {
+    readonly previousLevel: 0 | 1 | 2 | 3;
+    readonly level: 1 | 2 | 3;
+  };
+}
+
+/** Hook for command-specific effects that must observe CUP before it flushes. */
+export type SourceSettlementHook = (
+  target: CharaSlot,
+  participant: CharaSlot,
+  scaledSource: Readonly<Record<number, number>>,
+) => Readonly<Record<number, number>> | void;
+
+export interface AngerDiagnostics {
+  readonly source: number;
+  readonly emotion: number;
+  readonly reason: number;
+  readonly reasonMax: number;
+  readonly angerBefore: number;
+  readonly angerMax: number;
+  readonly rawIncrement: number;
+  readonly angerIncrement: number;
+  readonly angerAfter: number;
+  readonly underwear: "none" | "no-anger" | "belt";
+  readonly mood: number;
+  readonly sleepDrugStrength: number;
+  readonly prankSleepDrugSuppression: boolean;
+  readonly rebellionSuppression: boolean;
+  readonly hypnosisStrength: number;
+  /** Charm is intentionally not approximated until IsCharmValid is ported. */
+  readonly charmDeferred: boolean;
+  readonly suppressedBy: "none" | "training" | "no-source" | "no-cap";
 }
 
 // --- tiny readers (default 0 per the additive-slot convention) -------------
@@ -238,6 +287,144 @@ function sourceJudou(
   cupAdd(t, PALAM_ID.恭順, local2);
 }
 
+const EDGING_EX_IDS = [
+  EX_ID.Ｃ寸止め,
+  EX_ID.Ｖ寸止め,
+  EX_ID.Ａ寸止め,
+  EX_ID.Ｂ寸止め,
+  EX_ID.Ｍ寸止め,
+] as const;
+
+function snapshotEdgingEx(target: CharaSlot): readonly number[] {
+  return EDGING_EX_IDS.map((id) => target.state.EX[id] ?? 0);
+}
+
+function edgingTransitionEvents(
+  before: readonly number[],
+  after: readonly number[],
+): ObservationEvent[] {
+  const events: ObservationEvent[] = [];
+  if (after.some((value, index) => value > before[index]!)) {
+    events.push({
+      kind: "NARRATION",
+      timestamp: 0,
+      text: "寸止积累已暂存，下一次有效绝顶会吸收这些积累。",
+    });
+  }
+  if (after.some((value, index) => value < before[index]!)) {
+    events.push({
+      kind: "NARRATION",
+      timestamp: 0,
+      text: "这次绝顶吸收了此前暂存的寸止积累。",
+    });
+  }
+  return events;
+}
+
+function sourceRevisionScale(value: number, ability: number, rate: number): number {
+  return Math.trunc((value * getRevision(ability, 500, rate)) / 100);
+}
+
+function isPartnerLedSource(t: CharaSlot, p: CharaSlot): boolean {
+  return t.charaNum !== p.charaNum && cflag(t, CFLAG_ID.诶嘿嘿) === 2;
+}
+
+/**
+ * `@SOURCE_誘惑` (`SOURCE_1.ERB:668-689`).
+ *
+ * These sources are produced by partner-led counter actions rather than the
+ * ordinary command SOURCE map. Keeping their cross-participant CUP writes in
+ * the shared settlement makes the counter path obey the same flush/order as H
+ * commands. The 甲斐性無 flag is not yet modelled, so its optional ×2 arm is
+ * deliberately omitted rather than inferred from an unrelated field.
+ */
+export function sourceYuwaku(t: CharaSlot, p: CharaSlot, s: Record<number, number>): void {
+  let source = sourceRevisionScale(src(s, SOURCE_ID.誘惑), abl(t, ABL_ID.欲望) + 2, 10);
+  let local = source;
+  let obedience = source;
+  if (isPartnerLedSource(t, p)) {
+    local *= 2;
+    obedience *= 2;
+  }
+  cupAdd(t, PALAM_ID.優越, local);
+  local = sourceRevisionScale(local, abl(p, ABL_ID.欲望), 20);
+  obedience = sourceRevisionScale(obedience, abl(p, ABL_ID.従順), 5);
+  cupAdd(p, PALAM_ID.欲情, local);
+  cupAdd(p, PALAM_ID.恭順, obedience);
+}
+
+/** `@SOURCE_侮辱` (`SOURCE_1.ERB:692-723`). */
+export function sourceBujoku(t: CharaSlot, p: CharaSlot, s: Record<number, number>): void {
+  let local = sourceRevisionScale(src(s, SOURCE_ID.侮辱), abl(t, ABL_ID.施虐属性) + 2, 10);
+  if (isPartnerLedSource(t, p)) local *= 2;
+  local = sourceRevisionScale(local, abl(p, ABL_ID.受虐属性), 20);
+  local = sourceRevisionScale(local, abl(p, ABL_ID.露出癖), 20);
+  const shame = palam(p, PALAM_ID.恥情);
+  if (shame < palamLv(1)) local = times(local, 1.0);
+  else if (shame < palamLv(2)) local = times(local, 0.9);
+  else if (shame < palamLv(3)) local = times(local, 0.8);
+  else if (shame < palamLv(4)) local = times(local, 0.7);
+  else local = times(local, 0.6);
+  cupAdd(p, PALAM_ID.恥情, local);
+  cupAdd(t, PALAM_ID.優越, Math.trunc(local / 2));
+}
+
+/** `@SOURCE_挑発` (`SOURCE_1.ERB:725-748`). */
+export function sourceChouhatsu(t: CharaSlot, p: CharaSlot, s: Record<number, number>): void {
+  const source = sourceRevisionScale(src(s, SOURCE_ID.挑発), abl(t, ABL_ID.施虐属性) + 2, 10);
+  let local = source;
+  let submission = source;
+  if (isPartnerLedSource(t, p)) {
+    local *= 2;
+    submission *= 2;
+  }
+  cupAdd(t, PALAM_ID.優越, local);
+  local = sourceRevisionScale(local, abl(p, ABL_ID.欲望), 10);
+  submission = sourceRevisionScale(submission, abl(p, ABL_ID.受虐属性), 5);
+  cupAdd(p, PALAM_ID.欲情, local);
+  cupAdd(p, PALAM_ID.屈服, submission);
+}
+
+/** `@SOURCE_奉仕` (`SOURCE_1.ERB:750-769`). */
+export function sourceHoushi(t: CharaSlot, p: CharaSlot, s: Record<number, number>): void {
+  const source = sourceRevisionScale(
+    src(s, SOURCE_ID.奉仕),
+    abl(t, ABL_ID.技巧) + abl(t, ABL_ID.奉仕精神) + 2,
+    10,
+  );
+  let local = source;
+  let submission = source;
+  if (isPartnerLedSource(t, p)) {
+    local = times(local, 0.75);
+    submission = times(submission, 0.75);
+  }
+  local = sourceRevisionScale(local, abl(p, ABL_ID.欲望), 10);
+  submission = sourceRevisionScale(submission, abl(p, ABL_ID.受虐属性), 5);
+  cupAdd(p, PALAM_ID.欲情, local);
+  cupAdd(p, PALAM_ID.屈服, submission);
+}
+
+/** `@SOURCE_強要` (`SOURCE_1.ERB:771-796`). */
+export function sourceKyouyou(t: CharaSlot, p: CharaSlot, s: Record<number, number>): void {
+  const source = sourceRevisionScale(
+    src(s, SOURCE_ID.強要),
+    abl(t, ABL_ID.施虐属性) + abl(t, ABL_ID.欲望) + 2,
+    10,
+  );
+  let local = source;
+  let submission = source;
+  if (isPartnerLedSource(t, p)) {
+    local *= 2;
+    submission *= 2;
+  }
+  cupAdd(t, PALAM_ID.優越, local);
+  local = sourceRevisionScale(local, abl(p, ABL_ID.奉仕精神), 5);
+  submission = sourceRevisionScale(submission, abl(p, ABL_ID.従順), 10);
+  cupAdd(p, PALAM_ID.恭順, local);
+  cupAdd(p, PALAM_ID.屈服, submission);
+  cupAdd(p, PALAM_ID.恐怖, Math.trunc(submission / 2));
+}
+
 /** @SOURCE_情愛 → CUP:恭順 (via ABL:従順) + CUP:欲情 (via ABL:欲望). (5E) */
 function sourceJouai(t: CharaSlot, s: Record<number, number>): void {
   // TCVAR:强行 /=5, 诶嘿嘿/甲斐性無 modifiers are deferred.
@@ -341,15 +528,81 @@ function hankanBandMul(v: number): number {
   return 0.1;
 }
 
-/** @SOURCE_反感 → CUP:反感 (心情, 従順+親密, 奉仕精神, 受虐属性). (5E) */
-function sourceHankan(t: CharaSlot, s: Record<number, number>): void {
+/** @SOURCE_反感 → CUP:反感 (心情, 理性削り, 従順+親密, 奉仕精神, 受虐属性). (5E) */
+function sourceHankan(
+  t: CharaSlot,
+  s: Record<number, number>,
+  reasonShaved: boolean,
+): void {
   let local = Math.trunc((src(s, SOURCE_ID.反感) * (10 - 3 * talent(t, TALENT_ID.心情))) / 10);
-  // 诶嘿嘿/路人/体目当て — deferred (off).
+  if (reasonShaved && cflag(t, CFLAG_ID.体目当て) !== 0) local = Math.trunc(local / 2);
+  // Partner-led H mode and mob-specific aversion multipliers remain deferred.
   local = times(local, hankanJujunMul(abl(t, ABL_ID.従順) + abl(t, ABL_ID.親密)));
   local = times(local, hankanBandMul(abl(t, ABL_ID.奉仕精神)));
   local = times(local, hankanBandMul(abl(t, ABL_ID.受虐属性)));
   // FLAG:催眠強度 / TALENT:反発抑制 — deferred (off).
   cupAdd(t, PALAM_ID.反感, local);
+}
+
+/** @SOURCE_恭順 — the obedience SOURCE arm used by ORGASM_ADD additions. */
+function sourceGeneratedKyojun(t: CharaSlot, s: Record<number, number>): void {
+  let local = src(s, SOURCE_ID.恭順);
+  if (cflag(t, CFLAG_ID.诶嘿嘿) === 2) local = times(local, 0.5);
+  const scales = [0.5, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.4, 3.0];
+  local = times(local, scales[abl(t, ABL_ID.従順)] ?? 5.0);
+  cupAdd(t, PALAM_ID.恭順, local);
+}
+
+/** @SOURCE_露出 — the exposure SOURCE arm used by ORGASM_ADD additions. */
+function sourceGeneratedExposure(t: CharaSlot, s: Record<number, number>): void {
+  let raw = src(s, SOURCE_ID.露出);
+  const shame = talent(t, TALENT_ID.羞恥心);
+  if (shame > 0) raw = times(raw, 2.0);
+  else if (shame < 0) raw = times(raw, 0.5);
+  raw += Math.trunc(cup(t, PALAM_ID.潤滑) / 2);
+  s[SOURCE_ID.露出] = raw;
+
+  let local = raw;
+  if (cflag(t, CFLAG_ID.诶嘿嘿) === 2) local = times(local, 0.75);
+  const scales = [0, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6];
+  cupAdd(t, PALAM_ID.欲情, times(local, scales[abl(t, ABL_ID.露出癖)] ?? 2.0));
+
+  let shameValue = raw;
+  const currentShame = palam(t, PALAM_ID.恥情);
+  if (currentShame < palamLv(1)) shameValue = times(shameValue, 1.0);
+  else if (currentShame < palamLv(2)) shameValue = times(shameValue, 0.9);
+  else if (currentShame < palamLv(3)) shameValue = times(shameValue, 0.8);
+  else if (currentShame < palamLv(4)) shameValue = times(shameValue, 0.7);
+  else shameValue = times(shameValue, 0.6);
+  cupAdd(t, PALAM_ID.恥情, Math.max(shameValue, 0));
+}
+
+/** @SOURCE_屈従 — the submission SOURCE arm used by ORGASM_ADD additions. */
+function sourceGeneratedKujun(t: CharaSlot, s: Record<number, number>): void {
+  let local = src(s, SOURCE_ID.屈従);
+  if (cflag(t, CFLAG_ID.诶嘿嘿) === 2) local = times(local, 0.5);
+  local = ablHosei(local, abl(t, ABL_ID.従順), 1);
+  const scales = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5];
+  local = times(local, scales[abl(t, ABL_ID.奉仕精神)] ?? 7.0);
+  cupAdd(t, PALAM_ID.屈服, local);
+}
+
+/** Re-run only the post-orgasm SOURCE arms for SOURCE quanta generated by
+ * ORGASM_ADD. The ordinary command SOURCE has already passed these arms. */
+function applyGeneratedOrgasmSource(
+  t: CharaSlot,
+  p: CharaSlot,
+  generated: Record<number, number>,
+  skipReactiveEffects: boolean,
+  reasonShaved: boolean,
+): void {
+  sourceJouai(t, generated);
+  sourceYokujou(t, generated);
+  sourceGeneratedKyojun(t, generated);
+  sourceGeneratedExposure(t, generated);
+  sourceGeneratedKujun(t, generated);
+  if (!skipReactiveEffects) sourceHankan(t, generated, reasonShaved);
+  void p;
 }
 
 /**
@@ -409,6 +662,92 @@ export function sourceKaikanV(t: CharaSlot, s: Record<number, number>): void {
   cupAdd(t, PALAM_ID.欲情, Math.trunc((v * sourceRevision2(abl(t, ABL_ID.欲望))) / 100));
 }
 
+/** @SOURCE_快Ａ (`SOURCE_CBVA.ERB:121-200`) → CUP:快Ａ (+ CUP:欲情). */
+export function sourceKaikanA(t: CharaSlot, s: Record<number, number>): void {
+  let v = Math.trunc((src(s, SOURCE_ID.快Ａ) * (2 + talent(t, TALENT_ID.Ａ感度))) / 2);
+  v = Math.trunc((v * sourceRevision1(abl(t, ABL_ID.Ａ感覚))) / 10);
+
+  const ae = exp(t, EXP_ID.Ａ経験);
+  if (ae < expLv(1)) v = times(v, 0.3);
+  else if (ae < expLv(2)) v = times(v, 0.5);
+  else if (ae < expLv(3)) v = times(v, 0.8);
+  else if (ae < expLv(4)) v = times(v, 1.0);
+  else if (ae < expLv(5)) v = times(v, 1.2);
+  else v = times(v, 1.5);
+
+  const lubrication = palam(t, PALAM_ID.潤滑);
+  if (lubrication < palamLv(1)) v = times(v, 0.1);
+  else if (lubrication < palamLv(2)) v = times(v, 0.2);
+  else if (lubrication < palamLv(3)) v = times(v, 0.4);
+  else if (lubrication < palamLv(4)) v = times(v, 0.75);
+  else if (lubrication < palamLv(5)) v = times(v, 0.9);
+
+  let local = v;
+  const desire = palam(t, PALAM_ID.欲情);
+  if (desire < palamLv(1)) local = times(local, 0.9);
+  else if (desire < palamLv(3)) local = times(local, 1.0);
+  else if (desire < palamLv(5)) local = times(local, 1.1);
+  else if (desire < palamLv(7)) local = times(local, 1.2);
+  else local = times(local, 1.3);
+
+  let desireSource = Math.trunc((v * sourceRevision2(abl(t, ABL_ID.欲望))) / 100);
+  if ((talent(t, TALENT_ID.体型) ?? 0) < -2) {
+    local = times(local, 0.5);
+    desireSource = times(desireSource, 1.5);
+  }
+
+  cupAdd(t, PALAM_ID.快Ａ, local);
+  cupAdd(t, PALAM_ID.欲情, desireSource);
+
+  // SOURCE_CBVA.ERB:185-189: a virgin target who values chastity takes
+  // only one third of the generated 屈従 from a positive anal source.
+  if (exp(t, EXP_ID.Ｖ経験) === 0 && talent(t, TALENT_ID.貞操) > 0 && src(s, SOURCE_ID.快Ａ) > 0) {
+    s[SOURCE_ID.屈従] = Math.trunc(src(s, SOURCE_ID.屈従) / 3);
+  }
+}
+
+/** @SOURCE_快Ｂ (`SOURCE_CBVA.ERB:208-242`) → CUP:快Ｂ (+ CUP:欲情). */
+export function sourceKaikanB(t: CharaSlot, s: Record<number, number>): void {
+  let v = Math.trunc((src(s, SOURCE_ID.快Ｂ) * (2 + talent(t, TALENT_ID.Ｂ感度))) / 2);
+  v = Math.trunc((v * sourceRevision1(abl(t, ABL_ID.Ｂ感覚))) / 10);
+
+  let local = v;
+  const desire = palam(t, PALAM_ID.欲情);
+  if (desire < palamLv(1)) local = times(local, 0.8);
+  else if (desire < palamLv(3)) local = times(local, 1.0);
+  else if (desire < palamLv(5)) local = times(local, 1.2);
+  else if (desire < palamLv(7)) local = times(local, 1.4);
+  else local = times(local, 1.6);
+
+  cupAdd(t, PALAM_ID.快Ｂ, local);
+  cupAdd(t, PALAM_ID.欲情, Math.trunc((v * sourceRevision2(abl(t, ABL_ID.欲望))) / 100));
+}
+
+/** @SOURCE_快Ｍ (`SOURCE_CBVA.ERB:250-299`) → CUP:快Ｍ (+ CUP:欲情). */
+export function sourceKaikanM(t: CharaSlot, s: Record<number, number>): void {
+  let v = Math.trunc((src(s, SOURCE_ID.快Ｍ) * (2 + talent(t, TALENT_ID.Ｍ感度))) / 2);
+  v = Math.trunc((v * sourceRevision1(abl(t, ABL_ID.Ｍ感覚))) / 10);
+
+  const me = exp(t, EXP_ID.Ｍ経験);
+  if (me < expLv(1)) v = times(v, 0.25);
+  else if (me < expLv(2)) v = times(v, 0.5);
+  else if (me < expLv(3)) v = times(v, 1.0);
+  else if (me < expLv(4)) v = times(v, 2.0);
+  else if (me < expLv(5)) v = times(v, 3.0);
+  else v = times(v, 5.0);
+
+  let local = v;
+  const desire = palam(t, PALAM_ID.欲情);
+  if (desire < palamLv(1)) local = times(local, 0.6);
+  else if (desire < palamLv(3)) local = times(local, 0.8);
+  else if (desire < palamLv(5)) local = times(local, 1.0);
+  else if (desire < palamLv(7)) local = times(local, 1.2);
+  else local = times(local, 1.5);
+
+  cupAdd(t, PALAM_ID.快Ｍ, local);
+  cupAdd(t, PALAM_ID.欲情, Math.trunc((v * sourceRevision2(abl(t, ABL_ID.欲望))) / 100));
+}
+
 /**
  * @GET_ANGRY (`COMMON.ERB` 1357-1367) — the rage trigger. Sets 不機嫌
  * (心情不快) + 勃然大怒 (ブチギレ), pins 憤怒 to its cap, drops TALENT:心情 to
@@ -437,22 +776,29 @@ function inRange(x: number, lo: number, hi: number): boolean {
 }
 
 /**
- * @MARK_GOT_CHECK 反発刻印 arm (`TRACHECK_刻印取得.ERB` 154-227). Parity QA
- * P-15 ②. Reads the per-turn `CUP:反感 + CUP:不快` quanta (so it MUST run
- * before `applyAndClearCup` zeroes them), and on a high-enough sum brands the
- * target with 反発刻印 1/2/3 — setting 心情不快 / ブチギレ / TALENT:心情=-1 and
- * (at level ≥2) dropping ABL:従順/親密. The earlier 苦痛/時姦/快楽/不埒 brand
- * arms are deferred (their取得 reads CUP 快感/苦痛/恐怖 that 会話/掀裙子 don't
- * produce).
+ * @MARK_GOT_CHECK 反発刻印 arm (`TRACHECK_刻印取得.ERB` 154-230). Reads the
+ * accumulated `CUP:反感 + CUP:不快` after the other four brand checks. The
+ * previous ASSIPLAY latch suppresses only this rebellion arm.
  *
  * Returns the brand level newly reached (0 = none) for narration / tests.
  */
-function markGotCheckHankan(t: CharaSlot): number {
-  // ERB 157-165 early returns (MASTER excluded handled by caller; 恶作剧/TFLAG:150
-  // unmodeled-off).
+function markGotCheckHankan(
+  state: GameState,
+  t: CharaSlot,
+  cupTotals?: TrainingMarkCupTotals,
+): number {
+  // ERB 157-165: these early returns apply only to the rebellion brand arm.
   if (talent(t, TALENT_ID.反発抑制) !== 0) return 0;
+  if (t.charaNum === 0) return 0;
+  if (getTflag(state, TFLAG_ID.前回のASSIPLAYの履歴) !== 0) return 0;
 
-  let val = cup(t, PALAM_ID.反感) + cup(t, PALAM_ID.不快);
+  const finish = (level: number): number => {
+    setTflag(state, TFLAG_ID.前回のASSIPLAYの履歴, 0);
+    return level;
+  };
+
+  let val = (cupTotals?.[PALAM_ID.反感] ?? cup(t, PALAM_ID.反感))
+    + (cupTotals?.[PALAM_ID.不快] ?? cup(t, PALAM_ID.不快));
   // ERB 167-172: 反発取得履歴 makes re-earning the same band harder (a
   // window of values collapses down a level).
   const hist = mark(t, MARK_ID.反発取得履歴);
@@ -460,21 +806,23 @@ function markGotCheckHankan(t: CharaSlot): number {
   if (hist > 1 && inRange(val, 1001, 1300)) val = 1000;
   if (hist > 2 && inRange(val, 2001, 2500)) val = 2000;
 
-  const emoLack = false; // TALENT:感情缺乏 — unmodeled, off by default.
+  const emoLack = talent(t, TALENT_ID.感情缺乏) !== 0;
   const m = markStore(t);
   if (val >= 500 && val <= 1000) {
     if (mark(t, MARK_ID.反発刻印) < 1) {
       m[MARK_ID.反発刻印] = 1;
       m[MARK_ID.反発取得履歴] = Math.max(hist, 1);
+      setTflag(state, TFLAG_ID.反発刻印取得, 1);
       t.state.CFLAG[CFLAG_ID.不機嫌] = 1;
       t.state.CFLAG[CFLAG_ID.勃然大怒] = 1;
       t.state.TALENT[TALENT_ID.心情] = -1;
-      return 1;
+      return finish(1);
     }
   } else if (val >= 1001 && val <= 2000) {
     if (mark(t, MARK_ID.反発刻印) < 2) {
       m[MARK_ID.反発刻印] = 2;
       m[MARK_ID.反発取得履歴] = Math.max(hist, 2);
+      setTflag(state, TFLAG_ID.反発刻印取得, 2);
       t.state.CFLAG[CFLAG_ID.不機嫌] = 2;
       t.state.CFLAG[CFLAG_ID.勃然大怒] = 1;
       t.state.TALENT[TALENT_ID.心情] = -1;
@@ -484,16 +832,19 @@ function markGotCheckHankan(t: CharaSlot): number {
         if (ju >= 1 && ju <= 5) {
           t.state.ABL[ABL_ID.従順] = Math.max(ju - 1, 0);
           t.state.ABL[ABL_ID.親密] = Math.max(abl(t, ABL_ID.親密) - 1, 0);
+          setTflag(state, TFLAG_ID.刻印従順変化, 1);
         } else if (ju > 5) {
           t.state.ABL[ABL_ID.従順] = Math.max(ju - 1, 0);
+          setTflag(state, TFLAG_ID.刻印従順変化, 2);
         }
       }
-      return 2;
+      return finish(2);
     }
   } else if (val > 2000) {
     if (mark(t, MARK_ID.反発刻印) < 3) {
       m[MARK_ID.反発刻印] = 3;
       m[MARK_ID.反発取得履歴] = Math.max(hist, 3);
+      setTflag(state, TFLAG_ID.反発刻印取得, 3);
       t.state.CFLAG[CFLAG_ID.不機嫌] = 3;
       t.state.CFLAG[CFLAG_ID.勃然大怒] = 1;
       t.state.TALENT[TALENT_ID.心情] = -1;
@@ -502,15 +853,39 @@ function markGotCheckHankan(t: CharaSlot): number {
         if (ju >= 1 && ju <= 5) {
           t.state.ABL[ABL_ID.従順] = Math.max(ju - 2, 0);
           t.state.ABL[ABL_ID.親密] = Math.max(abl(t, ABL_ID.親密) - 2, 0);
+          setTflag(state, TFLAG_ID.刻印従順変化, 1);
         } else if (ju > 5) {
           t.state.ABL[ABL_ID.従順] = Math.max(ju - 1, 0);
           t.state.ABL[ABL_ID.親密] = Math.max(abl(t, ABL_ID.親密) - 1, 0);
+          setTflag(state, TFLAG_ID.刻印従順変化, 2);
         }
       }
-      return 3;
+      return finish(3);
     }
   }
-  return 0;
+  return finish(0);
+}
+
+/** Commit accumulated mark inputs once after the command's SOURCE passes. */
+export function finalizeTrainingMarkAcquisitionChecks(
+  state: GameState,
+  charaNum?: number,
+): void {
+  const frame = state.turnContext?.frame;
+  const pending = frame?.trainingMarkCupsByChara;
+  if (!pending) return;
+  const charaNums = charaNum === undefined
+    ? Object.keys(pending).map(Number)
+    : [charaNum];
+  for (const num of charaNums) {
+    const cups = pending[num];
+    const target = state.charas[num];
+    if (!cups || !target) continue;
+    delete pending[num];
+    if (cflag(target, CFLAG_ID.恶作剧) !== 0) continue;
+    applyTrainingMarkAcquisitionChecks(state, target, cups);
+    markGotCheckHankan(state, target, cups);
+  }
 }
 
 /**
@@ -594,7 +969,8 @@ function favorCalc(
   s: Record<number, number>,
   bias: number,
   suppressDailyAnger = false,
-): number {
+  hypnosisStrength = 0,
+): { value: number; angerDiagnostics: AngerDiagnostics } {
   // `bias` = the command's own `TFLAG:97 += …` pre-seed (e.g. COMF309's
   // 親密/好感 penalty). 0 for 会話.
   let tflag97 = bias + Math.trunc((abl(t, ABL_ID.従順) + abl(t, ABL_ID.親密)) / 2);
@@ -677,40 +1053,63 @@ function favorCalc(
   reasonDrop = Math.trunc((reasonDrop * (tamatte + 1000)) / 2000);
   t.state.BASE[BASE_ID.理性] = Math.max(base(t, BASE_ID.理性) - reasonDrop, 0);
 
-  // --- 日常時 BASE block (ERB 197-307) — Parity QA P-15 ① 反感→憤怒 ----------
-  // Upstream gates the whole block on `TFLAG:102 != 2`; in our settlement the
-  // daily-mode path is the only one (no うふふ session state machine yet), so
-  // we run the 憤怒 accumulation. The 情緒/理性 lines are deferred (they need
-  // 約会/抑制/天候 flags + feed the deferred 理性 reducer); we port the
-  // anger arm, which is what the user's low-favor 掀裙子 report is about.
-  // The 憤怒 accrual + cap-overflow + 心情不快 arms all read MAXBASE:憤怒. As
-  // with `recoverPermil`, an UNSET MAXBASE (== 0) means "no cap known" and the
-  // arm no-ops rather than zeroing current 憤怒 (a clean chara loaded via the
-  // CSV always has MAXBASE seeded; tests that don't seed it opt out faithfully).
+  // --- 日常時 BASE block (ERB 197-307) — 憤怒 arm -----------------------------
+  // The state change and every modifier are kept together so the UI/debug
+  // surface can explain why a low-favor action produced a given result.
   const angerMax = maxbase(t, BASE_ID.憤怒);
   const hankanSrc = src(s, SOURCE_ID.反感);
-  if (!suppressDailyAnger && hankanSrc > 0 && angerMax > 0) {
+  const joucho = base(t, BASE_ID.情緒);
+  const risei = base(t, BASE_ID.理性);
+  const riseiMax = maxbase(t, BASE_ID.理性);
+  const angerBefore = base(t, BASE_ID.憤怒);
+  const underwear = t.state.EQUIP[EQUIP_SLOT.下半身内衣２] ?? 0;
+  const underwearMode: AngerDiagnostics["underwear"] =
+    underwear === 27 ? "belt" : [28, 29, 30].includes(underwear) ? "no-anger" : "none";
+  const kokoro = talent(t, TALENT_ID.心情);
+  const sleepDrugStrength = Math.trunc(t.state.TCVAR[TCVAR_ID.睡眠薬強度] ?? 0);
+  const prankSleepDrugSuppression =
+    sleepDrugStrength >= 1 && sleepDrugStrength <= 3 &&
+    cflag(t, CFLAG_ID.恶作剧) !== 0;
+  const rebellionSuppression = talent(t, TALENT_ID.反発抑制) !== 0;
+  hypnosisStrength = Math.max(0, Math.trunc(hypnosisStrength));
+  const charmDeferred =
+    talent(t, TALENT_ID.魅惑) !== 0 || talent(t, TALENT_ID.謎之魅力) !== 0;
+  let rawIncrement = 0;
+  let angerIncrement = 0;
+  let suppressedBy: AngerDiagnostics["suppressedBy"] = "none";
+  if (hankanSrc <= 0) suppressedBy = "no-source";
+  else if (angerMax <= 0) suppressedBy = "no-cap";
+  else if (suppressDailyAnger) suppressedBy = "training";
+  else {
     // ERB 247: 憤怒上昇値 = 反感 * 3 * (2000-情緒) * (500+理性) /
     //                      ((2000+情緒) * (500+MAXBASE:理性)).
-    const joucho = base(t, BASE_ID.情緒);
-    const risei = base(t, BASE_ID.理性);
-    const riseiMax = maxbase(t, BASE_ID.理性);
-    let anger = Math.trunc(
+    rawIncrement = Math.trunc(
       (hankanSrc * 3 * (2000 - joucho) * (500 + risei)) /
         ((2000 + joucho) * (500 + riseiMax)),
     );
+    angerIncrement = rawIncrement;
+    if (underwearMode === "no-anger") angerIncrement = 0;
+    else if (underwearMode === "belt") angerIncrement = Math.trunc((angerIncrement * 4) / 3);
     // ERB 255-258: 心情 (TALENT:15) shifts the rise.
-    const kokoro = talent(t, TALENT_ID.心情);
-    if (kokoro === 1) anger = Math.trunc((anger * 7) / 10);
-    else if (kokoro === -1) anger = Math.trunc((anger * 3) / 2);
-    // ERB 271: 反発抑制 → /3.
-    if (talent(t, TALENT_ID.反発抑制) !== 0) anger = Math.trunc(anger / 3);
-    // ERB 274: BASE:憤怒 += 憤怒上昇値.
-    t.state.BASE[BASE_ID.憤怒] = base(t, BASE_ID.憤怒) + anger;
-    // ERB 276-277: 憤怒 over its cap → GET_ANGRY(ARG) (刻印付与 0).
-    if (base(t, BASE_ID.憤怒) > angerMax) {
-      getAngry(t, 0);
+    if (kokoro === 1) angerIncrement = Math.trunc((angerIncrement * 7) / 10);
+    else if (kokoro === -1) angerIncrement = Math.trunc((angerIncrement * 3) / 2);
+    // ERB 261-268: sleep-drug prank suppression.
+    if (prankSleepDrugSuppression) {
+      if (sleepDrugStrength === 1) angerIncrement = Math.trunc(angerIncrement / 2);
+      else if (sleepDrugStrength === 2) angerIncrement = Math.trunc(angerIncrement / 5);
+      else if (sleepDrugStrength === 3) angerIncrement = 0;
     }
+    // ERB 271: 反発抑制 → /3.
+    if (rebellionSuppression) angerIncrement = Math.trunc(angerIncrement / 3);
+    // ERB 274: 催眠強度 × (101-strength) / 100. A valid charm arm is
+    // intentionally left untouched and exposed in diagnostics below until
+    // IsCharmValid/MAGIC_CharmFactor are ported.
+    if (hypnosisStrength > 0) {
+      angerIncrement = Math.trunc((angerIncrement * (101 - hypnosisStrength)) / 100);
+    }
+    t.state.BASE[BASE_ID.憤怒] = angerBefore + angerIncrement;
+    // ERB 276-277: 憤怒 over its cap → GET_ANGRY(ARG) (刻印付与 0).
+    if (base(t, BASE_ID.憤怒) > angerMax) getAngry(t, 0);
     // ERB 278: clamp 憤怒 to its cap.
     t.state.BASE[BASE_ID.憤怒] = Math.min(base(t, BASE_ID.憤怒), angerMax);
   }
@@ -720,6 +1119,26 @@ function favorCalc(
     t.state.BASE[BASE_ID.憤怒] = angerMax;
     t.state.CFLAG[CFLAG_ID.勃然大怒] = 1;
   }
+
+  const angerDiagnostics: AngerDiagnostics = {
+    source: hankanSrc,
+    emotion: joucho,
+    reason: risei,
+    reasonMax: riseiMax,
+    angerBefore,
+    angerMax,
+    rawIncrement,
+    angerIncrement,
+    angerAfter: base(t, BASE_ID.憤怒),
+    underwear: underwearMode,
+    mood: kokoro,
+    sleepDrugStrength,
+    prankSleepDrugSuppression,
+    rebellionSuppression,
+    hypnosisStrength,
+    charmDeferred,
+    suppressedBy,
+  };
 
   // --- 反発刻印補正 (ERB 309-321) — Parity QA P-15 ② -------------------------
   // ERB 310: TFLAG:97 -= (FLAG:難易度 + 1) * MARK:反発刻印.
@@ -731,7 +1150,7 @@ function favorCalc(
   else if (brand === 2 && tflag97 < -2) tflag97 = -2;
   else if (brand === 1 && tflag97 < -1) tflag97 = -1;
   else if (tflag97 < 0) tflag97 = 0;
-  return tflag97;
+  return { value: tflag97, angerDiagnostics };
 }
 
 /**
@@ -775,7 +1194,7 @@ function mobGirlGrowthBonus(t: CharaSlot, favorDelta: number): number {
 /**
  * Slice C — 调教装备 TEQUIP 槽的持续 SOURCE (原版 `EQUIP_CHECK` →
  * `EQUIP_COM{N}`, SOURCE.ERB:242). 目标每 SOURCE 结算时, 已装备的调教道具
- * 追加持续 SOURCE. 值来自各 `EQUIP_COM{40-49/104-107}` 的非时停分支 (审计).
+ * 追加持续 SOURCE. 值来自各 `EQUIP_COM{11-12/40-49/104-107}` 的非时停分支 (审计).
  *
  * 装备状态在 `state.TEQUIP` (per-chara, 见 `state/tequip.ts`) — 读 TEQUIP
  * 而非 EQUIP (EQUIP 槽 11-22 是衣服, 撞号会误判穿裤子角色已装 陰蒂夾).
@@ -793,14 +1212,66 @@ const TEQUIP_CONTINUOUS: Readonly<Record<number, Readonly<Record<number, number>
   [TEQUIP_ID.拘束]: { [SOURCE_ID.苦痛]: 30 },
 };
 
-/** 把目标已装备调教道具的持续 SOURCE 追加到 `s`. */
-function addEquipContinuous(t: CharaSlot, s: Record<number, number>): void {
+/** 把目标已装备调教道具与持续接触的 SOURCE 追加到 `s`. */
+export function addEquipContinuous(next: GameState, t: CharaSlot, p: CharaSlot, s: Record<number, number>): void {
   for (const [tequip, sources] of Object.entries(TEQUIP_CONTINUOUS)) {
     if (readTequip(t, Number(tequip)) === 0) continue;
     for (const [sid, v] of Object.entries(sources)) {
       s[Number(sid)] = (s[Number(sid)] ?? 0) + v;
     }
   }
+  addSustainedContactSources(t, p, s, isTimeStopped(next) && cflag(t, CFLAG_ID.時間停止行動) === 0);
+}
+
+function addSustainedContactSources(t: CharaSlot, p: CharaSlot, s: Record<number, number>, frozen: boolean): void {
+  // EQUIP_COM11/12 run at each SOURCE_CHECK while the toggle is active.
+  if (readTequip(t, TEQUIP_ID.吸乳头) !== 0) {
+    const tongue = abl(p, ABL_ID.舌);
+    s[SOURCE_ID.快Ｂ] = (s[SOURCE_ID.快Ｂ] ?? 0) + (tongue + 1) * 10;
+    if (!frozen) {
+      s[SOURCE_ID.露出] = 20;
+      s[SOURCE_ID.不潔] = 30;
+      s[SOURCE_ID.反感] = 50;
+      s[SOURCE_ID.情愛] = (s[SOURCE_ID.情愛] ?? 0) + tongue * 5
+        + (abl(t, ABL_ID.親密) >= 5 ? abl(t, ABL_ID.親密) * 3 : 0);
+    }
+  }
+  if (readTequip(t, TEQUIP_ID.揉胸) !== 0) {
+    const fingers = abl(p, ABL_ID.指);
+    s[SOURCE_ID.快Ｂ] = (s[SOURCE_ID.快Ｂ] ?? 0) + (fingers + 1) * 10;
+    if (!frozen) {
+      s[SOURCE_ID.露出] = 20;
+      s[SOURCE_ID.逸脱] = 30;
+      s[SOURCE_ID.反感] = 30;
+      s[SOURCE_ID.情愛] = (s[SOURCE_ID.情愛] ?? 0) + fingers * 5
+        + (abl(t, ABL_ID.親密) >= 5 ? abl(t, ABL_ID.親密) * 2 : 0);
+    }
+  }
+}
+
+/** `EQUIP_COM11/12` also charge each participant and award player experience each settled turn. */
+export function applySustainedContactCosts(next: GameState, t: CharaSlot, p: CharaSlot): void {
+  if (t.charaNum === 0 || p.charaNum !== 0) return;
+  const sucking = readTequip(t, TEQUIP_ID.吸乳头) !== 0;
+  const fondling = readTequip(t, TEQUIP_ID.揉胸) !== 0;
+  if (!sucking && !fondling) return;
+
+  const frozen = isTimeStopped(next) && cflag(t, CFLAG_ID.時間停止行動) === 0;
+  if (frozen) {
+    p.state.BASE[BASE_ID.TSP] = base(p, BASE_ID.TSP) - 20 * (Number(sucking) + Number(fondling));
+  } else {
+    t.state.BASE[BASE_ID.体力] = base(t, BASE_ID.体力) - (sucking ? 5 : 0) - (fondling ? 5 : 0);
+    t.state.BASE[BASE_ID.気力] = base(t, BASE_ID.気力) - (sucking ? 20 : 0) - (fondling ? 20 : 0);
+    p.state.BASE[BASE_ID.体力] = base(p, BASE_ID.体力) - (sucking ? 5 : 0) - (fondling ? 15 : 0);
+    p.state.BASE[BASE_ID.気力] = base(p, BASE_ID.気力) - (sucking ? 10 : 0) - (fondling ? 20 : 0);
+  }
+  if (sucking) {
+    p.state.EXP[EXP_ID.口淫経験] = exp(p, EXP_ID.口淫経験) + 1;
+    if (talent(p, TALENT_ID.猫舌)) {
+      p.state.EXP[EXP_ID.嗜虐快楽経験] = exp(p, EXP_ID.嗜虐快楽経験) + 1;
+    }
+  }
+  if (fondling) p.state.EXP[EXP_ID.手淫経験] = exp(p, EXP_ID.手淫経験) + 1;
 }
 
 /** 媚薬 (TCVAR:140) active — the target is under an aphrodisiac effect. */
@@ -834,12 +1305,328 @@ export function applyAphrodisiacCupMul(t: CharaSlot): void {
   }
 }
 
+type InsertionContinuationChannel = "v" | "a";
+
+/**
+ * `TRACHECK_EQUIP_挿入継続.ERB` pain/aversion ladder for the target side.
+ * This is deliberately kept beside the shared EQUIP_CHECK bridge: the
+ * continuation routine is only allowed to add its channel when the current
+ * command did not already provide that channel's pleasure SOURCE.
+ */
+function insertionContinuationPain(
+  t: CharaSlot,
+  channel: InsertionContinuationChannel,
+): { pain: number; aversion: number } {
+  const experience = exp(
+    t,
+    channel === "v" ? EXP_ID.Ｖ経験 : EXP_ID.Ａ経験,
+  );
+  const lubrication = palam(t, PALAM_ID.潤滑);
+  let pain = channel === "v" ? 200 : 400;
+  let aversion = channel === "v" ? 150 : 250;
+
+  if (channel === "v") {
+    if (experience < expLv(2)) {
+      pain = times(pain, 0.8);
+      aversion = times(aversion, 1.2);
+    } else if (experience < expLv(3)) {
+      pain = times(pain, 0.4);
+    } else if (experience < expLv(4)) {
+      pain = times(pain, 0.1);
+    } else {
+      pain = 0;
+    }
+
+    if (lubrication < palamLv(1)) {
+      pain = times(pain, 3);
+      aversion = times(aversion, 3);
+    } else if (lubrication < palamLv(2)) {
+      pain = times(pain, 2);
+      aversion = times(aversion, 2.5);
+    } else if (lubrication < palamLv(3)) {
+      pain = times(pain, 0.6);
+      aversion = times(aversion, 1.5);
+    } else if (lubrication < palamLv(4)) {
+      pain = times(pain, 0.5);
+    } else if (lubrication < palamLv(5)) {
+      pain = times(pain, 0.1);
+      aversion = times(aversion, 0.5);
+    } else {
+      pain = times(pain, 0.02);
+      aversion = times(aversion, 0.3);
+    }
+  } else {
+    if (experience < expLv(1)) {
+      pain = times(pain, 3);
+      aversion = times(aversion, 3);
+    } else if (experience < expLv(2)) {
+      pain = times(pain, 1.2);
+      aversion = times(aversion, 2);
+    } else if (experience < expLv(3)) {
+      pain = times(pain, 0.8);
+      aversion = times(aversion, 1.5);
+    } else if (experience < expLv(4)) {
+      pain = times(pain, 0.6);
+      aversion = times(aversion, 1.2);
+    } else if (experience < expLv(5)) {
+      pain = times(pain, 0.4);
+    } else {
+      pain = times(pain, 0.2);
+    }
+
+    if (lubrication < palamLv(1)) {
+      pain = times(pain, 3);
+      aversion = times(aversion, 3);
+    } else if (lubrication < palamLv(2)) {
+      pain = times(pain, 2);
+      aversion = times(aversion, 2.5);
+    } else if (lubrication < palamLv(3)) {
+      pain = times(pain, 0.6);
+      aversion = times(aversion, 1.5);
+    } else if (lubrication < palamLv(4)) {
+      pain = times(pain, 0.5);
+    } else if (lubrication < palamLv(5)) {
+      pain = times(pain, 0.3);
+      aversion = times(aversion, 0.5);
+    } else {
+      pain = times(pain, 0.2);
+      aversion = times(aversion, 0.3);
+    }
+  }
+
+  return { pain, aversion };
+}
+
+/**
+ * Add the target-side continuous V/A insertion effects from
+ * `TRACHECK_EQUIP_挿入継続.ERB:2-188`.
+ *
+ * The upstream `EQUIP_CHECK` guard is important: a thrust command that already
+ * emitted `SOURCE:快Ｖ`/`SOURCE:快Ａ` must not receive this second channel pulse.
+ * Only a bilateral PLAYER↔target link is accepted here; malformed or
+ * multi-character links remain untouched until the identity graph exists.
+ */
+function addInsertionContinuation(
+  next: GameState,
+  t: CharaSlot,
+  p: CharaSlot,
+  s: Record<number, number>,
+): void {
+  if (t.charaNum <= 0 || t.charaNum === p.charaNum) return;
+
+  const timeStopped = isTimeStopped(next) && cflag(t, CFLAG_ID.時間停止行動) === 0;
+  const pose = readCurrentTouchPose(t);
+  const favoritePose = cflag(t, CFLAG_ID.喜欢的体位);
+  const channels: ReadonlyArray<readonly [InsertionContinuationChannel, number]> = [
+    ["v", SOURCE_ID.快Ｖ],
+    ["a", SOURCE_ID.快Ａ],
+  ];
+
+  for (const [channel, pleasureSource] of channels) {
+    // `SOURCE.ERB` uses `!SOURCE:ARG:快Ｖ/快Ａ` as the continuation gate.
+    if (src(s, pleasureSource) !== 0) continue;
+    const relation = readHInsertionRelation(next, t.charaNum, channel);
+    if (
+      relation.status !== "active" || !relation.bilateral ||
+      relation.actor_id !== p.charaNum || relation.receiver_id !== t.charaNum ||
+      (p.state.TCVAR[TCVAR_ID.ゴム使用済み] ?? 0) !== 0
+    ) continue;
+
+    const basePleasure = channel === "v" ? 150 : 200;
+    s[pleasureSource] = (s[pleasureSource] ?? 0) + basePleasure;
+
+    if (!timeStopped) {
+      if (channel === "v") {
+        s[SOURCE_ID.情愛] = (s[SOURCE_ID.情愛] ?? 0) + 75;
+        s[SOURCE_ID.露出] = (s[SOURCE_ID.露出] ?? 0) + 25;
+        if ((t.state.TCVAR[TCVAR_ID.强行] ?? 0) !== 0) {
+          s[SOURCE_ID.反感] = (s[SOURCE_ID.反感] ?? 0) + 1000;
+        }
+        if (talent(p, TALENT_ID.形状) === 5) {
+          s[SOURCE_ID.苦痛] = (s[SOURCE_ID.苦痛] ?? 0) + 200;
+        }
+        if (pose === 6) {
+          s[SOURCE_ID.苦痛] = (s[SOURCE_ID.苦痛] ?? 0) + 300;
+        }
+        if (pose > 0 && pose === favoritePose) {
+          s[SOURCE_ID.情愛] = (s[SOURCE_ID.情愛] ?? 0) + 100;
+          s[SOURCE_ID.恭順] = (s[SOURCE_ID.恭順] ?? 0) + 50;
+        }
+      } else {
+        s[SOURCE_ID.情愛] = (s[SOURCE_ID.情愛] ?? 0) + 50;
+        s[SOURCE_ID.露出] = (s[SOURCE_ID.露出] ?? 0) + 30;
+        s[SOURCE_ID.逸脱] = (s[SOURCE_ID.逸脱] ?? 0) + 100;
+        if (talent(p, TALENT_ID.形状) === 5) {
+          s[SOURCE_ID.苦痛] = (s[SOURCE_ID.苦痛] ?? 0) + 300;
+        }
+        if (pose === 6) {
+          s[SOURCE_ID.苦痛] = (s[SOURCE_ID.苦痛] ?? 0) + 300;
+        }
+        if (pose > 0 && pose === favoritePose - 5) {
+          s[SOURCE_ID.情愛] = (s[SOURCE_ID.情愛] ?? 0) + 100;
+          s[SOURCE_ID.恭順] = (s[SOURCE_ID.恭順] ?? 0) + 50;
+        }
+      }
+    }
+
+    const ladder = insertionContinuationPain(t, channel);
+    s[SOURCE_ID.苦痛] = (s[SOURCE_ID.苦痛] ?? 0) + ladder.pain;
+    if (!timeStopped && (channel === "v" || cflag(t, CFLAG_ID.恶作剧) === 0)) {
+      s[SOURCE_ID.反感] = (s[SOURCE_ID.反感] ?? 0) + ladder.aversion;
+    }
+
+    // Partner-led 诶嘿嘿 is a target-side continuation bonus. The ejaculation
+    // strength belongs to the actor/master, while the SOURCE remains target-side.
+    if (cflag(t, CFLAG_ID.诶嘿嘿) === 2) {
+      s[pleasureSource] = (s[pleasureSource] ?? 0) + 150;
+      s[SOURCE_ID.情愛] = (s[SOURCE_ID.情愛] ?? 0) + 100;
+      p.state.TCVAR[TCVAR_ID.射精快感強度] =
+        (p.state.TCVAR[TCVAR_ID.射精快感強度] ?? 0) + 150;
+    }
+  }
+}
+
+/**
+ * USERCOM/SOURCE.ERB:315-321 — teasing deliberately dampens every pleasure
+ * CUP before ORGASM_ADD observes it.  Keep this on the shared SOURCE_CHECK
+ * path so H commands and any other settled source use the same rule.
+ */
+function applyTeasingCupMul(t: CharaSlot): void {
+  if (readTequip(t, TEQUIP_ID.挑逗モード) === 0) return;
+  for (const id of [PALAM_ID.快Ｃ, PALAM_ID.快Ｖ, PALAM_ID.快Ａ, PALAM_ID.快Ｂ, PALAM_ID.快Ｍ]) {
+    if (cup(t, id) !== 0) t.state.CUP[id] = times(cup(t, id), 0.9);
+  }
+}
+
+/**
+ * `SOURCE_CBVA.ERB:749-753` — apply the command-local pleasure modifiers
+ * after all SOURCE converters and before ORGASM_ADD reads CUP. The command
+ * bodies write these transient TCVAR slots; keeping the consumer here makes
+ * the ordering identical for ordinary H commands, SM commands, and the
+ * master-side SOURCE of a dual-participant command.
+ */
+export function applyCommandPleasureCorrections(t: CharaSlot): void {
+  const corrections: ReadonlyArray<readonly [number, number]> = [
+    [PALAM_ID.快Ｃ, TCVAR_ID.指令Ｃ補正],
+    [PALAM_ID.快Ｖ, TCVAR_ID.指令Ｖ補正],
+    [PALAM_ID.快Ａ, TCVAR_ID.指令Ａ補正],
+    [PALAM_ID.快Ｂ, TCVAR_ID.指令Ｂ補正],
+    [PALAM_ID.快Ｍ, TCVAR_ID.指令Ｍ補正],
+  ];
+  for (const [palamId, tcvarId] of corrections) {
+    const correction = t.state.TCVAR[tcvarId] ?? 0;
+    if (correction === 0 || cup(t, palamId) === 0) continue;
+    t.state.CUP[palamId] = Math.trunc((cup(t, palamId) * (100 + correction)) / 100);
+  }
+}
+
+/**
+ * TRACHECK_TIME (TRACHECK.ERB:10-28) for the ordinary SOURCE_CHECK route.
+ * The command frame owns the once-per-command guard because some handlers
+ * settle both TARGET and MASTER SOURCE maps during one command.
+ *
+ * One_Minute_Man is an upstream named SAVEDATA toggle, not a FLAG. Its
+ * ordinary-H branch changes the standard +5-minute cost to +1.
+ */
+function applyTraceCheckTime(next: GameState): ObservationEvent[] {
+  const frame = next.turnContext?.frame;
+  if (!frame || frame.sourceCheckTimeApplied) return [];
+  frame.sourceCheckTimeApplied = true;
+  if (isTimeStopped(next) || frame.commandNo >= 200) return [];
+  const oneMinuteMan = (next.dlcSavedata?.[SAVEDATA_KEY.OneMinuteMan] ?? 0) !== 0;
+  return advanceTimeTicks(next, oneMinuteMan ? 1 : 5);
+}
+
+/** Modern COMF costs and upstream post-command corrections, audited per branch. */
+const ONE_MINUTE_H_AUDITED_COMF_TIME: Readonly<
+  Record<number, { readonly baseTimeCosts: readonly number[]; readonly correction: number }>
+> = {
+  312: { baseTimeCosts: [0, 5, 10], correction: 4 },
+  317: { baseTimeCosts: [5], correction: 4 },
+  318: { baseTimeCosts: [5], correction: 4 },
+  313: { baseTimeCosts: [5], correction: 4 },
+  314: { baseTimeCosts: [5], correction: 4 },
+  315: { baseTimeCosts: [5], correction: 4 },
+  316: { baseTimeCosts: [5], correction: 4 },
+  330: { baseTimeCosts: [5], correction: 4 },
+  331: { baseTimeCosts: [30], correction: 4 },
+  335: { baseTimeCosts: [30], correction: 4 },
+  336: { baseTimeCosts: [20, 40], correction: 4 },
+  356: { baseTimeCosts: [5], correction: 4 },
+  357: { baseTimeCosts: [10], correction: 4 },
+  360: { baseTimeCosts: [5], correction: 4 },
+  361: { baseTimeCosts: [10], correction: 9 },
+  320: { baseTimeCosts: [0], correction: 4 },
+  322: { baseTimeCosts: [0], correction: 4 },
+  323: { baseTimeCosts: [0], correction: 4 },
+};
+
+/**
+ * Fold TRACHECK_TIME's −4/−9 into audited positive COMF costs before clock
+ * advancement. Zero-cost H commands retain a signed correction, applied by
+ * the clock as a TIME adjustment rather than elapsed world time. Family7's
+ * COMF356/357 and COMF360/361 handlers also call this for explicit costs.
+ */
+export function applyOneMinuteHCommandTimeCorrection(
+  state: GameState,
+  commandNo: number,
+  target: number,
+  baseTimeCost: number,
+): number {
+  const audited = ONE_MINUTE_H_AUDITED_COMF_TIME[commandNo];
+  if (!audited || !audited.baseTimeCosts.includes(baseTimeCost)) {
+    return baseTimeCost;
+  }
+  // TRACHECK_TIME's H correction is outside FLAG:70's normal elapsed-time
+  // branch. Preserve a zero-cost TIME -= 4 even during time stop (notably
+  // COMF312's dedicated stop arm); positive body costs remain frozen here.
+  if (isTimeStopped(state) && baseTimeCost !== 0) return baseTimeCost;
+  if ((state.dlcSavedata?.[SAVEDATA_KEY.OneMinuteMan] ?? 0) === 0) {
+    return baseTimeCost;
+  }
+  const targetHMode = state.charas[target]?.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0;
+  return targetHMode > 0 ? baseTimeCost - audited.correction : baseTimeCost;
+}
+
+function culcTired(downbase: number): number {
+  if (downbase < 10) return 0;
+  const local = Math.trunc(downbase / 10);
+  return Math.trunc(local * Math.sqrt(local));
+}
+
+/**
+ * ADD_TIRED/CULC_TIRED (SET_CMN.ERB:182-205) for the bounded H slice.
+ * Until handlers expose their authored DOWNBASE accumulator, derive the
+ * consumed stamina/will from the command-start frame snapshot. This keeps
+ * the state mutation in SOURCE settlement and is safe across repeated calls.
+ */
+function applyFrameFatigue(next: GameState, t: CharaSlot): void {
+  const frame = next.turnContext?.frame;
+  const baseline = frame?.baseBeforeByChara?.[t.charaNum];
+  if (!frame || !baseline) return;
+  frame.fatigueAppliedByChara ??= {};
+  if (frame.fatigueAppliedByChara[t.charaNum]) return;
+  frame.fatigueAppliedByChara[t.charaNum] = true;
+
+  // ADD_TIRED skips MASTER and a target that is already sleeping.
+  if (t.charaNum === 0 || cflag(t, CFLAG_ID.睡眠) !== 0) return;
+  const staminaDrop = Math.max(0, baseline.stamina - base(t, BASE_ID.体力));
+  const willDrop = Math.max(0, baseline.will - base(t, BASE_ID.気力));
+  const tired = 12 * culcTired(staminaDrop) + 8 * culcTired(willDrop);
+  if (tired > 0) {
+    t.state.TCVAR[TCVAR_ID.疲労度] = (t.state.TCVAR[TCVAR_ID.疲労度] ?? 0) + tired;
+  }
+}
+
 export function settleSourcePalam(
   _next: GameState,
   t: CharaSlot,
   p: CharaSlot,
   source: Readonly<Record<number, number>>,
-  options: { skipReactiveEffects?: boolean } = {},
+  options: {
+    skipReactiveEffects?: boolean;
+    beforeApply?: SourceSettlementHook;
+  } = {},
 ): Record<number, number> {
   // Work on a copy — the pre-scalers mutate the source quanta and
   // FAVOR_CALC reads the post-scale values.
@@ -857,31 +1644,89 @@ export function settleSourcePalam(
 
   // Slice C: EQUIP_CHECK 持续效果 (SOURCE.ERB:242) — 目标装备的调教道具每
   // SOURCE 结算产生持续 SOURCE (不经 FAVOR/TECH 预处理, 与原版顺序一致).
-  addEquipContinuous(t, s);
+  addEquipContinuous(_next, t, p, s);
+  applySustainedContactCosts(_next, t, p);
+  addInsertionContinuation(_next, t, p, s);
 
   sourceKaikanC(t, s);
   sourceKaikanV(t, s);
+  sourceKaikanA(t, s);
+  sourceKaikanB(t, s);
+  sourceKaikanM(t, s);
   sourceJouai(t, s);
   sourceYokujou(t, s);
   sourcePain(t, p, s);
+  sourceYuwaku(t, p, s);
+  sourceBujoku(t, p, s);
+  sourceChouhatsu(t, p, s);
+  sourceHoushi(t, p, s);
+  sourceKyouyou(t, p, s);
   sourceKanraku(t, p, s);
   sourceSeifuku(t, p, s);
   sourceJudou(t, p, s);
   sourceDepression(_next, t, s);
   // A frozen target cannot register aversion. Keep the physical/pleasure
   // converters active, but do not create CUP:反感 or its reaction mark.
-  if (!options.skipReactiveEffects) sourceHankan(t, s);
+  const reasonShaved = getTflag(_next, TFLAG_ID.理性削り) !== 0;
+  if (!options.skipReactiveEffects) sourceHankan(t, s, reasonShaved);
 
   // 媚薬 (TCVAR:140) CUP 倍率 — after the converters accumulated CUP, before
   // MARK reads CUP:反感/不快 and applyAndClearCup flushes it (faithful to
   // SOURCE_EXTRA.ERB:18-22 / SOURCE_CBVA.ERB:656-661).
   applyAphrodisiacCupMul(t);
+  applyTeasingCupMul(t);
+  applyCommandPleasureCorrections(t);
 
-  // Parity QA P-15 ② — MARK_GOT_CHECK 反発刻印 runs HERE, reading the
-  // accumulated CUP:反感/不快 before applyAndClearCup zeroes them (faithful
-  // to the upstream order: MARK at SOURCE.ERB:1011, CUP-apply at 1127). The
-  // target's brand floor then feeds FAVOR_CALC / TRUST_CALC below.
-  if (!options.skipReactiveEffects) markGotCheckHankan(t);
+  // Every SOURCE_CHECK pass owns the upstream ORGASM_ADD window. It runs
+  // after the ordinary converters, while CUP/CDOWN are still live, and its
+  // generated SOURCE is then fed through the post-orgasm converter arms.
+  const orgasm = applyOrgasmAdd(_next, t, p, s);
+  const generatedSource: Record<number, number> = { ...orgasm.generatedSource };
+  if (Object.keys(generatedSource).length > 0) {
+    applyGeneratedOrgasmSource(
+      t,
+      p,
+      generatedSource,
+      options.skipReactiveEffects === true,
+      reasonShaved,
+    );
+    for (const [id, amount] of Object.entries(generatedSource)) {
+      s[Number(id)] = (s[Number(id)] ?? 0) + amount;
+    }
+  }
+
+  // Keep the compatibility hook for narrow callers that still need an
+  // additional pre-flush effect. Its returned SOURCE map follows the same
+  // deterministic converter path.
+  const extraSource = options.beforeApply?.(t, p, s);
+  if (extraSource && Object.keys(extraSource).length > 0) {
+    const extra = { ...extraSource };
+    applyGeneratedOrgasmSource(
+      t,
+      p,
+      extra,
+      options.skipReactiveEffects === true,
+      reasonShaved,
+    );
+    for (const [id, amount] of Object.entries(extra)) {
+      s[Number(id)] = (s[Number(id)] ?? 0) + amount;
+    }
+  }
+
+  applyFrameFatigue(_next, t);
+
+  // SOURCE.ERB calls MARK_GOT_CHECK after ORGASM_ADD, SOURCE_DOWNBASE, and
+  // EXP_GOT_CHECK, while CUP and the orgasm TCVAR results are still live.
+  // The prank guard belongs around the whole check; time-stop suppresses only
+  // the active 不埒 branch inside applyTrainingMarkAcquisitionChecks.
+  const frame = _next.turnContext?.frame;
+  if (frame) {
+    accumulateTrainingMarkCups(_next, t);
+  } else if (cflag(t, CFLAG_ID.恶作剧) === 0) {
+    applyTrainingMarkAcquisitionChecks(_next, t);
+    markGotCheckHankan(_next, t);
+  }
+  if (frame) frame.sourceByChara[t.charaNum] = { ...s };
 
   applyAndClearCup(t);
   applyAndClearCup(p);
@@ -1031,16 +1876,43 @@ export function applySourceCheck(
   favorBias = 0,
   trustSeed = 0,
 ): SourceCheckResult {
+  return applySourceCheckInternal(next, target, source, favorBias, trustSeed);
+}
+
+/** Apply SOURCE_CHECK with a pre-PALAM hook for bounded H settlement. */
+export function applySourceCheckWithHook(
+  next: GameState,
+  target: number,
+  source: Readonly<Record<number, number>>,
+  favorBias = 0,
+  trustSeed = 0,
+  beforeApply: SourceSettlementHook,
+): SourceCheckResult {
+  return applySourceCheckInternal(next, target, source, favorBias, trustSeed, beforeApply);
+}
+
+function applySourceCheckInternal(
+  next: GameState,
+  target: number,
+  source: Readonly<Record<number, number>>,
+  favorBias = 0,
+  trustSeed = 0,
+  beforeApply?: SourceSettlementHook,
+): SourceCheckResult {
   const t = next.charas[target];
   if (!t) throw new Error(`applySourceCheck: unknown target ${target}`);
   const p = next.master;
+  const timeEvents = applyTraceCheckTime(next);
   const beforeDomain = snapshotCharaDomainState(t);
+  const edgingBefore = snapshotEdgingEx(t);
 
   const timeStopped = (next.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
   const consciouslyActed = (t.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) !== 0;
   const s = settleSourcePalam(next, t, p, source, {
     skipReactiveEffects: timeStopped && !consciouslyActed,
+    beforeApply,
   });
+  const edgingEvents = edgingTransitionEvents(edgingBefore, snapshotEdgingEx(t));
 
   // S-2 — 欲求不満度上昇 (SOURCE.ERB:1200). Banks 积攒度 from the now-settled
   // 欲情 PALAM level. Runs after PALAM-apply, before FAVOR_CALC (ERB order).
@@ -1058,17 +1930,36 @@ export function applySourceCheck(
   if (timeStopped && !consciouslyActed) {
     return {
       favorDelta: 0,
-      events: [],
+      events: [...timeEvents, ...edgingEvents],
+      angerDiagnostics: null,
       transitions: detectCharaDomainTransitions(
         target,
         beforeDomain,
         snapshotCharaDomainState(t),
       ),
+      rebellionMark: undefined,
     };
   }
 
   const activeTraining = next.training?.target === target;
-  const favorDelta = mobGirlGrowthBonus(t, favorCalc(t, s, favorBias, activeTraining));
+  const favorResult = favorCalc(
+    t,
+    s,
+    favorBias,
+    activeTraining,
+    next.flagStore[FLAG_ID.催眠強度] ?? 0,
+  );
+  // FAVOR_CALC: daily rage wakes a sleeping character through the ordinary
+  // lifecycle, including fatigue/depth and co-sleep/prank cleanup.
+  const wakeEvents: ObservationEvent[] = [];
+  if (!activeTraining && cflag(t, CFLAG_ID.勃然大怒) && cflag(t, CFLAG_ID.睡眠)) {
+    const plan = planCharaAwake(next, target, false);
+    if (plan) {
+      applyCharaAwake(next, target, plan);
+      wakeEvents.push({ kind: "NARRATION", timestamp: next.time.tickValue, text: `${t.callName ?? `#${target}`}被惊醒了。` });
+    }
+  }
+  const favorDelta = mobGirlGrowthBonus(t, favorResult.value);
   const favorBefore = cflag(t, CFLAG_ID.好感度);
   t.state.CFLAG[CFLAG_ID.好感度] = Math.max(
     0,
@@ -1084,7 +1975,9 @@ export function applySourceCheck(
     trustCalc(t, p, s, trustSeed);
   }
 
-  const events: ObservationEvent[] =
+  const events: ObservationEvent[] = timeEvents.concat(
+    edgingEvents,
+    wakeEvents,
     favorDelta !== 0
       ? [
           {
@@ -1094,15 +1987,22 @@ export function applySourceCheck(
             text: `好感度 ${favorDelta >= 0 ? "+" : ""}${favorDelta}`,
           },
         ]
-      : [];
+      : [],
+  );
+  const previousMark = beforeDomain.marks[3] as 0 | 1 | 2 | 3;
+  const currentMark = (t.state.MARK?.[MARK_ID.反発刻印] ?? 0) as 0 | 1 | 2 | 3;
   return {
     favorDelta,
     events,
+    angerDiagnostics: favorResult.angerDiagnostics,
     transitions: detectCharaDomainTransitions(
       target,
       beforeDomain,
       snapshotCharaDomainState(t),
     ),
+    ...(currentMark > previousMark
+      ? { rebellionMark: { previousLevel: previousMark, level: currentMark as 1 | 2 | 3 } }
+      : {}),
   };
 }
 

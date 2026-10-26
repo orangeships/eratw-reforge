@@ -1,5 +1,7 @@
 import type { AiRelationshipLens } from "./relationship-lens.js";
 import { KOJO_VOICE_CARDS } from "./character-voice-cards.generated.js";
+import { currentAiSettings } from "./store.js";
+import { disabledPresetCardFields, presetText, presetList, type PresetCardField } from "./preset-card-fields.js";
 
 type RelationshipGradient = "stranger" | "friendly" | "crush" | "love" | "angry";
 
@@ -49,7 +51,7 @@ function compact(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-function renderBriefText(text: string, masterName: string, targetName: string): string {
+export function renderBriefText(text: string, masterName: string, targetName: string): string {
   return compact(text)
     .replaceAll("%CALLNAME:MASTER%", masterName)
     .replaceAll("CALLNAME:MASTER%", masterName)
@@ -57,6 +59,23 @@ function renderBriefText(text: string, masterName: string, targetName: string): 
     .replace(/%[A-Z][^%\r\n]*%/gi, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** Raw card access for the structured character-card builder
+ * (`character-card.ts`). Callers must render brief text via renderBriefText. */
+export function getKojoVoiceCard(
+  target: number,
+  selectedVariant: string,
+): KojoVoiceCard | null {
+  return CARDS[String(target)]?.[selectedVariant] ?? null;
+}
+
+/** The relationship-gradient key the card exposes for a live lens. Mirrors the
+ * selection compileKojoVoiceSlice applies when flattening the card to prose. */
+export function relationshipGradientKey(
+  lens: AiRelationshipLens,
+): RelationshipGradient {
+  return gradientFor(lens);
 }
 
 function gradientFor(lens: AiRelationshipLens): RelationshipGradient {
@@ -86,8 +105,28 @@ export function compileKojoVoiceSlice(input: {
   masterName: string;
   targetName: string;
 }): CharacterVoiceSlice | null {
-  const card = CARDS[String(input.target)]?.[input.selectedVariant];
-  if (!card) return null;
+  const raw = CARDS[String(input.target)]?.[input.selectedVariant];
+  if (!raw) return null;
+  const disabled = disabledPresetCardFields(currentAiSettings().presetCardDisabledFields, input.target);
+  const text = (key: PresetCardField, value: string) => presetText(disabled, key, value);
+  const list = (key: PresetCardField, value: readonly string[]) => presetList(disabled, key, value);
+  const card: KojoVoiceCard = {
+    ...raw,
+    identity: { ...raw.identity, species: text("identity.species", raw.identity.species), group: text("identity.group", raw.identity.group) },
+    stableVoice: {
+      coreTraits: list("core_traits", raw.stableVoice.coreTraits), selfImage: text("self_image", raw.stableVoice.selfImage),
+      tone: text("voice.tone", raw.stableVoice.tone), volume: text("voice.volume", raw.stableVoice.volume),
+      sentenceEndings: list("voice.sentence_endings", raw.stableVoice.sentenceEndings), exclamations: list("voice.exclamations", raw.stableVoice.exclamations),
+    },
+    habits: { interaction: list("interaction_habits", raw.habits.interaction) },
+    tabooTopics: { neverSay: list("never_say", raw.tabooTopics.neverSay) },
+    guidance: { emphasize: list("emphasize", raw.guidance.emphasize), avoid: list("avoid", raw.guidance.avoid), referenceLines: list("reference_lines", raw.guidance.referenceLines) },
+    relationshipGradients: Object.fromEntries(Object.entries(raw.relationshipGradients).map(([key, value]) => [key, {
+      attitude: text(`relationship_gradients.${key}.attitude` as PresetCardField, value.attitude),
+      boundaries: text(`relationship_gradients.${key}.boundaries` as PresetCardField, value.boundaries),
+      behaviors: list(`relationship_gradients.${key}.behaviors` as PresetCardField, value.behaviors),
+    }])) as unknown as KojoVoiceCard["relationshipGradients"],
+  };
   const render = (value: string): string => renderBriefText(value, input.masterName, input.targetName);
   const relationshipKey = input.relationship ? gradientFor(input.relationship) : "friendly";
   const baseGradient = card.relationshipGradients[relationshipKey];
@@ -115,8 +154,8 @@ export function compileKojoVoiceSlice(input: {
       `自我认知：${render(card.stableVoice.selfImage)}`,
       `说话方式：${render(card.stableVoice.tone)}`,
       `音量与节奏：${render(card.stableVoice.volume)}`,
-      `常用句尾：${renderList(card.stableVoice.sentenceEndings, input.masterName, input.targetName, 8).join("、") || "无固定句尾"}`,
-      `常用感叹：${renderList(card.stableVoice.exclamations, input.masterName, input.targetName, 6).join("、") || "无固定感叹"}`,
+      disabled.includes("voice.sentence_endings") ? "" : `常用句尾：${renderList(card.stableVoice.sentenceEndings, input.masterName, input.targetName, 8).join("、") || "无固定句尾"}`,
+      disabled.includes("voice.exclamations") ? "" : `常用感叹：${renderList(card.stableVoice.exclamations, input.masterName, input.targetName, 6).join("、") || "无固定感叹"}`,
       ...relationshipLines,
       ...renderList(card.habits.interaction, input.masterName, input.targetName, 2)
         .map((value) => `互动习惯：${value}`),
@@ -126,7 +165,7 @@ export function compileKojoVoiceSlice(input: {
         .map((value) => `避免写成：${value}`),
       ...renderList(card.tabooTopics.neverSay, input.masterName, input.targetName, 2)
         .map((value) => `认知或设定边界：${value}`),
-    ].filter((line) => !line.endsWith("：")),
+    ].filter((line) => Boolean(line) && !line.endsWith("：")),
     referenceLines: renderList(
       card.guidance.referenceLines,
       input.masterName,

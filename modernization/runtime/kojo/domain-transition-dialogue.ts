@@ -101,6 +101,22 @@ export function resolveDomainTransitionDialogue(
     ? 3
     : transition.markId;
 
+  // Modern authored override supplied for Reisen (chara 52). This is not an
+  // upstream claim; keep it at the presentation route so SOURCE remains
+  // character-agnostic and other residents retain their authored/common text.
+  if (transition.kind === "rebellion-mark-acquired" && transition.charaNum === 52) {
+    return {
+      state,
+      events: [{
+        kind: "DIALOGUE_LINE",
+        timestamp: deps.now(),
+        charaNum: transition.charaNum,
+        text: "把铃仙弄哭了.....",
+        form: "PRINTFORML",
+      }],
+    };
+  }
+
   const detailed = deps.router.resolveMarkKojoDetailed?.(
     transition.charaNum,
     transition.level,

@@ -3,7 +3,7 @@ import type { Rng } from "../command/rng.js";
 import type { DialogueRouter } from "../kojo/types.js";
 import { forceSleepFromExhaustion } from "../command/handlers/sleep.js";
 import { runEventComEnd2 } from "../command/handlers/event-com-end.js";
-import { cloneGameState, type GameState } from "../state/game-state.js";
+import { type CharaSlot, type GameState } from "../state/game-state.js";
 import { runUwakiWitnessCheck } from "../state/uwaki.js";
 import {
   detectDomainTransitions,
@@ -31,13 +31,37 @@ export interface FinalizeElapsedActionResult {
   transitions: DomainTransition[];
 }
 
+function domainSlotSnapshot(slot: CharaSlot): CharaSlot {
+  return {
+    ...slot,
+    state: {
+      ...slot.state,
+      CFLAG: { ...slot.state.CFLAG },
+      MARK: { ...slot.state.MARK },
+      TALENT: { ...slot.state.TALENT },
+    },
+  };
+}
+
+/** The transition detector reads only character domain fields. Avoid cloning
+ * the event log, inventories and other large bags at every elapsed-action
+ * boundary while retaining a compatibility fallback for malformed saves. */
+function domainStateSnapshot(state: GameState): GameState {
+  return {
+    master: domainSlotSnapshot(state.master),
+    charas: Object.fromEntries(
+      Object.entries(state.charas).map(([id, slot]) => [id, domainSlotSnapshot(slot)]),
+    ),
+  } as unknown as GameState;
+}
+
 /** Shared EVENTCOMEND/world projection boundary for anything that advances
  * game time: ordinary commands and full-screen activity settlements alike. */
 export function finalizeElapsedAction(
   state: GameState,
   options: FinalizeElapsedActionOptions,
 ): FinalizeElapsedActionResult {
-  const beforePost = cloneGameState(state);
+  const beforePost = domainStateSnapshot(state);
   const newTick = state.time.tickValue;
   const elapsed = Math.max(0, newTick - options.oldTick);
 

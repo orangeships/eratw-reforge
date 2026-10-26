@@ -24,20 +24,25 @@ import {
   getHudActionHints,
   getHudWorkInfo,
   getHBodyStats,
+  isHMode,
   palamLvBar,
   NAMED_STAT_KEYS,
   PALAM_STAT_KEYS,
-  weekdayName,
+  weekdayLabelZh,
   seasonOf,
   dateOf,
   monthName,
   isTimeStopped,
 } from "../../../modernization/runtime";
 import { selectPresentCharas } from "../../../modernization/runtime/scene/presence.js";
+import type { NarrativeDirectorView } from "../ai/narrative-status.js";
 import { nemuke } from "../../../modernization/runtime/state/nemuke.js";
 import { situationTags, type SituationTag } from "../../../modernization/runtime/state/situation.js";
 import { alcoholFace } from "../../../modernization/runtime/state/alcohol.js";
-import type { GameState } from "../../../modernization/runtime/state/index.js";
+import type { CharaSlot, GameState } from "../../../modernization/runtime/state/index.js";
+import { describeClothing } from "../../../modernization/runtime/state/clothing.js";
+import { isEquipped, readTequip } from "../../../modernization/runtime/state/tequip.js";
+import { TEQUIP_ID, TCVAR_ID } from "../../../modernization/runtime/state/settlement.js";
 import {
   formatTemperature,
   temperatureColor,
@@ -55,6 +60,8 @@ import { weatherStatusShow } from "../../../modernization/runtime/weather/displa
 import { itemCount } from "../../../modernization/runtime/state/items.js";
 import { FLAG_ID } from "../../../modernization/runtime/state/settlement.js";
 import { ITEM_FOLDING_UMBRELLA } from "../../../modernization/runtime/weather/umbrella.js";
+import PortraitVariantPicker from "./PortraitVariantPicker.js";
+import { AsciiBar, AsciiNumber } from "./ascii/AsciiEffects.js";
 
 /** Color tone per named stat (matches era BARCOLORSET conventions). */
 const BAR_TONE: Record<string, "red" | "green" | "cyan" | "yellow" | "purple"> = {
@@ -68,12 +75,17 @@ const BAR_TONE: Record<string, "red" | "green" | "cyan" | "yellow" | "purple"> =
 export interface GameStatusBarProps {
   state: GameState;
   /** Keep the date/weather/location/TSP/present-character band only. The
-   *  default full layout retains the classic inline work/status/param UI. */
-  layout?: "full" | "world-only";
+   *  full layout is used by the immersive shell; `minimal` is the
+   *  phone-portrait ultra-slim band (no numeric panels). */
+  layout?: "full" | "world-only" | "minimal";
+  /** Minimal layout only: click a present chara name to make it the TARGET. */
+  onSelectChara?: (charaNum: number) => void;
   /** The focused interaction target (charaNum). When present + > 0, the bar
    *  also shows that chara's 体力/気力 (the original shows both via
    *  PRINT_COLORBAR). */
   target?: number;
+  /** The dedicated H surface renders the same summary in its own status column. */
+  showHSessionStatus?: boolean;
   /** Release 時間停止 (issue COM999). The time-stop control lives here at the
    *  top of the screen, beside the TSP bar — NOT in the Act_COM / Ex_COM
    *  command rows. */
@@ -86,12 +98,38 @@ export interface GameStatusBarProps {
    *  button sits to the RIGHT of the 能力等级 (Palam) levels in the 属性 panel,
    *  matching eraTW's [能力显示] command. */
   onOpenCharaInfo?: (charaNum: number) => void;
+  /** The story currently worth the player's attention, if any. The bar renders
+   *  nothing for it when this is absent, so the shell keeps ownership of the
+   *  narrative state and only hands over a display shape. */
+  narrativePursuit?: NarrativePursuitSummary | null;
+  /** What the L3 director is doing right now (authoring / window open / …),
+   *  derived by `narrative-status.ts`. Shown as an extra panel line so the
+   *  player can tell "waiting for you" apart from "nothing is happening". */
+  narrativeDirector?: NarrativeDirectorView | null;
+  narrativePanelOpen?: boolean;
+  /** Toggle for the story panel. Without it the badge renders inert, which is
+   *  what a read-only render (tests, previews) wants. */
+  onToggleNarrativePanel?: () => void;
+}
+
+/** What the story badge shows while collapsed, and what the panel shows once
+ *  opened. `state` drives the marker so a story the player can walk into right
+ *  now is distinguishable from one already running, or one already missed. */
+export interface NarrativePursuitSummary {
+  id: string;
+  hint: string;
+  state: "waiting" | "active" | "missed";
+  /** How many stories are being tracked; shown as a count when > 1. */
+  count: number;
 }
 
 /** Format a location string for display.
  *  "神社:参道" → "博麗神社 · 参道"
- *  "人間之里" → "人間之里" */
-function fmtLocation(loc: string): string {
+ *  "人間之里" → "人間之里"
+ *
+ *  Exported so the story panel the shell feeds into this bar spells locations
+ *  the same way the location line does. */
+export function fmtLocation(loc: string): string {
   const idx = loc.indexOf(":");
   if (idx < 0) return loc;
   const area = loc.slice(0, idx);
@@ -108,7 +146,9 @@ function StatBars(props: {
   /** Optional testid suffix so two bar rows for the same chara (e.g. the
    *  always-on top TSP bar + the full Status dropdown row) don't collide. */
   testidSuffix?: string;
+  cells?: number;
 }) {
+  const cells = props.cells ?? 12;
   const testid = `status-bars-${props.who}${props.testidSuffix ? `-${props.testidSuffix}` : ""}`;
   return (
     <div className="status-bar__bars" data-testid={testid}>
@@ -128,9 +168,10 @@ function StatBars(props: {
               aria-valuenow={Math.max(0, value)}
             >
               <span className="bar__fill" style={{ width: `${fill}%` }} />
+              <span className="bar__ascii" aria-hidden="true"><AsciiBar fill01={fill / 100} cells={cells} /></span>
             </span>
             <span className="bar__num">
-              {value}/{max}
+              <AsciiNumber key={props.who} value={value} suffix={`/${max}`} />
             </span>
           </span>
         );
@@ -148,9 +189,11 @@ function RelationStats(props: { who: string; state: GameState["master"]["state"]
   const joucho = getRelationStat(props.state, "情緒");
   const risei = getRelationStat(props.state, "理性");
   const fury = getRelationStat(props.state, "憤怒");
-  // A 0..5 rating from a value/max pair, faithful to @INFO_EMOTION's gauge
-  // model: 理性 (rationality) is FULL when calm (value == cap), while 情緒
-  // (agitation) and 憤怒 (anger) sit EMPTY when calm and fill toward the cap.
+  // A 0..5 rating, faithful to @INFO_EMOTION's gauge model: the tier is the
+  // ABSOLUTE value/200 (not a ratio of the cap) — 理性 (rationality) floors at
+  // 1★ and is full when calm, while 情緒 (stirring) and 憤怒 (anger) sit empty
+  // when calm. Upstream caps 情緒 at 1500 for every character, so tier 5
+  // saturates at 1000 while the at-cap (upstream pink) marker needs 1500.
   // Render each glyph as its own span so the filled portions can carry the
   // intended color without recoloring the whole relation line.
   const rate = (
@@ -160,9 +203,16 @@ function RelationStats(props: { who: string; state: GameState["master"]["state"]
     tone: "risei" | "joucho" | "fury",
   ): ReactNode => {
     if (s.max <= 0) return "—";
-    const n = Math.max(0, Math.min(5, Math.round((s.value / s.max) * 5)));
+    const n = tone === "risei"
+      ? Math.max(1, Math.min(5, Math.trunc(s.value / 200)))
+      : Math.max(0, Math.min(5, Math.trunc(s.value / 200)));
+    const atCap = s.value >= s.max;
     return (
-      <span className={`status-bar__gauge status-bar__gauge--${tone}`} aria-label={`${n}/5`}>
+      <span
+        className={`status-bar__gauge status-bar__gauge--${tone}${atCap ? " status-bar__gauge--full" : ""}`}
+        aria-label={`${n}/5`}
+        title={atCap ? "MAX" : undefined}
+      >
         {Array.from({ length: 5 }, (_, i) => (
           <span
             key={i}
@@ -181,8 +231,8 @@ function RelationStats(props: { who: string; state: GameState["master"]["state"]
   return (
     <div className="status-bar__relation" data-testid="status-relation">
       {props.showWho !== false && <span className="status-bar__who">{props.who}</span>}
-      <span className="status-bar__rel">好感度 {favor.value}</span>
-      <span className="status-bar__rel">信頼度 {trust.value}</span>
+      <span className="status-bar__rel"><AsciiNumber key={props.who} value={favor.value} prefix="好感度 " /></span>
+      <span className="status-bar__rel"><AsciiNumber key={props.who} value={trust.value} prefix="信頼度 " /></span>
       <span className="status-bar__rel" data-testid="rel-risei">理性 {rate(risei, "★", "☆", "risei")}</span>
       <span className="status-bar__rel" data-testid="rel-joucho">情緒 {rate(joucho, "♥", "♡", "joucho")}</span>
       <span className="status-bar__rel status-bar__rel--fury" data-testid="rel-fury">憤怒 {rate(fury, "!", "!", "fury")}</span>
@@ -197,6 +247,11 @@ const H_CHIBURI_KEYS = ["Ｃ", "Ｖ", "Ａ", "Ｂ", "Ｍ"] as const;
 
 function HBodyStats(props: { who: string; state: GameState["master"]["state"]; showWho?: boolean }) {
   const s = getHBodyStats(props.state);
+  const ejaculateRatio = s.ejaculateMax > 0
+    ? Math.max(0, Math.min(1, s.ejaculate / s.ejaculateMax))
+    : 0;
+  const desireRatio = Math.max(0, Math.min(1, s.frustration / 1000));
+  const desireColor = `rgb(${Math.round(240 + 15 * desireRatio)}, ${Math.round(190 - 102 * desireRatio)}, ${Math.round(211 - 29 * desireRatio)})`;
   const semenLines: string[] = [];
   if (s.vaginalSemen > 0) semenLines.push(`膣内精液量:${s.vaginalSemen}`);
   if (s.analSemen > 0) semenLines.push(`肛内精液量:${s.analSemen}`);
@@ -208,7 +263,7 @@ function HBodyStats(props: { who: string; state: GameState["master"]["state"]; s
     .filter((k) => s.chiburi[k] > 0)
     .map((k) => `${k}${s.chiburi[k]}`);
   return (
-    <div className="status-bar__hbody" data-testid="status-hbody">
+    <div className="status-bar__hbody" data-testid="status-hbody" data-who={props.who}>
       {props.showWho !== false && <span className="status-bar__who">{props.who}</span>}
       <span className="status-bar__hbody-line" data-testid="hbody-estrus">
         生理：{s.estrusLabel}
@@ -229,15 +284,35 @@ function HBodyStats(props: { who: string; state: GameState["master"]["state"]; s
       {s.hasPenis && (
         <span className="status-bar__hbody-line" data-testid="hbody-ejaculate">
           射精：{s.ejaculate}/{s.ejaculateMax}
-          {s.ejaculateMax > 0 && s.ejaculate >= s.ejaculateMax ? " [要去了！]" : ""}
+          {s.aboutToEjaculate ? " [要去了！]" : ""}
+          <span
+            aria-hidden="true"
+            data-testid="hbody-ejaculate-gauge"
+            style={{
+              display: "inline-block",
+              width: "5.5em",
+              height: "0.55em",
+              marginLeft: "0.5em",
+              border: "1px solid #705f78",
+              background: `linear-gradient(90deg, ${s.aboutToEjaculate ? "#ff5577" : "#be7fe5"} ${Math.round(ejaculateRatio * 100)}%, #241e2a ${Math.round(ejaculateRatio * 100)}%)`,
+            }}
+          />
         </span>
       )}
-      <span className="status-bar__hbody-line" data-testid="hbody-frustration">
+      <span
+        className="status-bar__hbody-line"
+        data-testid="hbody-frustration"
+        data-desire-high={desireRatio >= 0.9 ? "true" : undefined}
+        style={{
+          color: desireColor,
+          textShadow: `0 0 ${Math.round(2 + desireRatio * 8)}px rgba(255, 92, 178, ${0.15 + desireRatio * 0.5})`,
+        }}
+      >
         欲求：{Math.trunc(s.frustration / 10)}%
       </span>
-      {s.afterglow > 0 && (
+      {s.afterglowLabel && (
         <span className="status-bar__hbody-line" data-testid="hbody-afterglow">
-          高潮余韵：{s.afterglow}
+          高潮余韵：{s.afterglowLabel}
         </span>
       )}
       {chiburiLines.length > 0 && (
@@ -301,6 +376,7 @@ function PalamPanel(props: {
   charaNum?: number;
   onOpenCharaInfo?: (charaNum: number) => void;
   collapsible?: boolean;
+  title?: string;
 }) {
   const [expanded, setExpanded] = useState(!props.collapsible);
   return (
@@ -321,7 +397,7 @@ function PalamPanel(props: {
             <span aria-hidden="true">{expanded ? "▼" : "▶"}</span>[Palam] 能力等级
           </button>
         ) : (
-          <span className="status-bar__palam-title">▼[Palam] 能力等级</span>
+          <span className="status-bar__palam-title">{props.title ?? "▼[Palam] 能力等级"}</span>
         )}
         {props.charaNum !== undefined && props.onOpenCharaInfo && (
           <button
@@ -349,8 +425,9 @@ function PalamPanel(props: {
                     className="status-bar__palam-fill"
                     style={{ width: `${Math.round(fill01 * 100)}%` }}
                   />
+                  <span className="bar__ascii" aria-hidden="true"><AsciiBar fill01={fill01} cells={6} /></span>
                 </span>
-                <span className="status-bar__palam-value">{value}</span>
+                <span className="status-bar__palam-value"><AsciiNumber value={value} /></span>
               </span>
             );
           })}
@@ -434,14 +511,139 @@ function AlcoholStatus(props: { state: GameState; charaNum: number; who: string;
   );
 }
 
+const H_POSITION_LABELS: Readonly<Record<number, string>> = {
+  60: "正常位",
+  61: "后背位",
+  62: "骑乘位",
+  63: "背面骑乘位",
+  65: "侧位",
+  66: "对面座位",
+  67: "立位",
+  68: "抱起",
+  69: "对面立位",
+  70: "背面立位",
+};
+
+const H_EQUIPMENT_LABELS: ReadonlyArray<readonly [number, string]> = [
+  [TEQUIP_ID.避孕套, "避孕套"],
+  [TEQUIP_ID.陰蒂夾, "阴蒂夹"],
+  [TEQUIP_ID.飛機杯, "飞机杯"],
+  [TEQUIP_ID.振動棒, "振动棒"],
+  [TEQUIP_ID.肛用振動棒, "肛用振动棒"],
+  [TEQUIP_ID.後庭拉珠, "后庭拉珠"],
+  [TEQUIP_ID.乳頭夾, "乳头夹"],
+  [TEQUIP_ID.搾乳機, "榨乳机"],
+  [TEQUIP_ID.眼罩, "眼罩"],
+  [TEQUIP_ID.縄, "绳"],
+  [TEQUIP_ID.口球, "口球"],
+  [TEQUIP_ID.拘束, "拘束"],
+];
+
+function hExposureLabels(chara: CharaSlot): string[] {
+  const lower = readTequip(chara, TEQUIP_ID.下半身着衣状況);
+  const upper = readTequip(chara, TEQUIP_ID.上半身着衣状況);
+  const lowerLabel = lower === 0
+    ? "下身裸露"
+    : lower & 0b10000
+      ? "下身不可插入"
+      : lower & 0b1000
+        ? "下装不可移位"
+        : lower & 0b0110
+          ? "下装可移位"
+          : "下装着衣";
+  const upperLabel = upper === 0
+    ? "上身裸露"
+    : upper & 0b100
+      ? "上身不可插入"
+      : upper & 0b10
+        ? "上衣不可敞开"
+        : upper & 0b1
+          ? "上身可敞开"
+          : "上身着衣";
+  return [upperLabel, lowerLabel];
+}
+
+/** Persistent H-session status. The command strip is intentionally compact,
+ * so the player also needs an always-visible owner/target/pose indicator that
+ * survives save/load and does not depend on the hover-only status panel. */
+export function HSessionStatus({ state, focusedTarget, showGauges = true }: { state: GameState; focusedTarget?: number; showGauges?: boolean }) {
+  const session = state.training;
+  const targetNo = session?.target ?? (focusedTarget && focusedTarget > 0 && isHMode(state, focusedTarget) ? focusedTarget : 0);
+  if (targetNo <= 0) return null;
+  const target = state.charas[targetNo];
+  const targetName = target?.callName ?? `#${targetNo}`;
+  const insertion = session?.vInserted ? "V 插入" : session?.aInserted ? "A 插入" : "未插入";
+  const positionCommand = session?.currentPositionCommandNo;
+  const position = positionCommand === undefined
+    ? "未选择体位"
+    : H_POSITION_LABELS[positionCommand] ?? `体位 ${positionCommand}`;
+  const clothing = target ? describeClothing(target) : null;
+  const clothingText = clothing
+    ? clothing.naked
+      ? "全裸"
+      : clothing.lines.slice(0, 4).map((line) => `${line.label}:${line.value}`).join("、") || "衣着未记录"
+    : "目标不存在";
+  const exposureText = target ? hExposureLabels(target).join("、") : "目标不存在";
+  const equipmentText = target
+    ? H_EQUIPMENT_LABELS.filter(([id]) => isEquipped(target, id)).map(([, label]) => label).join("、") || "无"
+    : "目标不存在";
+  return (
+    <div className="status-bar__h-session" data-testid="status-h-session" role="status">
+      <span className="status-bar__h-session-title">H 状态</span>
+      <span data-testid="status-h-session-owner">主人：{state.master.callName ?? "主人公"}</span>
+      <span data-testid="status-h-session-target">对象：{targetName}</span>
+      <span data-testid="status-h-session-insertion">状态：{insertion}</span>
+      <span data-testid="status-h-session-position">体位：{position}</span>
+      <span data-testid="status-h-session-clothing">衣着：{clothingText}</span>
+      <span data-testid="status-h-session-exposure">暴露：{exposureText}</span>
+      <span data-testid="status-h-session-equipment">装备：{equipmentText}</span>
+      {showGauges && <div className="status-bar__h-session-gauges" data-testid="status-h-session-gauges">
+        <HBodyStats who={state.master.callName ?? "主人公"} state={state.master.state} />
+        {target && <HBodyStats who={targetName} state={target.state} showWho={false} />}
+      </div>}
+    </div>
+  );
+}
+
+/** Read-only H HUD using the canonical selectors from the ordinary status UI. */
+export function HTrainingStats({ state, target }: { state: GameState; target: number }) {
+  const partner = state.charas[target];
+  return (
+    <div className="h-training-stats" data-testid="h-training-stats">
+      <section aria-label="主角信息" data-testid="h-master-stats">
+        <h3>主角 · {state.master.callName ?? "主人公"}</h3>
+        <StatBars who={state.master.callName ?? "主人公"} state={state.master.state} keys={["体力", "気力"]} />
+      </section>
+      {partner && <section aria-label="对象信息" data-testid="h-target-stats">
+        <h3>对象 · {partner.callName ?? partner.name ?? `角色${target}`}</h3>
+        <StatBars who={partner.callName ?? `角色${target}`} state={partner.state} keys={["体力", "気力"]} />
+        <RelationStats who={partner.callName ?? `角色${target}`} state={partner.state} showWho={false} />
+        <span>避孕药：{(partner.state.TCVAR[TCVAR_ID.口服避孕薬] ?? 0) !== 0 ? "已服用" : "未服用"}</span>
+      </section>}
+      {partner && <section aria-label="对象积攒与身体状态">
+        <h3>对象 · 积攒与身体状态</h3>
+        <PalamPanel state={partner.state} title="积攒与感受" />
+        <HBodyStats who={partner.callName ?? `角色${target}`} state={partner.state} showWho={false} />
+      </section>}
+      <section aria-label="主角积攒与身体状态">
+        <h3>主角 · 积攒与身体状态</h3>
+        <PalamPanel state={state.master.state} title="积攒与感受" />
+        <StatBars who={state.master.callName ?? "主人公"} state={state.master.state} keys={NAMED_STAT_KEYS.filter((key) => key !== "体力" && key !== "気力")} />
+        <HBodyStats who={state.master.callName ?? "主人公"} state={state.master.state} showWho={false} />
+      </section>
+    </div>
+  );
+}
+
 export interface TextGameInfoPanelProps {
   state: GameState;
   target?: number;
   onOpenCharaInfo?: (charaNum: number) => void;
+  onSetPortraitVariant?: (charaNum: number, variantId: number) => void;
 }
 
 /** Fixed left column for the immersive text-game surface. This is a pure
- * presentation of the same state selectors used by the classic status bar. */
+ * presentation of the same state selectors used by the full status bar. */
 export function TextGameInfoPanel(props: TextGameInfoPanelProps) {
   const targetSlot =
     props.target !== undefined && props.target > 0
@@ -457,6 +659,7 @@ export function TextGameInfoPanel(props: TextGameInfoPanelProps) {
     ? getBattleAbilityDisplay(targetSlot.state)
     : "";
   const fortune = getFortune(props.state.master.state);
+  const [portraitPickerOpen, setPortraitPickerOpen] = useState(false);
 
   return (
     <aside className="text-game-info" data-testid="text-game-info-panel" aria-label="角色与状态情报">
@@ -471,6 +674,27 @@ export function TextGameInfoPanel(props: TextGameInfoPanelProps) {
         ) : (
           <p className="text-game-info__empty">未选择对象</p>
         )}
+        {targetSlot && props.onSetPortraitVariant && (
+          <div className="text-game-info__portrait-update">
+            <button
+              type="button"
+              className="text-game-info__action"
+              data-testid="text-game-portrait-update"
+              aria-expanded={portraitPickerOpen}
+              onClick={() => setPortraitPickerOpen((open) => !open)}
+            >
+              {portraitPickerOpen ? "[收起立绘更新]" : "[立绘更新]"}
+            </button>
+            {portraitPickerOpen && (
+              <PortraitVariantPicker
+                state={props.state}
+                charaNum={targetSlot.charaNum}
+                compact
+                onSelect={(variantId) => props.onSetPortraitVariant?.(targetSlot.charaNum, variantId)}
+              />
+            )}
+          </div>
+        )}
       </section>
 
       <section className="text-game-info__section" data-testid="text-game-status-info">
@@ -479,12 +703,16 @@ export function TextGameInfoPanel(props: TextGameInfoPanelProps) {
           who={props.state.master.callName ?? "主人公"}
           state={props.state.master.state}
           keys={NAMED_STAT_KEYS.filter((key) => key !== "TSP")}
+          cells={16}
         />
         <Sleepiness state={props.state} />
         <SituationTags state={props.state} />
+        {props.state.training && (
+          <HBodyStats who={props.state.master.callName ?? "主人公"} state={props.state.master.state} />
+        )}
         {targetSlot && (
           <div className="text-game-info__target-status">
-            <StatBars who={targetName} state={targetSlot.state} keys={["体力", "気力"]} />
+            <StatBars who={targetName} state={targetSlot.state} keys={["体力", "気力"]} cells={16} />
             <AlcoholStatus
               state={props.state}
               charaNum={targetSlot.charaNum}
@@ -523,7 +751,7 @@ export default function GameStatusBar(props: GameStatusBarProps) {
   // Parity QA P-2: real eraTW calendar — weekday `(dayIndex+1)%7`
   // (日/月/火/水/木/金/土) + the (season-month, date) pair off `time`
   // (春之月/夏之月/…, date 1-31). Was an `(dayIndex+3)%7` mock anchor.
-  const weekday = weekdayName(time.dayIndex);
+  const weekday = weekdayLabelZh(time.dayIndex);
   const month = monthName(seasonOf(time));
   const date = dateOf(time);
 
@@ -543,7 +771,7 @@ export default function GameStatusBar(props: GameStatusBarProps) {
 
   // Parity QA F-1e — 時間帯 name + real minutes. eraTW shows `(卯时三点-晓-)`
   // via GET_CLASSICAL_HOUR (deferred — see weather.ts); we surface the coarser
-  // 現在時間帯 8-division label (未明/明け方/朝/…) + HH:MM (was HH:00 only).
+  // Current Chinese 8-division label + HH:MM (was HH:00 only).
   const tzName = timezoneName(currentTimezone(time.hourOfDay));
   const minutes = time.tickValue % 60;
 
@@ -603,7 +831,103 @@ export default function GameStatusBar(props: GameStatusBarProps) {
   const actionHints = getHudActionHints(props.state);
   const workInfo = targetSlot ? getHudWorkInfo(props.state, targetSlot.charaNum) : null;
   const battleAbility = targetSlot ? getBattleAbilityDisplay(targetSlot.state) : "";
-  const worldOnly = props.layout === "world-only";
+  // Minimal starts as world-only band (no work info, no hover status/param
+  // dropdowns) plus a trimmed numeric surface: only time/weather/location/
+  // roster/time-stop stay, everything numeric goes away.
+  const minimal = props.layout === "minimal";
+  const worldOnly = props.layout === "world-only" || minimal;
+
+  // Shared 时间停止 control: a full TSP row in the standard layouts, a single
+  // compact button on the minimal date line (the minimal top band is only two
+  // rows tall so the text stream keeps the screen).
+  const timestopButton = isTimeStopped(props.state) ? (
+    <button
+      type="button"
+      className={`status-bar__timestop status-bar__timestop--active${minimal ? " status-bar__timestop--compact" : ""}`}
+      data-testid="status-bar-timestop"
+      onClick={props.onReleaseTimeStop}
+      disabled={!props.onReleaseTimeStop}
+      title="解除时间停止"
+    >
+      解除时停
+    </button>
+  ) : (
+    <button
+      type="button"
+      className={`status-bar__timestop${minimal ? " status-bar__timestop--compact" : ""}`}
+      data-testid="status-bar-timestart"
+      onClick={props.onTimeStop}
+      disabled={!props.onTimeStop}
+      title="时间停止"
+    >
+      时停
+    </button>
+  );
+
+  // Story badge + panel. A circled ! immediately right of the time-stop
+  // control, opening an on-demand panel instead of the permanent banner this
+  // replaces. Rendered only when there is a story to show: an inert toggle in
+  // the two-row minimal band costs more than it says.
+  const pursuit = props.narrativePursuit ?? null;
+  const director = props.narrativeDirector ?? null;
+  const narrativeToggle = pursuit || director ? (
+    <>
+      <button
+        type="button"
+        className={`status-bar__narrative-toggle${pursuit && (pursuit.state === "waiting" || pursuit.state === "active") ? " status-bar__narrative-toggle--active" : ""}${minimal ? " status-bar__narrative-toggle--compact" : ""}`}
+        data-testid="status-bar-narrative-toggle"
+        data-narrative-state={pursuit?.state ?? "waiting"}
+        aria-expanded={props.narrativePanelOpen === true}
+        aria-controls={pursuit?.id ? `narrative-pursuit-${pursuit.id}` : undefined}
+        onClick={props.onToggleNarrativePanel}
+        disabled={!props.onToggleNarrativePanel}
+        title={pursuit?.hint ?? director?.label}
+      >
+        <span className="status-bar__narrative-toggle-mark" aria-hidden="true">!</span>
+        <span className="status-bar__narrative-toggle-label">事件</span>
+        {pursuit && pursuit.count > 1 && <span className="status-bar__narrative-toggle-count">{pursuit.count}</span>}
+      </button>
+      {props.narrativePanelOpen && (
+        // Deliberately NOT role="status": the banner this replaces announced
+        // itself on every render, which is one of the things being fixed.
+        <div
+          className="status-bar__narrative-panel"
+          data-testid="narrative-pursuit-panel"
+          id={pursuit?.id ? `narrative-pursuit-${pursuit.id}` : undefined}
+        >
+          {pursuit && <p className="status-bar__narrative-panel-opening" data-testid="narrative-pursuit-hint">{pursuit.hint}</p>}
+          {director && <p data-testid="narrative-director-status">{director.label}</p>}
+        </div>
+      )}
+    </>
+  ) : null;
+
+  // Present-NPC names: chips that pick the TARGET in minimal (rendered inline
+  // on the location line), plain spans in the standard layouts.
+  const presentChips = present.length > 0 ? (
+    <>
+      在场：
+      {present.map((c) =>
+        minimal && props.onSelectChara ? (
+          <button
+            key={c.charaNum}
+            type="button"
+            className={`status-bar__present-name status-bar__present-name--chip${props.target === c.charaNum ? " status-bar__present-name--selected" : ""}`}
+            data-testid="minimal-roster-name"
+            data-chara={c.charaNum}
+            aria-pressed={props.target === c.charaNum}
+            onClick={() => props.onSelectChara!(c.charaNum)}
+          >
+            [{c.callName ?? `#${c.charaNum}`}]
+          </button>
+        ) : (
+          <span key={c.charaNum} className="status-bar__present-name">
+            [{c.callName ?? `#${c.charaNum}`}]
+          </span>
+        ),
+      )}
+    </>
+  ) : null;
 
   return (
     <div className="status-bar" data-testid="game-status-bar">
@@ -616,7 +940,7 @@ export default function GameStatusBar(props: GameStatusBarProps) {
         <span className="status-bar__time">
           {hh}:{mm}
         </span>
-        {tzName && (
+        {!minimal && tzName && (
           <span className="status-bar__timezone" data-testid="status-bar-timezone">
             （{tzName}）
           </span>
@@ -624,15 +948,21 @@ export default function GameStatusBar(props: GameStatusBarProps) {
         <span className="status-bar__weather" data-testid="status-bar-weather">
           ―{weather}―
         </span>
-        <span className="status-bar__weather-detail" data-testid="status-bar-region">
-          区域:{weatherInfo.regionName}
-        </span>
-        <span className="status-bar__weather-detail" data-testid="status-bar-wind">
-          风:{wind}
-        </span>
-        <span className="status-bar__weather-detail" data-testid="status-bar-rainbow">
-          天象:{rainbow}
-        </span>
+        {!minimal && (
+          <span className="status-bar__weather-detail" data-testid="status-bar-region">
+            区域:{weatherInfo.regionName}
+          </span>
+        )}
+        {!minimal && (
+          <span className="status-bar__weather-detail" data-testid="status-bar-wind">
+            风:{wind}
+          </span>
+        )}
+        {!minimal && (
+          <span className="status-bar__weather-detail" data-testid="status-bar-rainbow">
+            天象:{rainbow}
+          </span>
+        )}
         {weatherInfo.thunder && (
           <span className="status-bar__weather-detail status-bar__weather-detail--warn" data-testid="status-bar-thunder">
             雷
@@ -643,9 +973,11 @@ export default function GameStatusBar(props: GameStatusBarProps) {
             警报:{weatherInfo.warnings.join("、")}
           </span>
         )}
-        <span className="status-bar__weather-detail" data-testid="status-bar-umbrella">
-          {umbrellaText}
-        </span>
+        {!minimal && (
+          <span className="status-bar__weather-detail" data-testid="status-bar-umbrella">
+            {umbrellaText}
+          </span>
+        )}
         <span
           className="status-bar__temp"
           data-testid="status-bar-temp"
@@ -654,68 +986,56 @@ export default function GameStatusBar(props: GameStatusBarProps) {
           {formatTemperature(temp01)}
         </span>
         <ActionHints hints={actionHints} />
+        {minimal && timestopButton}
+        {minimal && narrativeToggle}
       </div>
       <div className="status-bar__rule" />
 
       {/* TSP bar + 時間停止 control — a fixed top row, BELOW the date line and
           ABOVE the Status section (NOT inside Status, NOT in the Act_COM grid).
           The TSP gauge is always visible; the 時間停止 button sits to its RIGHT:
-          「时停」to enter, swapping to「解除时停」while stopped. */}
-      <div className="status-bar__tsp-row" data-testid="status-bar-tsp-row">
-        <StatBars who="主人公" state={master.state} keys={["TSP"]} testidSuffix="tsp" />
-        {isTimeStopped(props.state) ? (
-          <button
-            type="button"
-            className="status-bar__timestop status-bar__timestop--active"
-            data-testid="status-bar-timestop"
-            onClick={props.onReleaseTimeStop}
-            disabled={!props.onReleaseTimeStop}
-            title="解除时间停止"
-          >
-            解除时停
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="status-bar__timestop"
-            data-testid="status-bar-timestart"
-            onClick={props.onTimeStop}
-            disabled={!props.onTimeStop}
-            title="时间停止"
-          >
-            时停
-          </button>
-        )}
-      </div>
+          「时停」to enter, swapping to「解除时停」while stopped.
+          Minimal: the whole row collapses (the button moved onto the date
+          line) so the top band stays two rows tall. */}
+      {!minimal && (
+        <div className="status-bar__tsp-row" data-testid="status-bar-tsp-row">
+          <StatBars who="主人公" state={master.state} keys={["TSP"]} testidSuffix="tsp" />
+          {timestopButton}
+          {narrativeToggle}
+        </div>
+      )}
 
-      {/* ② 地点 / 清洁度 / 所持金 */}
+      {/* ② 地点 / 清洁度 / 所持金 — minimal keeps the location line and inlines
+          the present-NPC chips onto it (two-row top band). */}
       <div className="status-bar__line">
         <span className="status-bar__loc" data-testid="status-bar-loc">
           ［{fmtLocation(master.location)}］
         </span>
-        {cleanliness && (
+        {!minimal && cleanliness && (
           <span className="status-bar__cleanliness" data-testid="status-bar-cleanliness">
             清洁度:{cleanliness}
           </span>
         )}
-        <span className="status-bar__money">所持金：{money.toLocaleString()}</span>
+        {!minimal && <span className="status-bar__money">所持金：<AsciiNumber value={money} grouped /></span>}
         {props.state.dateSession && (
           <span data-testid="status-bar-date">
-            约会：{datePartner?.callName ?? `#${props.state.dateSession.partner}`} · {props.state.dateSession.phase}
-            {props.state.dateSession.travelRemainingMinutes ? ` · 剩余${props.state.dateSession.travelRemainingMinutes}分` : ""}
+            约会：{datePartner?.callName ?? `#${props.state.dateSession.partner}`} · 约会中
+          </span>
+        )}
+        {minimal && (
+          <span className="status-bar__present-inline" data-testid="status-bar-present">
+            {presentChips}
           </span>
         )}
       </div>
 
-      {/* ③ 在场角色 — the mock's `[先代] [灵梦]` line. */}
-      {present.length > 0 && (
+      {props.showHSessionStatus !== false && <HSessionStatus state={props.state} focusedTarget={props.target} />}
+
+      {/* ③ 在场角色 — the mock's `[先代] [灵梦]` line (minimal inlines it
+          above instead of taking a third top row). */}
+      {!minimal && (
         <div className="status-bar__present" data-testid="status-bar-present">
-          在场：
-          {present.map((c) => (
-            <span key={c.charaNum} className="status-bar__present-name">
-              [{c.callName ?? `#${c.charaNum}`}]
-            </span>
-          ))}
+          {presentChips}
         </div>
       )}
 
@@ -778,6 +1098,9 @@ export default function GameStatusBar(props: GameStatusBarProps) {
               <StatBars who={master.callName ?? "主人公"} state={master.state} keys={NAMED_STAT_KEYS.filter((k) => k !== "TSP")} />
               <Sleepiness state={props.state} />
               <SituationTags state={props.state} />
+              {props.state.training && (
+                <HBodyStats who={master.callName ?? "主人公"} state={master.state} />
+              )}
               {targetSlot && (
                 <>
                   <StatBars who={targetName} state={targetSlot.state} keys={["体力", "気力"]} />

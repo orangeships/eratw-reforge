@@ -15,6 +15,7 @@
 
 import type { CharaSlotState } from "./game-state.js";
 import { bodyFillRate } from "./body-fill-rate.js";
+import { afterglowStageLabel } from "./h-afterglow.js";
 import {
   BASE_ID,
   CFLAG_ID,
@@ -42,10 +43,13 @@ export interface HBodyStats {
   /** 射精槽（`BASE:射精` / `MAXBASE`），hasPenis 时才渲染。 */
   ejaculate: number;
   ejaculateMax: number;
+  /** Upstream two-step threshold: crossing the ceiling arms the next stimulus. */
+  aboutToEjaculate: boolean;
   /** 欲求不满度（`CFLAG:溜まってる度`）。原版显示 `欲求：{/10}％`。 */
   frustration: number;
   /** 高潮余韵（`BASE:絶頂余韻`）。 */
   afterglow: number;
+  afterglowLabel: string | undefined;
   /** 寸止め 各部位计数（`EX:Ｃ/Ｖ/Ａ/Ｂ/Ｍ寸止め`）。 */
   chiburi: Record<"Ｃ" | "Ｖ" | "Ａ" | "Ｂ" | "Ｍ", number>;
   /** 生理状态标签：怀孕 / 已受精 / 发情中 / estrusCategory。 */
@@ -83,8 +87,10 @@ export function getHBodyStats(state: CharaSlotState): HBodyStats {
     hasPenis: ((state.TALENT[TALENT_ID.性別] ?? 0) & 2) !== 0,
     ejaculate: state.BASE[BASE_ID.射精] ?? 0,
     ejaculateMax: state.MAXBASE?.[BASE_ID.射精] ?? 0,
+    aboutToEjaculate: (state.TCVAR[TCVAR_ID.要去了] ?? 0) !== 0,
     frustration: state.CFLAG[CFLAG_ID.溜まってる度] ?? 0,
     afterglow: state.BASE[BASE_ID.絶頂余韻] ?? 0,
+    afterglowLabel: afterglowStageLabel(state.BASE[BASE_ID.絶頂余韻] ?? 0),
     chiburi: {
       "Ｃ": state.EX[EX_ID.Ｃ寸止め] ?? 0,
       "Ｖ": state.EX[EX_ID.Ｖ寸止め] ?? 0,

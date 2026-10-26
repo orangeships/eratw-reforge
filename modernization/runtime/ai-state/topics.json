@@ -1,0 +1,14 @@
+[
+  {"id":"body","label":"身体与作息","aliases":["累","疲惫","休息","身体","睡觉","熬夜","酒","喝醉","醉"],"related":["work"],"priority":80,"fields":["stamina","energy","alcohol","drunkenness","sleep","overnight"]},
+  {"id":"relationship","label":"与主角的关系","aliases":["喜欢","信任","关系","生气","讨厌","道歉"],"related":[],"priority":90,"fields":["favor","trust","anger","emotion","composure"]},
+  {"id":"work","label":"工作与生活圈","aliases":["工作","上班","下班","忙","拜访","住","回家"],"related":["body","schedule"],"priority":60,"fields":["job","workplace","home","work"]},
+  {"id":"schedule","label":"约定与日程","aliases":["约会","明天","约定","赴约","什么时候","几点"],"related":["reunion"],"priority":70,"fields":["wake","bedtime","date"]},
+  {"id":"cooking","label":"料理与技能","aliases":["料理","做饭","下厨","拿手菜","吃","饭","菜"],"related":["skills","taste"],"priority":70,"fields":["cookingSkill","cookingExperience","dish"]},
+  {"id":"taste","label":"口味与好恶","aliases":["吃","好吃","口味","味道","喜欢吃什么","讨厌吃什么","忌口","好恶","喜好"],"related":["cooking"],"priority":70,"fields":["foodTaste","senseTaste"]},
+  {"id":"skills","label":"技能与成长","aliases":["练习","擅长","技能","学习","进步","打扫"],"related":[],"priority":45,"fields":["cookingSkill","conversationSkill","cleaningSkill","conversationExperience"]},
+  {"id":"gifts","label":"收到的礼物","aliases":["礼物","送给","回礼","情人节"],"related":["reunion"],"priority":70,"fields":["gifts"]},
+  {"id":"reunion","label":"会面与纪念","aliases":["好久不见","昨天","上次见","纪念日","初吻"],"related":[],"priority":55,"fields":["lastMeeting","firstKissDay"]},
+  {"id":"clothing","label":"当前穿着","aliases":["衣服","裙","穿","换装","打扮","帽子"],"related":[],"priority":60,"fields":["clothing"]},
+  {"id":"world","label":"时间与天气","aliases":["天气","下雨","下雪","风","季节","今天几号"],"related":[],"priority":60,"fields":["calendar","weather"]},
+  {"id":"resources","label":"主角的生活资源（导演）","aliases":["钱","购买","收成","酿酒","种田"],"related":["cooking"],"priority":40,"fields":["money","farm","brewing"]}
+]

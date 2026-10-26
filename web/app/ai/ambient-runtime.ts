@@ -1,10 +1,11 @@
 import type { GameState } from "../../../modernization/runtime/state/index.js";
 import type { DialogueRouter } from "../../../modernization/runtime/kojo/types.js";
 import type { AmbientInitiativeOpportunity } from "../../../modernization/runtime/world/ambient-initiative.js";
+import { familyIdOf } from "../game/command-families.js";
 import { buildSceneAmbientCompletion } from "./ambient-context.js";
 import { useSceneAmbientStore } from "./ambient-store.js";
 import { parsePartialSceneAmbientResponse, parseSceneAmbientResponse } from "./ambient-validator.js";
-import { collectAuthoredVoiceSamples } from "./kojo-runtime.js";
+import { cachedAuthoredVoiceSamples, collectAuthoredVoiceSamplesAsync } from "./kojo-runtime.js";
 import { createOpenAiCompatibleProvider } from "./provider.js";
 import { currentAiCharacterProfile, currentAiSettings, useAiStore } from "./store.js";
 import type {
@@ -49,13 +50,68 @@ export function prepareSceneAmbientRequest(
   const publicOnly = input.opportunity.kind === "npc-exchange";
   const voiceSamples = Object.fromEntries(input.opportunity.participantIds.map((participantId) => [
     participantId,
-    publicOnly ? [] : collectAuthoredVoiceSamples({
+    publicOnly ? [] : cachedAuthoredVoiceSamples({
       router: input.router,
       state: input.state,
       target: participantId,
       seed: input.seed ^ (participantId * 7919),
+      preferredFamilyId: input.state.training?.target === participantId
+        ? familyIdOf(input.state.training.lastCommandNo)
+        : undefined,
     }),
   ]));
+  return {
+    requestId,
+    sceneEpoch: input.sceneEpoch,
+    opportunity: input.opportunity,
+    settings,
+    completion: buildSceneAmbientCompletion({
+      requestId,
+      sceneEpoch: input.sceneEpoch,
+      state: input.state,
+      opportunity: input.opportunity,
+      settings,
+      voiceSamples,
+      visibleFacts: input.visibleFacts,
+    }),
+  };
+}
+
+/** Async counterpart used by the live scene sidecar. The synchronous helper
+ * remains available for deterministic tests/tools; player UI uses this path
+ * so authored sample collection can yield and be cancelled. */
+export async function prepareSceneAmbientRequestAsync(
+  input: PrepareSceneAmbientInput,
+  signal?: AbortSignal,
+): Promise<PreparedSceneAmbientRequest | null> {
+  const settings = currentAiSettings();
+  if (!settings.enabled || !settings.ambientEnabled) return null;
+  if (!settings.baseUrl.trim() || !settings.model.trim()) return null;
+  if (activeRequest) return null;
+  if (input.state.master.location !== input.opportunity.location) return null;
+  if (!input.opportunity.participantIds.every((participantId) => {
+    const slot = input.state.charas[participantId];
+    return slot?.location === input.state.master.location && currentAiCharacterProfile(participantId).enabled;
+  })) return null;
+
+  serial += 1;
+  const requestId = `ambient:${Date.now()}:${serial}`;
+  const publicOnly = input.opportunity.kind === "npc-exchange";
+  const voiceSamples: Record<number, readonly string[]> = {};
+  for (const participantId of input.opportunity.participantIds) {
+    voiceSamples[participantId] = publicOnly
+      ? []
+      : await collectAuthoredVoiceSamplesAsync({
+          router: input.router,
+          state: input.state,
+          target: participantId,
+          seed: input.seed ^ (participantId * 7919),
+          preferredFamilyId: input.state.training?.target === participantId
+            ? familyIdOf(input.state.training.lastCommandNo)
+            : undefined,
+        }, signal);
+  }
+  if (signal?.aborted) throw new Error("Ambient preparation cancelled");
   return {
     requestId,
     sceneEpoch: input.sceneEpoch,
@@ -161,6 +217,17 @@ export function cancelSceneAmbientRequest(requestId?: string): void {
   if (!activeRequest) return;
   if (requestId && activeRequest.requestId !== requestId) return;
   activeRequest.controller.abort("cancelled");
+}
+
+/** A player command addressed to a participant consumes their overhead scene
+ * initiative. Multi-character entries are one exchange, so consuming any
+ * participant dismisses the whole entry and prevents a late stream restore. */
+export function dismissSceneAmbientForParticipant(participantId: number): boolean {
+  const session = useSceneAmbientStore.getState().session;
+  if (!session?.entry?.participantIds.includes(participantId)) return false;
+  cancelSceneAmbientRequest(session.requestId ?? session.entry.requestId);
+  useSceneAmbientStore.getState().clearEntry();
+  return true;
 }
 
 export function resetSceneAmbientRuntime(): void {

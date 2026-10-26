@@ -242,21 +242,25 @@ export function advancedRoamStep(
   state: GameState,
   slot: CharaSlot,
   elapsedMin: number,
+  destinationOverride?: string,
 ): string | null {
   if (!slot.location.startsWith("神社:")) return null;
   if (elapsedMin <= 0) return null;
   // なるべく動かない (line 135-138): if set and no 無差別移動, stay put
   const [indiscriminate, gPoint] = shouldIndiscriminateMove(state, slot);
   const stayPut = slot.state.TCVAR[TCVAR_ID.なるべく動かない] ?? 0;
-  if (stayPut && !indiscriminate) {
+  if (stayPut && !indiscriminate && !destinationOverride) {
     slot.state.TCVAR[TCVAR_ID.なるべく動かない] = 0; // clear flag
     return null;
   }
+  if (destinationOverride) slot.state.TCVAR[TCVAR_ID.なるべく動かない] = 0;
   const rng = createRng((slot.charaNum * 1_000_003) ^ state.time.tickValue);
   // 引力点 or G_POINT branch (line 159-206)
   const gravityActive = isGravityPointActive(state, slot);
   const gravityPointId = slot.state.TCVAR[TCVAR_ID.引力点] ?? 0;
-  const target = gravityActive ? roomIdToLocation(gravityPointId) : gPoint;
+  const target = gravityActive
+    ? roomIdToLocation(gravityPointId)
+    : destinationOverride ?? gPoint;
   if (target) {
     // Multi-hop pathfinding to gravity point (line 179-189)
     let dest = target;

@@ -30,8 +30,23 @@
 import type { GameState, CharaSlot } from "../../state/game-state.js";
 import type { CommandContext, ExecCheck } from "../types.js";
 
-/** ERB outcome flag (TFLAG:193): 1 大成功 / 0 通常 / -1 失敗. */
-export type ComfOutcome = 1 | 0 | -1;
+/** ERB outcome flag (TFLAG:193): 1 大成功 / 0 通常 / -1 失敗 / 99 拒絶. */
+export type ComfOutcome = 1 | 0 | -1 | 99;
+
+/** Metadata for command-specific arms which do not fit the shared random path. */
+export interface ComfOutcomeResolution {
+  outcome: ComfOutcome;
+  /** Named arm exposed to the ComfDef builders. */
+  branch?: string;
+  /** `null` preserves the existing TFLAG:193 instead of writing outcome. */
+  outcomeFlag?: number | null;
+  /** `null` leaves the transient frame outcome untouched. */
+  frameOutcome?: number | null;
+  /** Additional TFLAG writes made by this selected arm. */
+  tflags?: Readonly<Record<number, number>>;
+  /** Models an upstream early `RETURN 0` after its listed flag writes. */
+  returnEarly?: "noop";
+}
 
 /**
  * The context every `ComfDef` builder lambda receives. Readers default
@@ -50,6 +65,8 @@ export interface ComfCtx {
   readonly master: CharaSlot;
   /** Rolled outcome (great/normal/fail). */
   readonly outcome: ComfOutcome;
+  /** Optional named upstream arm selected before shared settlement. */
+  readonly branch?: string;
   /**
    * Whether a real present target slot exists. Always `true` for
    * `requiresTarget` commands. For master-centric commands
@@ -138,12 +155,21 @@ export interface ComfGate {
   /** `SIF TCVAR:MASTER:亲热 < n → RETURN 0` — minimum 亲热 (skinship) level. */
   minIntimacy?: number;
   /**
+   * Minimum 亲热 enforced by COM_ABLE313/316 only in the ordinary awake,
+   * visible command context. Upstream bypasses this check during time-stop
+   * before the target has acted, while the target is asleep, or while the
+   * target's CFLAG:526 stealth bit is set.
+   */
+  minIntimacyOutsideBypassStates?: number;
+  /**
    * `SIF TIME_PROGRESS(TCVAR:<id>) < <minutes> → RETURN 0` — per-target
    * cooldown: the command can't re-fire until `minutes` of game-time have
    * passed since the timestamp stored in `TCVAR:<tcvarId>`. `{ tcvarId,
    * minutes }`.
    */
   cooldown?: { tcvarId: number; minutes: number };
+  /** `TIME_PROGRESS(TFLAG:<id>) < <minutes>` — global timestamp cooldown. */
+  tflagCooldown?: { tflagId: number; minutes: number };
   /** `SIF !INROOM(現在位置) → RETURN 0` — indoors only (膝枕/索求膝枕 等). */
   requiresIndoor?: boolean;
   /** `SIF BATHROOM()/BATHCHECK(現在位置) → RETURN 0` — not in a bath. */
@@ -170,9 +196,9 @@ export interface ComfGate {
    *  passed-out drunk (照料/介抱). Modeled via `CFLAG:職種`/`酔いつぶれ`. */
   requiresDrunkTarget?: boolean;
   /** `SIF CFLAG:職種 != JOB_宴会参加 → RETURN 0` — the target must be a
-   *  banquet participant (碰杯/杯を交わす). The banquet/job subsystem isn't
-   *  modeled → 職種 is never 49 → this gate blocks faithfully (碰杯 only
-   *  appears during a banquet, which our runtime never hosts). */
+   *  live participant in an active deterministic banquet (碰杯/杯を交わす).
+   *  The compiler also checks the active phase, sleep/action projection and
+   *  remaining work so preparation-stage workers cannot expose this command. */
   requiresBanquetParticipant?: boolean;
   /** `SIF CFLAG:诶嘿嘿 == 2 → RETURN 0` — block while the target is in
    *  partner-led (逆推) H-mode (戦闘訓練). */
@@ -208,6 +234,16 @@ export interface ComfDef {
   /** Optional execution-only CAN_COM predicate. It must not hide the menu
    * entry; the resolver checks it immediately before settlement. */
   canExecute?: ExecCheck;
+  /**
+   * Optional pre-roll branch selector. A numeric outcome bypasses RAND and
+   * uses the normal ComfCtx/buildSources/timeCost/body pipeline; a structured
+   * resolution can also name a branch, preserve/override the outcome flag,
+   * write TFLAGs, or return early. `undefined` uses the ordinary random path.
+   */
+  resolveOutcome?: (
+    ctx: CommandContext,
+    next: GameState,
+  ) => ComfOutcome | ComfOutcomeResolution | undefined;
   /** Opt-in Act_COM state gate for a non-baseline H command. See HandlerEntry. */
   hModeMenuCheck?: ExecCheck;
   /**
@@ -220,6 +256,13 @@ export interface ComfDef {
    */
   gate?: ComfGate;
   /**
+   * Exact predicate override for `@COM_ABLE` blocks whose conditional ERB
+   * structure cannot be represented by the generated declarative gate.
+   * When present, this replaces the merged generated/declared gate; callers
+   * must preserve any modelable guards they still want enforced.
+   */
+  gateOverride?: ExecCheck;
+  /**
    * Minutes the command costs (ERB `TIME += …`). Either a constant or a
    * function of the context — the latter for state-dependent costs (e.g.
    * `412 勉強`'s weather-gated 30/45/60 min, `304`'s per-jobType TIME).
@@ -229,10 +272,16 @@ export interface ComfDef {
   maxRoll?: 100 | 110;
   /** `roll < greatThreshold` → 大成功. Default 5. */
   greatThreshold?: number;
-  /** `roll >= failThreshold` → 失敗. Default 90 (GET_SUCCESS_RATE deferred → 0). */
+  /** Generic roll cutoff. Command-specific GET_SUCCESS_RATE rules use resolveOutcome. */
   failThreshold?: number;
   /** Whether a present target is required. Default true. */
   requiresTarget?: boolean;
+  /**
+   * Settle `buildSources` into MASTER when this is a genuinely self-directed
+   * H command with no target. Optional-target chores keep the default false;
+   * their SOURCE block only opens when an upstream helper/target is present.
+   */
+  settleSourcesOnMaster?: boolean;
   /** Build the transient SOURCE quanta (id → value) before scaling. */
   buildSources(c: ComfCtx): Record<number, number>;
   /**
@@ -241,7 +290,7 @@ export interface ComfDef {
    * master's PALAM WITHOUT the 好感度 machinery. Omit for single-
    * participant commands. (B1b)
    */
-  buildMasterSources?(c: ComfCtx): Record<number, number>;
+  buildMasterSources?(c: ComfCtx): Record<number, number> | undefined;
   /** Per-SOURCE outcome multipliers. Missing ids default to MUL_POSITIVE. */
   outcomeMul?: Record<number, OutcomeMul>;
   /** Optional `TFLAG:97` pre-seed (e.g. 親密/好感 penalty brackets). */
@@ -273,6 +322,12 @@ export interface ComfDef {
    */
   downbase?: Record<number, number> | ((c: ComfCtx) => Record<number, number>);
   /**
+   * Target BASE drain, applied after time advance and master DOWNBASE, before
+   * `body`. H-mode `execCheck` uses the same projection to require enough
+   * target resources before the action can be shown or submitted.
+   */
+  targetDownbase?: Record<number, number> | ((c: ComfCtx) => Record<number, number>);
+  /**
    * Slice B — the item this command consumes (id + qty, default 1). The
    * factory gates `execCheck` on holding ≥ qty and `removeItem`s it before
    * settlement. E.g. 181 媚薬 consumes 41.
@@ -280,7 +335,9 @@ export interface ComfDef {
   consumeItem?: { id: number; qty?: number };
   /**
    * Slice C — an item the command requires HOLDING (not consumed), e.g.
-   * 调教装备 跳蛋(0)/按摩棒(1)/阴蒂夹(2). Gates `execCheck` on `hasItem`.
+   * 调教装备 跳蛋(0)/按摩棒(1)/阴蒂夹(2). Gates `execCheck` on `hasItem`;
+   * for a `toggleTequip` command, the item is not required to remove an
+   * already-equipped toggle.
    */
   requiresItem?: number;
   /**
@@ -290,6 +347,8 @@ export interface ComfDef {
    * toggle commands (COMF42 阴蒂夹 etc.).
    */
   toggleTequip?: number;
+  /** Player-facing removal line for a sustained contact toggle. */
+  toggleOffNarration?: string;
   /**
    * 浴室PLAY 地垫门 (原版 `IF TEQUIP:31; SIF ITEM:20 == 0 RETURN 0`):
    * while the TARGET is in 浴室PLAY, holding 塑料地墊 (ITEM 20) is required.
@@ -298,6 +357,8 @@ export interface ComfDef {
   bathMatRequired?: boolean;
   /** Persisted side writes (EXP / TCVAR markers / 累計). Runs after time-advance. */
   body?(c: ComfCtx): void;
+  /** Run after SOURCE and dialogue settlement for actions that close H state. */
+  afterSettlement?(c: ComfCtx): string | undefined;
   /**
    * P1-d: auto-strip the target's clothing after the body hook executes
    * (mirrors upstream DATUI_LATE called from SOURCE.ERB:125). "top" =

@@ -43,6 +43,8 @@ export interface PromptSpec {
   kind: PromptKind;
   question: string;
   options: PromptOption[];
+  /** Presentation hint for the Web/Tauri adapter; settlement never reads it. */
+  surface?: "shop" | "commission" | "unique";
 }
 
 /**

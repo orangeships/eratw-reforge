@@ -290,6 +290,12 @@ export interface VillageShop {
   discount: number;
 }
 
+/** 河童道具屋 lineup used by the target-aware COMF443 dispatcher. */
+export const KAPPA_SHOP_ITEM_IDS = [
+  0, 1, 2, 3, 4, 5, 6, 10, 11, 12, 15, 16, 17, 20, 21, 22, 23, 27,
+  40, 41, 42, 91, 250, 252,
+] as const;
+
 /**
  * The three clean TYPE-categorized produce/food buy-shops faithfully ported in
  * Wave 3b. Each `@COM6xx` does `ITEMDATA(LOCAL,"SHOP:<店名>")` to build its
@@ -338,19 +344,6 @@ export const VILLAGE_SHOPS: readonly VillageShop[] = [
     // 酒購入 menu (COMF619:96-99): 浊酒/清酒/鬼杀酒/甜酒.
     itemIds: [51, 52, 53, 56],
     discount: 20, // 通常 20% (first-visit 40% deferred, like 614's 特売日).
-  },
-  {
-    commandNo: 443,
-    name: "河童の道具屋",
-    location: "妖怪之山・山麓:河童の宣傳站",
-    // 调教道具 (ITEMDATA "SHOP:河童の道具屋" membership): 装备型 0-27 (unique)
-    // + 消耗型 40/41/42/250/252. 6/17/21/22/91 为 Item.csv 注释项/原版无商店,
-    // 为闭合 46/106/184/186/192 装备与消耗环入店 (现代化有意偏差, 见 DEBUG-BOARD).
-    itemIds: [
-      0, 1, 2, 3, 4, 5, 6, 10, 11, 12, 15, 16, 17, 20, 21, 22, 23, 27,
-      40, 41, 42, 91, 250, 252,
-    ],
-    discount: 0,
   },
 ];
 
@@ -506,9 +499,20 @@ export function shopBuy(
 }
 
 function shopRegionForLocation(location: string): number {
-  const prefixes = ["神社", "人間之里", "永遠亭", "魔法の森", "紅魔館", "地底", "彼岸", "天界", "月都", "魔界", "夢"];
-  const index = prefixes.findIndex((prefix) => location.includes(prefix));
-  return index < 0 ? -1 : index;
+  const regions: ReadonlyArray<readonly [number, readonly string[]]> = [
+    [8, ["守矢神社", "妖怪之山・山頂"]],
+    [7, ["妖怪之山・山麓"]],
+    [0, ["神社"]],
+    [1, ["命蓮寺", "霊廟"]],
+    [2, ["人間之里"]],
+    [3, ["紅魔館", "霧之湖"]],
+    [4, ["永遠亭", "迷途竹林"]],
+    [5, ["魔法之森", "魔法の森"]],
+    [6, ["彼岸", "冥界"]],
+    [9, ["旧都", "地底"]],
+    [10, ["月之世界", "月都"]],
+  ];
+  return regions.find(([, prefixes]) => prefixes.some((prefix) => location.includes(prefix)))?.[0] ?? -1;
 }
 
 export function souvenirSaleDiscount(state: Readonly<GameState>): number {

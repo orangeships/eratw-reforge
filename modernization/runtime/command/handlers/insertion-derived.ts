@@ -2,30 +2,71 @@ import type { CommandContext, ExecCheck, HandlerEntry } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
 import {
   BASE_ID,
+  CFLAG_ID,
   EXP_ID,
+  FLAG_ID,
   SOURCE_ID,
   TALENT_ID,
   TCVAR_ID,
 } from "../../state/settlement.js";
 import { applySourceCheck } from "../source-check.js";
+import { isPlayerHInsertionActive } from "../../state/h-interaction-state.js";
+import {
+  checkHBaseResourceAvailability,
+  type HBaseResourceCosts,
+} from "../h-base-resources.js";
 
 const block = (message: string) =>
   ({ ok: false, reason: { kind: "precondition", message } }) as const;
 
-const insertedVCheck: ExecCheck = (ctx) => {
-  const session = ctx.state.training;
-  if (!session || session.target !== ctx.target || !session.vInserted) {
-    return block("需要先以Ｖ系体位完成插入。");
-  }
-  const target = ctx.state.charas[ctx.target];
-  if (!target || target.location !== ctx.state.master.location) {
-    return block("插入对象已经不在场。");
-  }
-  return { ok: true };
+const G_SPOT_COSTS: HBaseResourceCosts = {
+  master: { [BASE_ID.体力]: 50, [BASE_ID.気力]: 100 },
+  target: { [BASE_ID.体力]: 40, [BASE_ID.気力]: 50 },
 };
+
+const CERVIX_COSTS: HBaseResourceCosts = {
+  target: { [BASE_ID.体力]: 60, [BASE_ID.気力]: 120 },
+};
+
+const MASTER_TSP_COST: HBaseResourceCosts = {
+  master: { [BASE_ID.TSP]: 60 },
+};
+
+function timeStopWithoutTargetAction(ctx: CommandContext): boolean {
+  return (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
+    (ctx.state.charas[ctx.target]?.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
+}
+
+function costsFor(ctx: CommandContext, kind: "g-spot" | "cervix"): HBaseResourceCosts {
+  if (!timeStopWithoutTargetAction(ctx)) {
+    return kind === "g-spot" ? G_SPOT_COSTS : CERVIX_COSTS;
+  }
+  if (kind === "cervix") return MASTER_TSP_COST;
+  return {
+    master: {
+      ...G_SPOT_COSTS.master,
+      [BASE_ID.TSP]: 60,
+    },
+  };
+}
+
+function insertedVCheck(kind: "g-spot" | "cervix"): ExecCheck {
+  return (ctx) => {
+    const session = ctx.state.training;
+    if (!session || session.target !== ctx.target || !isPlayerHInsertionActive(ctx.state, ctx.target, "v")) {
+      return block("需要先以Ｖ系体位完成插入。");
+    }
+    const target = ctx.state.charas[ctx.target];
+    if (!target || target.location !== ctx.state.master.location) {
+      return block("插入对象已经不在场。");
+    }
+    return checkHBaseResourceAvailability(ctx, costsFor(ctx, kind));
+  };
+}
 
 function derivedHandler(kind: "g-spot" | "cervix") {
   return (ctx: CommandContext) => {
+    const costs = costsFor(ctx, kind);
     const next = cloneGameState(ctx.state);
     const target = next.charas[ctx.target]!;
     const cervixExp = target.state.EXP[EXP_ID.子宮口開発経験] ?? 0;
@@ -48,10 +89,14 @@ function derivedHandler(kind: "g-spot" | "cervix") {
       sources[SOURCE_ID.鬱屈] = 500;
     }
 
-    next.master.state.BASE[BASE_ID.体力] = (next.master.state.BASE[BASE_ID.体力] ?? 0) - 50;
-    next.master.state.BASE[BASE_ID.気力] = (next.master.state.BASE[BASE_ID.気力] ?? 0) - 100;
-    target.state.BASE[BASE_ID.体力] = (target.state.BASE[BASE_ID.体力] ?? 0) - (kind === "g-spot" ? 40 : 60);
-    target.state.BASE[BASE_ID.気力] = (target.state.BASE[BASE_ID.気力] ?? 0) - (kind === "g-spot" ? 50 : 120);
+    for (const [idText, cost] of Object.entries(costs.master ?? {})) {
+      const id = Number(idText);
+      next.master.state.BASE[id] = (next.master.state.BASE[id] ?? 0) - cost;
+    }
+    for (const [idText, cost] of Object.entries(costs.target ?? {})) {
+      const id = Number(idText);
+      target.state.BASE[id] = (target.state.BASE[id] ?? 0) - cost;
+    }
     target.state.TCVAR[TCVAR_ID.行為者] = 0;
     next.master.state.TCVAR[TCVAR_ID.射精箇所] = 1;
     target.state.TCVAR[TCVAR_ID.射精箇所] = 13;
@@ -77,15 +122,15 @@ function derivedHandler(kind: "g-spot" | "cervix") {
 export const insertionGSpot72HandlerEntry: HandlerEntry = {
   commandNo: 72,
   gateStatus: "complete",
-  execCheck: insertedVCheck,
-  hModeMenuCheck: insertedVCheck,
+  execCheck: insertedVCheck("g-spot"),
+  hModeMenuCheck: insertedVCheck("g-spot"),
   handler: derivedHandler("g-spot"),
 };
 
 export const insertionCervix73HandlerEntry: HandlerEntry = {
   commandNo: 73,
   gateStatus: "complete",
-  execCheck: insertedVCheck,
-  hModeMenuCheck: insertedVCheck,
+  execCheck: insertedVCheck("cervix"),
+  hModeMenuCheck: insertedVCheck("cervix"),
   handler: derivedHandler("cervix"),
 };

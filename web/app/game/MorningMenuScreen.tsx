@@ -6,7 +6,7 @@ import {
   getCleanlinessLabel,
   getNamedStat,
   masterWakeMinute,
-  weekdayName,
+  weekdayLabelZh,
   seasonOf,
   dateOf,
   monthName,
@@ -36,11 +36,12 @@ import ExComPanel, { CalendarDetails } from "./ExComPanel.js";
 import { RESIDENCE_OPTIONS, type ResidenceOption } from "./pre/newgame-draft.js";
 import { regionByMapName } from "./pre/residence-data.js";
 import ResidencePicker from "./pre/ResidencePicker.js";
+import { usePresentationMode } from "../state/presentation-mode.js";
 import { getCharaCflag, CFLAG_ID, FLAG_ID, TALENT_ID } from "../../../modernization/runtime/state/settlement.js";
 import { OMANEKI_PLACE } from "../../../modernization/runtime/world/omaneki.js";
 import { buildGiftHistory, type GiftHistoryRow } from "../../../modernization/runtime/state/gifts.js";
 import { getMasterCflag } from "../../../modernization/runtime/state/settlement.js";
-import { portraitKindOf } from "../../../modernization/runtime/state/portrait-kind.js";
+import OptionsDialog from "./OptionsDialog.js";
 import { BUG_CATALOG, MUSHI_MAX_CAGE } from "../../../modernization/runtime/state/bug-catching.js";
 import { FISH_CATALOG } from "../../../modernization/runtime/state/fishing.js";
 import {
@@ -52,6 +53,11 @@ import { GATHERING_SPOT_1_ITEMS, gatheringPower } from "../../../modernization/r
 import { usableMasterConsumables } from "../../../modernization/runtime/command/handlers/item-use.js";
 import itemsBundle from "./items.bundle.json";
 import dishesBundle from "./dishes.bundle.json";
+import PortraitVariantPicker from "./PortraitVariantPicker.js";
+import { useGameStateStore } from "../state/game-state-store.js";
+import type { AgentNightCharaProgress } from "../ai/agent-night.js";
+import ManualNarrativePanel from "../ai/ManualNarrativePanel.js";
+import { useAiStore } from "../ai/store.js";
 
 type PanelKind =
   | "ability"
@@ -63,14 +69,16 @@ type PanelKind =
   | "gathering-list"
   | "fishing-list"
   | "bug-list"
-  | "appearance"
   | "save"
   | "calendar"
   | "move-home"
   | "gifts"
   | "reset-commission"
   | "reset-clothes"
-  | "option";
+  | "portrait-update"
+  | "option"
+  | "manual-narrative"
+  | "l3-status";
 
 interface Props {
   state: GameState;
@@ -93,12 +101,16 @@ interface Props {
   /** Flip `FLAG:立絵種類` (OPTION [3] 角色绘的类型 — 立絵↔顔絵). Optional;
    *  when absent the OPTION [3] row renders read-only. */
   onTogglePortraitKind?: () => void;
+  /** Persist a per-character portrait package selection (CFLAG 564). */
+  onSetPortraitVariant?: (charaNum: number, variantId: number) => void;
   /** Toggle FLAG:87, the upstream automatic collection-gap transfer mode. */
   onTogglePantyGapAuto?: () => void;
   /** Claim one earned SHOP/BONUS2 panty collection milestone. */
   onClaimPantyCollectionBonus?: (id: number) => boolean;
   /** Sell duplicate permanent panties, retaining one of each species. */
   onSellPantyDuplicates?: () => number;
+  /** 手动触发 L3 叙事导演，可选玩家自定义意图 */
+  onTriggerManualNarrative?: (playerIntent?: string) => Promise<boolean>;
 }
 
 interface MenuCommand {
@@ -108,6 +120,8 @@ interface MenuCommand {
   disabled?: boolean;
   reason?: string;
   dlc?: boolean;
+  /** 未接入 / 暂不上菜单的入口. 定义连同 reason 一起保留, 日后放回只需去掉这一行. */
+  hidden?: boolean;
 }
 
 function formatLocation(loc: string): string {
@@ -192,11 +206,15 @@ function CommandSection({
   title: string;
   commands: MenuCommand[];
 }) {
+  // hidden 的入口整条不渲染 (含分区只剩 hidden 时连标题一起收掉), 但
+  // disabled 仍照旧渲染 —— 那类是按运行时状态开关的, 玩家需要看得见.
+  const visible = commands.filter((command) => !command.hidden);
+  if (visible.length === 0) return null;
   return (
     <section className="morning-menu__section">
       <h2>【{title}】</h2>
       <div className="morning-menu__commands">
-        {commands.map((command) => (
+        {visible.map((command) => (
           <CommandButton key={command.code} command={command} />
         ))}
       </div>
@@ -204,12 +222,84 @@ function CommandSection({
   );
 }
 
+// ── 睁眼等待门 — agent-night sidecar progress ────────────────────────────────
+//
+// While the background night cycle (character reflections/diaries/plans) is
+// still running, day-break waits. The block shows what the system is doing
+// per character plus the classic generic loading line; after NIGHT_SKIP_DELAY_MS
+// a 「不再等待」 escape hatch appears (per failure fallback decision).
+
+const NIGHT_STATUS_DOT_FRAMES = 4;
+const NIGHT_STATUS_FRAME_MS = 400;
+const NIGHT_SKIP_DELAY_MS = 30_000;
+
+function nightCharaPhaseText(entry: AgentNightCharaProgress): string | null {
+  if (entry.phase === "reflecting") return `${entry.name}正在回想一天的经历`;
+  if (entry.phase === "reviewing") return `${entry.name}正在整理反思`;
+  if (entry.phase === "judging-diary") return `${entry.name}正在考虑是否写日记`;
+  if (entry.phase === "writing") return `${entry.name}正在写日记`;
+  // failed — the character slept through their reflection; no line to show.
+  return null;
+}
+
+function NightCycleStatusBlock({
+  entries,
+  onSkip,
+}: {
+  entries: readonly AgentNightCharaProgress[];
+  /** Cancel the night cycle and wake up anyway (「不再等待」). */
+  onSkip: () => void;
+}) {
+  // Dots advance through React state, not CSS animation, so the text stays
+  // test-observable (same rationale as GatheringProgress).
+  const [frame, setFrame] = useState(1);
+  const [showSkip, setShowSkip] = useState(false);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setFrame((current) => (current % NIGHT_STATUS_DOT_FRAMES) + 1);
+    }, NIGHT_STATUS_FRAME_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowSkip(true), NIGHT_SKIP_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return (
+    <div
+      className="morning-menu__night-status"
+      data-testid="morning-night-status"
+      role="status"
+      aria-live="polite"
+    >
+      <p data-testid="morning-night-status-generic">少女祈祷中{".".repeat(frame)}</p>
+      {entries.map((entry) => {
+        const text = nightCharaPhaseText(entry);
+        return text
+          ? <p key={entry.charaNum} data-testid="morning-night-status-chara">{text}</p>
+          : null;
+      })}
+      {showSkip && (
+        <button
+          type="button"
+          className="morning-menu__night-skip"
+          data-testid="morning-night-skip"
+          onClick={onSkip}
+        >
+          不再等待，直接天亮
+        </button>
+      )}
+    </div>
+  );
+}
+
 function PanelShell({
   title,
+  variant,
   children,
   onClose,
 }: {
   title: string;
+  variant?: "calendar";
   children: ReactNode;
   onClose: () => void;
 }) {
@@ -224,7 +314,7 @@ function PanelShell({
   return createPortal(
     <div className="morning-menu__modal-scrim" data-testid="morning-menu-panel" onClick={onClose}>
       <div
-        className="morning-menu__modal"
+        className={`morning-menu__modal${variant === "calendar" ? " morning-menu__modal--calendar" : ""}`}
         role="dialog"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
@@ -403,7 +493,7 @@ function ResidencePanel({
     <div data-testid="morning-residence-panel">
       <dl className="morning-menu__kv">
         <div>
-          <dt>自宅位置</dt>
+          <dt>住址</dt>
           <dd>{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}</dd>
         </div>
         <div>
@@ -467,7 +557,7 @@ function ResidencePanel({
         </div>
       </section>
       <p className="morning-menu__note">
-        自宅是场景内部的房间（就寝／返回自宅的落点）；起床予定时刻会影响下一次就寝结算；安眠枕／桐木床的恢复补正已按持有道具生效。
+        家是场景内部的房间（睡觉／回家的位置）；起床时间会影响下一次睡眠结算；安眠枕／桐木床的恢复补正已按持有道具生效。
       </p>
     </div>
   );
@@ -505,6 +595,11 @@ function GapShopPanel({
     // upstream shop categories. The gap-shop screen is item-centric, so one
     // row per item avoids duplicate React identities and duplicate purchases.
     .filter((entry, index, all) => all.findIndex((candidate) => candidate.id === entry.id) === index);
+  const categories = ["全部", ...new Set(entries.map((entry) => entry.category || "其他"))];
+  const [category, setCategory] = useState(categories[0]!);
+  const visibleEntries = category === "全部"
+    ? entries
+    : entries.filter((entry) => (entry.category || "其他") === category);
   const buyOne = (entry: ShopCatalogEntry): void => {
     if (!onBuyCatalogItem) return;
     const result = onBuyCatalogItem(entry.id, 1);
@@ -517,8 +612,22 @@ function GapShopPanel({
   return (
     <div className="morning-menu__shop" data-testid="morning-gap-shop">
       <p className="morning-menu__message">{message}</p>
+      <div className="morning-menu__shop-tabs" role="tablist" aria-label="商品分类">
+        {categories.map((label) => (
+          <button
+            key={label}
+            type="button"
+            role="tab"
+            aria-selected={category === label}
+            className={category === label ? "is-active" : undefined}
+            onClick={() => setCategory(label)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="morning-menu__shop-list">
-        {entries.map((entry) => {
+        {visibleEntries.map((entry) => {
           const reason = buyDisabledReason(state, entry);
           return (
             <div key={entry.id} className="morning-menu__shop-row">
@@ -767,23 +876,6 @@ function BugListPanel({ state, onRelease, onMaterialize }: { state: GameState; o
   );
 }
 
-function AppearancePanel({ state }: { state: GameState }) {
-  const rows = Object.values(state.charas).sort((a, b) => a.charaNum - b.charaNum);
-  return (
-    <div className="morning-menu__appearance" data-testid="morning-appearance-list">
-      {rows.map((slot) => (
-        <div key={slot.charaNum} className="morning-menu__list-row">
-          <span>
-            [{slot.charaNum}] {slot.callName ?? `角色${slot.charaNum}`}
-          </span>
-          <span>{slot.location ? formatLocation(slot.location) : "位置未知"}</span>
-        </div>
-      ))}
-      <p className="morning-menu__note">※ 显示现代 runtime 当前掌握的位置；跨图漫游和来访概率仍按看板 deferred。</p>
-    </div>
-  );
-}
-
 /**
  * SHOP [3333] 日历 — read-only 月日/星期/天气/气温一览. 复用 ExComPanel
  * 的 CalendarView(已在游戏画面 Ex_COM 行使用). 这里在 panel 顶端额外补一行
@@ -800,10 +892,6 @@ function CalendarPanel({ state }: { state: GameState }) {
         </p>
       )}
       <CalendarDetails state={state} />
-      <p className="morning-menu__note">
-        ※ 天候/气温取自 runtime 实时模拟(`currentRegionWeather`+`getCurrentTemperature`),
-        与状态栏一致. 节日取自 `(season, date) → FESTIVAL()` 表(calendar.ts:101-143).
-      </p>
     </div>
   );
 }
@@ -850,7 +938,7 @@ function MoveHomePanel({
     <div className="morning-menu__movehome" data-testid="morning-movehome">
       {inOmaneki ? (
         <p className="morning-menu__note morning-menu__note--warn" data-testid="morning-movehome-omaneki">
-          正在待客室（{OMANEKI_PLACE}）中，无法搬家。请先用 699 外に出る／让角色离开。
+          正在待客室（{OMANEKI_PLACE}）中，无法搬家。请先用 699「外出」／让角色离开。
         </p>
       ) : (
         <ResidencePicker
@@ -867,7 +955,7 @@ function MoveHomePanel({
         />
       )}
       <p className="morning-menu__note">
-        当前自宅：{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}。搬家后返回自宅／起床落点会同步。
+        当前住址：{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}。搬家后回家／起床落点会同步。
       </p>
       <p className="morning-menu__note">
         起床时间（{minuteText(wake)}）在「居住环境设定」面板可调；可选：{wakeChoices.map(minuteText).join(" / ")}。
@@ -1176,45 +1264,57 @@ function ResetClothesPanel({
   );
 }
 
-/** OPTION 菜单 (最小忠实接入) — eraTW OPTION.ERB. 只实现 [3] 角色绘的类型
- *  (立絵↔顔絵, FLAG:立絵種類 toggle); 其余原版 OPTION 项 (显示人数/位置 等,
- *  依赖 `FLAG:画像表示` 现代未建模) 以 disabled+reason 列出. */
-function OptionPanel({
+/**
+ * In-game UPDATE page for deterministic portrait-package selection. The old
+ * Web-only implementation treated [500] as an unavailable external updater;
+ * this page keeps the command number but gives it the authored visual-update
+ * function the player can use without leaving the game.
+ */
+function PortraitUpdatePanel({
   state,
-  onTogglePortraitKind,
-  onClose,
+  onSetPortraitVariant,
 }: {
   state: GameState;
-  onTogglePortraitKind?: () => void;
-  onClose: () => void;
+  onSetPortraitVariant?: (charaNum: number, variantId: number) => void;
 }) {
-  const kind = portraitKindOf(state);
-  const kindLabel = kind === "face" ? "颜绘" : "立绘";
+  const rows = Object.values(state.charas).sort((a, b) => a.charaNum - b.charaNum);
+  const [selectedChara, setSelectedChara] = useState(rows[0]?.charaNum ?? 0);
+  const selected = rows.find((slot) => slot.charaNum === selectedChara) ?? rows[0];
   return (
-    <div className="morning-menu__option" data-testid="morning-option">
+    <div className="morning-menu__portrait-update" data-testid="morning-portrait-update">
       <p className="morning-menu__message">
-        <button
-          type="button"
-          className="morning-menu__choice"
-          data-testid="morning-option-toggle-portrait-kind"
-          disabled={!onTogglePortraitKind}
-          onClick={() => onTogglePortraitKind?.()}
-        >
-          [3] 角色绘的类型 — {kindLabel}
-        </button>
+        选择角色后切换其立绘包。选择会保存到角色自身；立绘／颜绘的全局显示类型仍在 OPTION [3] 中切换。
       </p>
-      <p className="morning-menu__note">
-        原版其余 OPTION 项 (显示人数 / 显示位置 / 图像表示…) 依赖
-        <code>FLAG:画像表示</code> 现代未建模 — 暂不接入。
-      </p>
-      <button
-        type="button"
-        className="morning-menu__choice"
-        data-testid="morning-option-close"
-        onClick={onClose}
-      >
-        关闭
-      </button>
+      <div className="morning-menu__portrait-update-layout">
+        <div className="morning-menu__portrait-roster" role="list" aria-label="立绘更新角色列表">
+          {rows.map((slot) => (
+            <button
+              type="button"
+              key={slot.charaNum}
+              className={
+                "morning-menu__choice" +
+                (slot.charaNum === selected?.charaNum ? " morning-menu__choice--active" : "")
+              }
+              data-testid="morning-portrait-character"
+              data-chara={slot.charaNum}
+              onClick={() => setSelectedChara(slot.charaNum)}
+            >
+              [{slot.charaNum}] {slot.callName ?? slot.name ?? `角色${slot.charaNum}`}
+            </button>
+          ))}
+        </div>
+        <div className="morning-menu__portrait-detail">
+          {selected ? (
+            <PortraitVariantPicker
+              state={state}
+              charaNum={selected.charaNum}
+              onSelect={(variantId) => onSetPortraitVariant?.(selected.charaNum, variantId)}
+            />
+          ) : (
+            <p className="morning-menu__note">当前没有可更新的角色。</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1237,15 +1337,27 @@ export default function MorningMenuScreen({
   onReleaseBug,
   onMaterializeBug,
   onTogglePortraitKind,
+  onSetPortraitVariant,
   onTogglePantyGapAuto,
   onClaimPantyCollectionBonus,
   onSellPantyDuplicates,
+  onTriggerManualNarrative,
 }: Props) {
-  const [panel, setPanel] = useState<PanelKind | null>(initialPanel ?? null);
+  // Minimal mode keeps wake/save plus the explicitly requested L3 controls.
+  // The auto-opened initial panel (e.g. gap-shop after night settlement) is
+  // ignored so no shop modal pops up uninvited.
+  const minimal = usePresentationMode() === "minimal";
+  const [panel, setPanel] = useState<PanelKind | null>(() => (minimal ? null : (initialPanel ?? null)));
   const [saveMessage, setSaveMessage] = useState("");
+  // 睁眼等待门 — while the background agent-night sidecar (character
+  // reflections/diaries) is still running, [100] stays disabled and the
+  // status block shows its progress. 「不再等待」 cancels it (abandon).
+  const nightCycleStatus = useGameStateStore((s) => s.nightCycleStatus);
+  const abandonNightCycleAction = useGameStateStore((s) => s.abandonNightCycleAction);
+  const nightRunning = nightCycleStatus?.running === true;
   const { time } = state;
   const day = time.dayIndex + 1;
-  const weekday = weekdayName(time.dayIndex);
+  const weekday = weekdayLabelZh(time.dayIndex);
   const dateLabel = `${monthName(seasonOf(time))}${dateOf(time)}日`;
   const tz = timezoneName(currentTimezone(time.hourOfDay));
   const cleanliness = state.master.location ? getCleanlinessLabel(state, state.master.location) : "";
@@ -1281,37 +1393,66 @@ export default function MorningMenuScreen({
     }
   };
 
-  const mainCommands: MenuCommand[] = [
-    { code: 100, label: "睁开眼睛", onClick: onOpenEyes },
-    { code: 102, label: "居住环境设定", onClick: () => setPanel("residence") },
-    { code: 120, label: "搬家", onClick: () => setPanel("move-home") },
-    { code: 101, label: "能力显示", onClick: () => setPanel("ability") },
-    { code: 103, label: "隙间商店", onClick: () => setPanel("gap-shop") },
-    { code: 104, label: "所持道具一览", onClick: () => setPanel("inventory") },
-    { code: 105, label: "收集", onClick: () => setPanel("collection") },
-    { code: 106, label: "入手的乐谱", disabled: true, reason: "乐谱列表尚未接入" },
-    { code: 107, label: "收到的礼物", onClick: () => setPanel("gifts") },
-    { code: 108, label: "钓鱼列表", onClick: () => setPanel("fishing-list") },
-    { code: 109, label: "狩猎兽列表", disabled: true, reason: "狩猎列表尚未接入" },
-    { code: 110, label: "捕虫列表", onClick: () => setPanel("bug-list") },
-    { code: 111, label: "固有料理列表", onClick: () => setPanel("special-dishes") },
-    { code: 112, label: "战斗履历列表", disabled: true, reason: "弹幕玩法已接入，但战斗履历尚未持久化" },
-    { code: 150, label: "实绩解除", disabled: true, reason: "实绩系统尚未接入" },
-    { code: 151, label: "农家设定", disabled: true, reason: "家庭菜园已接入，但农家职业设定尚未建模" },
-  ];
-  const systemCommands: MenuCommand[] = [
-    { code: 160, label: "重置委托", onClick: () => setPanel("reset-commission") },
-    { code: 161, label: "重置服装", onClick: () => setPanel("reset-clothes") },
-    { code: 3333, label: "日历", onClick: () => setPanel("calendar") },
-    { code: 400, label: "OPTION", onClick: () => setPanel("option") },
-    { code: 410, label: "采集列表", onClick: () => setPanel("gathering-list") },
-    { code: 411, label: "出现场所列表", onClick: () => setPanel("appearance") },
-    { code: 420, label: "单独指导", disabled: true, reason: "指导系统尚未接入" },
-    { code: 200, label: "SAVE", onClick: () => setPanel("save") },
-    { code: 300, label: "档案操作", onClick: () => setPanel("save") },
-    { code: 500, label: "UPDATE", disabled: true, reason: "外部更新器不在 Web runtime 内" },
-    { code: 600, label: "卖出筹码", disabled: true, reason: "筹码/赌场兑换尚未接入" },
-    { code: 666, label: "幻想乡之主", disabled: true, reason: "DLC 暂不做", dlc: true },
+  // 检查 L3 是否可用
+  const aiSettings = useAiStore((s) => s.settings);
+  // L3 stands on its own switch: it does not need the shell to replace authored
+  // kojo with AI, so those two toggles are not part of this gate.
+  const l3Available = aiSettings.enabled && aiSettings.narrativeEnabled &&
+    state.agentRuntime?.settings.masterEnabled === true;
+
+  // 菜单按功能分组 (2026-09-11): 不再按上游 1xx/2xx/4xx 的编号分段.
+  // [200] SAVE 已撤下, 存读档统一走 [300] 档案操作; [411] 出现场所列表
+  // 已撤下. 未接入 / DLC 暂不做的入口标 hidden —— 定义和 reason 留着,
+  // 恢复时去掉 hidden 即可.
+  const menuSections: { title: string; commands: MenuCommand[] }[] = [
+    {
+      title: "起居",
+      commands: [
+        { code: 100, label: "睁开眼睛", onClick: onOpenEyes, disabled: nightRunning, reason: nightRunning ? "少女祈祷中，请稍候…" : undefined },
+        { code: 102, label: "居住环境设定", onClick: () => setPanel("residence") },
+        { code: 120, label: "搬家", onClick: () => setPanel("move-home") },
+      ],
+    },
+    {
+      title: "情报一览",
+      commands: [
+        { code: 101, label: "能力显示", onClick: () => setPanel("ability") },
+        { code: 104, label: "所持道具一览", onClick: () => setPanel("inventory") },
+        { code: 105, label: "收集", onClick: () => setPanel("collection") },
+        { code: 106, label: "入手的乐谱", hidden: true, reason: "乐谱列表尚未接入" },
+        { code: 107, label: "收到的礼物", onClick: () => setPanel("gifts") },
+        { code: 108, label: "钓鱼列表", onClick: () => setPanel("fishing-list") },
+        { code: 109, label: "狩猎兽列表", hidden: true, reason: "狩猎列表尚未接入" },
+        { code: 110, label: "捕虫列表", onClick: () => setPanel("bug-list") },
+        { code: 111, label: "固有料理列表", onClick: () => setPanel("special-dishes") },
+        { code: 112, label: "战斗履历列表", hidden: true, reason: "弹幕玩法已接入，但战斗履历尚未持久化" },
+      ],
+    },
+    {
+      title: "商店与服务",
+      commands: [
+        { code: 103, label: "隙间商店", onClick: () => setPanel("gap-shop") },
+        { code: 410, label: "采集列表", onClick: () => setPanel("gathering-list") },
+        { code: 500, label: "UPDATE／立绘更新", onClick: () => setPanel("portrait-update") },
+      ],
+    },
+    {
+      title: "系统",
+      commands: [
+        { code: 150, label: "实绩解除", hidden: true, reason: "实绩系统尚未接入" },
+        { code: 151, label: "农家设定", hidden: true, reason: "家庭菜园已接入，但农家职业设定尚未建模" },
+        { code: 160, label: "重置委托", onClick: () => setPanel("reset-commission") },
+        { code: 161, label: "重置服装", onClick: () => setPanel("reset-clothes") },
+        { code: 300, label: "档案操作", onClick: () => setPanel("save") },
+        { code: 3333, label: "日历", onClick: () => setPanel("calendar") },
+        { code: 400, label: "OPTION", onClick: () => setPanel("option") },
+        { code: 420, label: "单独指导", hidden: true, reason: "指导系统尚未接入" },
+        { code: 113, label: "手动触发故事（L3）", onClick: () => setPanel("manual-narrative"), disabled: !l3Available || !onTriggerManualNarrative, reason: !l3Available ? "需要同时开启 AI、L3 叙事导演与 Agent Runtime" : undefined },
+        { code: 114, label: "L3 剧情状态 / 调试", onClick: () => setPanel("l3-status") },
+        { code: 600, label: "卖出筹码", hidden: true, reason: "筹码/赌场兑换尚未接入" },
+        { code: 666, label: "幻想乡之主", hidden: true, reason: "DLC 暂不做", dlc: true },
+      ],
+    },
   ];
 
   return (
@@ -1322,10 +1463,30 @@ export default function MorningMenuScreen({
           <span>
             第{day}日（{weekday}）　{dateLabel}　{timeText(state)} {tz ? `(${tz})` : ""}
           </span>
-          <span>所持金：￥{state.money.toLocaleString()}</span>
+          {!minimal && <span>所持金：￥{state.money.toLocaleString()}</span>}
         </div>
         <div className="morning-menu__rule" />
 
+        {nightRunning && (
+          <NightCycleStatusBlock
+            entries={nightCycleStatus!.entries}
+            onSkip={() => {
+              abandonNightCycleAction();
+              onOpenEyes();
+            }}
+          />
+        )}
+
+        {minimal ? (
+          /* Minimal wake-up page: wake/save and L3 generation/diagnostics. */
+          <div className="morning-menu__minimal-actions" data-testid="morning-minimal-actions">
+            <CommandButton command={{ code: 100, label: "睁开眼睛", onClick: onOpenEyes, disabled: nightRunning, reason: nightRunning ? "少女祈祷中，请稍候…" : undefined }} />
+            <CommandButton command={{ code: 300, label: "档案操作", onClick: () => setPanel("save") }} />
+            <CommandButton command={{ code: 113, label: "手动触发故事（L3）", onClick: () => setPanel("manual-narrative"), disabled: !l3Available || !onTriggerManualNarrative, reason: !l3Available ? "需要同时开启 AI、L3 叙事导演与 Agent Runtime" : undefined }} />
+            <CommandButton command={{ code: 114, label: "L3 剧情状态 / 调试", onClick: () => setPanel("l3-status") }} />
+          </div>
+        ) : (
+          <>
         <div className="morning-menu__bars">
           {["体力", "気力", "TSP", "精力"].map((label) => (
             <StatLine key={label} state={state.master.state} label={label} />
@@ -1333,12 +1494,12 @@ export default function MorningMenuScreen({
         </div>
 
         <div className="morning-menu__home">
-          <div>［自宅位置］：{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}</div>
+          <div>［住址］：{state.homeLocation ? formatLocation(state.homeLocation) : "未设置"}</div>
           <div>［当前位置］：{formatLocation(state.master.location)}</div>
           <div>［起床时间］：{minuteText(masterWakeMinute(state))}</div>
           <div>
-            ［天气］：{formatRegionWeather(regionWeather)}（{regionWeather.regionName}）　
-            风:{formatRegionWind(regionWeather)}　天象:{formatRegionRainbow(regionWeather)}　
+            ［天气］：{formatRegionWeather(regionWeather)}（{regionWeather.regionName}）
+            风:{formatRegionWind(regionWeather)}　天象:{formatRegionRainbow(regionWeather)}
             {formatTemperature(getCurrentTemperature(state))}
           </div>
           {cleanliness && <div>［清洁度］：{cleanliness}</div>}
@@ -1347,15 +1508,19 @@ export default function MorningMenuScreen({
         <p className="morning-menu__tip">
           温馨提示：有些素材不在特定季节或特定地点就无法采集到。
         </p>
+
+        {menuSections.map((section) => (
+          <CommandSection key={section.title} title={section.title} commands={section.commands} />
+        ))}
+          </>
+        )}
         {saveMessage && (
           <p className="morning-menu__save-message" data-testid="morning-save-message">
             {saveMessage}{savedText ? `（上次保存：${savedText}）` : ""}
           </p>
         )}
 
-        <CommandSection title="主菜单" commands={mainCommands} />
-        <CommandSection title="系统菜单" commands={systemCommands} />
-
+        {panel === "l3-status" && <ExComPanel state={state} tool="l3-status" onClose={() => setPanel(null)} />}
         {panel === "ability" && (
           <ExComPanel
             state={state}
@@ -1406,12 +1571,22 @@ export default function MorningMenuScreen({
             <BugListPanel state={state} onRelease={onReleaseBug} onMaterialize={onMaterializeBug} />
           </PanelShell>
         )}
-        {panel === "appearance" && (
-          <PanelShell title="出现场所列表" onClose={() => setPanel(null)}>
-            <AppearancePanel state={state} />
-          </PanelShell>
-        )}
-        {panel === "save" && (
+        {panel === "save" && (minimal ? (
+          /* Minimal: the save slots render inline in the page — no modal box. */
+          <div className="morning-menu__inline-save" data-testid="morning-inline-save">
+            <h3 className="morning-menu__field-title">SAVE / LOAD（3 存档位）</h3>
+            <SavePanel
+              currentInfo={formatSaveInfo(state)}
+              slots={saveSlots}
+              onRefresh={onRefreshSlots}
+              onSave={saveToSlot}
+              onLoad={onLoadSlot ? loadFromSlot : undefined}
+            />
+            <button type="button" className="morning-menu__choice" data-testid="morning-inline-save-close" onClick={() => setPanel(null)}>
+              [收起]
+            </button>
+          </div>
+        ) : (
           <PanelShell title="SAVE / LOAD（3 存档位）" onClose={() => setPanel(null)}>
             <SavePanel
               currentInfo={formatSaveInfo(state)}
@@ -1421,9 +1596,9 @@ export default function MorningMenuScreen({
               onLoad={onLoadSlot ? loadFromSlot : undefined}
             />
           </PanelShell>
-        )}
+        ))}
         {panel === "calendar" && (
-          <PanelShell title="日历" onClose={() => setPanel(null)}>
+          <PanelShell title="日历" variant="calendar" onClose={() => setPanel(null)}>
             <CalendarPanel state={state} />
           </PanelShell>
         )}
@@ -1456,10 +1631,22 @@ export default function MorningMenuScreen({
           </PanelShell>
         )}
         {panel === "option" && (
-          <PanelShell title="OPTION" onClose={() => setPanel(null)}>
-            <OptionPanel
+          <OptionsDialog
+            state={state}
+            onTogglePortraitKind={onTogglePortraitKind}
+            onClose={() => setPanel(null)}
+          />
+        )}
+        {panel === "portrait-update" && (
+          <PanelShell title="UPDATE／立绘更新" onClose={() => setPanel(null)}>
+            <PortraitUpdatePanel state={state} onSetPortraitVariant={onSetPortraitVariant} />
+          </PanelShell>
+        )}
+        {panel === "manual-narrative" && (
+          <PanelShell title="手动触发故事（L3 叙事导演）" onClose={() => setPanel(null)}>
+            <ManualNarrativePanel
               state={state}
-              onTogglePortraitKind={onTogglePortraitKind}
+              onTriggerNarrative={onTriggerManualNarrative ?? (async () => false)}
               onClose={() => setPanel(null)}
             />
           </PanelShell>

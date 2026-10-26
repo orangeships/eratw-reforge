@@ -77,7 +77,7 @@ export function currentTimezone(hourOfDay: number): number {
 
 /**
  * `@CHANGE_TIMEZONE` 8-division display names (`日時天候管理.ERB:141-164`).
- * Indexed 1..8: 未明 / 明け方 / 朝 / 昼前 / 昼過ぎ / 夕方 / 夜のはじめ頃 / 夜遅く.
+ * Indexed 1..8, translated from the upstream labels in `日時天候管理.ERB`.
  *
  * NOTE: eraTW's status line shows a FINER classical form `(卯时三点-晓-)`
  * via `GET_CLASSICAL_HOUR` (PANIMATION_TOHO.ERB:283) — the twelve-時辰 +
@@ -85,7 +85,7 @@ export function currentTimezone(hourOfDay: number): number {
  * name is the coarser but faithful `現在時間帯` label until then.
  */
 const TIMEZONE_NAMES = [
-  "", "未明", "明け方", "朝", "昼前", "昼過ぎ", "夕方", "夜のはじめ頃", "夜遅く",
+  "", "凌晨", "黎明", "早晨", "上午", "午后", "傍晚", "入夜", "深夜",
 ] as const;
 
 /** Display name for a `currentTimezone` band (1..8). */
@@ -205,8 +205,8 @@ const WEATHER_SCENERY = [
 
 /**
  * Weather scenery feedback for callers that explicitly request it. eraTW's
- * `@COM495 空を眺める` body has no text (just TIME+1); COMF495 deliberately
- * uses weather-neutral narration so it does not invent a weather report.
+ * `@COM495 空を眺める` body has no text (just TIME+1); its separate
+ * `@MESSAGE_COM495` describes the current sky and weather.
  * Deterministic: same game-moment → same scene.
  *
  * Legacy variant taking `TimeSlot` only — kept for the few direct tests.

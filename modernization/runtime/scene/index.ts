@@ -6,7 +6,12 @@
  * (`selectScene`).
  */
 
-export type { SceneAsset, SceneExit } from "./types.js";
+export {
+  SCENE_INTRO_DIAGNOSTIC_PREFIX,
+  isMissingSceneIntro,
+  type SceneAsset,
+  type SceneExit,
+} from "./types.js";
 export { selectPresentCharas } from "./presence.js";
 export {
   parseSceneAsset,

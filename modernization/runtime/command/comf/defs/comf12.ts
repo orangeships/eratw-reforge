@@ -17,34 +17,56 @@
  *   - HETEROSEX EXP both += 5 (ERB 55-62) — deferred
  *
  * **DEFERRED (documented):**
- *   - Time-stop branch (ERB 21-24) — TSP drain + reduced sources.
- *   - @EQUIP_COM12 continuation block (ERB 68-101) — fires every turn
- *     while TEQUIP:揉胸 is on; not modeled (per-command, mid-scene).
+ *   - @EQUIP_COM12 continuation SOURCE/BASE/TSP/EXP is in source-check.ts
+ *     and runs while TEQUIP:揉胸 is active.
  *   - TCVAR:116 / TCVAR:PLAYER:108 (ERB 13-15) — markers.
  *   - HETEROSEX 同性愛 EXP (ERB 54-62) — gender-pair helper deferred.
- *   - TEQUIP:揉胸 toggle (ERB 7) — equipment state machine not modeled.
- *   - Note: COMF12 has no SOURCE 反感/逸脱 persistence from the
- *     @EQUIP_COM12 arm — captured in the initial fire only.
  *
  * **No outcome roll** — pinned 通常; timeCost 0.
  */
 
-import type { HandlerEntry } from "../../types.js";
-import { ABL_ID, SOURCE_ID, TALENT_ID } from "../../../state/settlement.js";
+import type { ExecCheck, HandlerEntry } from "../../types.js";
+import { ABL_ID, BASE_ID, CFLAG_ID, FLAG_ID, SOURCE_ID, TALENT_ID, TEQUIP_ID } from "../../../state/settlement.js";
+import { isEquipped } from "../../../state/tequip.js";
 import { makeComfHandler } from "../make-comf-handler.js";
 import type { ComfDef } from "../comf-def.js";
+
+const com12Check: ExecCheck = (ctx) => {
+  const target = ctx.state.charas[ctx.target];
+  if (!target) return { ok: false, reason: { kind: "precondition", message: "需要在场的对象。" } };
+  if (isEquipped(target, TEQUIP_ID.乳房電極)) {
+    return { ok: false, reason: { kind: "precondition", message: "对象装备乳房电极时不能揉胸。" } };
+  }
+  if (target.state.TALENT[TALENT_ID.胸围] === -2) {
+    return { ok: false, reason: { kind: "precondition", message: "对象的身体条件不适合这一动作。" } };
+  }
+  return { ok: true };
+};
 
 export const comf12Def: ComfDef = {
   commandNo: 12,
   label: "胸揉み",
+  toggleTequip: TEQUIP_ID.揉胸,
+  toggleOffNarration: "停止揉弄对象的胸部。",
+  canExecute: com12Check,
+  hModeMenuCheck: com12Check,
 
   maxRoll: 100,
   greatThreshold: 0,
   failThreshold: 101,
 
   timeCost: 0,
+  downbase: (c): Record<number, number> => c.next.flagStore[FLAG_ID.時間停止] === 1 && c.tCflag(CFLAG_ID.時間停止行動) === 0
+    ? { [BASE_ID.TSP]: 20 }
+    : {},
+  targetDownbase: (c): Record<number, number> => c.next.flagStore[FLAG_ID.時間停止] === 1 && c.tCflag(CFLAG_ID.時間停止行動) === 0
+    ? {}
+    : { [BASE_ID.体力]: 10, [BASE_ID.気力]: 50 },
 
   buildSources: (c) => {
+    if (c.next.flagStore[FLAG_ID.時間停止] === 1 && c.tCflag(CFLAG_ID.時間停止行動) === 0) {
+      return { [SOURCE_ID.快Ｂ]: c.mAbl(ABL_ID.指) * 20 + 30 };
+    }
     // ERB 29-32: base (no base 快Ｂ — derived entirely from ABL:PLAYER:指).
     let kaiB = 0;
     let jouai = 15;

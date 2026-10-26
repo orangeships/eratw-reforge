@@ -19,10 +19,11 @@
  *   - L1  adjustments: 陥落 +1; 反発刻印 -1; 憤怒≥500 -1; 情緒≥650 +1; 嫉妬+デート → 憤怒
  *   - L2  hover derivation
  *   - L3  resource-degradation → web adapter
- *   - L4  special overrides: 発情 / 睡眠 / トロ顔
+ *   - L4  special overrides: 発情 / 睡眠 / トロ顔 / イキ顔
  *   - L5  IMAGE_CHARA_OVERRIDE — DEFERRED (unported)
- *   - L6  command layer (性交/自慰/愛撫) — logic mapped, but the face sheet has
- *        only 裸 versions for these → render falls back to normal (documented)
+ *   - L6  command-face aliases (性交/自慰/愛撫) — their assets are not yet
+ *        indexed in the Web bundle; retain the L4 state expression. The H
+ *        view selects an authored DISPLAY_COM_IMAGE pose separately.
  *   - L7  RAND swap — DEFERRED (non-deterministic); IMAGE_CHARA_OVERRIDE COM — DEFERRED
  */
 
@@ -30,20 +31,26 @@ import type { GameState } from "../state/game-state.js";
 import {
   BASE_ID,
   CFLAG_ID,
+  EX_ID,
   FLAG_ID,
   MARK_ID,
   PALAM_ID,
   TALENT_ID,
   TCVAR_ID,
-  TEQUIP_ID,
   palamLevel,
 } from "./settlement.js";
 import { getTflag } from "./tflag.js";
 import { computeConsentJudgement } from "./attitude.js";
-import { readTequip } from "./tequip.js";
 
 /** Candidate expressions the modern render layer can display. */
-export type CoreExpression = "normal" | "smile" | "angry" | "sleep" | "lust";
+export type CoreExpression =
+  | "normal"
+  | "smile"
+  | "angry"
+  | "sleep"
+  | "lust"
+  | "aroused"
+  | "climax";
 
 export interface ExpressionCoreResult {
   /** The idle (base) face. */
@@ -83,15 +90,6 @@ function emotionHigh(state: GameState, charaNum: number): boolean {
 /** The current focused TARGET of this command frame (0 when none). */
 function currentTarget(state: GameState): number {
   return state.turnContext?.frame?.target ?? state.turnContext?.frame?.actor ?? 0;
-}
-
-/** Whether the chara is currently in a sex act (IS_SEXING — TEQUIP:Ｖ/Ａ性交).
- *  Sex-partner state lives in `state.TEQUIP` (per-chara), never EQUIP. */
-function isSexing(state: GameState, charaNum: number): boolean {
-  const slot = charaNum === 0 ? state.master : state.charas[charaNum];
-  if (!slot) return false;
-  return readTequip(slot, TEQUIP_ID.Ｖ性交) !== 0 ||
-    readTequip(slot, TEQUIP_ID.Ａ性交) !== 0;
 }
 
 /**
@@ -169,32 +167,19 @@ export function calcExpressionCore(
     exHover = "sleep";
   } else if (
     (C[CFLAG_ID.诶嘿嘿] ?? 0) !== 0 &&
-    palamLevel(P[PALAM_ID.欲情] ?? 0, 10) >= 7 &&
-    toroFaceAvailable()
+    palamLevel(P[PALAM_ID.欲情] ?? 0, 10) >= 7
   ) {
-    // トロ顔 — no base-sheet resource; degrade to normal (L3).
-    exBase = "normal";
-    exHover = "normal";
+    // QOL_IMAGE checks NOWEX:TotalEX after selecting トロ顔. The resource
+    // adapter applies the same fallback when a crop is missing: イキ顔 → トロ顔 → base.
+    const totalEx = state.turnContext?.frame?.nowExByChara[charaNum]?.[EX_ID.TotalEX] ?? 0;
+    exBase = totalEx >= 5 ? "climax" : "aroused";
+    exHover = exBase;
   }
 
-  // L6 — command layer (QOL_IMAGE.ERB:1489-1514). Only when NOT time-stopped,
-  // chara IS the target, and not sleeping. The face sheet has only 裸 versions
-  // of 性交/自慰/愛撫 (not ported) → these candidates degrade to normal by the
-  // web adapter; the command selection itself is faithfully evaluated.
-  const timeStopped = (state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
-  if (!timeStopped && charaNum === currentTarget(state) && (C[CFLAG_ID.睡眠] ?? 0) === 0) {
-    const sel = state.turnContext?.selectCom ?? state.turnContext?.frame?.commandNo;
-    if (sel !== undefined) {
-      if (isSexing(state, charaNum)) {
-        exBase = "lust"; // 性交 — 裸 face only → degraded downstream
-      } else if (sel <= 15) {
-        exBase = sel === 9 ? "lust" : "lust"; // 自慰/愛撫 — 裸 face only → degraded
-      } else if ((sel >= 60 && sel <= 79) || (sel >= 317 && sel <= 323)) {
-        exBase = "lust"; // 性交 — degraded downstream
-      }
-      exHover = exBase;
-    }
-  }
+  // L6 — QOL_IMAGE's command-face expression names are distinct from 発情.
+  // They are not indexed in the Web portrait bundle yet, so keep the previous
+  // state candidate instead of incorrectly painting an arousal face for every
+  // sex command. The H view handles a matching DISPLAY_COM_IMAGE pose.
 
   // L7 RAND swap — DEFERRED (non-deterministic); keep the stable base.
 
@@ -202,10 +187,8 @@ export function calcExpressionCore(
 }
 
 // ---------------------------------------------------------------------------
-// Resource-availability probes. These are static facts about the sprite sheet
-// coverage (not bundle-dependent): the modern face sheet carries 通常/笑顔/憤怒/
-// 発情 for most chars and 睡眠 for ~30; トロ顔/イキ顔/性交/自慰/愛撫 are 裸-only
-// (unported). Probes keep the core honest without importing the bundle.
+// Resource availability belongs to the rendering adapter. Upstream coverage
+// varies by character, clothing, portrait package and expression.
 // ---------------------------------------------------------------------------
 
 function lustFaceAvailable(): boolean {
@@ -214,10 +197,6 @@ function lustFaceAvailable(): boolean {
 function sleepFaceAvailable(): boolean {
   return true; // 睡眠 face exists for ~30 chars; bundle omits when absent.
 }
-function toroFaceAvailable(): boolean {
-  return false; // トロ顔 只有 裸/差分 — unported, degrade to normal.
-}
-
 // Re-export the flag id so the web layer can flip the kind without importing
 // settlement directly (forbidden-names guard).
 export { FLAG_ID };

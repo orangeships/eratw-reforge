@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import { usePreGameStore } from "../../state/pre-game-store.js";
+import { setSceneBackgroundEnabled, useSceneBackgroundEnabled } from "../../state/scene-display-settings.js";
 import {
   hasPenis,
   PENIS_SHAPE_OPTIONS,
@@ -37,6 +38,7 @@ export default function NewGameOptions(props: NewGameOptionsProps) {
   const draft = usePreGameStore((s) => s.draft);
   const setDraft = usePreGameStore((s) => s.setDraft);
   const [editingPenis, setEditingPenis] = useState(false);
+  const sceneBackgroundEnabled = useSceneBackgroundEnabled();
   const name = draft.callName.trim() || "主人公";
   const hasMaleOrgan = hasPenis(draft.gender);
   const gutsText = draft.noGuts ? "没有告白的胆量" : "有告白的胆量";
@@ -88,6 +90,13 @@ export default function NewGameOptions(props: NewGameOptionsProps) {
         </button>
         <button type="button" data-testid="newgame-option-5" onClick={props.onEditResidence}>
           [5] {name}居住在{homeLabel(draft.homeLocation)}
+        </button>
+        <button
+          type="button"
+          data-testid="newgame-option-6"
+          onClick={() => setSceneBackgroundEnabled(!sceneBackgroundEnabled)}
+        >
+          [6] 场景背景：{sceneBackgroundEnabled ? "开启" : "关闭"}
         </button>
       </div>
 

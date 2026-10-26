@@ -33,6 +33,16 @@ interface CharaMoveSpotsBundle {
     string,
     { pIds: number[]; wildcard: boolean } | { wildcard: true } | undefined
   >;
+  blockedRoomsByChara?: Record<string, { roomIds: number[]; all: boolean }>;
+  qolAreaDestinations?: Record<
+    string,
+    { roomId: number; weight: number | "cleanliness" }[]
+  >;
+}
+
+export interface QolVisitorRoomCandidate {
+  roomId: number;
+  weight: number | "cleanliness";
 }
 
 let table: CharaMoveSpotsBundle | null = null;
@@ -65,4 +75,22 @@ export function canAppearAtSpot(
     return entry.pIds.includes(Number(spotId));
   }
   return null;
+}
+
+/** QOL `QOL_VISITOR_ADD_LOCATION`'s `CHARAMOVE_DATA_NN(4, room) < 0` gate. */
+export function canMoveToQolRoom(
+  charaNum: number,
+  roomId: number,
+): boolean | null {
+  if (table === null) return null;
+  const entry = table.blockedRoomsByChara?.[String(charaNum)];
+  if (!entry) return true;
+  return !entry.all && !entry.roomIds.includes(roomId);
+}
+
+/** Exact room weights extracted from upstream QOL_VISITOR_CHECK_AREA. */
+export function qolVisitorRoomsForArea(
+  areaId: number,
+): readonly QolVisitorRoomCandidate[] {
+  return table?.qolAreaDestinations?.[String(areaId)] ?? [];
 }

@@ -13,10 +13,10 @@
  * needs an item-id→name table; 外出 needs the out-of-shrine locations built.
  * Those render as disabled buttons with a reason, not fake actions.
  */
-import type { GameState } from "../../../modernization/runtime/state/index.js";
-import type { DatePlanEvent } from "../../../modernization/runtime/state/game-state.js";
+import type { BanquetEventInstance, GameState } from "../../../modernization/runtime/state/index.js";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import NarrativeStatusPanel from "../ai/NarrativeStatusPanel.js";
 import { getDish } from "../../../modernization/runtime/state/dish.js";
 import { dishFreshnessStatus } from "../../../modernization/runtime/state/dish-freshness.js";
 import {
@@ -35,11 +35,11 @@ import {
   PALAM_STAT_KEYS,
   NAMED_STAT_KEYS,
   getCleanlinessLabel,
-  weekdayName,
+  weekdayLabelZh,
   seasonOf,
   dateOf,
   monthName,
-  festivalOf,
+  projectCalendarAgenda,
 } from "../../../modernization/runtime";
 import {
   formatTemperature,
@@ -49,28 +49,57 @@ import {
 import { getCurrentTemperature } from "../../../modernization/runtime/weather/temperature.js";
 import {
   currentRegionWeather,
-  formatRegionRainbow,
   formatRegionWeather,
-  formatRegionWind,
 } from "../../../modernization/runtime/weather/region-override.js";
 import { resolveWhereabouts } from "../../../modernization/runtime/world/whereabouts.js";
 import {
-  JOB_LABEL,
-  WORK_MANIFEST,
-  resolveWorkEntry,
-} from "../../../modernization/runtime/world/work/work-manifest.js";
+  buildAbilityGrid,
+  type AbilityGridValueCell,
+} from "../../../modernization/runtime/state/chara-info-state.js";
+import type { CalendarAgendaItem } from "../../../modernization/runtime/world/calendar-agenda.js";
 
-export type ExComTool = "ability-master" | "ability-target" | "calendar" | "yogore" | "living" | "whereabouts";
+export type ExComTool = "ability-master" | "ability-target" | "calendar" | "yogore" | "living" | "whereabouts" | "l3-status";
 
 const RELATION_LABELS = ["好感度", "信頼度", "情緒", "理性", "憤怒"] as const;
 
 type Slot = GameState["master"]["state"];
 
-/** 体力/気力/酒/TSP/精力 bars — the same accessor the status bar uses. */
-function AbilityView({ slot, name, isTarget }: { slot: Slot; name: string; isTarget: boolean }) {
+function excomAbilityTone(value: number, maxRank: 6 | 99): string {
+  const ratio = value / maxRank;
+  if (value <= 0) return "ci-panel__ability-cell--zero";
+  if (ratio >= 0.8) return "ci-panel__ability-cell--hi";
+  if (ratio >= 0.4) return "ci-panel__ability-cell--mid";
+  return "ci-panel__ability-cell--lo";
+}
+
+function ExComAbilityGrid({ grid }: { grid: AbilityGridValueCell[][] }) {
+  return (
+    <div className="ci-panel__ability-grid" data-testid="excom-ability-grid">
+      {grid.map((row, ri) => (
+        <div key={ri} className="ci-panel__ability-row">
+          {row.map((cell, ci) => cell.kind === "placeholder" || cell.kind === "hidden" ? (
+            <span key={ci} className="ci-panel__ability-cell ci-panel__ability-cell--empty" />
+          ) : (
+            <span key={ci} className={`ci-panel__ability-cell ${excomAbilityTone(cell.value ?? 0, cell.maxRank)}`}>
+              <span className="ci-panel__ability-name">{cell.name}</span>
+              <span className="ci-panel__ability-val">{cell.value ?? 0}</span>
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Base stats, status parameters, and the runtime-projected ability grid. */
+function AbilityView({ slot, name, isTarget, abilityGrid }: { slot: Slot; name: string; isTarget: boolean; abilityGrid: AbilityGridValueCell[][] }) {
   return (
     <div className="excom-panel__ability" data-testid="excom-ability">
       <div className="excom-panel__who">{name}</div>
+      <div className="excom-panel__ability-levels">
+        <div className="excom-panel__subtitle">能力等级</div>
+        <ExComAbilityGrid grid={abilityGrid} />
+      </div>
       {NAMED_STAT_KEYS.map((label) => {
         const { value, max } = getNamedStat(slot, label);
         const fill = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -135,16 +164,20 @@ export function CalendarDetails({ state, onCancelAppointment }: { state: GameSta
   const hh = String(time.hourOfDay).padStart(2, "0");
   const mm = String(minutes).padStart(2, "0");
   const rows: Array<[string, string]> = [
-    ["第几日", `第 ${time.dayIndex + 1} 日`],
-    ["月／日", `${monthName(seasonOf(time))} ${dateOf(time)}日`],
-    ["星期", weekdayName(time.dayIndex)],
-    ["时间", `${timezoneName(currentTimezone(time.hourOfDay))}　${hh}:${mm}`],
-    ["天候", `${formatRegionWeather(regionWeather)}（${regionWeather.regionName}）`],
-    ["風・天象", `${formatRegionWind(regionWeather)} / ${formatRegionRainbow(regionWeather)}`],
-    ["气温", formatTemperature(getCurrentTemperature(state))],
+    ["今天", `${monthName(seasonOf(time))}${dateOf(time)}日（${weekdayLabelZh(time.dayIndex)}）`],
+    ["时刻", `${timezoneName(currentTimezone(time.hourOfDay))} ${hh}:${mm}`],
+    ["天气", `${formatRegionWeather(regionWeather)} · ${formatTemperature(getCurrentTemperature(state))}`],
   ];
-  const upcoming = projectCalendarDays(state, 7);
-  const appointments = (state.worldEvents ?? []).filter((event): event is DatePlanEvent => event.kind === "date-plan" && ["scheduled", "waiting"].includes(event.phase));
+  const upcoming = projectCalendarAgenda(state, 7);
+  const distantBanquet = (state.worldEvents ?? [])
+    .filter((event): event is BanquetEventInstance => event.kind === "banquet"
+      && event.phase !== "resolved"
+      && event.phase !== "cancelled"
+      && Math.floor(event.scheduledStartTick / 1440) >= time.dayIndex + 7)
+    .sort((a, b) => a.scheduledStartTick - b.scheduledStartTick)[0];
+  const distantBanquetDay = distantBanquet
+    ? projectCalendarAgenda(state, Math.floor(distantBanquet.scheduledStartTick / 1440) - time.dayIndex + 1).at(-1)
+    : undefined;
   return (
     <div data-testid="excom-calendar-body">
       <dl className="excom-panel__kv">
@@ -156,30 +189,59 @@ export function CalendarDetails({ state, onCancelAppointment }: { state: GameSta
         ))}
       </dl>
       <div className="excom-panel__subtitle">未来七日</div>
-      <div data-testid="excom-calendar-appointments">
-        {appointments.length === 0 ? <span>无约会预约</span> : appointments.map((event) => (
-          <div key={event.id}>
-            <span>{state.charas[event.partner]?.callName ?? `#${event.partner}`}　{event.scheduledStartTick != null ? minuteLabel(event.scheduledStartTick % 1440) : "时间未定"}　{event.location ?? "地点未定"}　赴约窗口 -30/+60分</span>
-            {onCancelAppointment && <button type="button" data-testid={`cancel-date-${event.id}`} onClick={() => onCancelAppointment(event.id)}>[取消]</button>}
-          </div>
-        ))}
-      </div>
       <div className="excom-panel__calendar-wrap" data-testid="excom-calendar-upcoming">
         <table className="excom-panel__calendar-table">
-          <thead><tr><th>日期</th><th>节日</th><th>公开日程</th></tr></thead>
+          <thead><tr><th>日期</th><th>活动安排 / 参与角色</th></tr></thead>
           <tbody>{upcoming.map((day) => (
             <tr key={day.dayIndex} className={day.dayIndex === time.dayIndex ? "is-today" : undefined}>
-              <th scope="row">第 {day.dayIndex + 1} 日<br /><small>{monthName(day.season)}{day.date}日（{weekdayName(day.dayIndex)}）</small></th>
-              <td>{day.festival || "—"}</td>
-              <td>{day.work.length > 0 ? day.work.map((entry) => (
-                <div key={`${entry.charaNum}:${entry.startMin}:${entry.jobType}`}>
-                  {minuteLabel(entry.startMin)}-{minuteLabel(entry.endMin)}　{entry.name} · {JOB_LABEL[entry.jobType] ?? "工作"}　{entry.location}
-                </div>
-              )) : "—"}</td>
+              <th scope="row"><strong>{day.date}日</strong><small>{weekdayLabelZh(day.dayIndex)}</small></th>
+              <td>
+                {day.items.length === 0 ? <span className="excom-panel__calendar-empty">—</span> : groupCalendarItems(day.items).map((group) => {
+                  const item = group.items[0]!;
+                  const participants = group.items.flatMap((agendaItem) => agendaItem.participantIds.map((id) => ({
+                    key: `${agendaItem.id}:${id}`,
+                    name: calendarParticipantName(state, id),
+                    title: [calendarTimeLabel(agendaItem), agendaItem.location ?? ""]
+                      .filter(Boolean).join(" · "),
+                  })));
+                  return (
+                    <div key={group.key} className={`excom-panel__calendar-item excom-panel__calendar-item--${group.kind}`}>
+                      <span className="excom-panel__calendar-label">【{group.label}】</span>
+                      {participants.length > 0 && (
+                        <span className="excom-panel__calendar-participants">
+                          {participants.map((participant) => (
+                            <span key={participant.key} className="excom-panel__calendar-person" title={participant.title || undefined}>
+                              {participant.name}
+                            </span>
+                          ))}
+                        </span>
+                      )}
+                      {item.kind === "narrative" && (item.arcId || item.narrativeStatus) && (
+                        <span className="excom-panel__calendar-meta">
+                          {[item.arcId ? "剧情线" : "", item.narrativeStatus ?? ""].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
+                      {item.kind === "date" && item.worldEventId && onCancelAppointment && (
+                        <button
+                          type="button"
+                          data-testid={`cancel-date-${item.worldEventId}`}
+                          onClick={() => onCancelAppointment(item.worldEventId!)}
+                        >[取消]</button>
+                      )}
+                    </div>
+                  );
+                })}
+              </td>
             </tr>
           ))}</tbody>
         </table>
       </div>
+      {distantBanquet && distantBanquetDay && (
+        <p className="excom-panel__calendar-distant" data-testid="excom-calendar-distant-banquet">
+          远期宴会　{distantBanquetDay.date}日（{weekdayLabelZh(distantBanquetDay.dayIndex)}）　
+          {minuteLabel(distantBanquet.scheduledStartTick % 1440)}　{distantBanquet.venue}
+        </p>
+      )}
     </div>
   );
 }
@@ -188,45 +250,42 @@ function minuteLabel(minute: number): string {
   return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 }
 
-function nextCalendarDate(season: number, date: number): { season: number; date: number } {
-  if (date < 31) return { season, date: date + 1 };
-  return { season: season === 4 ? 1 : season + 1, date: 1 };
+function calendarTimeLabel(item: CalendarAgendaItem): string {
+  if (item.startMinute === undefined) return "";
+  const start = minuteLabel(item.startMinute);
+  return item.endMinute === undefined ? start : `${start}–${minuteLabel(item.endMinute)}`;
 }
 
-function projectCalendarDays(state: GameState, count: number) {
-  const result: Array<{
-    dayIndex: number;
-    season: number;
-    date: number;
-    festival: string;
-    work: Array<{ charaNum: number; name: string; startMin: number; endMin: number; jobType: number; location: string }>;
-  }> = [];
-  let season = seasonOf(state.time);
-  let date = dateOf(state.time);
-  for (let offset = 0; offset < count; offset++) {
-    const dayIndex = state.time.dayIndex + offset;
-    // Conditions in WORK_MANIFEST read the supplied state's day/time. Build a
-    // throwaway projection so this information display never mutates runtime.
-    const projected = { ...state, time: { ...state.time, dayIndex, season, date } };
-    const work = WORK_MANIFEST.flatMap((entry) => {
-      const ctx = { state: projected, dayIndex };
-      if (!entry.cond(ctx)) return [];
-      const resolved = resolveWorkEntry(entry, ctx);
-      if (!resolved) return [];
-      const slot = state.charas[entry.charaNum];
-      return [{
-        charaNum: entry.charaNum,
-        name: slot?.callName ?? `#${entry.charaNum}`,
-        startMin: resolved.startMin,
-        endMin: resolved.endMin,
-        jobType: resolved.jobType,
-        location: resolved.location,
-      }];
-    });
-    result.push({ dayIndex, season, date, festival: festivalOf(season, date), work });
-    ({ season, date } = nextCalendarDate(season, date));
+interface CalendarAgendaGroup {
+  key: string;
+  kind: CalendarAgendaItem["kind"];
+  label: string;
+  items: CalendarAgendaItem[];
+}
+
+function groupCalendarItems(items: CalendarAgendaItem[]): CalendarAgendaGroup[] {
+  const groups: CalendarAgendaGroup[] = [];
+  const workGroups = new Map<string, CalendarAgendaGroup>();
+  for (const item of items) {
+    if (item.kind !== "work") {
+      groups.push({ key: item.id, kind: item.kind, label: item.label, items: [item] });
+      continue;
+    }
+    const key = `${item.kind}:${item.label}`;
+    const group = workGroups.get(key);
+    if (group) {
+      group.items.push(item);
+    } else {
+      const next = { key, kind: item.kind, label: item.label, items: [item] };
+      workGroups.set(key, next);
+      groups.push(next);
+    }
   }
-  return result;
+  return groups;
+}
+
+function calendarParticipantName(state: GameState, charaNum: number): string {
+  return charaNum === 0 ? state.master.callName ?? "主人公" : state.charas[charaNum]?.callName ?? `#${charaNum}`;
 }
 
 function YogoreView({ state }: { state: GameState }) {
@@ -360,6 +419,7 @@ const TITLES: Record<ExComTool, string> = {
   yogore: "污渍显示",
   living: "生活与物品",
   whereabouts: "所在地察觉",
+  "l3-status": "L3 剧情状态 / 调试",
 };
 
 export default function ExComPanel({
@@ -380,14 +440,16 @@ export default function ExComPanel({
 }) {
   let body: React.ReactNode;
   if (tool === "ability-master") {
-    body = <AbilityView slot={state.master.state} name="主角" isTarget={false} />;
+    body = <AbilityView slot={state.master.state} name="主角" isTarget={false} abilityGrid={buildAbilityGrid(state, 0)} />;
   } else if (tool === "ability-target") {
     const slot = target !== undefined ? state.charas[target] : undefined;
     body = slot ? (
-      <AbilityView slot={slot.state} name={slot.callName ?? `#${target}`} isTarget />
+      <AbilityView slot={slot.state} name={slot.callName ?? `#${target}`} isTarget abilityGrid={buildAbilityGrid(state, slot.charaNum)} />
     ) : (
       <p className="excom-panel__note" data-testid="excom-no-target">未选择对象。</p>
     );
+  } else if (tool === "l3-status") {
+    body = <NarrativeStatusPanel state={state} />;
   } else if (tool === "calendar") {
     body = <CalendarDetails state={state} onCancelAppointment={onCancelAppointment} />;
   } else if (tool === "yogore") {
@@ -409,7 +471,7 @@ export default function ExComPanel({
   return createPortal(
     <div className="excom-panel__scrim" data-testid="excom-panel-scrim" onClick={onClose}>
       <div
-        className={`excom-panel${tool === "whereabouts" ? " excom-panel--whereabouts" : ""}`}
+        className={`excom-panel${tool === "whereabouts" ? " excom-panel--whereabouts" : ""}${tool === "calendar" ? " excom-panel--calendar" : ""}${tool === "l3-status" ? " excom-panel--l3" : ""}`}
         data-testid="excom-panel"
         role="dialog"
         aria-label={TITLES[tool]}

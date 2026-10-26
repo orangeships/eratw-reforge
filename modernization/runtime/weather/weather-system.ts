@@ -31,6 +31,7 @@ import { applyAbnormalWeather } from "./abnormal-weather.js";
 import { runQolChangeWeatherSystem } from "./change-weather.js";
 import { qolSetRegionWeather } from "./region-override.js";
 import { updateNowWeatherControl } from "./weather-control.js";
+import { applyScheduledWeatherIncidents } from "./narrative-incident.js";
 
 /* -------------------------------------------------------------- *
  * 主入口                                                          *
@@ -60,23 +61,31 @@ export function runWeatherSystemTick(
   const w = ensureWeatherState(state);
   const curHour = state.time.hourOfDay;
   const curBand = currentTimezone(curHour);
+  const hadActiveIncident = (state.scheduledWeatherIncidents ?? []).some((entry) => entry.status === "active");
+  const incidentEvents = applyScheduledWeatherIncidents(state, _now);
+  const incidentEnded = hadActiveIncident && !(state.scheduledWeatherIncidents ?? []).some((entry) => entry.status === "active");
 
   /* 时段未跨变 → 不做事（与上游 SIF WEATHER_TIMEZOME != 現在時間帯 一致） */
   const prevBand = currentTimezone(prevHourOfDay);
-  if (curBand === prevBand) {
-    return [];
+  if (curBand === prevBand && !incidentEnded) {
+    return incidentEvents;
   }
 
   /* 记录新时段（`日時天候管理.ERB:177-179`） */
   w.weatherTimezone = curBand;
 
   const events: ObservationEvent[] = [];
+  events.push(...incidentEvents);
 
   /* S3: refresh NOW_WEATHER_CONTROL from forecast state, then dispatch S2. */
   updateNowWeatherControl(state);
   const rng = createRng((state.time.tickValue + state.time.hourOfDay * 60) % 10000);
   runQolChangeWeatherSystem(state, false, rng);
   qolSetRegionWeather(state);
+  // A validated narrative incident is an input to the weather authority, not
+  // a competing state writer. Re-apply it after the natural transition so it
+  // remains visible and mechanically effective for its accepted duration.
+  events.push(...applyScheduledWeatherIncidents(state, _now));
 
   /* 异常气象副作用 — 对在场所有角色（含 master） */
   for (const chara of iteratePresentCharacters(state)) {

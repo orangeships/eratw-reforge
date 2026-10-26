@@ -55,7 +55,13 @@ import {
   emptyHistoryArray,
   lockHolds,
 } from "./personal-history.js";
-import { getBattleAbilityDisplay, getFortune, getRebellionBrand } from "./named-stats.js";
+import {
+  getBattleAbilityDisplay,
+  getFortune,
+  getRebellionBrand,
+  getTrainingMarkTiers,
+  type TrainingMarkTier,
+} from "./named-stats.js";
 import { ABILITY_GRID_ROWS, genderHideAbility } from "./ability-grid.js";
 import { describeClothing, type ClothingDescription } from "./clothing.js";
 
@@ -104,6 +110,8 @@ export interface BasicHeader {
   /** 反発刻印（MARK:3）品牌阶 0..3 — kuchiku-mark-rescue (2026-07-09).
    *  仅 NPC。`undefined` 表示没有该值（例如 MASTER 路径）。 */
   brand?: { tier: number; max: number };
+  /** 四类常规 H 刻印的当前等级，仅 NPC。 */
+  trainingMarks?: TrainingMarkTier[];
   fortune: number;
   /** 「▼〜的呢喃」 — modern 端暂无 呢喃 数据，空数组。 */
   whispers: { header: string; lines: string[] }[];
@@ -142,19 +150,24 @@ function buildHeaderFor(slot: CharaSlot, state: GameState): BasicHeader {
   const st = slot.state;
   const chip = hModeChipOf(slot);
   const named: NamedBar[] = [];
+  const bar = (key: NamedBar["key"], id: number, fallbackMax: number): NamedBar => {
+    const value = Math.max(0, st.BASE[id] ?? 0);
+    const storedMax = st.MAXBASE[id] ?? 0;
+    return { key, value, max: storedMax > 0 ? storedMax : Math.max(fallbackMax, value) };
+  };
   if (isMaster) {
     named.push(
-      { key: "体力", value: st.BASE[BASE_ID.体力] ?? 0, max: st.MAXBASE[BASE_ID.体力] ?? 2000 },
-      { key: "気力", value: st.BASE[BASE_ID.気力] ?? 0, max: st.MAXBASE[BASE_ID.気力] ?? 2000 },
-      { key: "酒", value: st.BASE[BASE_ID.酒気] ?? 0, max: st.MAXBASE[BASE_ID.酒気] ?? 1000 },
-      { key: "TSP", value: st.BASE[BASE_ID.TSP] ?? 0, max: st.MAXBASE[BASE_ID.TSP] ?? 100 },
-      { key: "精力", value: st.BASE[BASE_ID.精力] ?? 0, max: st.MAXBASE[BASE_ID.精力] ?? 100 },
+      bar("体力", BASE_ID.体力, 2000),
+      bar("気力", BASE_ID.気力, 2000),
+      bar("酒", BASE_ID.酒気, 1000),
+      bar("TSP", BASE_ID.TSP, 100),
+      bar("精力", BASE_ID.精力, 100),
     );
   } else {
     named.push(
-      { key: "体力", value: st.BASE[BASE_ID.体力] ?? 0, max: st.MAXBASE[BASE_ID.体力] ?? 2000 },
-      { key: "気力", value: st.BASE[BASE_ID.気力] ?? 0, max: st.MAXBASE[BASE_ID.気力] ?? 2000 },
-      { key: "酒", value: st.BASE[BASE_ID.酒気] ?? 0, max: st.MAXBASE[BASE_ID.酒気] ?? 1000 },
+      bar("体力", BASE_ID.体力, 2000),
+      bar("気力", BASE_ID.気力, 2000),
+      bar("酒", BASE_ID.酒気, 1000),
     );
   }
 
@@ -221,6 +234,7 @@ function buildHeaderFor(slot: CharaSlot, state: GameState): BasicHeader {
     // the player can see how hostile this NPC is. Hidden when tier==0 so
     // the chip never leaks info about unriled NPCs.
     header.brand = getRebellionBrand(st);
+    header.trainingMarks = getTrainingMarkTiers(st);
   }
 
   return header;
@@ -700,6 +714,12 @@ export interface AgentInfoSnapshot {
   latestDiary: string | null;
   topMemories: { text: string; importance: number }[];
   latestReflection: string | null;
+  latestReflectionParts: {
+    attitudeToPlayer: string;
+    interestingEvent: string | null;
+    nextTendency: string;
+    auditStatus: string;
+  } | null;
 }
 
 export function buildCharaInfoSnapshot(state: GameState, charaNum: number): CharaInfoSnapshot | null {
@@ -740,10 +760,10 @@ function buildAgentInfoSnapshot(state: GameState, charaNum: number): AgentInfoSn
   const cog = runtime.cognitions[charaNum];
   if (!cog) return null;
 
-  const goals = cog.goals
-    .filter((g) => g.status === "active")
-    .slice(0, 4)
-    .map((g) => ({ text: g.text, status: g.status }));
+  const goals = (cog.mind?.goals?.length
+    ? cog.mind.goals.filter((g) => g.status !== "resolved").map((g) => ({ text: g.text, status: g.status ?? "active" }))
+    : cog.goals.filter((g) => g.status === "active").map((g) => ({ text: g.text, status: g.status })))
+    .slice(0, 4);
 
   const plan = cog.currentPlan;
   const planSelections = plan
@@ -761,7 +781,14 @@ function buildAgentInfoSnapshot(state: GameState, charaNum: number): AgentInfoSn
     .slice(0, 5)
     .map((m) => ({ text: m.text.slice(0, 120), importance: m.importance }));
 
-  const latestReflection = cog.reflections.slice(-1)[0]?.text.slice(0, 200) ?? null;
+  const reflection = cog.reflections.slice(-1)[0];
+  const latestReflection = reflection?.text.slice(0, 600) ?? null;
+  const latestReflectionParts = reflection?.parts ? {
+    attitudeToPlayer: reflection.parts.attitudeToPlayer,
+    interestingEvent: reflection.parts.interestingEvent,
+    nextTendency: reflection.parts.nextTendency,
+    auditStatus: reflection.auditStatus ?? "not-applicable",
+  } : null;
 
   // Return null if everything is empty (no agent data worth showing)
   if (
@@ -774,7 +801,7 @@ function buildAgentInfoSnapshot(state: GameState, charaNum: number): AgentInfoSn
     return null;
   }
 
-  return { goals, planSelections, latestDiary, topMemories, latestReflection };
+  return { goals, planSelections, latestDiary, topMemories, latestReflection, latestReflectionParts };
 }
 
 // ---------------------------------------------------------------------------

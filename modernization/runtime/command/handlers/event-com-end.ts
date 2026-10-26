@@ -21,11 +21,12 @@
  *     else if NEMUKE() >= 840:
  *       BASE:MASTER:気力 = MAX(BASE:MASTER:気力 - 2 * TIME_PROGRESS(TIME:1), 0)
  *
- * DEFERRED (H-subsystem, not on the daily path / unmodeled namespaces):
- *   - L156-161 `IF NOWEX:射精 …` 勃起 recompute (only on ejaculation turns)
- *   - STAIN propagation (L130-148), 体位/位置関係 decay (L107-117),
- *     TEQUIP pose history (L100-105), CLOTHES_SETTING_TRAIN (L125) — all
- *     需要 STAIN/TEQUIP/充填率/NOWEX namespaces we don't model yet.
+ * The bounded H slice below now also ports the V/A parts of those lines:
+ *   - V/A fluid flags, pose history and position-control decay;
+ *   - deterministic midpoint semen-stain propagation from internal residue;
+ *   - NOWEX:射精 erection recompute.
+ * Full clothing-setting side effects and the remaining H/ASSI branches stay
+ * outside this hook until their owning state machines are migrated.
  *
  * NOTE on phase (batch-3 finding): in the real traces CFLAG[285] reads as the
  * PREVIOUS command's 勃起, because the trace's own @EVENTCOMEND dump hook runs
@@ -35,10 +36,22 @@
  * a trace and is documented in the oracle batch notes, not corrected here.
  */
 
-import type { GameState } from "../../state/game-state.js";
+import type { GameState, CharaSlot } from "../../state/game-state.js";
 import type { CharaSlotState } from "../../state/game-state.js";
-import { BASE_ID, CFLAG_ID } from "../../state/settlement.js";
+import {
+  ABL_ID,
+  BASE_ID,
+  CFLAG_ID,
+  EX_ID,
+  TCVAR_ID,
+  TEQUIP_ID,
+} from "../../state/settlement.js";
 import { nemuke } from "../../state/nemuke.js";
+import { activeHInsertionSite } from "../training-session.js";
+import { bodyFillRate } from "../../state/body-fill-rate.js";
+import { STAIN_BIT, STAIN_PART } from "../../state/stain.js";
+import { readTequip } from "../../state/tequip.js";
+import { shiftTouchHistory } from "../../state/touch-state.js";
 
 /** Sync + clamp 勃起 for one chara's slot state. Mutates in place. */
 function syncErectionForSlot(s: CharaSlotState): void {
@@ -52,6 +65,70 @@ function syncErectionForSlot(s: CharaSlotState): void {
   // forceSleep use, matching the upstream `MIN` over an unset var.
   const cap = s.MAXBASE?.[BASE_ID.勃起] ?? 0;
   if (cap > 0 && erection > cap) s.BASE[BASE_ID.勃起] = cap;
+}
+
+function hasActiveInsertion(state: GameState, slot: CharaSlot): boolean {
+  if (slot.charaNum === 0) {
+    return (
+      readTequip(state.master, TEQUIP_ID.Ｖ性交) !== 0 ||
+      readTequip(state.master, TEQUIP_ID.Ａ性交) !== 0
+    );
+  }
+  return activeHInsertionSite(state, slot.charaNum) !== null;
+}
+
+function settleFluidFlag(slot: CharaSlotState, flagId: number, senderId: number): void {
+  const current = slot.TCVAR[flagId] ?? 0;
+  if (current <= 0) return;
+  const remaining = Math.max(0, current - 1);
+  slot.TCVAR[flagId] = remaining;
+  if (remaining === 0) slot.TCVAR[senderId] = -1;
+}
+
+function decayPoseControl(slot: CharaSlotState, controlId: number, valueId: number): void {
+  const current = slot.TCVAR[controlId] ?? 0;
+  if (current <= 0) return;
+  const remaining = Math.max(0, current - 1);
+  slot.TCVAR[controlId] = remaining;
+  if (remaining === 0) slot.TCVAR[valueId] = 0;
+}
+
+/** Deterministic midpoint of EVENTCOMEND2's random semen-spread check. */
+function propagateInternalSemen(slot: CharaSlotState): void {
+  const vFill = bodyFillRate(slot, 1) ?? 0;
+  if (vFill >= 120 && (slot.STAIN[STAIN_PART.膣内] ?? 0) & STAIN_BIT.精液) {
+    slot.STAIN[STAIN_PART.Ｖ] = (slot.STAIN[STAIN_PART.Ｖ] ?? 0) | STAIN_BIT.精液;
+  }
+  const aFill = bodyFillRate(slot, 2) ?? 0;
+  if (aFill >= 120 && (slot.STAIN[STAIN_PART.腸内] ?? 0) & STAIN_BIT.精液) {
+    slot.STAIN[STAIN_PART.Ａ] = (slot.STAIN[STAIN_PART.Ａ] ?? 0) | STAIN_BIT.精液;
+  }
+}
+
+function settleEventComEndSlot(state: GameState, slot: CharaSlot): void {
+  const s = slot.state;
+  s.TCVAR[TCVAR_ID.調教履歴保存] = s.TCVAR[TCVAR_ID.調教履歴] ?? 0;
+  s.TCVAR[TCVAR_ID.前ターン射精箇所] = s.TCVAR[TCVAR_ID.已射精部位FLAG] ?? 0;
+  settleFluidFlag(s, TCVAR_ID.V被中出FLAG, TCVAR_ID.Vに中出しした角色番号);
+  settleFluidFlag(s, TCVAR_ID.A被中出FLAG, TCVAR_ID.Aに中出しした角色番号);
+  decayPoseControl(s, TCVAR_ID.体勢制御, TCVAR_ID.体勢);
+  decayPoseControl(s, TCVAR_ID.位置関係制御, TCVAR_ID.位置関係);
+  propagateInternalSemen(s);
+
+  const ejaculation = state.turnContext?.frame?.nowExByChara[slot.charaNum]?.[EX_ID.射精] ?? 0;
+  if (ejaculation <= 0) return;
+  const erection = s.BASE[BASE_ID.勃起] ?? 0;
+  if (hasActiveInsertion(state, slot)) {
+    s.BASE[BASE_ID.勃起] = 1000;
+    return;
+  }
+  const desire = s.ABL[ABL_ID.欲望] ?? 0;
+  const energy = s.BASE[BASE_ID.精力] ?? 0;
+  const maxEnergy = s.MAXBASE?.[BASE_ID.精力] ?? 0;
+  const denominator = (maxEnergy + 200) * (desire + 10);
+  s.BASE[BASE_ID.勃起] = denominator > 0
+    ? Math.max(0, Math.trunc((erection * (desire + 1) * (energy + 200)) / denominator))
+    : 0;
 }
 
 /** Apply EVENTCOMEND2's sleepy-overwork drain to the master. Mutates in place. */
@@ -78,11 +155,14 @@ function drainMasterForSleepiness(state: GameState, elapsedMinutes: number): voi
  * apply-intent can append its result uniformly).
  */
 export function runEventComEnd2(state: GameState, elapsedMinutes = 0): never[] {
+  shiftTouchHistory(state);
   syncErectionForSlot(state.master.state);
+  settleEventComEndSlot(state, state.master);
   state.master.state.CFLAG[CFLAG_ID.前一次的位置] =
     state.master.state.CFLAG[CFLAG_ID.現在位置] ?? 0;
   for (const slot of Object.values(state.charas)) {
     syncErectionForSlot(slot.state);
+    settleEventComEndSlot(state, slot);
     // EVENTCOMEND2.ERB:237 — snapshot location after this command. The next
     // movement pass uses current vs previous to reject actions mid-move.
     slot.state.CFLAG[CFLAG_ID.前一次的位置] =

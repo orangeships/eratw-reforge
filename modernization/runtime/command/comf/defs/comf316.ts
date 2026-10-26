@@ -62,13 +62,14 @@ const EXP_SHUNIN = 24;
 export const comf316Def: ComfDef = {
   commandNo: 316,
   label: "指挿れ",
-  // @COM_ABLE316 (Slice 7): only 気力>0 is unconditional; the
-  // 亲热<2/睡眠/陪睡中/行動/約會/甲斐性無 cluster is !FLAG:70-conditional, and
-  // the rest are TEQUIP:0/50 着衣·挿入 / TFLAG:61 / TCVAR:26 gates — deferred.
+  // @COM_ABLE316 (Slice 7): 亲热<2 is enforced in the ordinary awake/visible
+  // context; minIntimacyOutsideBypassStates models upstream time-stop/sleep/
+  // stealth bypasses. Remaining conditions are deferred.
   gate: {
+    minIntimacyOutsideBypassStates: 2,
     requiresMasterStamina: true,
     deferredGates:
-      "亲热<2/睡眠/陪睡中/行動==5/約會/甲斐性無 (!FLAG:70-conditional); TEQUIP:0&4 着衣 / TEQUIP:50 挿入; TFLAG:61 MASTER_POSE; GETBIT(TCVAR:26,6)",
+      "睡眠/陪睡中/行動==5/約會/甲斐性無 (!FLAG:70 conditional); TEQUIP:0&4 着衣 / TEQUIP:50 挿入; TFLAG:61 MASTER_POSE; GETBIT(TCVAR:26,6)",
   },
   timeCost: 5,
   maxRoll: 100,

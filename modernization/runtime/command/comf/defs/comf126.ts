@@ -87,8 +87,9 @@ export const comf126Def: ComfDef = {
   canExecute: com126Check,
   hModeMenuCheck: com126Check,
 
-  // Target drain handled in body().
+  // ERB 20-21: target drain is shared with the resource preflight.
   downbase: {},
+  targetDownbase: { [BASE_ID.体力]: 7, [BASE_ID.気力]: 70 },
 
   buildSources: (c) => {
     const sources: Record<number, number> = {
@@ -129,10 +130,6 @@ export const comf126Def: ComfDef = {
     c.t.state.TCVAR[TCVAR_ID.行為者] = c.t.charaNum;
     c.master.state.TCVAR[108] = 1;
     c.t.state.TCVAR[108] = 1;
-    // ERB 20-21: target 体力 7 / 気力 70 drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 7;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 70;
-
     // ERB 57-61: 汚れ移動 — double mutual OR (master 手 ⇔ target Ｂ,
     // master Ｂ ⇔ target 手).
     const m1 = c.master.state.STAIN[STAIN_PART.手] ?? 0;

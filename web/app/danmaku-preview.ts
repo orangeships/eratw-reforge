@@ -33,7 +33,13 @@ interface Shot { x: number; y: number; age: number; }
 interface Spark { x: number; y: number; vx: number; vy: number; life: number; color: string; }
 
 const bossImage = new Image();
-bossImage.src = "/portraits/120.webp";
+// Resolve the sheet from the generated bundle rather than hardcoding a file
+// name: build-portraits fingerprints every output name from its upstream
+// path, so a literal `/portraits/120.webp` goes stale the next time the
+// bundle is regenerated. (This preview's `danmaku-preview.html` entry has
+// already been removed; nothing imports this module any more.)
+import portraits from "./game/portraits.bundle.json";
+bossImage.src = `/${(portraits as Record<string, { src: string }>)["120"]!.src}`;
 const keys = new Set<string>();
 let bullets: Bullet[] = [];
 let shots: Shot[] = [];

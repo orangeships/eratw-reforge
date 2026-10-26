@@ -10,6 +10,7 @@
  */
 
 import type { GameState } from "../../state/game-state.js";
+import { clearDialogueAccompanyPermit } from "../../ai-state/dialogue-action.js";
 import type { CommandContext, HandlerEntry } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
 import {
@@ -26,10 +27,11 @@ import {
 } from "../../world/odekake.js";
 import { runOutingDepartureEvents } from "../../world/outing-events.js";
 import { canStartPlayerDate, startDate } from "../../world/date-session.js";
+import { applyDateOutfit } from "../../world/date-outfit.js";
 import { dateTravelMinutes } from "../../world/date-travel-time.js";
 import { mapIdOfLocation } from "../../world/location-predicates.js";
-import { setSlotLocation } from "../../world/room-id-location.js";
 import { pickOne, requirePickOne, type PromptSpec } from "../prompt.js";
+import { hasActiveStealthSession } from "../../state/stealth.js";
 
 const GO_OUT_TIME_COST = 5;
 
@@ -57,7 +59,7 @@ function checkGoOut(
     return block("すでに外出中です。");
   }
   if ((state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0) return block("時間停止中です。");
-  if (((state.flagStore[FLAG_ID.潜伏] ?? 0) & 1) !== 0) return block("潜伏中です。");
+  if (hasActiveStealthSession(state)) return block("潜伏中です。");
   if (isGapGuest(state as GameState, 0)) return block("隙間客の状態では外出できません。");
   if (getMasterCflag(state as GameState, CFLAG_ID.睡眠) !== 0) return block("睡眠中です。");
   if (getMasterCflag(state as GameState, CFLAG_ID.陪睡中) !== 0) return block("陪睡中です。");
@@ -104,14 +106,31 @@ export const goOut405HandlerEntry: HandlerEntry = {
     if (companions.length === 1) {
       const check = canStartPlayerDate(next, companions[0]!);
       if (!check.ok) return { state: next, events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: check.reason }], outcome: "noop" as const };
+      clearDialogueAccompanyPermit(next, companions[0]!);
     }
+    // Repair stale saves in which FLAG:潜伏 outlived every character's
+    // CFLAG:潜伏状態. A coherent active session was rejected by execCheck.
+    next.flagStore[FLAG_ID.潜伏] = (next.flagStore[FLAG_ID.潜伏] ?? 0) & ~1;
     const originLocation = next.master.location;
     const originMapId = mapIdOfLocation(originLocation) ?? 0;
     const entered = enterOdekake(next, destination.mapId, companions.length === 0 ? companions : []);
+    let dressedUp = false;
     if (companions.length === 1) {
+      // Upstream `SET_DATE` charges `所要時間` and, for a real outing map, calls
+      // `EX_COSTUME` before the party sets off. The road itself is not modeled:
+      // `startDate` places both participants at the destination and charges the
+      // travel cost in the same pass.
       const travelMinutes = dateTravelMinutes(originMapId, destination.mapId) ?? 0;
-      if (travelMinutes > 0) setSlotLocation(next.master, originLocation);
-      startDate(next, { partner: companions[0]!, source: "player-405", mapId: destination.mapId, destination: destination.representativeLocation, travelMinutes });
+      startDate(next, {
+        partner: companions[0]!,
+        source: "player-405",
+        mapId: destination.mapId,
+        destination: destination.representativeLocation,
+        travelMinutes,
+      });
+      // `ctx.rng` is required: 雛 / 青娥 roll their date outfit per date
+      // (see date-outfit-resolvers.ts), so the hook is not a pure lookup.
+      dressedUp = applyDateOutfit(next, companions[0]!, destination.mapId, ctx.rng);
     }
     advanceTimeTicks(next, GO_OUT_TIME_COST);
     const outing = runOutingDepartureEvents(next, ctx.rng);
@@ -122,12 +141,15 @@ export const goOut405HandlerEntry: HandlerEntry = {
         : null;
     const text =
       partner != null
-        ? `和${partner}一起去了${entered.label}。`
+        ? `和${partner}一起去了${entered.label}。${dressedUp ? `\n${partner}为了约会专门打扮了。` : ""}`
         : `去了${entered.label}。`;
 
     return {
       state: outing.state,
-      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text }, ...outing.events],
+      events: [
+        { kind: "NARRATION" as const, timestamp: ctx.now(), text },
+        ...outing.events,
+      ],
       outcome: "ok" as const,
     };
   },

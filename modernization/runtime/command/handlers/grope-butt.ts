@@ -9,14 +9,15 @@
  * Faithful core ported (`ERB/コマンド関連/COMF/日常系/COMF310 尻を撫でる.ERB`,
  * the normal-branch path: `TFLAG:192 == 0` / CASE 0, no DLC):
  *
- *   1. `@COM_ABLE310` core (ERB 115-154), simplified to what we model:
+ *   1. `@COM_ABLE310` single-target core (ERB 115-154):
  *        - target present (resolver contract; `ctx.target > 0`)
  *        - when NOT time-stopped: target not sleeping (ERB 131), not
  *          working 行動==5 unless 美宵 (ERB 134), not 陪睡中 (ERB 137),
  *          not 甲斐性無 without 诶嘿嘿 (ERB 143)
  *        - master 気力 > 0 (ERB 147)
- *      (TFLAG:100 / GLOBAL_COMABLE / TFLAG:61 / TCVAR:26 / CFLAG:526 /
- *       恶作剧 / 约会 / CFLAG:344 defer — UI/flag-state not modeled.)
+ *      Includes the frozen/hidden bypass, sleep-prank exception, date-room
+ *      restriction and hand/counter-use latches. Act_COM phase is represented
+ *      by the read-only menu query rather than a persisted TFLAG:100 mirror.
  *
  *   2. Time-stop bypass arm (ERB 6-7): `FLAG:70 && CFLAG:TARGET:344==0`
  *      → `BASE:MASTER:TSP -= 10`, no SOURCE/settlement. (344 not modeled
@@ -61,6 +62,7 @@ import {
   FLAG_ID,
   SOURCE_ID,
   TALENT_ID,
+  TCVAR_ID,
   advanceTimeTicks,
   getMasterBase,
   setMasterBase,
@@ -75,7 +77,8 @@ import {
 import { applySourceCheck } from "../source-check.js";
 import { collectCommandKojo } from "../command-kojo.js";
 import { applyKojoEffects } from "../../kojo/effects.js";
-import { setTflag } from "../../state/tflag.js";
+import { getTflag, setTflag, TFLAG_ID } from "../../state/tflag.js";
+import { ROOM_CATALOG_BY_LOCATION } from "../../world/room-catalog.js";
 
 /** 美宵 charaNum (`CSV/Chara/Chara134 美宵.csv`) — the one chara exempt
  *  from the 行動==5 仕事中 block (ERB 134). */
@@ -95,13 +98,15 @@ function checkGropeButtEligible(
   if (!target) {
     return { ok: false, reason: { kind: "precondition", message: "目标角色不存在。" } };
   }
-  const timeStop = (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
-  // ERB 127: the 睡眠/仕事/陪睡/甲斐性 gates only apply when NOT
-  // time-stopped (`(!FLAG:70 || CFLAG:344==1) && !GETBIT(CFLAG:526,0)` —
-  // 344/526 defer to 0, reducing to `!FLAG:70`).
-  if (!timeStop) {
-    // ERB 131: 睡眠中 (恶作剧 arm deferred → always blocks when sleeping).
-    if ((target.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) {
+  const timeStop = (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
+    (target.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) !== 1;
+  if (target.location !== ctx.state.master.location) {
+    return { ok: false, reason: { kind: "precondition", message: "需要目标角色在同一地点。" } };
+  }
+  // ERB 127: normal gates are bypassed for a frozen or hidden target.
+  if (!timeStop && ((target.state.CFLAG[CFLAG_ID.潜伏状態] ?? 0) & 1) === 0) {
+    // ERB 131: sleeping blocks unless the prank mode is already active.
+    if ((target.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0 && (target.state.CFLAG[CFLAG_ID.恶作剧] ?? 0) === 0) {
       return { ok: false, reason: { kind: "precondition", message: "目标正在睡觉。" } };
     }
     // ERB 134: 仕事中 (行動==5) unless 美宵.
@@ -119,13 +124,20 @@ function checkGropeButtEligible(
     ) {
       return { ok: false, reason: { kind: "precondition", message: "没有那份胆量（甲斐性無）。" } };
     }
-    // ERB 140: 约会中 — IS_DATING_WITH_PLAYER + OMANEKIBEYA, deferred.
+    if (ctx.state.dateSession?.partner === ctx.target &&
+        ROOM_CATALOG_BY_LOCATION[target.location]?.localNumber !== 98) {
+      return { ok: false, reason: { kind: "precondition", message: "约会中只能在待客室进行。" } };
+    }
   }
   // ERB 147: master 気力 > 0.
   if ((getMasterBase(ctx.state, BASE_ID.気力) ?? 0) <= 0) {
     return { ok: false, reason: { kind: "precondition", message: "気力不足，无法行动。" } };
   }
-  // ERB 150/152: TFLAG:61 / TCVAR:26 bit0 — deferred (not modeled).
+  // ERB 150/152: hand usage and partner-led counter exclusion.
+  if (getTflag(ctx.state, TFLAG_ID.手使用中) !== 0 ||
+      ((target.state.TCVAR[TCVAR_ID.MASTER_COUNTER制御] ?? 0) & 1) !== 0) {
+    return { ok: false, reason: { kind: "precondition", message: "当前无法使用手进行该动作。" } };
+  }
   return { ok: true };
 }
 
@@ -236,8 +248,8 @@ export const gropeButtHandlerEntry: HandlerEntry = {
     const master = next.master;
 
     // ----- Time-stop bypass arm (ERB 6-7) -----
-    const timeStop = (next.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
-    // CFLAG:344 not modeled → 0, so the arm fires whenever time is stopped.
+    const timeStop = (next.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
+      (target.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
     if (timeStop) {
       setMasterBase(
         next,

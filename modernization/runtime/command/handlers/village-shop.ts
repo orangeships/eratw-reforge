@@ -44,6 +44,7 @@ import {
   type VillageShop,
 } from "../../state/shop.js";
 import { CFLAG_ID, FLAG_ID, advanceTimeTicks } from "../../state/settlement.js";
+import { itemCount, removeItem } from "../../state/items.js";
 
 /** TIME cost per shop (`@COM6xx` tail: 614 += 30; 618/622 += 10). */
 function shopTimeCost(commandNo: number): number {
@@ -51,8 +52,8 @@ function shopTimeCost(commandNo: number): number {
 }
 
 /** Build the shop's pickOne over its in-catalog lineup (price + discount). */
-function shopPrompt(shop: VillageShop): PromptSpec {
-  const options = shop.itemIds
+function shopPrompt(shop: VillageShop, state?: Readonly<GameState>): PromptSpec {
+  const options: Array<{ id: number | string; label: string; detail: string }> = shop.itemIds
     .map((id) => {
       const e = catalogEntry(id);
       if (!e) return null;
@@ -61,6 +62,19 @@ function shopPrompt(shop: VillageShop): PromptSpec {
       return { id, label: e.name, detail: `${unit} 円` };
     })
     .filter((o): o is { id: number; label: string; detail: string } => o !== null);
+  if (shop.commandNo === 619 && state) {
+    const rateByTier = [10, 15, 20, 30] as const;
+    const tier = Math.max(0, Math.min(3, Math.trunc(state.flagStore[864] ?? 0)));
+    const rate = rateByTier[tier]! + ((state.flagStore[FLAG_ID.酒屋買取強化] ?? 0) > 0 ? 20 : 0);
+    for (const id of shop.itemIds) {
+      const count = itemCount(state as GameState, id);
+      const entry = catalogEntry(id);
+      if (!entry || count <= 0) continue;
+      const unit = Math.trunc(entry.price * rate / 100);
+      options.push({ id: `sell:${id}:1`, label: `出售1个${entry.name}`, detail: `+${unit} 円` });
+      if (count > 1) options.push({ id: `sell:${id}:${count}`, label: `出售全部${entry.name}（${count}）`, detail: `+${unit * count} 円` });
+    }
+  }
   return pickOne(`${shop.name}：买什么？`, options);
 }
 
@@ -87,7 +101,7 @@ function checkShopEligible(
 function makeVillageShopHandler(shop: VillageShop): HandlerEntry {
   return {
     commandNo: shop.commandNo,
-    prompt: () => shopPrompt(shop),
+    prompt: (ctx) => shopPrompt(shop, ctx.state),
     execCheck: (ctx) => {
       const r = checkShopEligible(ctx.state, shop);
       return r.ok ? { ok: true } : { ok: false, reason: r.reason };
@@ -98,7 +112,7 @@ function makeVillageShopHandler(shop: VillageShop): HandlerEntry {
       // replenishment belongs to SHOP_EVENTTURNEND in runDayEnd.
       ensureShopStock(next, shop.itemIds);
 
-      const spec = shopPrompt(shop);
+      const spec = shopPrompt(shop, next);
       const picked = requirePickOne(spec, ctx.promptAnswer);
       // 0 / absent answer = [999] 返回 no-buy exit (RETURN -1) — TIME still
       // advances on cancel for 618/622 (ERB: 999 arm does TIME += 10 then
@@ -111,6 +125,38 @@ function makeVillageShopHandler(shop: VillageShop): HandlerEntry {
             { kind: "NARRATION" as const, timestamp: ctx.now(), text: `离开了${shop.name}。` },
           ],
           outcome: "noop" as const,
+        };
+      }
+
+      if (shop.commandNo === 619 && typeof picked === "string" && picked.startsWith("sell:")) {
+        const [, rawId, rawCount] = picked.split(":");
+        const itemId = Number(rawId);
+        const requested = Number(rawCount);
+        const held = itemCount(next, itemId);
+        const entry = catalogEntry(itemId);
+        if (!entry || !shop.itemIds.includes(itemId) || !Number.isInteger(requested) || requested <= 0 || requested > held) {
+          return {
+            state: next,
+            events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "没有足够的酒可以出售。" }],
+            outcome: "noop" as const,
+          };
+        }
+        const rateByTier = [10, 15, 20, 30] as const;
+        const tier = Math.max(0, Math.min(3, Math.trunc(next.flagStore[864] ?? 0)));
+        const rate = rateByTier[tier]! + ((next.flagStore[FLAG_ID.酒屋買取強化] ?? 0) > 0 ? 20 : 0);
+        const unit = Math.trunc(entry.price * rate / 100);
+        const total = unit * requested;
+        removeItem(next, itemId, requested);
+        next.money += total;
+        next.itemSales ??= {};
+        next.itemSales[itemId] = (next.itemSales[itemId] ?? 0) + requested;
+        next.flagStore[863] = (next.flagStore[863] ?? 0) + Math.trunc(entry.price * (80 - rate) / 100) * requested;
+        next.flagStore[FLAG_ID.最後に酒屋に訪れた日] = Math.max(1, next.time.dayIndex + 1);
+        advanceTimeTicks(next, 10);
+        return {
+          state: next,
+          events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: `以 ${total} 円卖掉了${requested}个${entry.name}。` }],
+          outcome: "ok" as const,
         };
       }
 
@@ -128,6 +174,9 @@ function makeVillageShopHandler(shop: VillageShop): HandlerEntry {
 
       // TIME += per-shop cost on a successful buy (ERB tail).
       advanceTimeTicks(next, shopTimeCost(shop.commandNo));
+      if (shop.commandNo === 619) {
+        next.flagStore[FLAG_ID.最後に酒屋に訪れた日] = Math.max(1, next.time.dayIndex + 1);
+      }
       const e = catalogEntry(picked as number);
       return {
         state: next,
@@ -155,7 +204,6 @@ const VILLAGE_SHOP_NOS = [
   { commandNo: 618 },
   { commandNo: 622 },
   { commandNo: 619 },
-  { commandNo: 443 },
 ] as const;
 
 export const villageShopEntries: readonly HandlerEntry[] =

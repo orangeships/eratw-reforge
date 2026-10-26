@@ -54,6 +54,7 @@ export const comf742Def: ComfDef = {
   failThreshold: 101,
   timeCost: 5,
   requiresTarget: false,
+  settleSourcesOnMaster: true,
   downbase: { [BASE_ID.体力]: 10, [BASE_ID.気力]: 80 },
   buildSources: (c) => {
     const sources: Record<number, number> = {

@@ -16,12 +16,9 @@
  * up ERB edits (Phase 10 may add file watching for dev mode).
  */
 
-import { extractFuncs } from "../../importer/kojo/extractor.js";
-import { parseFunc } from "../../importer/kojo/parser.js";
-import { bindStaticCallArguments } from "../../importer/kojo/static-call.js";
-import { resolveDiaryStaticCall } from "../../importer/kojo/diary-static.js";
-import { DEFAULT_CONTEXT, type SubstituteContext } from "../../importer/kojo/substitute.js";
-import type { ParsedKojoFunc } from "../../importer/kojo/parser-types.js";
+import { parseKojoSource } from "./source-parser.js";
+import type { KojoAsyncParser } from "./async-parser.js";
+import { recordKojoPerformance } from "./performance.js";
 import type {
   DialogueRouter,
   DiaryHappenResolution,
@@ -41,32 +38,39 @@ import {
   resolveKojoNodeDetailed,
   resolveKojoFunctionDetailed,
   resolveKojoNodeWithChoices,
+  hasActionableKojoNode,
 } from "./static-router.js";
 import { resolveActiveKojoVariantCode } from "./variant-selection.js";
 import {
   DEFAULT_KOJO_SYMBOLS,
-  GLOBAL_KOJO_DECLARATIONS,
-  SCOPED_KOJO_DECLARATIONS,
   SCOPED_KOJO_SYMBOLS,
   mergeKojoSymbolTables,
 } from "./symbol-table.js";
 import { withMarkKojoContext } from "./mark-kojo.js";
 import { palamKojoKey } from "./palam-kojo.js";
-import { iraiKojoSelectorKeys } from "./irai-kojo.js";
+import { collectCharaKojoFilePaths } from "./interactive-preload.js";
+import {
+  collectInteractiveKojoPreparations,
+  MAX_INTERACTIVE_PREPARATIONS,
+  yieldForKojoPreparation,
+  type InteractiveKojoPreparationOptions,
+  type InteractiveKojoTarget,
+} from "./interactive-preparation.js";
+import { iraiKojoSelectorKeys, mergeIraiKojoResolutions } from "./irai-kojo.js";
 import { iraiIdToClient } from "../state/commission.js";
 import { resolveDiaryCall } from "./diary-call.js";
 import { getTflag, TFLAG_ID } from "../state/tflag.js";
 import type { GameState } from "../state/index.js";
 import type { Rng } from "../command/types.js";
 
-function containsUnsupportedKojoNode(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  if ((value as { type?: string }).type === "unsupported-effect") return true;
-  return Object.values(value).some((child) =>
-    Array.isArray(child)
-      ? child.some(containsUnsupportedKojoNode)
-      : containsUnsupportedKojoNode(child)
-  );
+function stableSourceFingerprint(text: string): string {
+  // FNV-1a keeps this synchronous and dependency-free in Browser/Tauri.
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 function emptyKojoResolution(
@@ -118,7 +122,39 @@ const ROLEPLAY_FLAG_ID = 1030;
 const ROLEPLAY_KOJO_PRESENT_CFLAG_ID = 373;
 
 /** Cache key → parsed KojoNode tree. */
-type CacheEntry = { node: KojoNode; cachedAt: number };
+type CacheEntry = { node: KojoNode | null; cachedAt: number; sourceFingerprint?: string };
+type SourceEntry = { text: string; lines: string[]; fingerprint: string };
+
+/**
+ * Build a `SourceEntry` with a lazily computed `fingerprint`.
+ *
+ * The index generator stamps `contentFingerprint` on 100% of the 51095
+ * locations it emits, and both writers use `loc.contentFingerprint ??
+ * source.fingerprint` — so the runtime hash is a fallback that in practice is
+ * never read. It was still being computed eagerly on every cold file, as a
+ * char-by-char FNV-1a pass over the whole text: 2.3 million iterations for
+ * `M_KOJO_K58_1_日常系コマンド.ERB`, on the main thread, for a value nobody
+ * asks for. A getter keeps the value identical whenever it *is* consulted.
+ */
+export function makeSourceEntry(text: string): SourceEntry {
+  const entry: SourceEntry = {
+    text,
+    lines: text.split("\n"),
+    fingerprint: "",
+  };
+  Object.defineProperty(entry, "fingerprint", {
+    configurable: true,
+    enumerable: true,
+    get(): string {
+      const fingerprint = stableSourceFingerprint(text);
+      Object.defineProperty(entry, "fingerprint", {
+        configurable: true, enumerable: true, writable: true, value: fingerprint,
+      });
+      return fingerprint;
+    },
+  });
+  return entry;
+}
 type CommandKind = "COM" | "SCOM";
 
 function commandKindFor(state: Readonly<GameState>): CommandKind {
@@ -169,15 +205,104 @@ export interface KojoCacheOptions {
    * without statically importing `node:fs` into the browser bundle.
    */
   readText?: KojoSourceReader;
+  /**
+   * Optional asynchronous mirror of `readText`, used ONLY by
+   * `preloadSources` to warm `sourceCache` off the main-thread critical
+   * path (the Tauri renderer injects a non-blocking `fetch`). When absent
+   * (Node runtime, tests, bundle routers), `preloadSources` is a no-op and
+   * the synchronous reader keeps today's semantics.
+   */
+  readTextAsync?: (filePath: string, projectRoot: string) => Promise<string>;
+  /** Optional background compiler. Its request contains source identity, never GameState. */
+  parseAsync?: KojoAsyncParser;
+  /**
+   * Resident budget for cached ERB source text, in UTF-16 code units.
+   * Defaults to `DEFAULT_MAX_SOURCE_CACHE_CHARS`; 0 disables eviction.
+   */
+  maxSourceCacheChars?: number;
+}
+
+/** Files fetched concurrently by `preloadSources`. Small on purpose: the
+ *  asset-protocol round trip is cheap per file, but an unbounded fan-out
+ *  would compete with gameplay fetches for the WebView's connection pool. */
+export const KOJO_PRELOAD_CONCURRENCY = 8;
+
+/**
+ * Character budget for resident ERB source text, in UTF-16 code units.
+ *
+ * `sourceCache` used to grow for the lifetime of the process with no bound.
+ * The checkout's kojo tree is ~155 MiB of ERB and the index references 1717
+ * files; each cached entry holds both `text` and a `split("\n")` array, so a
+ * long session that touched most of the roster drifted into hundreds of MiB of
+ * live objects and every later interaction paid major GC for it. That is the
+ * "it gets laggier the longer I play" half of the dev-shell cost, and it is
+ * independent of the blocking-read half.
+ *
+ * Sized to keep a comfortable working set — the night sweep alone spans ~469
+ * files, and the in-room working set is a handful — while capping the tail.
+ * Eviction is least-recently-used, and a re-read is always correct because a
+ * `CacheEntry` holds the *parsed* node, never a reference to the SourceEntry.
+ */
+export const DEFAULT_MAX_SOURCE_CACHE_CHARS = 32_000_000;
+
+/**
+ * Blocking source-read telemetry.
+ *
+ * The dev shell injects a SYNCHRONOUS reader (`readTauriKojoTextSync`, a
+ * blocking sync XHR over the asset protocol), so every cold kojo file stalls
+ * the WebView main thread inside the command settlement window. Node cannot
+ * see that cost — `readFileSync` off a warm page cache is an order of magnitude
+ * cheaper than a sync XHR — so the only place the real number exists is the
+ * renderer. This ring buffer is polled by the 「耗时」 perf panel.
+ */
+export interface KojoSourceReadRecord {
+  filePath: string;
+  chars: number;
+  ms: number;
+}
+
+const SOURCE_READ_LIMIT = 20;
+const sourceReadLog: KojoSourceReadRecord[] = [];
+
+/** Newest-first read log for the perf panel. */
+export function kojoSourceReadRecords(): readonly KojoSourceReadRecord[] {
+  return sourceReadLog;
+}
+
+export function resetKojoSourceReadRecordsForTests(): void {
+  sourceReadLog.length = 0;
+}
+
+function recordSourceRead(filePath: string, text: string, ms: number): void {
+  sourceReadLog.unshift({ filePath, chars: text.length, ms });
+  if (sourceReadLog.length > SOURCE_READ_LIMIT) sourceReadLog.length = SOURCE_READ_LIMIT;
 }
 
 export class KojoCache implements DialogueRouter {
   private readonly index: KojoCommandIndex;
   private readonly projectRoot: string;
   private readonly nameResolver?: (charaNum: number) => string | undefined;
+  /** Read one ERB source file synchronously (see `readTextAsync` for the
+   *  preload mirror). */
   private readonly readText: KojoSourceReader;
+  private readonly readTextAsync?: (filePath: string, projectRoot: string) => Promise<string>;
+  private readonly parseAsync?: KojoAsyncParser;
+  private readonly preparing = new Map<string, Promise<void>>();
   /** Parsed KojoNode cache. Key = `${charaNum}:${variantCode}:${comType}:${cmd}`. */
   private readonly cache = new Map<string, CacheEntry>();
+  /** Unused speculative nodes have a separate, bounded lifetime. */
+  private readonly preparedCacheKeys = new Set<string>();
+  /** One synchronous source read per ERB file, bounded by
+   * `maxSourceCacheChars` and evicted least-recently-used first. */
+  private readonly sourceCache = new Map<string, SourceEntry>();
+  /** Resident source size in code units, kept in step with `sourceCache`. */
+  private sourceCacheChars = 0;
+  /** Resident budget in code units. 0 disables eviction (test/debug escape). */
+  private readonly maxSourceCacheChars: number;
+  /** In-flight async reads from `preloadSources`, deduped per file. */
+  private readonly preloading = new Map<string, Promise<void>>();
+  /** Invalidates speculative work when the caller explicitly clears the cache. */
+  private cacheGeneration = 0;
 
   constructor(index: KojoCommandIndex, projectRoot: string, opts: KojoCacheOptions = {}) {
     this.index = index;
@@ -188,6 +313,117 @@ export class KojoCache implements DialogueRouter {
     this.readText = opts.readText ?? (() => {
       throw new Error("KojoCache requires a synchronous readText(filePath, projectRoot) implementation");
     });
+    this.readTextAsync = opts.readTextAsync;
+    this.parseAsync = opts.parseAsync;
+    this.maxSourceCacheChars = Math.max(
+      0,
+      opts.maxSourceCacheChars ?? DEFAULT_MAX_SOURCE_CACHE_CHARS,
+    );
+  }
+
+  /**
+   * Warm the kojo source behind the given characters through the async
+   * reader, so a later synchronous first touch hits memory instead of the
+   * renderer's blocking sync XHR.
+   *
+   * This is the interactive counterpart to `preloadSources`: the night
+   * preload set covers the sleep settlement, but `commands` (日常系コマンド) —
+   * the surface the player clicks most — was left cold on purpose to keep
+   * boot I/O bounded. Scoping the warm to the characters actually present in
+   * the room keeps it to a few files instead of the ~1248-file remainder, and
+   * `readTextAsync` is non-blocking, so this is safe to fire on every room
+   * change. No-op without an async reader (Node runtime, tests).
+   */
+  async preloadCharaSources(charaNums: readonly number[]): Promise<void> {
+    if (!this.readTextAsync || charaNums.length === 0) return;
+    await this.preloadSources(collectCharaKojoFilePaths(this.index, charaNums));
+  }
+
+  /** Read and parse the active interactive routes without RNG, effects or state mutation. */
+  async prepareInteractiveKojo(
+    state: Readonly<GameState>,
+    targets: readonly InteractiveKojoTarget[],
+    options: InteractiveKojoPreparationOptions = {},
+  ): Promise<void> {
+    if (!this.readTextAsync && !this.parseAsync) return;
+    const generation = this.cacheGeneration;
+    const cancelled = (): boolean => options.signal?.aborted === true || generation !== this.cacheGeneration;
+    const yieldControl = options.yieldControl ?? yieldForKojoPreparation;
+    const tasks = collectInteractiveKojoPreparations(this.index, state, targets, options);
+    if (cancelled()) return;
+    const wanted = new Set(tasks.map((task) => task.key));
+    for (const key of this.preparedCacheKeys) {
+      if (!options.retainPrepared && !wanted.has(key)) {
+        this.cache.delete(key);
+        this.preparedCacheKeys.delete(key);
+      }
+    }
+    for (const task of tasks) {
+      if (cancelled()) return;
+      const cached = this.cache.get(task.key);
+      if (cached && (!task.location.contentFingerprint || cached.sourceFingerprint === task.location.contentFingerprint)) {
+        if (options.retainPrepared && this.preparedCacheKeys.delete(task.key)) this.preparedCacheKeys.add(task.key);
+        continue;
+      }
+      if (this.parseAsync) {
+        const location = { ...task.location };
+        const preparationKey = `${generation}:${task.key}:${JSON.stringify(location)}`;
+        let pending = this.preparing.get(preparationKey);
+        if (!pending) {
+          // Shared work is not owned by one caller's AbortSignal: cancelling room
+          // speculation must not cancel a click that is waiting for the same node.
+          pending = this.parseAsync({
+            location, charaNum: task.charaNum, revision: generation,
+            calleeName: this.nameResolver?.(task.charaNum),
+            expandSameFileStaticCalls: task.expandSameFileStaticCalls,
+          }).then((result) => {
+            if (generation !== this.cacheGeneration) return;
+            if (location.contentFingerprint !== task.location.contentFingerprint) throw new Error("kojo source index changed during compilation");
+            const current = this.cache.get(task.key);
+            if (current && (!location.contentFingerprint || current.sourceFingerprint === location.contentFingerprint)) return;
+            this.cache.set(task.key, {
+              node: result.node, cachedAt: Date.now(),
+              sourceFingerprint: location.contentFingerprint ?? result.sourceFingerprint,
+            });
+            this.preparedCacheKeys.add(task.key);
+            this.trimPreparedCache();
+          }).finally(() => {
+            if (this.preparing.get(preparationKey) === pending) this.preparing.delete(preparationKey);
+          });
+          this.preparing.set(preparationKey, pending);
+        }
+        await pending;
+        if (cancelled()) return;
+        continue;
+      }
+      await this.preloadSources([task.location.filePath]);
+      if (cancelled()) return;
+      await yieldControl();
+      if (cancelled()) return;
+      // An unreadable or evicted file must never fall through to the blocking reader.
+      const source = this.sourceCache.get(task.location.filePath);
+      if (!source) continue;
+      // A player command may have parsed this route while preparation yielded.
+      const current = this.cache.get(task.key);
+      if (current && (!task.location.contentFingerprint || current.sourceFingerprint === task.location.contentFingerprint)) continue;
+      const node = this.parseFuncFromFile(task.location, task.charaNum, task.variantCode,
+        false, task.expandSameFileStaticCalls);
+      this.cache.set(task.key, {
+        node,
+        cachedAt: Date.now(),
+        sourceFingerprint: task.location.contentFingerprint ?? source.fingerprint,
+      });
+      this.preparedCacheKeys.add(task.key);
+      this.trimPreparedCache();
+    }
+  }
+
+  private trimPreparedCache(): void {
+    if (this.preparedCacheKeys.size > MAX_INTERACTIVE_PREPARATIONS) {
+      const oldest = this.preparedCacheKeys.values().next().value!;
+      this.preparedCacheKeys.delete(oldest);
+      this.cache.delete(oldest);
+    }
   }
 
   // ── DialogueRouter impl ──────────────────────────────────────────
@@ -250,6 +486,7 @@ export class KojoCache implements DialogueRouter {
     commandNo: number,
     state: Readonly<GameState>,
     rng: Rng,
+    options?: { probeReadonly?: boolean },
   ) {
     if (!this.kojoEnabledForTarget(state, charaNum)) return emptyKojoResolution("gated");
     const variantCode = this.resolveVariant(charaNum, state);
@@ -257,13 +494,14 @@ export class KojoCache implements DialogueRouter {
     if (!variant) return emptyKojoResolution("not-authored");
     const commandKind = commandKindFor(state);
     const loc = commandLocationFor(variant, commandKind, commandNo);
+    const context = { commandNo, probeReadonly: options?.probeReadonly };
     if (loc) {
       const node = this.getOrParse(charaNum, variantCode, commandKind, commandNo, loc);
-      if (node) return resolveKojoNodeDetailed(node, charaNum, state, rng, [], { commandNo });
+      if (node) return resolveKojoNodeDetailed(node, charaNum, state, rng, [], context);
     }
     if (variant.catchAll) {
       const node = this.getOrParse(charaNum, variantCode, "CATCHALL", 0, variant.catchAll);
-      if (node) return resolveKojoNodeDetailed(node, charaNum, state, rng, [], { commandNo });
+      if (node) return resolveKojoNodeDetailed(node, charaNum, state, rng, [], context);
     }
     return emptyKojoResolution("not-authored");
   }
@@ -392,6 +630,51 @@ export class KojoCache implements DialogueRouter {
           args ?? [],
           choices,
         )
+      : emptyInteractiveKojoResolution("not-authored");
+  }
+
+  resolveDailyKojo(
+    charaNum: number,
+    eventId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+    args: number[] = [],
+  ): KojoLine[] {
+    return this.resolveDailyKojoDetailed(charaNum, eventId, state, rng, args).lines;
+  }
+
+  resolveDailyKojoDetailed(
+    charaNum: number,
+    eventId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+    args: number[] = [],
+  ): KojoResolution {
+    if (!this.kojoEnabledForTarget(state, charaNum)) return emptyKojoResolution("gated");
+    const variantCode = this.resolveVariant(charaNum, state);
+    const variant = this.findVariant(charaNum, variantCode);
+    const loc = variant?.dailyEvents?.[`DAILY:${eventId}`];
+    const node = loc ? this.getOrParseDailyEvent(charaNum, variantCode, eventId, loc) : null;
+    return node
+      ? resolveKojoNodeDetailed(node, charaNum, state, rng, args)
+      : emptyKojoResolution("not-authored");
+  }
+
+  resolveDailyKojoInteractive(
+    charaNum: number,
+    eventId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+    args: readonly number[] | undefined,
+    choices: readonly number[],
+  ): InteractiveKojoResolution {
+    if (!this.kojoEnabledForTarget(state, charaNum)) return emptyInteractiveKojoResolution("gated");
+    const variantCode = this.resolveVariant(charaNum, state);
+    const variant = this.findVariant(charaNum, variantCode);
+    const loc = variant?.dailyEvents?.[`DAILY:${eventId}`];
+    const node = loc ? this.getOrParseDailyEvent(charaNum, variantCode, eventId, loc) : null;
+    return node
+      ? resolveKojoNodeWithChoices(node, charaNum, state, rng, args ?? [], choices)
       : emptyInteractiveKojoResolution("not-authored");
   }
 
@@ -632,6 +915,11 @@ export class KojoCache implements DialogueRouter {
           rng,
           [],
           choices,
+          // UPDATE_K resource checks in the indexed packs only guard optional
+          // portrait recommendations. This adapter has no resource manifest,
+          // so deterministically take the absent-resource branch while leaving
+          // ordinary dialogue routes fail-closed.
+          { resourceExists: () => false },
         )
       : emptyInteractiveKojoResolution("not-authored");
   }
@@ -639,7 +927,10 @@ export class KojoCache implements DialogueRouter {
   hasUpdateKojo(charaNum: number, state: Readonly<GameState>): boolean {
     if (!this.kojoEnabledForTarget(state, charaNum)) return false;
     const variantCode = this.resolveVariant(charaNum, state);
-    return Boolean(this.findVariant(charaNum, variantCode)?.update);
+    const update = this.findVariant(charaNum, variantCode)?.update;
+    if (!update) return false;
+    const node = this.getOrParseUpdate(charaNum, variantCode, update);
+    return node !== null && hasActionableKojoNode(node);
   }
 
   resolveMarkKojo(
@@ -1021,13 +1312,24 @@ export class KojoCache implements DialogueRouter {
     state: Readonly<GameState>,
     rng: Rng,
   ): KojoLine[] {
-    if (!this.kojoEnabledForTarget(state, charaNum)) return [];
+    return this.resolveIraiKojoDetailed(charaNum, role, scene, iraiId, state, rng).lines;
+  }
+
+  resolveIraiKojoDetailed(
+    charaNum: number,
+    role: string,
+    scene: string,
+    iraiId: number,
+    state: Readonly<GameState>,
+    rng: Rng,
+  ): KojoResolution {
+    if (!this.kojoEnabledForTarget(state, charaNum)) return emptyKojoResolution("gated");
 
     const variantCode = this.resolveVariant(charaNum, state);
     const variant = this.findVariant(charaNum, variantCode);
-    if (!variant) return [];
+    if (!variant) return emptyKojoResolution("not-authored");
 
-    const out: KojoLine[] = [];
+    const resolutions: KojoResolution[] = [];
     const clientId = iraiIdToClient(iraiId);
     const targetName =
       this.nameResolver?.(charaNum) ?? state.charas[charaNum]?.callName ?? "对方";
@@ -1048,12 +1350,66 @@ export class KojoCache implements DialogueRouter {
       const loc = byRole?.[role]?.[scene] ?? byRole?.["*"]?.[scene];
       if (!loc) continue;
       const node = this.getOrParseIrai(charaNum, variantCode, selector, role, scene, loc);
-      if (node) out.push(...resolveKojoNode(node, charaNum, state, rng, [], context));
+      if (node) {
+        resolutions.push(resolveKojoNodeDetailed(node, charaNum, state, rng, [], context));
+      } else {
+        resolutions.push({
+          status: "unsupported",
+          lines: [],
+          effects: [],
+          unsupportedPredicates: [],
+          unsupportedEffects: [],
+          diagnostics: [{ code: "unresolved-text", detail: `IRAI source could not be parsed: ${loc.filePath}:${loc.lineStart}` }],
+        });
+      }
     }
-    return out;
+    return mergeIraiKojoResolutions(resolutions);
   }
 
   // ── Cache stats (for tests / debug) ───────────────────────────────
+
+  /**
+   * Warm `sourceCache` for the given files through the injected async
+   * reader so later synchronous reads (e.g. the whole night-settlement kojo
+   * sweep) hit memory instead of a blocking sync XHR per file.
+   *
+   * - No-op when no `readTextAsync` was injected (Node runtime, tests).
+   * - Idempotent and race-safe: cached files are skipped and in-flight reads
+   *   are joined; `getSource` winning mid-preload is respected.
+   * - A single unreadable file is swallowed (the sync reader keeps today's
+   *   error semantics for that file) so one bad path cannot reject the batch.
+   */
+  async preloadSources(filePaths: readonly string[]): Promise<void> {
+    if (!this.readTextAsync) return;
+    const pending = [...new Set(filePaths)].filter((filePath) =>
+      !this.sourceCache.has(filePath));
+    for (let index = 0; index < pending.length; index += KOJO_PRELOAD_CONCURRENCY) {
+      const batch = pending.slice(index, index + KOJO_PRELOAD_CONCURRENCY);
+      await Promise.all(batch.map((filePath) => this.preloadOne(filePath)));
+    }
+  }
+
+  private preloadOne(filePath: string): Promise<void> {
+    const inFlight = this.preloading.get(filePath);
+    if (inFlight) return inFlight;
+    const generation = this.cacheGeneration;
+    const load = (async () => {
+      const text = (await this.readTextAsync!(filePath, this.projectRoot)).replace(/^\uFEFF/, "");
+      // A synchronous `getSource` may have cached the file while the async
+      // read was in flight — never overwrite the entry the sync path trusts.
+      if (generation === this.cacheGeneration && !this.sourceCache.has(filePath)) {
+        this.sourceCache.set(filePath, makeSourceEntry(text));
+        this.sourceCacheChars += text.length;
+        this.evictSourcesIfNeeded();
+      }
+    })().finally(() => {
+      if (this.preloading.get(filePath) === load) this.preloading.delete(filePath);
+    }).catch(() => {
+      // Swallowed: keep the sync reader as the fallback for this file.
+    });
+    this.preloading.set(filePath, load);
+    return load;
+  }
 
   /** Number of cached entries. */
   cacheSize(): number {
@@ -1062,12 +1418,33 @@ export class KojoCache implements DialogueRouter {
 
   /** Clear all cached entries (e.g. for hot-reload in dev mode). */
   clearCache(): void {
+    this.cacheGeneration += 1;
+    this.preloading.clear();
+    this.preparing.clear();
     this.cache.clear();
+    this.preparedCacheKeys.clear();
+    this.sourceCache.clear();
+    this.sourceCacheChars = 0;
+  }
+
+  /** Resident ERB source files, for tests / debug. */
+  sourceCacheSize(): number {
+    return this.sourceCache.size;
+  }
+
+  /** Resident ERB source size in code units, for tests / debug. */
+  residentSourceChars(): number {
+    return this.sourceCacheChars;
   }
 
   /** Expose the index for tests. */
   getIndex(): Readonly<KojoCommandIndex> {
     return this.index;
+  }
+
+  /** Lets preparation coordinators retry after explicit cache invalidation. */
+  get preparationRevision(): number {
+    return this.cacheGeneration;
   }
 
   // ── Internals ─────────────────────────────────────────────────────
@@ -1118,13 +1495,63 @@ export class KojoCache implements DialogueRouter {
   ): KojoNode | null {
     const key = `${charaNum}:${variantCode}:${comType}:${cmd}`;
     const cached = this.cache.get(key);
-    if (cached) return cached.node;
-
-    const node = this.parseFuncFromFile(loc, charaNum, variantCode);
-    if (node) {
-      this.cache.set(key, { node, cachedAt: Date.now() });
+    if (cached && (!loc.contentFingerprint || cached.sourceFingerprint === loc.contentFingerprint)) {
+      this.preparedCacheKeys.delete(key);
+      return cached.node;
     }
+
+    const source = this.getSource(loc.filePath);
+    const node = this.parseFuncFromFile(loc, charaNum, variantCode);
+    this.cache.set(key, { node, cachedAt: Date.now(), sourceFingerprint: loc.contentFingerprint ?? source.fingerprint });
     return node;
+  }
+
+  getCounterKojoMetadata(
+    charaNum: number,
+    counterAction: number,
+    state: Readonly<GameState>,
+  ) {
+    const variantCode = this.resolveVariant(charaNum, state);
+    const loc = this.findVariant(charaNum, variantCode)?.counters?.[counterAction];
+    return {
+      variantCode,
+      sourceFile: loc?.filePath,
+      functionName: loc?.funcName,
+    };
+  }
+
+  private getSource(filePath: string): SourceEntry {
+    const cached = this.sourceCache.get(filePath);
+    if (cached) {
+      // Refresh recency — a Map preserves insertion order, so re-inserting
+      // the same key is the LRU touch.
+      this.sourceCache.delete(filePath);
+      this.sourceCache.set(filePath, cached);
+      return cached;
+    }
+    const startedAt = performance.now();
+    const text = this.readText(filePath, this.projectRoot).replace(/^\uFEFF/, "");
+    recordSourceRead(filePath, text, performance.now() - startedAt);
+    const entry = makeSourceEntry(text);
+    recordKojoPerformance("read", performance.now() - startedAt);
+    this.sourceCache.set(filePath, entry);
+    this.sourceCacheChars += text.length;
+    this.evictSourcesIfNeeded();
+    return entry;
+  }
+
+  /** Drop least-recently-used sources until the resident budget is respected. */
+  private evictSourcesIfNeeded(): void {
+    if (this.maxSourceCacheChars <= 0) return;
+    // A file whose async read is still pending is not in `sourceCache` yet, so
+    // it is unreachable from this loop and needs no guard. A file that IS
+    // resident was inserted exactly once, by the completed read, so evicting
+    // it here cannot cause a duplicate re-insert.
+    for (const [filePath, entry] of this.sourceCache) {
+      if (this.sourceCacheChars <= this.maxSourceCacheChars) return;
+      this.sourceCache.delete(filePath);
+      this.sourceCacheChars -= entry.text.length;
+    }
   }
 
   /** Parse an EVENT-arm personal kojo (`M_KOJO_EVENT_K{n}_{arm}`) from
@@ -1138,7 +1565,10 @@ export class KojoCache implements DialogueRouter {
   ): KojoNode | null {
     const key = `EVENT_ARM:${charaNum}:${variantCode}:${arm}`;
     const cached = this.cache.get(key);
-    if (cached) return cached.node;
+    if (cached) {
+      this.preparedCacheKeys.delete(key);
+      return cached.node;
+    }
     const node = this.parseFuncFromFile(loc, charaNum, variantCode);
     if (node) {
       this.cache.set(key, { node, cachedAt: Date.now() });
@@ -1164,6 +1594,20 @@ export class KojoCache implements DialogueRouter {
     return node;
   }
 
+  private getOrParseDailyEvent(
+    charaNum: number,
+    variantCode: string,
+    eventId: number,
+    loc: FuncLocation,
+  ): KojoNode | null {
+    const key = `DAILY:${charaNum}:${variantCode}:${eventId}`;
+    const cached = this.cache.get(key);
+    if (cached) return cached.node;
+    const node = this.parseFuncFromFile(loc, charaNum, variantCode);
+    if (node) this.cache.set(key, { node, cachedAt: Date.now() });
+    return node;
+  }
+
   /** ENCOUNTER cache+parse — same shape as the EVENT-arm helper, but there is
    *  a single first-meeting func per (chara, variant), so no arm key. */
   private getOrParseEncounter(
@@ -1173,7 +1617,10 @@ export class KojoCache implements DialogueRouter {
   ): KojoNode | null {
     const key = `ENCOUNTER:${charaNum}:${variantCode}`;
     const cached = this.cache.get(key);
-    if (cached) return cached.node;
+    if (cached) {
+      this.preparedCacheKeys.delete(key);
+      return cached.node;
+    }
     // ENCOUNTER bodies may delegate their opening setup prompt to a helper in
     // the same ERB file. Luna K6 does this with
     // `CALL KOJO_OPTION_K6_RESULT_1`; without static same-file expansion the
@@ -1196,7 +1643,10 @@ export class KojoCache implements DialogueRouter {
   ): KojoNode | null {
     const key = `ROOM_DESCRIPTION:${charaNum}:${variantCode}`;
     const cached = this.cache.get(key);
-    if (cached) return cached.node;
+    if (cached) {
+      this.preparedCacheKeys.delete(key);
+      return cached.node;
+    }
     const node = this.parseFuncFromFile(loc, charaNum, variantCode);
     if (node) {
       this.cache.set(key, { node, cachedAt: Date.now() });
@@ -1280,11 +1730,16 @@ export class KojoCache implements DialogueRouter {
   ): KojoNode | null {
     const key = `COUNTER:${charaNum}:${variantCode}:${counterAction}`;
     const cached = this.cache.get(key);
-    if (cached) return cached.node;
-    const node = this.parseFuncFromFile(loc, charaNum, variantCode);
-    if (node) {
-      this.cache.set(key, { node, cachedAt: Date.now() });
+    if (cached && (!loc.contentFingerprint || cached.sourceFingerprint === loc.contentFingerprint)) {
+      return cached.node;
     }
+    const source = this.getSource(loc.filePath);
+    const node = this.parseFuncFromFile(loc, charaNum, variantCode);
+    this.cache.set(key, {
+      node,
+      cachedAt: Date.now(),
+      sourceFingerprint: loc.contentFingerprint ?? source.fingerprint,
+    });
     return node;
   }
 
@@ -1421,93 +1876,11 @@ export class KojoCache implements DialogueRouter {
     expandSameFileStaticCalls = false,
   ): KojoNode | null {
     try {
-      const isIraiScene = "sceneLineStart" in loc && "sceneLineEnd" in loc;
-      // Build the substitution context. Only callee-side tokens are
-      // pre-resolved here (`%CALLNAME:TARGET%` / `%CALLNAME:NN%` for
-      // N≠0). The three player-caller tokens (`MASTER`/`PLAYER`/`0`)
-      // are left verbatim in the cached node and resolved at emit time
-      // against live `state.master.callName` —
-      // `runtime/kojo/text-renderer.ts::substituteKojoCallNames`. With no
-      // resolver wired, the callee falls back to "对方" (readable,
-      // chara-neutral). Because the cache key includes `charaNum`, the
-      // per-chara substituted node is never shared across characters.
-      const ctx: SubstituteContext = {
-        ...DEFAULT_CONTEXT,
-        calleeName: this.nameResolver?.(charaNum) ?? "对方",
-        calleeCharaNum: charaNum,
-        ...(isIraiScene
-          ? { deferredCallNameAliases: ["CHARA", "CLIENT_ID"] }
-          : {}),
-      };
-
-      // Read the file and extract the target lines
-      const text = this.readText(loc.filePath, this.projectRoot);
-      const lines = text.split("\n");
-      const slice = isIraiScene
-        ? [
-            lines[loc.lineStart - 1] ?? `@${loc.funcName.replace(/^@/, "")}`,
-            ...lines.slice(
-              Math.max(0, loc.sceneLineStart - 1),
-              Math.min(Math.max(0, loc.sceneLineEnd - 1), lines.length),
-            ),
-          ].join("\n")
-        : lines.slice(loc.lineStart - 1, Math.min(loc.lineEnd, lines.length)).join("\n");
-
-      // Extract @-funcs from the slice. The target func should be the
-      // first one (since lineStart points to its declaration).
-      const funcs = extractFuncs(slice);
-      if (funcs.length === 0) return null;
-
-      // Find the func matching our target name
-      const targetName = loc.funcName.startsWith("@")
-        ? loc.funcName.slice(1)
-        : loc.funcName;
-      const fn = funcs.find((f) => f.name === targetName) ?? funcs[0]!;
-
-      const effectiveSymbols = mergeKojoSymbolTables(
-        DEFAULT_KOJO_SYMBOLS,
-        SCOPED_KOJO_SYMBOLS[String(charaNum)],
-      );
-      const scopedDeclarations = SCOPED_KOJO_DECLARATIONS[String(charaNum)];
-
-      // Parse into KojoNode tree
-      const functions = expandSameFileStaticCalls
-        ? new Map(extractFuncs(text).map((candidate) => [candidate.name.toUpperCase(), candidate]))
-        : null;
-      const parseWithStaticCalls = (
-        current: typeof fn,
-        visiting: ReadonlySet<string>,
-      ): ParsedKojoFunc => parseFunc(current, ctx, {
+      return parseKojoSource(loc, charaNum, this.getSource(loc.filePath), {
+        calleeName: this.nameResolver?.(charaNum),
         captureFunctionResults,
-        symbols: effectiveSymbols,
-        namedLocals: [
-          ...GLOBAL_KOJO_DECLARATIONS.numeric,
-          ...(scopedDeclarations?.numeric ?? []),
-        ],
-        namedStringLocals: [
-          ...GLOBAL_KOJO_DECLARATIONS.string,
-          ...(scopedDeclarations?.string ?? []),
-        ],
-        resolveStaticCall: functions
-          ? (functionName, args, line) => {
-              const callee = functions.get(`@${functionName}`.toUpperCase());
-              const canonical = callee?.name.toUpperCase();
-              if (callee && canonical && !visiting.has(canonical)) {
-                const bound = bindStaticCallArguments(callee, args);
-                const body = parseWithStaticCalls(bound, new Set([...visiting, canonical])).body;
-                // Preserve the cache's existing fail-closed boundary: expand a
-                // helper only when its whole static body is supported. This lets
-                // K6's first authored option run without pulling the separate,
-                // still-unsupported ASK_M ability-customization helper into the
-                // same transaction and discarding the completed first choice.
-                if (!containsUnsupportedKojoNode(body)) return body;
-              }
-              return resolveDiaryStaticCall(functionName, args, line, effectiveSymbols);
-            }
-          : undefined,
+        expandSameFileStaticCalls,
       });
-      const parsed = parseWithStaticCalls(fn, new Set([fn.name.toUpperCase()]));
-      return parsed.body;
     } catch {
       return null;
     }

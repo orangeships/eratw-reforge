@@ -86,8 +86,19 @@ export const comf89Def: ComfDef = {
   canExecute: com89Check,
   hModeMenuCheck: com89Check,
 
-  // ERB 36: target 気力 100 drain — in body.
-  downbase: {},
+  // ERB 36 / 131-133: response branch spends target 気力; frozen branch spends master TSP.
+  downbase: (c): Record<number, number> => {
+    const frozen =
+      (c.next.flagStore[FLAG_ID.時間停止] ?? 0) === 1 &&
+      (c.t.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
+    return frozen ? { [BASE_ID.TSP]: 50 } : {};
+  },
+  targetDownbase: (c): Record<number, number> => {
+    const frozen =
+      (c.next.flagStore[FLAG_ID.時間停止] ?? 0) === 1 &&
+      (c.t.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
+    return frozen ? {} : { [BASE_ID.気力]: 100 };
+  },
 
   buildSources: (c) => {
     const V = getTflag(c.next, TFLAG_ID.套套内);
@@ -113,7 +124,6 @@ export const comf89Def: ComfDef = {
   body: (c) => {
     const V = getTflag(c.next, TFLAG_ID.套套内);
     const timeStopped = (c.next.flagStore[FLAG_ID.時間停止] ?? 0) === 1;
-    const frozen = timeStopped && (c.t.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0;
 
     c.t.state.TCVAR[TCVAR_ID.行為者] = 0;
     c.t.state.EXP[EXP_ID.精液経験] =
@@ -127,11 +137,6 @@ export const comf89Def: ComfDef = {
     c.t.state.CFLAG[CFLAG_ID.累計精飲] =
       (c.t.state.CFLAG[CFLAG_ID.累計精飲] ?? 0) + V;
     setTflag(c.next, TFLAG_ID.SELECTCOM的分岐, V);
-    if (frozen) {
-      c.master.state.BASE[BASE_ID.TSP] = (c.master.state.BASE[BASE_ID.TSP] ?? 0) - 50;
-    } else {
-      c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 100;
-    }
     setTflag(c.next, TFLAG_ID.套套内, 0);
   },
 

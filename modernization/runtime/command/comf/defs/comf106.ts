@@ -74,8 +74,14 @@ export const comf106Def: ComfDef = {
 
   timeCost: 0,
 
-  // Target drain lives in body (factory downbase is master-only).
+  // ERB 22-23: target 気力 50, scaled by 緊縛経験 (ERB 35-44).
   downbase: {},
+  targetDownbase: (c) => ({
+    [BASE_ID.気力]: times(
+      50,
+      kinbakuDrainMul(c.t.state.EXP[EXP_ID.緊縛経験] ?? 0),
+    ),
+  }),
 
   buildSources: (_c) => {
     // ERB 25-29: 恐怖 500, 露出 200, 屈従 150, 逸脱 100, 反感 300.
@@ -89,10 +95,6 @@ export const comf106Def: ComfDef = {
   },
 
   body: (c) => {
-    // ERB 22-23: target 気力 50 drain (体力 0), scaled by 緊縛経験 (ERB 35-44).
-    const mul = kinbakuDrainMul(c.t.state.EXP[EXP_ID.緊縛経験] ?? 0);
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - times(50, mul);
-
     // ERB 49: 緊縛経験 (target) += 2.
     c.t.state.EXP[EXP_ID.緊縛経験] = (c.t.state.EXP[EXP_ID.緊縛経験] ?? 0) + 2;
   },

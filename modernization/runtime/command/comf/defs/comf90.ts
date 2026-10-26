@@ -65,8 +65,9 @@ export const comf90Def: ComfDef = {
 
   timeCost: 0,
 
-  // ERB 23-24: target drain — in body.
+  // ERB 23-24: target DOWNBASE uses the shared resource preflight.
   downbase: {},
+  targetDownbase: { [BASE_ID.体力]: 10, [BASE_ID.気力]: 100 },
 
   buildSources: (c) => {
     // ERB 26-31: fixed tail. 不潔 line-31 200 is overridden by line-35 Y*10+60.
@@ -92,10 +93,6 @@ export const comf90Def: ComfDef = {
   }),
 
   body: (c) => {
-    // ERB 23-24: target 体力 10 / 気力 100 drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 10;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 100;
-
     // No body EXP; HETEROSEX deferred.
 
     // ERB 48-49: STAIN swap — target 手 ⇔ master Ａ.
@@ -106,7 +103,7 @@ export const comf90Def: ComfDef = {
   },
 
   narration: (_c, favorDelta) =>
-    `%CALLNAME:TARGET% 爱抚了 %CALLNAME:MASTER%'s anus — アナル愛撫される；好感度 ${
+    `%CALLNAME:TARGET% 爱抚了%CALLNAME:MASTER%的肛门 — アナル愛撫される；好感度 ${
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };

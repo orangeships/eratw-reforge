@@ -57,6 +57,7 @@ import type {
   ObservationEvent,
 } from "../../schemas/types.js";
 import type { GameState } from "../state/index.js";
+import { cloneGameState } from "../state/game-state.js";
 import { beginKojoExecutionFrame, beginTurnContext } from "../state/tflag.js";
 import {
   detectDomainTransitions,
@@ -74,11 +75,24 @@ import {
   trainLinesToNarrationEvents,
   type TrainMessageRouter,
 } from "./train-message.js";
-import { clearTrainingMode, finishTrainingSession, withTrainingSessionLifecycle } from "./training-session.js";
+import {
+  clearTrainingMode,
+  finishTrainingSession,
+  prepareHInsertionBeforeSettlement,
+  prepareHInsertionReleaseBeforeSettlement,
+  withTrainingSessionLifecycle,
+} from "./training-session.js";
+import { runEventComEnd2 } from "./handlers/event-com-end.js";
+import { prepareHCommandStimulus, withHCommandEjaculation } from "./h-ejaculation.js";
+import { hasHInteractionProjection, prepareHInteraction } from "./h-interaction.js";
+import { attachHSettlementReceipt } from "./h-settlement-receipt.js";
 import { applyDailyBlessingExpBonus } from "../world/daily-event.js";
 import { collectCommandKojo } from "./command-kojo.js";
 import { applyKojoEffects, resolveEventKojoAndApply } from "../kojo/effects.js";
 import { collectCommandPalamCng } from "../kojo/palam-dispatch.js";
+import { finalizeTrainingMarkAcquisitionChecks } from "./source-check.js";
+import { withEventCounter } from "./counter/with-counter.js";
+import { resolveDomainTransitionDialogue } from "../kojo/domain-transition-dialogue.js";
 import {
   hModeBlockReason,
   isCleanHModeBaselineCommand,
@@ -86,9 +100,11 @@ import {
   requiresHMode,
 } from "./h-mode.js";
 import { extractedGateAuditFor } from "./comf/comable-gate-audit.generated.js";
-import { advanceDateTravel, endDate, followDatePartner, syncDateMirrors, tryStartAppointmentOnArrival } from "../world/date-session.js";
+import { endDate, followDatePartner, syncDateMirrors, tryStartAppointmentOnArrival } from "../world/date-session.js";
+import { applyDateTimeUp, dateTimeUpFlags } from "../world/date-timeup.js";
 import { advanceDateAppointments, offeredDateInvitations, offerDateIntentionsOnEncounter } from "../world/date-appointments.js";
 import { mapIdOfLocation } from "../world/location-predicates.js";
+import { CFLAG_ID, TCVAR_ID, flushCommandTimeBatch } from "../state/settlement.js";
 import {
   accrueMobDirt,
   clearMobInterruptedTargetEmotion,
@@ -118,12 +134,43 @@ export interface ResolverDeps {
    * fall back to canned NARRATION).
    */
   readonly dialogueRouter?: import("../kojo/types.js").DialogueRouter;
+  readonly narrativeHookGeneration?: boolean;
   /**
    * Original TRAIN_MESSAGE / MESSAGE_COMxxx layer. This is common action
-   * prose, not personal kojo: it should appear before handler/personal
-   * dialogue when a command actually settles.
+   * prose, not personal kojo: when a command settles it is retained in the
+   * event log and presented in the scene-description lane before the handler
+   * or personal dialogue.
    */
   readonly trainMessageRouter?: TrainMessageRouter;
+  /**
+   * EVENT_COUNTER pipeline switch. Defaults to on; the golden-trace
+   * comparison harness flips it off to reproduce pre-counter sequences.
+   * The AI counter provider (S4) will arrive as a separate dep.
+   */
+  readonly counterEnabled?: boolean;
+  /**
+   * Generated shared counter narration asset (COUNTER_MESSAGE bodies).
+   * Absent ⇒ counter actions fire silently (personal kojo only).
+   */
+  readonly counterSharedAssets?: import("../kojo/counter-dispatch.js").SharedCounterDialogueAssets;
+  /**
+   * Counter action-selection provider. Default = the deterministic weighted
+   * draw; an AI provider may only pick pool members (validated) and abstains
+   * to the deterministic fallback when unready.
+   */
+  readonly counterProvider?: import("./counter/provider.js").CounterActionProvider;
+  /** Optional deterministic trigger stream override for focused tests/tools. */
+  readonly counterTriggerRng?: Rng;
+  /** Optional development-only counter route diagnostics. */
+  readonly counterDiagnostics?: (entry: {
+    charaNum: number;
+    action: number;
+    variantCode?: string;
+    sourceFile?: string;
+    functionName?: string;
+    status: string;
+    diagnostics: readonly string[];
+  }) => void;
 }
 
 const SYNTHETIC_ENGLISH_NARRATION_RE =
@@ -140,6 +187,9 @@ function isSyntheticMigrationNarration(event: ObservationEvent): boolean {
 }
 
 const HANDLER_AUTHORED_MESSAGE_COMMANDS = new Set<number>([
+  // Cooking/eating handlers already own the dish summary and per-eater prose.
+  // The common template lacks EX_DISH_NAME and runs after meal reset.
+  413, 414, 415,
   // COM445's modern handler owns the item/quantity/EXP result text. The legacy
   // TRAIN_MESSAGE line needs ERB TFLAG/ITEM expression evaluation, so using it
   // here leaks placeholders like `{TFLAG:194}` into the UI.
@@ -172,7 +222,10 @@ function withTrainMessage(
 
   const trainEvents = trainLinesToNarrationEvents(trainLines, ctx.now);
   const events = result.events.filter(
-    (event) => !isSyntheticMigrationNarration(event) && !isApologyFallbackNarration(event, ctx.commandNo),
+    (event) =>
+      !(event.kind === "NARRATION" && event.origin === "comf-fallback") &&
+      !isSyntheticMigrationNarration(event) &&
+      !isApologyFallbackNarration(event, ctx.commandNo),
   );
   return {
     ...result,
@@ -186,6 +239,12 @@ function withTrainMessage(
  * transaction-aware personal route after settlement, before TRAIN_MESSAGE is
  * prepended for display. */
 function withCommandKojo(result: CommandResult, ctx: CommandContext): CommandResult {
+  if (result.outcome === "ok") {
+    // Custom handlers may make several SOURCE_CHECK passes before this shared
+    // dialogue boundary. Commit their summed mark inputs once before kojo and
+    // state-transition feedback read the final levels.
+    finalizeTrainingMarkAcquisitionChecks(result.state);
+  }
   if (
     result.outcome !== "ok" ||
     result.kojoHandled ||
@@ -195,12 +254,19 @@ function withCommandKojo(result: CommandResult, ctx: CommandContext): CommandRes
   ) {
     return result;
   }
-  const kojo = collectCommandKojo({ ...ctx, state: result.state });
+  // EVENTCOMEND2 resets the eaten dish after upstream command dialogue. The
+  // handlers already clear it, so expose only the consumed dish to this read
+  // context; effects still commit against the authoritative, cleared state.
+  const kojoState = (ctx.commandNo === 414 || ctx.commandNo === 415) && ctx.state.dish && !result.state.dish
+    ? { ...result.state, dish: ctx.state.dish }
+    : result.state;
+  const kojo = collectCommandKojo({ ...ctx, state: kojoState });
   return {
     ...result,
     state: kojo.effects.length > 0 ? applyKojoEffects(result.state, kojo.effects) : result.state,
     events: [...result.events, ...kojo.events],
     ...(kojo.pendingKojoChoice ? { pendingKojoChoice: kojo.pendingKojoChoice } : {}),
+    ...(kojo.resolution ? { commandKojoResolution: kojo.resolution } : {}),
     kojoHandled: true,
   };
 }
@@ -214,6 +280,7 @@ function withCommandKojo(result: CommandResult, ctx: CommandContext): CommandRes
 function withPalamCngKojo(result: CommandResult, ctx: CommandContext): CommandResult {
   if (
     result.outcome !== "ok" ||
+    ctx.commandNo === 433 ||
     result.pendingKojoChoice ||
     !ctx.dialogueRouter ||
     ctx.target <= 0
@@ -227,6 +294,20 @@ function withPalamCngKojo(result: CommandResult, ctx: CommandContext): CommandRe
     state: palam.effects.length > 0 ? applyKojoEffects(result.state, palam.effects) : result.state,
     events: [...result.events, ...palam.events],
   };
+}
+
+function orderCommandEvents(events: readonly ObservationEvent[]): ObservationEvent[] {
+  // Preserve the runtime's append order for command prose, personal kojo,
+  // and EVENT_COUNTER output. Only move world ambience ahead of the command
+  // transcript so it cannot interrupt the active interaction surface.
+  return events
+    .map((event, index) => ({ event, index }))
+    .sort((a, b) => {
+      const aAmbient = a.event.kind === "NARRATION" && a.event.presentation === "ambient";
+      const bAmbient = b.event.kind === "NARRATION" && b.event.presentation === "ambient";
+      return Number(bAmbient) - Number(aAmbient) || a.index - b.index;
+    })
+    .map(({ event }) => event);
 }
 
 function withResolvedTransitions(
@@ -260,6 +341,21 @@ function withResolvedTransitions(
  * I/O's, never calls external services.
  */
 export function resolveCommand(
+  intent: IssueCommandIntent,
+  state: Readonly<GameState>,
+  deps: ResolverDeps,
+): CommandResult {
+  const result = resolveCommandInternal(intent, state, deps);
+  if (!result.failReason || (!state.training && !isHMode(state, intent.target ?? intent.actor))) return result;
+  return {
+    ...result,
+    events: result.events.map((event) => event.kind === "STATUS_MESSAGE"
+      ? { ...event, presentation: "command-feedback" as const }
+      : event),
+  };
+}
+
+function resolveCommandInternal(
   intent: IssueCommandIntent,
   state: Readonly<GameState>,
   deps: ResolverDeps,
@@ -330,13 +426,15 @@ export function resolveCommand(
   // target-directed COMF commands (5D); absent ⇒ actor is the implicit
   // target (e.g. 移動 acts on the player). See header note.
   const commandState = beginTurnContext(state, intent.commandNo);
-  beginKojoExecutionFrame(
+  const commandFrame = beginKojoExecutionFrame(
     commandState,
     intent.actor,
     intent.target ?? intent.actor,
     intent.commandNo,
   );
-  const ctx: CommandContext = {
+  commandFrame.batchCommandTime =
+    intent.commandNo < 200 || (intent.commandNo >= 312 && intent.commandNo <= 361);
+  let ctx: CommandContext = {
     state: commandState,
     actor: intent.actor,
     target: intent.target ?? intent.actor,
@@ -345,6 +443,7 @@ export function resolveCommand(
     rngSeed: deps.rngSeed,
     now,
     dialogueRouter: deps.dialogueRouter,
+    narrativeHookGeneration: deps.narrativeHookGeneration,
     // Phase 7 Wave 2c: forward the B9 prompt answer (absent for non-B9
     // commands or when the UI skipped the picker).
     promptAnswer: intent.promptAnswer,
@@ -455,16 +554,81 @@ export function resolveCommand(
     }
   }
 
+  // Project the upstream TEQUIP contact/pose write before SOURCE settlement.
+  // The command context received a shallow turn clone, so clone the state
+  // again only on this accepted H path and keep the public input untouched.
+  let insertionReleaseMessages: string[] = [];
+  if (hasHInteractionProjection(ctx.commandNo)) {
+    const preparedState = cloneGameState(ctx.state);
+    insertionReleaseMessages = prepareHInsertionReleaseBeforeSettlement(preparedState, ctx.target, ctx.commandNo);
+    const interactionChanged = prepareHInteraction(preparedState, ctx.actor, ctx.target, ctx.commandNo);
+    const insertionPrepared = prepareHInsertionBeforeSettlement(
+      preparedState,
+      ctx.target,
+      ctx.actor,
+      ctx.commandNo,
+    );
+    if (interactionChanged || insertionPrepared) {
+      ctx = { ...ctx, state: preparedState };
+    }
+  }
+
+  prepareHCommandStimulus(ctx);
+
+  const handlerResult = entry.handler(ctx);
+  const handled = handlerResult.outcome === "ok" && insertionReleaseMessages.length > 0
+    ? { ...handlerResult, events: [...insertionReleaseMessages.map((text) => ({
+        kind: "NARRATION" as const, timestamp: ctx.now(), text,
+      })), ...handlerResult.events] }
+    : handlerResult;
+
   // Happy path: handler settles state; then the original common
-  // TRAIN_MESSAGE layer emits its action prose before personal kojo.
+  // TRAIN_MESSAGE layer emits its action prose before personal kojo, the
+  // EVENT_COUNTER pipeline may add the target's own reaction, and the
+  // training lifecycle finalizes session bookkeeping.
   let settled = withTrainingSessionLifecycle(
-    withPalamCngKojo(
-      withTrainMessage(withCommandKojo(entry.handler(ctx), ctx), ctx, deps),
+    withEventCounter(
+      withPalamCngKojo(
+        withTrainMessage(withCommandKojo(withHCommandEjaculation(handled, ctx), ctx), ctx, deps),
+        ctx,
+      ),
       ctx,
+      deps,
     ),
     ctx,
   );
+  const commandTimeEvents = flushCommandTimeBatch(settled.state, now);
+  if (commandTimeEvents.length > 0) {
+    settled = { ...settled, events: [...settled.events, ...commandTimeEvents] };
+  }
   if (settled.outcome === "ok") {
+    // Upstream FirstMeetToday records a same-room interaction for EVENT 31.
+    const target = settled.state.charas[ctx.target];
+    if (target && target.location === settled.state.master.location) {
+      // Normal handlers already own a deep copy. Preserve the defensive copy
+      // for handlers that return shared slots, without recopying the entire
+      // save/history before the all-character EVENTCOMEND2 bookkeeping.
+      const ownsSlotState = (slot: typeof settled.state.master, original: typeof slot | undefined) =>
+        !original || (slot.state !== original.state && Object.entries(slot.state).every(([key, value]) =>
+          value === null || typeof value !== "object"
+          || value !== (original.state as unknown as Record<string, unknown>)[key],
+        ));
+      const ownsCharacterState = ownsSlotState(settled.state.master, state.master)
+        && Object.entries(settled.state.charas).every(([id, slot]) =>
+          ownsSlotState(slot, state.charas[Number(id)]),
+        );
+      if (!ownsCharacterState) {
+        settled = { ...settled, state: cloneGameState(settled.state) };
+      }
+      const met = settled.state.charas[ctx.target]!;
+      met.state.CFLAG[CFLAG_ID.最后见面的日子] = settled.state.time.dayIndex;
+      met.state.TCVAR[TCVAR_ID.今天有否见面] = 1;
+    }
+    // EVENTCOMEND2 is an authoritative post-command hook, not a UI-only
+    // afterthought. Run its silent per-character bookkeeping for resolver
+    // callers too (the elapsed-time finalizer may run the same hook later
+    // with a non-zero fatigue delta).
+    runEventComEnd2(settled.state, 0);
     // `EVENTCOMEND.ERB` applies the MOB room's per-minute dirt and then
     // allows that room's `MOB_TURNENDEVENT` to interrupt public H activity.
     // Keep this in the command authority so generated move handlers remain
@@ -484,11 +648,18 @@ export function resolveCommand(
       const message = mobInterruptionMessage(settled.state);
       clearMobInterruptedTargetEmotion(settled.state, ctx.target);
       clearTrainingMode(settled.state, ctx.target);
-      finishTrainingSession(settled.state, "manual");
-      if (message) {
+      const clearedEdging = finishTrainingSession(settled.state, "manual");
+      const interruptionMessages = [
+        message,
+        ...(clearedEdging > 0 ? ["训练中断，未吸收的寸止积累已清除。"] : []),
+      ].filter((text): text is string => Boolean(text));
+      if (interruptionMessages.length > 0) {
         settled = {
           ...settled,
-          events: [...settled.events, { kind: "NARRATION", timestamp: now(), text: message }],
+          events: [
+            ...settled.events,
+            ...interruptionMessages.map((text) => ({ kind: "NARRATION" as const, timestamp: now(), text })),
+          ],
         };
       }
     }
@@ -502,16 +673,31 @@ export function resolveCommand(
         }],
       };
     }
-    const elapsed = Math.max(0, settled.state.time.tickValue - state.time.tickValue);
     const session = settled.state.dateSession;
     if (session && (settled.state.time.dayIndex !== state.time.dayIndex || (session.forcedEndTick != null && settled.state.time.tickValue >= session.forcedEndTick))) {
       endDate(settled.state, { returnHome: true });
-    } else if (session && (session.phase === "traveling" || session.phase === "returning")) {
-      advanceDateTravel(settled.state, elapsed);
-    } else if (session && session.phase === "active") {
-      session.mapId = mapIdOfLocation(settled.state.master.location) ?? session.mapId;
-      followDatePartner(settled.state);
-      syncDateMirrors(settled.state);
+    } else if (session) {
+      // Upstream `@约会終了タイムアップ処理` runs after every turn. It ends the
+      // date on 気力 0 / NEMUKE>=720 / blackout drunk / partner weakened, and
+      // offers a stay-over when the partner invited the master. It calls
+      // `SET_DATE` WITHOUT `DATE_EVENT`, so no date settlement runs here.
+      const timeUp = dateTimeUpFlags(settled.state);
+      if (timeUp?.anyAffected) {
+        const result = applyDateTimeUp(settled.state, timeUp, { now });
+        if (result.events.length > 0) {
+          settled = {
+            ...settled,
+            events: [...settled.events, ...result.events],
+          };
+        }
+      } else {
+        // The date is always in its single `active` phase: the road stage is
+        // retired, so the master may walk and the partner follows.
+        session.mapId = mapIdOfLocation(settled.state.master.location) ?? session.mapId;
+        followDatePartner(settled.state);
+        syncDateMirrors(settled.state);
+        tryStartAppointmentOnArrival(settled.state);
+      }
     } else {
       tryStartAppointmentOnArrival(settled.state);
     }
@@ -524,7 +710,7 @@ export function resolveCommand(
         invitationEvents.push({
           kind: "NARRATION",
           timestamp: now(),
-          text: `${name}似乎想和你约个时间一起出门。`,
+          text: `${name}似乎想邀请你去${invitation.location ?? "某处"}约会。`,
         });
         if (deps.dialogueRouter) {
           for (const line of resolveEventKojoAndApply(
@@ -557,5 +743,27 @@ export function resolveCommand(
       };
     }
   }
-  return withResolvedTransitions(state, settled, ctx);
+  settled = withResolvedTransitions(state, settled, ctx);
+  if (settled.outcome === "ok" && deps.dialogueRouter && settled.transitions?.length) {
+    for (const transition of settled.transitions) {
+      if (transition.kind !== "rebellion-mark-acquired" && transition.kind !== "mark-acquired") continue;
+      const reaction = resolveDomainTransitionDialogue(settled.state, transition, {
+        router: deps.dialogueRouter,
+        rng: ctx.rng,
+        now,
+      });
+      settled = {
+        ...settled,
+        state: reaction.state,
+        events: [...settled.events, ...reaction.events.map((event) => ({ ...event, origin: "mark" as const }))],
+      };
+    }
+  }
+  // Last point where the command's `KojoExecutionFrame` still exists: snapshot
+  // this turn's NOWEX / edging / marks into a persisted receipt so the L1
+  // scene projection can read them long after `clearTurnContext` runs.
+  return attachHSettlementReceipt(
+    { ...settled, events: orderCommandEvents(settled.events) },
+    { before: state, ctx },
+  );
 }

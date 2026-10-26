@@ -14,6 +14,8 @@ export interface SpriteCropProps {
   /** Maximum rendered footprint. The crop keeps its original aspect ratio. */
   frameWidth?: number;
   frameHeight?: number;
+  /** Contain the complete resource crop when the shell has a bounded portrait column. */
+  fit?: "cover" | "contain";
   imageTestId?: string;
   cropTestId?: string;
 }
@@ -32,6 +34,7 @@ export default function SpriteCrop({
   className,
   frameWidth = 130,
   frameHeight = 200,
+  fit = "cover",
   imageTestId,
   cropTestId,
 }: SpriteCropProps) {
@@ -39,7 +42,9 @@ export default function SpriteCrop({
   // Portrait cells are usually square while the stage slot is tall. `cover`
   // keeps the character visually present instead of leaving a large empty
   // band above a tiny contained square; the outer frame clips only overflow.
-  const scale = Math.max(frameWidth / width, frameHeight / height);
+  const scale = fit === "contain"
+    ? Math.min(frameWidth / width, frameHeight / height)
+    : Math.max(frameWidth / width, frameHeight / height);
   const viewportStyle: CSSProperties = {
     width: `${width * scale}px`,
     height: `${height * scale}px`,

@@ -23,6 +23,7 @@
  * 倍数) IS modelled — `charaDataOf` exposes the raw foodLike/foodDislike.
  */
 import type { CommandContext, HandlerEntry } from "../types.js";
+import type { ObservationEvent } from "../../../schemas/types.js";
 import { cloneGameState, type GameState } from "../../state/game-state.js";
 import { itemCount, removeItem } from "../../state/items.js";
 import {
@@ -38,6 +39,7 @@ import {
 import { buffBase } from "../../state/buff.js";
 import { riseFullness } from "../../state/dish.js";
 import { TFLAG_ID, getTflag, setTflag } from "../../state/tflag.js";
+import { itemExplanation } from "../../state/item-explanation.js";
 import { charaDataOf } from "../../state/chara-data.js";
 import { pickOne, requirePickOne, type PromptSpec } from "../prompt.js";
 
@@ -600,12 +602,53 @@ export const itemUse490HandlerEntry: HandlerEntry = {
       };
     }
     const applied = applyConsumable(next, itemId, targetCharaNum);
+    const item = MASTER_CONSUMABLES[itemId]!;
+    if (applied.ok) {
+      // COMF490 アイテム.ERB:106-107 — `TFLAG:193 = 使用道具`（used item id）
+      // and `TFLAG:194 = 対象 == MASTER ? MASTER # 1`（self use → 0, NPC use
+      // → 1）. Written on the result state so `withCommandKojo`'s
+      // collectCommandKojo evaluates the authored COM490 routes (22 characters
+      // ship them) against the same transient flags the upstream kojo reads.
+      setTflag(next, TFLAG_ID.SELECTCOM的分岐, itemId);
+      setTflag(next, TFLAG_ID.SOURCEなどに影響しないSELECTCOMの分岐, targetCharaNum === 0 ? 0 : 1);
+    }
+    const events: ObservationEvent[] = [
+      ...applied.clockEvents.map((event) => ({ ...event, timestamp: ctx.now() })),
+    ];
+    if (applied.ok && targetCharaNum > 0) {
+      const receiver = next.charas[targetCharaNum];
+      events.push({
+        kind: "NARRATION" as const,
+        timestamp: ctx.now(),
+        text: `给${receiver?.callName ?? `角色#${targetCharaNum}`}使用了${item.name}。`,
+        surface: "item-use" as const,
+        tone: "plain" as const,
+      });
+    }
+    events.push({
+      kind: "NARRATION" as const,
+      timestamp: ctx.now(),
+      text: applied.message,
+      ...(applied.ok ? { surface: "item-use" as const, tone: "plain" as const } : {}),
+    });
+    if (applied.ok) {
+      // Same convention as 採集 (@MESSAGE_COM445 prints the item's 地文
+      // introduction): the upstream `"??????"` no-explanation fallback is
+      // omitted rather than printed.
+      const explanation = itemExplanation(next, itemId);
+      if (explanation !== null) {
+        events.push({
+          kind: "NARRATION" as const,
+          timestamp: ctx.now(),
+          text: `${item.name}：${explanation}`,
+          surface: "item-use" as const,
+          tone: "plain" as const,
+        });
+      }
+    }
     return {
       state: next,
-      events: [
-        ...applied.clockEvents.map((event) => ({ ...event, timestamp: ctx.now() })),
-        { kind: "NARRATION" as const, timestamp: ctx.now(), text: applied.message },
-      ],
+      events,
       outcome: applied.ok ? "ok" as const : "noop" as const,
     };
   },

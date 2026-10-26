@@ -81,6 +81,13 @@ function recipeForSpecies(species: string): RaceRecipe {
   return RACE_RECIPES[speciesKey(species)] ?? { cloth: "私服A" };
 }
 
+/** The portrait cloth layer a species draws (CN12 服 layer name). The mob
+ *  clothing seed (`mob-clothing.ts`) maps this to an EQUIP outfit the same
+ *  way upstream's SIF block maps CSTR:路人子画像文字列_服_通常 → 衣装セット. */
+export function mobClothForSpecies(species: string): string {
+  return recipeForSpecies(species).cloth;
+}
+
 function suffixForExpression(expression: PortraitExpression, eyeType: string): string {
   if (expression === "smile") return "CN02_瞳_目瞳_閉じ目2";
   return `CN02_瞳_目瞳_${eyeType}${expression === "angry" ? "2" : "1"}`;

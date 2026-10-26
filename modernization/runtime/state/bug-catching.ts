@@ -48,7 +48,10 @@ export interface BugDef {
   name: string;
   /** Rarity 0 (common) to 9 (legendary) */
   rarity: number;
-  tribe: string;       // e.g. "[蝶][飛行]"
+  /** Tribe tags, e.g. `[蝶][飛行]`. Empty string = tribe-less species (14 upstream). */
+  tribe: string;
+  /** 属性（色）. May stack two colours, e.g. `緑黒`. */
+  type: string;
   field: number;        // FIELD bitset
   /** Area bitset (mapId 0..11), faithful to AREA_SETBIT. */
   area: number;
@@ -58,6 +61,13 @@ export interface BugDef {
   conditions: readonly string[];
   /** `FAVOS`: bait types or named favourites used by the insect trap. */
   favorites: string;
+  /** Base 斗虫 stats. `MUSHI_PALAM` derives max HP/ATK/SPD from these + rank. */
+  hp: number;
+  atk: number;
+  spd: number;
+  size: number;
+  /** Special abilities, e.g. `[睡眠粉][強攻撃]`. */
+  skl: string;
   /** Catch result → item conversion (item id or pseudo-category) */
   itemId: number;       // Item.csv id
 }
@@ -68,7 +78,12 @@ export interface BugDef {
  *
  * TODO(V2): full 100+ bug catalog from MUSHI_DATA.ERB.
  */
-const LEGACY_BUG_CATALOG: Array<Omit<BugDef, "area" | "conditions" | "favorites">> = [
+/**
+ * Readable fixture slice used as documentation examples. Deliberately *not* a
+ * `BugDef`: the battle fields (type/hp/atk/spd/size/skl) live in the generated
+ * catalog, and duplicating hand-typed copies here would only rot.
+ */
+const LEGACY_BUG_CATALOG: ReadonlyArray<Pick<BugDef, "num" | "name" | "rarity" | "tribe" | "field" | "condition" | "itemId">> = [
   // rarity 0 — commons
   { num: 1,  name: "菜粉蝶", rarity: 0, tribe: "[蝶][飛行]",    field: FIELD.GRASS | FIELD.FLOWER, condition: "昼間", itemId: 709 },
   { num: 19, name: "剑角蝗", rarity: 0, tribe: "[蝗虫]",         field: FIELD.GRASS,                condition: "",     itemId: 709 },
@@ -110,13 +125,26 @@ export const BUG_CATALOG: readonly BugDef[] = RAW_BUG_CATALOG.map((bug) => ({
   name: bug.name,
   rarity: bug.rarity,
   tribe: bug.tribe,
+  type: bug.type,
   field: FieldBitset(bug.field),
   area: AreaBitset(bug.area),
   condition: bug.conditions.join("&&"),
   conditions: bug.conditions,
   favorites: bug.favorites,
+  hp: bug.hp,
+  atk: bug.atk,
+  spd: bug.spd,
+  size: bug.size,
+  skl: bug.skl,
   itemId: bug.rarity > 5 ? 710 : 709,
 }));
+
+const BUG_BY_NUM = new Map(BUG_CATALOG.map((bug) => [bug.num, bug]));
+
+/** Species lookup by upstream `MUSHI_NUM`. */
+export function bugDefFor(num: number): BugDef | undefined {
+  return BUG_BY_NUM.get(num);
+}
 
 /** Upstream `@MUSHI_ESA_DATA`, generated with real Item.csv ids. */
 export interface BugBaitDef {

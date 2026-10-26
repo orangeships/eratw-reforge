@@ -2,7 +2,7 @@
  * Phase 7 — `COMF330 スカートをめくる` (flip the skirt) settlement, as a `ComfDef`.
  *
  * Ports `@COM330` (`ERB/コマンド関連/COMF/日常系/COMF330 スカートをめくる.ERB`),
- * the non-time-stop arm.
+ * the normal arm, with the time-stop TSP-only arm in the handler wrapper.
  *
  * **Special case — outcome driven by favor bracket, NOT a RAND roll.**
  * The ERB (lines 57-76) sets `TFLAG:193` and `DOWNBASE:MASTER:体力`
@@ -69,13 +69,16 @@
  *     — modeled via `downbase` function form (factory drains master only)
  *   - IS_DATING_WITH_PLAYER → 约会経験++ (ERB 111-114)
  *   - 戦闘能力 = ABL:战斗能力 (id 42) — read for downbase
- *   - Time-stop arm (ERB 6-8) — TSP drain only
  *   - CASE 1/-1/-2 arms, MAGIC_DLC, HITOKE, FAVOR_CALC, TRUST_CALC
  */
 
 import type { HandlerEntry } from "../../types.js";
-import { ABL_ID, BASE_ID, SOURCE_ID, TALENT_ID } from "../../../state/settlement.js";
+import { ABL_ID, BASE_ID, CFLAG_ID, EQUIP_SLOT, FLAG_ID, SOURCE_ID, TALENT_ID, TCVAR_ID, getMasterBase, setMasterBase } from "../../../state/settlement.js";
+import { cloneGameState } from "../../../state/game-state.js";
 import { TFLAG_ID, addTflag } from "../../../state/tflag.js";
+import { wornPieceName } from "../../../state/clothing.js";
+import { ROOM_CATALOG_BY_LOCATION } from "../../../world/room-catalog.js";
+import { isHMode } from "../../h-mode.js";
 import { makeComfHandler } from "../make-comf-handler.js";
 import { MUL_NONE, type ComfDef } from "../comf-def.js";
 
@@ -83,6 +86,32 @@ export const comf330Def: ComfDef = {
   commandNo: 330,
   label: "スカートをめくる",
   timeCost: 5,
+  // COM_ABLE330:121-159. The flat generated gate loses the frozen/hidden
+  // bypass and Miyoi's working exception; use the native branch ordering.
+  gateOverride: (ctx) => {
+    const block = (message: string) => ({ ok: false as const, reason: { kind: "precondition" as const, message } });
+    const target = ctx.state.charas[ctx.target];
+    if (ctx.target <= 0 || !target || target.location !== ctx.state.master.location) return block("掀裙子需要在场的目标。");
+    if (isHMode(ctx.state, ctx.target) && (target.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) !== 2) return block("调教中不能使用该日常指令。");
+    const stopped = (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0 &&
+      (target.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) !== 1;
+    if (!stopped && ((target.state.CFLAG[CFLAG_ID.潜伏状態] ?? 0) & 1) === 0) {
+      if ((target.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) return block("目标正在睡觉。");
+      if ((target.state.CFLAG[CFLAG_ID.行动] ?? 0) === 5 && ctx.target !== 134) return block("目标正在工作。");
+      if (ctx.state.dateSession?.partner === ctx.target &&
+          ROOM_CATALOG_BY_LOCATION[target.location]?.localNumber !== 98) return block("约会中只能在待客室进行。");
+      if ((target.state.CFLAG[CFLAG_ID.陪睡中] ?? 0) !== 0) return block("目标正在陪睡。");
+      if ((ctx.state.flagStore[FLAG_ID.甲斐性無] ?? 0) !== 0) return block("没有那份胆量（甲斐性無）。");
+    }
+    const flippableSlots = ["裙子", "連衣裙", "和服", "裤子"] as const;
+    if (!flippableSlots.some((slot) => {
+      const piece = target.state.EQUIP[EQUIP_SLOT[slot]];
+      return piece === undefined ? wornPieceName(target, slot) !== "" : piece !== 0;
+    })) return block("目标没有可掀起的下身衣服。");
+    if ((getMasterBase(ctx.state, BASE_ID.気力) ?? 0) <= 0) return block("气力不足。");
+    if (((target.state.TCVAR[TCVAR_ID.MASTER_COUNTER制御] ?? 0) & (1 << 7)) !== 0) return block("当前无法掀起衣服。");
+    return { ok: true };
+  },
   // No factory-driven roll. The ERB's outcome IS the favor bracket.
   // Pinned at outcome 0 (通常) — see C-tier DEFERRED note.
   greatThreshold: 0,
@@ -189,4 +218,21 @@ export const comf330Def: ComfDef = {
   },
 };
 
-export const comf330HandlerEntry: HandlerEntry = makeComfHandler(comf330Def);
+const normalSkirtFlip = makeComfHandler(comf330Def);
+export const comf330HandlerEntry: HandlerEntry = {
+  ...normalSkirtFlip,
+  handler: (ctx) => {
+    // @COM330:7-8 has no SOURCE, day tally or time cost for a frozen target.
+    if ((ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) === 1 &&
+        (ctx.state.charas[ctx.target]?.state.CFLAG[CFLAG_ID.時間停止行動] ?? 0) === 0) {
+      const next = cloneGameState(ctx.state);
+      setMasterBase(next, BASE_ID.TSP, getMasterBase(next, BASE_ID.TSP) - 10);
+      return {
+        state: next,
+        events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "%CALLNAME:MASTER%在时间停止中掀起了%CALLNAME:TARGET%的裙子。" }],
+        outcome: "ok",
+      };
+    }
+    return normalSkirtFlip.handler(ctx);
+  },
+};

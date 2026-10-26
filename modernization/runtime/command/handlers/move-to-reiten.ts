@@ -14,6 +14,7 @@ import type { HandlerEntry } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
 import { advanceTimeTicks } from "../../state/settlement.js";
 import { setSlotLocation } from "../../world/room-id-location.js";
+import { followCompanions } from "../../state/companion-follow.js";
 import { endOdekakeIfReturningHome } from "../../world/odekake.js";
 import { pitfallArrivalEvents } from "../../world/free-activity-events.js";
 
@@ -28,6 +29,7 @@ export const moveToReitenHandlerEntry: HandlerEntry = {
     const endedDate = endOdekakeIfReturningHome(next, REITEN_GATE);
     setSlotLocation(next.master, REITEN_GATE);
     advanceTimeTicks(next, 5);
+    followCompanions(next, 5);
     const activityEvents = pitfallArrivalEvents(next, REITEN_GATE, ctx.now());
     const tail = endedDate ? " 约会结束了。" : "";
     return {

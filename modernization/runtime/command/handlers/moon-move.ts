@@ -4,6 +4,7 @@ import { cloneGameState } from "../../state/game-state.js";
 import { advanceTimeTicks } from "../../state/settlement.js";
 import { mapCanMove } from "../../world/map-can-move.js";
 import { setSlotLocation } from "../../world/room-id-location.js";
+import { followCompanions } from "../../state/companion-follow.js";
 import { pitfallArrivalEvents } from "../../world/free-activity-events.js";
 
 const MOON_MOVES: readonly { commandNo: number; toLocation: string }[] = [
@@ -136,6 +137,7 @@ export function makeMoonRoomMoveHandlers(): HandlerEntry[] {
       const next = cloneGameState(ctx.state);
       setSlotLocation(next.master, m.toLocation);
       advanceTimeTicks(next, 1);
+      followCompanions(next, 1);
       const activityEvents = pitfallArrivalEvents(next, m.toLocation, ctx.now());
       return {
         state: next,

@@ -72,9 +72,9 @@ export const comf0Def: ComfDef = {
 
   timeCost: 0,
 
-  // ERB 70-73: master drain only via factory downbase; target drain
-  // (体力 10 / 気力 40) is in `body`.
+  // ERB 70-73: master and target DOWNBASE share preflight and settlement.
   downbase: { [BASE_ID.体力]: 20, [BASE_ID.気力]: 20 },
+  targetDownbase: { [BASE_ID.体力]: 10, [BASE_ID.気力]: 40 },
 
   buildSources: (c) => {
     // ERB 90-91: ABL:PLAYER:指 contributes to C/B 快感.
@@ -161,10 +161,6 @@ export const comf0Def: ComfDef = {
   },
 
   body: (c) => {
-    // ERB 70-71: target 体力 10 / 気力 40 drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 10;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 40;
-
     const kissConsented =
       ((c.tCflag(CFLAG_ID.既成事実) ?? 0) & KISS_CONSENT_BIT) !== 0;
 

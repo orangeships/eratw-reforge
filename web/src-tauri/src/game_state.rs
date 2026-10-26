@@ -27,7 +27,9 @@
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use tauri::Manager;
 
@@ -82,8 +84,21 @@ pub fn save_state_to(
     let path = state_file_path(base, project_root);
     let text = serde_json::to_string_pretty(state)
         .map_err(|e| format!("serialize state: {}", e))?;
-    std::fs::write(&path, text)
-        .map_err(|e| format!("write {}: {}", path.display(), e))?;
+    // Memory blocks are written before their save root. Publishing the root
+    // atomically keeps the previous complete slot readable on write failure.
+    static WRITE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+    let temp = path.with_extension(format!("{}.{}.tmp", std::process::id(), WRITE_SEQUENCE.fetch_add(1, Ordering::Relaxed)));
+    let write_result = (|| -> std::io::Result<()> {
+        let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&temp)?;
+        file.write_all(text.as_bytes())?;
+        file.sync_all()?;
+        drop(file);
+        std::fs::rename(&temp, &path)
+    })();
+    if let Err(error) = write_result {
+        let _ = std::fs::remove_file(&temp);
+        return Err(format!("write {}: {}", path.display(), error));
+    }
     Ok(())
 }
 
@@ -174,8 +189,8 @@ mod tests {
 
     #[test]
     fn project_root_hash_is_deterministic() {
-        let h1 = project_root_hash(r"F:\games\eraTW");
-        let h2 = project_root_hash(r"F:\games\eraTW");
+        let h1 = project_root_hash(r"F:\mattest\self-llm\claude playground\aigame\eratw-sub-modding-main");
+        let h2 = project_root_hash(r"F:\mattest\self-llm\claude playground\aigame\eratw-sub-modding-main");
         assert_eq!(h1, h2);
         assert!(!h1.is_empty());
         assert_eq!(h1.len(), 16, "16 hex chars expected; got {:?}", h1);
@@ -359,6 +374,28 @@ mod tests {
         save_state_to(&base, root, &v2).unwrap();
         let loaded = load_state_from(&base, root).unwrap().unwrap();
         assert_eq!(loaded, v2);
+        best_effort_cleanup(&base);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn failed_replace_keeps_previous_complete_save() {
+        let base = unique_tmpdir("failed-replace");
+        let root = r"F:\readonly-slot";
+        let previous = serde_json::json!({"version": 2, "state": {"memory": "complete"}});
+        save_state_to(&base, root, &previous).unwrap();
+        let path = state_file_path(&base, root);
+        let mut permissions = std::fs::metadata(&path).unwrap().permissions();
+        permissions.set_readonly(true);
+        std::fs::set_permissions(&path, permissions).unwrap();
+        let result = save_state_to(&base, root, &serde_json::json!({"state": "replacement"}));
+        let loaded = load_state_from(&base, root).unwrap().unwrap();
+        let mut permissions = std::fs::metadata(&path).unwrap().permissions();
+        permissions.set_readonly(false);
+        std::fs::set_permissions(&path, permissions).unwrap();
+        assert!(result.is_err());
+        assert_eq!(loaded, previous);
+        assert_eq!(std::fs::read_dir(base.join("states")).unwrap().count(), 1);
         best_effort_cleanup(&base);
     }
 }

@@ -35,7 +35,7 @@
  *        `VARSET TCVAR:MASTER` — but a cross-day clear is logically
  *        mandatory to avoid double-paying. Marked as fidelity TBD).
  *   2. **Advance day** (`INFO.ERB:1261`): `DAY++` — OWNED BY `advanceClock`
- *      (`dayIndex = floor(tickValue / 1440)`), NOT here.
+ *      (including explicit DAY after a direct TIME correction), NOT here.
  *   3. **1/day reset** (BEFORETRAIN:523-524 + AFTERTRA:52):
  *      - `FLAG:祈願内容 = 0`, `FLAG:精力強化回数 = 0`
  *      - `CLEARBIT FLAG:おみくじ, 1` (bit1 = 今日已抽)
@@ -53,12 +53,17 @@ import { grant, formatMoney } from "./money.js";
 import { advanceCalendarDay } from "../world/calendar.js";
 import { enforceCognitiveCaps } from "../agent/init.js";
 import { selectRosterAtNight } from "../agent/roster.js";
+import {
+  ensureCurrentAgentLedgerDay,
+  finalizeAgentDailyLedgerDay,
+} from "../agent/daily-ledger.js";
 import { accrueDailyDirt } from "../world/dirt-accrual.js";
 import { createRng } from "../command/rng.js";
 import { refreshWeatherForecastsForNewDay } from "../weather/prediction.js";
 import { clearTflagsByLifecycle } from "./tflag.js";
 import { applyBanquetStateProjection, scheduleBanquet } from "../world/banquet.js";
 import { restockAllShopsAtDayEnd } from "./shop.js";
+import { restoreRabbitDayOutfits } from "../world/rabbit-day.js";
 
 /** `FLAG:おみくじ` (999) bit1 — 今日已抽 (1/day gate, COMF434). */
 const BIT_OMIKUJI_TODAY_DRAWN = 1 << 1;
@@ -116,7 +121,7 @@ export function runDayEnd(state: GameState): {
   }
 
   // ----- 2. Advance day (INFO.ERB:1261 DAY++) — OWNED BY advanceClock -----
-  // advanceClock recomputes dayIndex = floor(tickValue / 1440); runDayEnd
+  // advanceClock advances the authoritative dayIndex; runDayEnd
   // must NOT also bump it (double-advance). Phase 7's advanceDay did the
   // bump here because there was no clock authority; Phase 8 removed it.
 
@@ -132,6 +137,10 @@ export function runDayEnd(state: GameState): {
   // advanceClock above; the (season, date) pair is tracked separately
   // (124-day cycle, not derivable from dayIndex). Phase 7.1b.
   const seasonWrapped = advanceCalendarDay(state.time);
+  // BEFORETRAIN's rabbit-day outfit is temporary. Restore it as soon as the
+  // calendar leaves date 28, including command paths that cross midnight
+  // without going through the morning pipeline first.
+  restoreRabbitDayOutfits(state);
   const weatherRng = createRng((state.time.tickValue + state.time.dayIndex * 31 + (state.time.season ?? 1) * 997) | 0);
   refreshWeatherForecastsForNewDay(state, weatherRng, seasonWrapped);
   // Raw unit fixtures may omit the migrated banquet-enabled flag; treat that
@@ -161,8 +170,10 @@ export function runDayEnd(state: GameState): {
   // pipeline (来訪/encounter/commission) reads from it.
   const ar = state.agentRuntime;
   if (ar?.settings.masterEnabled) {
+    finalizeAgentDailyLedgerDay(state, Math.max(0, state.time.dayIndex - 1), state.time.tickValue);
     enforceCognitiveCaps(ar);
     selectRosterAtNight(ar, state, state.time.tickValue, state.time.dayIndex);
+    ensureCurrentAgentLedgerDay(state);
   }
 
   return { events };

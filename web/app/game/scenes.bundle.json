@@ -3,7 +3,6 @@
     "id": "bamboo",
     "location": "迷いの竹林",
     "displayName": "迷いの竹林",
-    "ascii": "             |\n            /\\\n           /||\\\n          / || \\\n         /  ||  \\\n        /   ||   \\\n       /____||____\\\n       ~~~ 竹海  ~~~\n   ~   ~   ~   ~   ~\n",
     "intro": "竹影婆娑，风过处沙沙作响。这片竹林深处尚无人居住。",
     "exits": [
       {
@@ -17,7 +16,6 @@
     "id": "chitei",
     "location": "地灵殿",
     "displayName": "縦穴底部",
-    "ascii": "縦穴底部\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿]",
     "exits": [
       {
@@ -46,7 +44,6 @@
     "id": "chitei-901-room",
     "location": "旧都:地霊殿前",
     "displayName": "旧都 地霊殿前",
-    "ascii": "旧都 地霊殿前\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:地霊殿前]",
     "exits": [
       {
@@ -65,7 +62,6 @@
     "id": "chitei-904-room",
     "location": "地灵殿:大會堂",
     "displayName": "地灵殿 大會堂",
-    "ascii": "地灵殿 大會堂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:大會堂]",
     "exits": [
       {
@@ -79,7 +75,6 @@
     "id": "chitei-905-room",
     "location": "地灵殿:一階廊下",
     "displayName": "地灵殿 一階廊下",
-    "ascii": "地灵殿 一階廊下\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:一階廊下]",
     "exits": [
       {
@@ -138,7 +133,6 @@
     "id": "chitei-906-room",
     "location": "地灵殿:一層廁所",
     "displayName": "地灵殿 一層廁所",
-    "ascii": "地灵殿 一層廁所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:一層廁所]",
     "exits": [
       {
@@ -152,7 +146,6 @@
     "id": "chitei-909-room",
     "location": "地灵殿:厨房",
     "displayName": "地灵殿 厨房",
-    "ascii": "地灵殿 厨房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:厨房]",
     "exits": [
       {
@@ -181,7 +174,6 @@
     "id": "chitei-910-room",
     "location": "地灵殿:食料庫",
     "displayName": "地灵殿 食料庫",
-    "ascii": "地灵殿 食料庫\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:食料庫]",
     "exits": [
       {
@@ -195,7 +187,6 @@
     "id": "chitei-911-room",
     "location": "地灵殿:阿空私室",
     "displayName": "地灵殿 阿空私室",
-    "ascii": "地灵殿 阿空私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:阿空私室]",
     "exits": [
       {
@@ -209,7 +200,6 @@
     "id": "chitei-912-room",
     "location": "地灵殿:阿燐私室",
     "displayName": "地灵殿 阿燐私室",
-    "ascii": "地灵殿 阿燐私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:阿燐私室]",
     "exits": [
       {
@@ -223,7 +213,6 @@
     "id": "chitei-913-room",
     "location": "地灵殿:食堂",
     "displayName": "地灵殿 食堂",
-    "ascii": "地灵殿 食堂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:食堂]",
     "exits": [
       {
@@ -252,7 +241,6 @@
     "id": "chitei-914-room",
     "location": "地灵殿:二階廊下",
     "displayName": "地灵殿 二階廊下",
-    "ascii": "地灵殿 二階廊下\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:二階廊下]",
     "exits": [
       {
@@ -301,7 +289,6 @@
     "id": "chitei-915-room",
     "location": "地灵殿:露台",
     "displayName": "地灵殿 露台",
-    "ascii": "地灵殿 露台\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:露台]",
     "exits": [
       {
@@ -315,7 +302,6 @@
     "id": "chitei-916-room",
     "location": "地灵殿:庫房",
     "displayName": "地灵殿 庫房",
-    "ascii": "地灵殿 庫房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:庫房]",
     "exits": [
       {
@@ -329,7 +315,6 @@
     "id": "chitei-917-room",
     "location": "地灵殿:二層廁所",
     "displayName": "地灵殿 二層廁所",
-    "ascii": "地灵殿 二層廁所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:二層廁所]",
     "exits": [
       {
@@ -343,7 +328,6 @@
     "id": "chitei-918-room",
     "location": "地灵殿:恋私室",
     "displayName": "地灵殿 恋私室",
-    "ascii": "地灵殿 恋私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:恋私室]",
     "exits": [
       {
@@ -357,7 +341,6 @@
     "id": "chitei-919-room",
     "location": "地灵殿:覚私室",
     "displayName": "地灵殿 覚私室",
-    "ascii": "地灵殿 覚私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:覚私室]",
     "exits": [
       {
@@ -376,7 +359,6 @@
     "id": "chitei-920-room",
     "location": "地灵殿:書斎",
     "displayName": "地灵殿 書斎",
-    "ascii": "地灵殿 書斎\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:書斎]",
     "exits": [
       {
@@ -395,7 +377,6 @@
     "id": "chitei-921-room",
     "location": "地灵殿:風呂",
     "displayName": "地灵殿 風呂",
-    "ascii": "地灵殿 風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:風呂]",
     "exits": [
       {
@@ -409,7 +390,6 @@
     "id": "chitei-922-room",
     "location": "地灵殿:脱衣所",
     "displayName": "地灵殿 脱衣所",
-    "ascii": "地灵殿 脱衣所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:脱衣所]",
     "exits": [
       {
@@ -428,7 +408,6 @@
     "id": "chitei-923-room",
     "location": "地灵殿:後院",
     "displayName": "地灵殿 後院",
-    "ascii": "地灵殿 後院\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:後院]",
     "exits": [
       {
@@ -452,7 +431,6 @@
     "id": "chitei-925-room",
     "location": "地灵殿:薔薇園",
     "displayName": "地灵殿 薔薇園",
-    "ascii": "地灵殿 薔薇園\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:薔薇園]",
     "exits": [
       {
@@ -471,7 +449,6 @@
     "id": "chitei-926-room",
     "location": "地灵殿:中庭",
     "displayName": "地灵殿 中庭",
-    "ascii": "地灵殿 中庭\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 地灵殿:中庭]",
     "exits": [
       {
@@ -495,7 +472,6 @@
     "id": "chitei-928-room",
     "location": "旧地狱:灼熱地獄跡",
     "displayName": "旧地狱 灼熱地獄跡",
-    "ascii": "旧地狱 灼熱地獄跡\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧地狱:灼熱地獄跡]",
     "exits": [
       {
@@ -514,7 +490,6 @@
     "id": "chitei-929-room",
     "location": "旧地狱:地獄的人工太陽",
     "displayName": "旧地狱 地獄的人工太陽",
-    "ascii": "旧地狱 地獄的人工太陽\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧地狱:地獄的人工太陽]",
     "exits": [
       {
@@ -538,7 +513,6 @@
     "id": "chitei-930-room",
     "location": "旧地狱:旧血の池地獄",
     "displayName": "旧地狱 旧血の池地獄",
-    "ascii": "旧地狱 旧血の池地獄\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧地狱:旧血の池地獄]",
     "exits": [
       {
@@ -557,7 +531,6 @@
     "id": "chitei-931-room",
     "location": "旧都:大街",
     "displayName": "旧都 大街",
-    "ascii": "旧都 大街\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:大街]",
     "exits": [
       {
@@ -591,7 +564,6 @@
     "id": "chitei-932-room",
     "location": "旧都:後街",
     "displayName": "旧都 後街",
-    "ascii": "旧都 後街\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:後街]",
     "exits": [
       {
@@ -635,7 +607,6 @@
     "id": "chitei-933-room",
     "location": "旧都:酒場",
     "displayName": "旧都 酒場",
-    "ascii": "旧都 酒場\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:酒場]",
     "exits": [
       {
@@ -654,7 +625,6 @@
     "id": "chitei-934-room",
     "location": "旧都:温泉",
     "displayName": "旧都 温泉",
-    "ascii": "旧都 温泉\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:温泉]",
     "exits": [
       {
@@ -668,7 +638,6 @@
     "id": "chitei-935-room",
     "location": "旧都:情人旅館",
     "displayName": "旧都 情人旅館",
-    "ascii": "旧都 情人旅館\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:情人旅館]",
     "exits": [
       {
@@ -682,7 +651,6 @@
     "id": "chitei-936-room",
     "location": "旧都:勇儀的家",
     "displayName": "旧都 勇儀的家",
-    "ascii": "旧都 勇儀的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:勇儀的家]",
     "exits": [
       {
@@ -696,7 +664,6 @@
     "id": "chitei-937-room",
     "location": "旧都:空屋",
     "displayName": "旧都 空屋",
-    "ascii": "旧都 空屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:空屋]",
     "exits": [
       {
@@ -710,7 +677,6 @@
     "id": "chitei-938-room",
     "location": "旧都:鬼的聚集場所",
     "displayName": "旧都 鬼的聚集場所",
-    "ascii": "旧都 鬼的聚集場所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:鬼的聚集場所]",
     "exits": [
       {
@@ -724,7 +690,6 @@
     "id": "chitei-939-room",
     "location": "旧都:小胡同",
     "displayName": "旧都 小胡同",
-    "ascii": "旧都 小胡同\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:小胡同]",
     "exits": [
       {
@@ -738,7 +703,6 @@
     "id": "chitei-940-room",
     "location": "旧都:帕露西的家",
     "displayName": "旧都 帕露西的家",
-    "ascii": "旧都 帕露西的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:帕露西的家]",
     "exits": [
       {
@@ -752,7 +716,6 @@
     "id": "chitei-941-room",
     "location": "旧都:山女的家",
     "displayName": "旧都 山女的家",
-    "ascii": "旧都 山女的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:山女的家]",
     "exits": [
       {
@@ -766,7 +729,6 @@
     "id": "chitei-942-room",
     "location": "旧都:琪斯美的家",
     "displayName": "旧都 琪斯美的家",
-    "ascii": "旧都 琪斯美的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:琪斯美的家]",
     "exits": [
       {
@@ -780,7 +742,6 @@
     "id": "chitei-943-room",
     "location": "旧都:茅屋",
     "displayName": "旧都 茅屋",
-    "ascii": "旧都 茅屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:茅屋]",
     "exits": [
       {
@@ -794,7 +755,6 @@
     "id": "chitei-944-room",
     "location": "旧都:街道",
     "displayName": "旧都 街道",
-    "ascii": "旧都 街道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:街道]",
     "exits": [
       {
@@ -823,7 +783,6 @@
     "id": "chitei-945-room",
     "location": "旧都:川岸",
     "displayName": "旧都 川岸",
-    "ascii": "旧都 川岸\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:川岸]",
     "exits": [
       {
@@ -857,7 +816,6 @@
     "id": "chitei-946-room",
     "location": "旧都:橋",
     "displayName": "旧都 橋",
-    "ascii": "旧都 橋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧都:橋]",
     "exits": [
       {
@@ -881,7 +839,6 @@
     "id": "chitei-947-room",
     "location": "旧地狱:ちやりの棲み処",
     "displayName": "旧地狱 ちやりの棲み処",
-    "ascii": "旧地狱 ちやりの棲み処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧地狱:ちやりの棲み処]",
     "exits": [
       {
@@ -895,7 +852,6 @@
     "id": "chitei-949-room",
     "location": "旧地狱:托卡马克装置核心",
     "displayName": "旧地狱 托卡马克装置核心",
-    "ascii": "旧地狱 托卡马克装置核心\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 旧地狱:托卡马克装置核心]",
     "exits": [
       {
@@ -909,7 +865,6 @@
     "id": "forest",
     "location": "魔法之森",
     "displayName": "魔法之森入口",
-    "ascii": "魔法之森入口\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森]",
     "exits": [
       {
@@ -948,7 +903,6 @@
     "id": "forest-502-room",
     "location": "魔法之森:香霖堂",
     "displayName": "魔法之森 香霖堂",
-    "ascii": "魔法之森 香霖堂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:香霖堂]",
     "exits": [
       {
@@ -962,7 +916,6 @@
     "id": "forest-503-room",
     "location": "魔法之森:岔道",
     "displayName": "魔法之森 岔道",
-    "ascii": "魔法之森 岔道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:岔道]",
     "exits": [
       {
@@ -1011,7 +964,6 @@
     "id": "forest-506-room",
     "location": "魔法之森:無縁塚",
     "displayName": "魔法之森 無縁塚",
-    "ascii": "魔法之森 無縁塚\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:無縁塚]",
     "exits": [
       {
@@ -1025,7 +977,6 @@
     "id": "forest-507-room",
     "location": "魔法之森:菌菇群生地",
     "displayName": "魔法之森 菌菇群生地",
-    "ascii": "魔法之森 菌菇群生地\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:菌菇群生地]",
     "exits": [
       {
@@ -1044,7 +995,6 @@
     "id": "forest-508-room",
     "location": "魔法之森:魔法之広場",
     "displayName": "魔法之森 魔法之広場",
-    "ascii": "魔法之森 魔法之広場\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:魔法之広場]",
     "exits": [
       {
@@ -1083,7 +1033,6 @@
     "id": "forest-509-room",
     "location": "魔法之森:再思之道",
     "displayName": "魔法之森 再思之道",
-    "ascii": "魔法之森 再思之道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:再思之道]",
     "exits": [
       {
@@ -1102,7 +1051,6 @@
     "id": "forest-510-room",
     "location": "魔理沙宅:霧雨魔法店",
     "displayName": "魔理沙宅 霧雨魔法店",
-    "ascii": "魔理沙宅 霧雨魔法店\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔理沙宅:霧雨魔法店]",
     "exits": [
       {
@@ -1121,7 +1069,6 @@
     "id": "forest-511-room",
     "location": "魔理沙宅:魔理沙宅・居間",
     "displayName": "魔理沙宅 魔理沙宅・居間",
-    "ascii": "魔理沙宅 魔理沙宅・居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔理沙宅:魔理沙宅・居間]",
     "exits": [
       {
@@ -1160,7 +1107,6 @@
     "id": "forest-512-room",
     "location": "魔理沙宅:魔理沙宅・寝室",
     "displayName": "魔理沙宅 魔理沙宅・寝室",
-    "ascii": "魔理沙宅 魔理沙宅・寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔理沙宅:魔理沙宅・寝室]",
     "exits": [
       {
@@ -1174,7 +1120,6 @@
     "id": "forest-513-room",
     "location": "魔理沙宅:魔理沙宅・研究部屋",
     "displayName": "魔理沙宅 魔理沙宅・研究部屋",
-    "ascii": "魔理沙宅 魔理沙宅・研究部屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔理沙宅:魔理沙宅・研究部屋]",
     "exits": [
       {
@@ -1188,7 +1133,6 @@
     "id": "forest-514-room",
     "location": "魔理沙宅:魔理沙宅・風呂",
     "displayName": "魔理沙宅 魔理沙宅・風呂",
-    "ascii": "魔理沙宅 魔理沙宅・風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔理沙宅:魔理沙宅・風呂]",
     "exits": [
       {
@@ -1202,7 +1146,6 @@
     "id": "forest-515-room",
     "location": "魔理沙宅:魔理沙宅・倉庫",
     "displayName": "魔理沙宅 魔理沙宅・倉庫",
-    "ascii": "魔理沙宅 魔理沙宅・倉庫\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔理沙宅:魔理沙宅・倉庫]",
     "exits": [
       {
@@ -1221,7 +1164,6 @@
     "id": "forest-520-room",
     "location": "魔法之森:人偶洋館前",
     "displayName": "魔法之森 人偶洋館前",
-    "ascii": "魔法之森 人偶洋館前\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:人偶洋館前]",
     "exits": [
       {
@@ -1245,7 +1187,6 @@
     "id": "forest-521-room",
     "location": "人偶的洋馆:人偶洋館・愛麗絲的房間",
     "displayName": "人偶的洋馆 人偶洋館・愛麗絲的房間",
-    "ascii": "人偶的洋馆 人偶洋館・愛麗絲的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・愛麗絲的房間]",
     "exits": [
       {
@@ -1259,7 +1200,6 @@
     "id": "forest-522-room",
     "location": "人偶的洋馆:人偶洋館・神綺的房間",
     "displayName": "人偶的洋馆 人偶洋館・神綺的房間",
-    "ascii": "人偶的洋馆 人偶洋館・神綺的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・神綺的房間]",
     "exits": [
       {
@@ -1273,7 +1213,6 @@
     "id": "forest-523-room",
     "location": "人偶的洋馆:人偶洋館・夢子的房間",
     "displayName": "人偶的洋馆 人偶洋館・夢子的房間",
-    "ascii": "人偶的洋馆 人偶洋館・夢子的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・夢子的房間]",
     "exits": [
       {
@@ -1287,7 +1226,6 @@
     "id": "forest-524-room",
     "location": "人偶的洋馆:人偶洋館・研究室",
     "displayName": "人偶的洋馆 人偶洋館・研究室",
-    "ascii": "人偶的洋馆 人偶洋館・研究室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・研究室]",
     "exits": [
       {
@@ -1301,7 +1239,6 @@
     "id": "forest-525-room",
     "location": "人偶的洋馆:人偶洋館・生活間",
     "displayName": "人偶的洋馆 人偶洋館・生活間",
-    "ascii": "人偶的洋馆 人偶洋館・生活間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・生活間]",
     "exits": [
       {
@@ -1350,7 +1287,6 @@
     "id": "forest-526-room",
     "location": "人偶的洋馆:人偶洋館・風呂",
     "displayName": "人偶的洋馆 人偶洋館・風呂",
-    "ascii": "人偶的洋馆 人偶洋館・風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・風呂]",
     "exits": [
       {
@@ -1364,7 +1300,6 @@
     "id": "forest-528-room",
     "location": "人偶的洋馆:人偶洋館・倉庫",
     "displayName": "人偶的洋馆 人偶洋館・倉庫",
-    "ascii": "人偶的洋馆 人偶洋館・倉庫\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・倉庫]",
     "exits": [
       {
@@ -1378,7 +1313,6 @@
     "id": "forest-529-room",
     "location": "人偶的洋馆:人偶洋館・露台",
     "displayName": "人偶的洋馆 人偶洋館・露台",
-    "ascii": "人偶的洋馆 人偶洋館・露台\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・露台]",
     "exits": [
       {
@@ -1397,7 +1331,6 @@
     "id": "forest-530-room",
     "location": "人偶的洋馆:人偶洋館・二階",
     "displayName": "人偶的洋馆 人偶洋館・二階",
-    "ascii": "人偶的洋馆 人偶洋館・二階\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・二階]",
     "exits": [
       {
@@ -1426,7 +1359,6 @@
     "id": "forest-531-room",
     "location": "人偶的洋馆:人偶洋館・空的部屋",
     "displayName": "人偶的洋馆 人偶洋館・空的部屋",
-    "ascii": "人偶的洋馆 人偶洋館・空的部屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 人偶的洋馆:人偶洋館・空的部屋]",
     "exits": [
       {
@@ -1440,7 +1372,6 @@
     "id": "forest-534-room",
     "location": "轻飘飘艾伦的店:轻飘飘的艾伦魔法商店",
     "displayName": "轻飘飘艾伦的店 轻飘飘的艾伦魔法商店",
-    "ascii": "轻飘飘艾伦的店 轻飘飘的艾伦魔法商店\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 轻飘飘艾伦的店:轻飘飘的艾伦魔法商店]",
     "exits": [
       {
@@ -1474,7 +1405,6 @@
     "id": "forest-535-room",
     "location": "轻飘飘艾伦的店:艾伦宅・寝室",
     "displayName": "轻飘飘艾伦的店 艾伦宅・寝室",
-    "ascii": "轻飘飘艾伦的店 艾伦宅・寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 轻飘飘艾伦的店:艾伦宅・寝室]",
     "exits": [
       {
@@ -1488,7 +1418,6 @@
     "id": "forest-536-room",
     "location": "轻飘飘艾伦的店:艾伦宅・倉庫",
     "displayName": "轻飘飘艾伦的店 艾伦宅・倉庫",
-    "ascii": "轻飘飘艾伦的店 艾伦宅・倉庫\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 轻飘飘艾伦的店:艾伦宅・倉庫]",
     "exits": [
       {
@@ -1502,7 +1431,6 @@
     "id": "forest-537-room",
     "location": "轻飘飘艾伦的店:艾伦宅・風呂",
     "displayName": "轻飘飘艾伦的店 艾伦宅・風呂",
-    "ascii": "轻飘飘艾伦的店 艾伦宅・風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 轻飘飘艾伦的店:艾伦宅・風呂]",
     "exits": [
       {
@@ -1516,7 +1444,6 @@
     "id": "forest-540-room",
     "location": "魔法之森:古木的大樹",
     "displayName": "魔法之森 古木的大樹",
-    "ascii": "魔法之森 古木的大樹\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:古木的大樹]",
     "exits": [
       {
@@ -1555,7 +1482,6 @@
     "id": "forest-541-room",
     "location": "魔法之森:朱鷺子的棲息処",
     "displayName": "魔法之森 朱鷺子的棲息処",
-    "ascii": "魔法之森 朱鷺子的棲息処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:朱鷺子的棲息処]",
     "exits": [
       {
@@ -1569,7 +1495,6 @@
     "id": "forest-542-room",
     "location": "魔法之森:莉格露的棲息処",
     "displayName": "魔法之森 莉格露的棲息処",
-    "ascii": "魔法之森 莉格露的棲息処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:莉格露的棲息処]",
     "exits": [
       {
@@ -1583,7 +1508,6 @@
     "id": "forest-543-room",
     "location": "魔法之森:露米娅的棲息処",
     "displayName": "魔法之森 露米娅的棲息処",
-    "ascii": "魔法之森 露米娅的棲息処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:露米娅的棲息処]",
     "exits": [
       {
@@ -1597,7 +1521,6 @@
     "id": "forest-544-room",
     "location": "魔法之森:成美の小屋",
     "displayName": "魔法之森 成美の小屋",
-    "ascii": "魔法之森 成美の小屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:成美の小屋]",
     "exits": [
       {
@@ -1616,7 +1539,6 @@
     "id": "forest-545-room",
     "location": "魔法之森:慧ノ子の棲み処",
     "displayName": "魔法之森 慧ノ子の棲み処",
-    "ascii": "魔法之森 慧ノ子の棲み処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 魔法之森:慧ノ子の棲み処]",
     "exits": [
       {
@@ -1630,7 +1552,6 @@
     "id": "home",
     "location": "自宅",
     "displayName": "自宅",
-    "ascii": "             /\\\n            /  \\\n           / 自 \\\n          /  宅  \\\n         /________\\\n         |  ____  |\n         | |    | |\n         | | [] | |\n         | |____| |\n         |________|\n          我  的  家\n",
     "intro": "回到自宅，炉火尚温，一切都安静下来。",
     "exits": [
       {
@@ -1649,7 +1570,6 @@
     "id": "koumakan",
     "location": "紅魔館",
     "displayName": "紅魔館 正門",
-    "ascii": "紅魔館 正門\n",
     "intro": "红魔馆的正面大门，华丽的朱漆大门紧闭着，散发出令人敬畏的气息。",
     "exits": [
       {
@@ -1693,7 +1613,6 @@
     "id": "koumakan-2f-hall",
     "location": "紅魔館:二階廊下",
     "displayName": "紅魔館 二階廊下",
-    "ascii": "紅魔館 二階廊下\n",
     "intro": "红魔馆二层的长廊，两侧是各位大小姐的房间。",
     "exits": [
       {
@@ -1737,7 +1656,6 @@
     "id": "koumakan-abandoned-2f",
     "location": "廃洋館:廃洋館・二階廊下",
     "displayName": "廃洋館 廃洋館・二階廊下",
-    "ascii": "廃洋館 廃洋館・二階廊下\n",
     "intro": "废洋馆二层的长廊，踩上去会发出嘎吱声。",
     "exits": [
       {
@@ -1766,7 +1684,6 @@
     "id": "koumakan-abandoned-bath",
     "location": "廃洋館:廃洋館・風呂",
     "displayName": "廃洋館 廃洋館・風呂",
-    "ascii": "廃洋館 廃洋館・風呂\n",
     "intro": "废洋馆的浴场，干涸的浴缸和剥落的瓷砖。",
     "exits": [
       {
@@ -1780,7 +1697,6 @@
     "id": "koumakan-abandoned-entrance",
     "location": "廃洋館:廃洋館・入口",
     "displayName": "廃洋館 廃洋館・入口",
-    "ascii": "廃洋館 廃洋館・入口\n",
     "intro": "废洋馆的入口，破败的大门在荒草中摇摇欲坠。",
     "exits": [
       {
@@ -1799,7 +1715,6 @@
     "id": "koumakan-abandoned-hall",
     "location": "廃洋館:廃洋館・大廳",
     "displayName": "廃洋館 廃洋館・大廳",
-    "ascii": "廃洋館 廃洋館・大廳\n",
     "intro": "废洋馆的大厅，腐朽的吊灯和蛛网覆盖的家具。",
     "exits": [
       {
@@ -1828,7 +1743,6 @@
     "id": "koumakan-abandoned-kitchen",
     "location": "廃洋館:廃洋館・廚房",
     "displayName": "廃洋館 廃洋館・廚房",
-    "ascii": "廃洋館 廃洋館・廚房\n",
     "intro": "废洋馆的厨房，锈迹斑斑的炉灶和厨具。",
     "exits": [
       {
@@ -1842,7 +1756,6 @@
     "id": "koumakan-akomamroom",
     "location": "紅魔館:小悪魔私室",
     "displayName": "紅魔館 小悪魔私室",
-    "ascii": "紅魔館 小悪魔私室\n",
     "intro": "大图书馆旁的小恶魔私人室，到处是偷看的窥视孔。",
     "exits": [
       {
@@ -1856,7 +1769,6 @@
     "id": "koumakan-backyard",
     "location": "紅魔館:後院",
     "displayName": "紅魔館 後院",
-    "ascii": "紅魔館 後院\n",
     "intro": "红魔馆后院，菜园内种满了魔物食材用的草药。",
     "exits": [
       {
@@ -1890,7 +1802,6 @@
     "id": "koumakan-balcony",
     "location": "紅魔館:小露台",
     "displayName": "紅魔館 小露台",
-    "ascii": "紅魔館 小露台\n",
     "intro": "蕾米莉亚室旁的小露台，可以观赏夜晚的幻想乡。",
     "exits": [
       {
@@ -1904,7 +1815,6 @@
     "id": "koumakan-basement-hall",
     "location": "紅魔館:地下走廊",
     "displayName": "紅魔館 地下走廊",
-    "ascii": "紅魔館 地下走廊\n",
     "intro": "通往地下室的长廊，阴冷而阴暗。",
     "exits": [
       {
@@ -1938,7 +1848,6 @@
     "id": "koumakan-bath",
     "location": "紅魔館:大浴場",
     "displayName": "紅魔館 大浴場",
-    "ascii": "紅魔館 大浴場\n",
     "intro": "红魔馆的大浴场，温泉汤泉热气腾腾。",
     "exits": [
       {
@@ -1952,7 +1861,6 @@
     "id": "koumakan-cellar",
     "location": "紅魔館:倉庫",
     "displayName": "紅魔館 倉庫",
-    "ascii": "紅魔館 倉庫\n",
     "intro": "地下室的仓库，存放着酒类和其他物资。",
     "exits": [
       {
@@ -1966,7 +1874,6 @@
     "id": "koumakan-cellar-bed",
     "location": "紅魔館:地下室",
     "displayName": "紅魔館 地下室",
-    "ascii": "紅魔館 地下室\n",
     "intro": "地下室的卧铺，偶尔有客人留宿。",
     "exits": [
       {
@@ -1980,7 +1887,6 @@
     "id": "koumakan-cirno-bing",
     "location": "霧之湖:琪露諾的冰屋",
     "displayName": "霧之湖 琪露諾的冰屋",
-    "ascii": "霧之湖 琪露諾的冰屋\n",
     "intro": "琪露诺的冰屋，上面写着\"NO.9\"的招牌。",
     "exits": [
       {
@@ -1994,7 +1900,6 @@
     "id": "koumakan-daiseisei",
     "location": "霧之湖:大妖精の棲家",
     "displayName": "霧之湖 大妖精の棲家",
-    "ascii": "霧之湖 大妖精の棲家\n",
     "intro": "大妖精居住的小屋，周围鲜花盛开。",
     "exits": [
       {
@@ -2008,7 +1913,6 @@
     "id": "koumakan-dining",
     "location": "紅魔館:食堂",
     "displayName": "紅魔館 食堂",
-    "ascii": "紅魔館 食堂\n",
     "intro": "大厅旁的食堂，飘散着红茶和点心的香气。",
     "exits": [
       {
@@ -2027,7 +1931,6 @@
     "id": "koumakan-dressing",
     "location": "紅魔館:脱衣所",
     "displayName": "紅魔館 脱衣所",
-    "ascii": "紅魔館 脱衣所\n",
     "intro": "大浴场旁的脱衣所，整齐地摆放着浴巾。",
     "exits": [
       {
@@ -2046,7 +1949,6 @@
     "id": "koumakan-e-balcony",
     "location": "紅魔館:東陽台",
     "displayName": "紅魔館 東陽台",
-    "ascii": "紅魔館 東陽台\n",
     "intro": "红魔馆东侧的阳台，阳光充足，可以眺望远方。",
     "exits": [
       {
@@ -2065,7 +1967,6 @@
     "id": "koumakan-empty",
     "location": "紅魔館:空的小屋",
     "displayName": "紅魔館 空的小屋",
-    "ascii": "紅魔館 空的小屋\n",
     "intro": "庭院旁的一间空的小屋，暂无人居住。",
     "exits": [
       {
@@ -2084,7 +1985,6 @@
     "id": "koumakan-empty-2f",
     "location": "紅魔館:空的部屋",
     "displayName": "紅魔館 空的部屋",
-    "ascii": "紅魔館 空的部屋\n",
     "intro": "二层的一间空房，积着薄薄的灰尘。",
     "exits": [
       {
@@ -2098,7 +1998,6 @@
     "id": "koumakan-fairymaid",
     "location": "紅魔館:妖精女僕的值班室",
     "displayName": "紅魔館 妖精女僕的值班室",
-    "ascii": "紅魔館 妖精女僕的值班室\n",
     "intro": "妖精女仆的值班室，到处散落着妖精的翅膀碎片。",
     "exits": [
       {
@@ -2112,7 +2011,6 @@
     "id": "koumakan-garden",
     "location": "紅魔館:庭",
     "displayName": "紅魔館 庭",
-    "ascii": "紅魔館 庭\n",
     "intro": "红魔馆前的庭院，修剪整齐的灌木和鲜花组成精美的图案。",
     "exits": [
       {
@@ -2151,7 +2049,6 @@
     "id": "koumakan-guard",
     "location": "紅魔館:守衛小屋",
     "displayName": "紅魔館 守衛小屋",
-    "ascii": "紅魔館 守衛小屋\n",
     "intro": "正门旁的小小的门卫小屋，咲夜正坐在里面值班。",
     "exits": [
       {
@@ -2175,7 +2072,6 @@
     "id": "koumakan-hall",
     "location": "紅魔館:大廳",
     "displayName": "紅魔館 大廳",
-    "ascii": "紅魔館 大廳\n",
     "intro": "红魔馆的一楼大厅，华丽的吊灯和大理石地面彰显着主人的品味。",
     "exits": [
       {
@@ -2219,7 +2115,6 @@
     "id": "koumakan-kitchen",
     "location": "紅魔館:厨房",
     "displayName": "紅魔館 厨房",
-    "ascii": "紅魔館 厨房\n",
     "intro": "后院相连的红魔馆厨房，美铃正在准备晚餐。",
     "exits": [
       {
@@ -2238,7 +2133,6 @@
     "id": "koumakan-lake",
     "location": "霧之湖:霧之湖",
     "displayName": "霧之湖 霧之湖",
-    "ascii": "霧之湖 霧之湖\n",
     "intro": "被浓雾笼罩的湖泊，湖水深不见底，湖底似乎有什么在涌动。",
     "exits": [
       {
@@ -2257,7 +2151,6 @@
     "id": "koumakan-lakebottom",
     "location": "霧之湖:霧之湖・湖底",
     "displayName": "霧之湖 霧之湖・湖底",
-    "ascii": "霧之湖 霧之湖・湖底\n",
     "intro": "雾之湖的湖底，透过浓雾可以看到奇异的光。",
     "exits": [
       {
@@ -2271,7 +2164,6 @@
     "id": "koumakan-lakeside",
     "location": "霧之湖:湖畔",
     "displayName": "霧之湖 湖畔",
-    "ascii": "霧之湖 湖畔\n",
     "intro": "雾之湖的湖畔，湖面飘着厚厚的雾气，能见度极低。",
     "exits": [
       {
@@ -2310,7 +2202,6 @@
     "id": "koumakan-library",
     "location": "紅魔館:図書館",
     "displayName": "紅魔館 図書館",
-    "ascii": "紅魔館 図書館\n",
     "intro": "红魔馆的大图书馆，帕秋莉正在书架间穿梭。",
     "exits": [
       {
@@ -2339,7 +2230,6 @@
     "id": "koumakan-lilyca-room",
     "location": "廃洋館:莉莉卡私室",
     "displayName": "廃洋館 莉莉卡私室",
-    "ascii": "廃洋館 莉莉卡私室\n",
     "intro": "废洋馆中莉莉卡的私人房间。",
     "exits": [
       {
@@ -2353,7 +2243,6 @@
     "id": "koumakan-luna-room",
     "location": "廃洋館:露娜薩私室",
     "displayName": "廃洋館 露娜薩私室",
-    "ascii": "廃洋館 露娜薩私室\n",
     "intro": "废洋馆中露娜萨的私人房间。",
     "exits": [
       {
@@ -2367,7 +2256,6 @@
     "id": "koumakan-melan-room",
     "location": "廃洋館:梅露蘭私室",
     "displayName": "廃洋館 梅露蘭私室",
-    "ascii": "廃洋館 梅露蘭私室\n",
     "intro": "废洋馆中梅露兰的私人房间。",
     "exits": [
       {
@@ -2381,7 +2269,6 @@
     "id": "koumakan-parlor",
     "location": "紅魔館:會客廳",
     "displayName": "紅魔館 會客廳",
-    "ascii": "紅魔館 會客廳\n",
     "intro": "红魔馆的会客厅，摆满了西洋风的家具和装饰。",
     "exits": [
       {
@@ -2400,7 +2287,6 @@
     "id": "koumakan-patchroom",
     "location": "紅魔館:帕秋莉私室",
     "displayName": "紅魔館 帕秋莉私室",
-    "ascii": "紅魔館 帕秋莉私室\n",
     "intro": "大图书馆深处的帕秋莉私人室，魔导书堆积如山。",
     "exits": [
       {
@@ -2414,7 +2300,6 @@
     "id": "koumakan-remilia-room",
     "location": "紅魔館:蕾米莉亜私室",
     "displayName": "紅魔館 蕾米莉亜私室",
-    "ascii": "紅魔館 蕾米莉亜私室\n",
     "intro": "三层最华丽的房间，猩红之兽的寝居。",
     "exits": [
       {
@@ -2433,7 +2318,6 @@
     "id": "koumakan-retibing",
     "location": "霧之湖:蕾蒂的冰屋",
     "displayName": "霧之湖 蕾蒂的冰屋",
-    "ascii": "霧之湖 蕾蒂的冰屋\n",
     "intro": "蕾蒂打造的冰雪小屋，四周都是冰柱。",
     "exits": [
       {
@@ -2447,7 +2331,6 @@
     "id": "koumakan-sakiyama-room",
     "location": "紅魔館:咲夜私室",
     "displayName": "紅魔館 咲夜私室",
-    "ascii": "紅魔館 咲夜私室\n",
     "intro": "二层的时空管理员咲夜的私人房间。",
     "exits": [
       {
@@ -2461,7 +2344,6 @@
     "id": "koumakan-servant",
     "location": "紅魔館:使用人部屋",
     "displayName": "紅魔館 使用人部屋",
-    "ascii": "紅魔館 使用人部屋\n",
     "intro": "女仆们的休息室，摆着茶点和麻将桌。",
     "exits": [
       {
@@ -2475,7 +2357,6 @@
     "id": "koumakan-store",
     "location": "紅魔館:仓库",
     "displayName": "紅魔館 仓库",
-    "ascii": "紅魔館 仓库\n",
     "intro": "红魔馆后院的仓库，堆放着各种物资。",
     "exits": [
       {
@@ -2489,7 +2370,6 @@
     "id": "koumakan-terrace",
     "location": "紅魔館:大露台",
     "displayName": "紅魔館 大露台",
-    "ascii": "紅魔館 大露台\n",
     "intro": "三层的大露台，可以俯瞰整个红魔馆和庭院。",
     "exits": [
       {
@@ -2503,7 +2383,6 @@
     "id": "koumakan-w-balcony",
     "location": "紅魔館:西陽台",
     "displayName": "紅魔館 西陽台",
-    "ascii": "紅魔館 西陽台\n",
     "intro": "红魔馆西侧的阳台，傍晚时分的夕阳最为美丽。",
     "exits": [
       {
@@ -2527,7 +2406,6 @@
     "id": "koumakan-wc1",
     "location": "紅魔館:一層廁所",
     "displayName": "紅魔館 一層廁所",
-    "ascii": "紅魔館 一層廁所\n",
     "intro": "一楼的厕所，打扫得一尘不染。",
     "exits": [
       {
@@ -2541,7 +2419,6 @@
     "id": "koumakan-wc2",
     "location": "紅魔館:二層廁所",
     "displayName": "紅魔館 二層廁所",
-    "ascii": "紅魔館 二層廁所\n",
     "intro": "二楼的厕所，安静而整洁。",
     "exits": [
       {
@@ -2555,7 +2432,6 @@
     "id": "lake",
     "location": "霧の湖",
     "displayName": "霧の湖",
-    "ascii": "   ~ 雾 雾 雾 雾 雾 雾 雾 雾 雾 ~\n  ~   .   .   .   .   .   .   .  ~\n ~   .   .   .   .   .   .   .   ~\n  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n       霧  の  湖\n",
     "intro": "雾气笼罩湖面，什么也看不清。湖畔一带尚无人居住。",
     "exits": [
       {
@@ -2569,7 +2445,6 @@
     "id": "meikai",
     "location": "彼岸",
     "displayName": "中有之道",
-    "ascii": "中有之道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸]",
     "exits": [
       {
@@ -2603,7 +2478,6 @@
     "id": "meikai-602-room",
     "location": "彼岸:賽の河原",
     "displayName": "彼岸 賽の河原",
-    "ascii": "彼岸 賽の河原\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:賽の河原]",
     "exits": [
       {
@@ -2642,7 +2516,6 @@
     "id": "meikai-603-room",
     "location": "彼岸:積石塚",
     "displayName": "彼岸 積石塚",
-    "ascii": "彼岸 積石塚\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:積石塚]",
     "exits": [
       {
@@ -2671,7 +2544,6 @@
     "id": "meikai-604-room",
     "location": "彼岸:彼岸",
     "displayName": "彼岸 彼岸",
-    "ascii": "彼岸 彼岸\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:彼岸]",
     "exits": [
       {
@@ -2710,7 +2582,6 @@
     "id": "meikai-605-room",
     "location": "彼岸:地獄",
     "displayName": "彼岸 地獄",
-    "ascii": "彼岸 地獄\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:地獄]",
     "exits": [
       {
@@ -2734,7 +2605,6 @@
     "id": "meikai-606-room",
     "location": "彼岸:日狭美の家",
     "displayName": "彼岸 日狭美の家",
-    "ascii": "彼岸 日狭美の家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:日狭美の家]",
     "exits": [
       {
@@ -2748,7 +2618,6 @@
     "id": "meikai-607-room",
     "location": "彼岸:残無の家",
     "displayName": "彼岸 残無の家",
-    "ascii": "彼岸 残無の家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:残無の家]",
     "exits": [
       {
@@ -2762,7 +2631,6 @@
     "id": "meikai-608-room",
     "location": "彼岸:潤美的家",
     "displayName": "彼岸 潤美的家",
-    "ascii": "彼岸 潤美的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:潤美的家]",
     "exits": [
       {
@@ -2776,7 +2644,6 @@
     "id": "meikai-609-room",
     "location": "彼岸:瓔花的家",
     "displayName": "彼岸 瓔花的家",
-    "ascii": "彼岸 瓔花的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 彼岸:瓔花的家]",
     "exits": [
       {
@@ -2790,7 +2657,6 @@
     "id": "meikai-610-room",
     "location": "是非曲直厅:是非曲直庁大堂",
     "displayName": "是非曲直厅 是非曲直庁大堂",
-    "ascii": "是非曲直厅 是非曲直庁大堂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:是非曲直庁大堂]",
     "exits": [
       {
@@ -2814,7 +2680,6 @@
     "id": "meikai-612-room",
     "location": "是非曲直厅:法廷",
     "displayName": "是非曲直厅 法廷",
-    "ascii": "是非曲直厅 法廷\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:法廷]",
     "exits": [
       {
@@ -2833,7 +2698,6 @@
     "id": "meikai-613-room",
     "location": "是非曲直厅:是非曲直庁廊下",
     "displayName": "是非曲直厅 是非曲直庁廊下",
-    "ascii": "是非曲直厅 是非曲直庁廊下\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:是非曲直庁廊下]",
     "exits": [
       {
@@ -2872,7 +2736,6 @@
     "id": "meikai-614-room",
     "location": "是非曲直厅:是非曲直庁等候室",
     "displayName": "是非曲直厅 是非曲直庁等候室",
-    "ascii": "是非曲直厅 是非曲直庁等候室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:是非曲直庁等候室]",
     "exits": [
       {
@@ -2891,7 +2754,6 @@
     "id": "meikai-615-room",
     "location": "是非曲直厅:映姫的房間",
     "displayName": "是非曲直厅 映姫的房間",
-    "ascii": "是非曲直厅 映姫的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:映姫的房間]",
     "exits": [
       {
@@ -2905,7 +2767,6 @@
     "id": "meikai-616-room",
     "location": "是非曲直厅:小町的房間",
     "displayName": "是非曲直厅 小町的房間",
-    "ascii": "是非曲直厅 小町的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:小町的房間]",
     "exits": [
       {
@@ -2919,7 +2780,6 @@
     "id": "meikai-617-room",
     "location": "是非曲直厅:風呂",
     "displayName": "是非曲直厅 風呂",
-    "ascii": "是非曲直厅 風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:風呂]",
     "exits": [
       {
@@ -2933,7 +2793,6 @@
     "id": "meikai-618-room",
     "location": "是非曲直厅:空的部屋",
     "displayName": "是非曲直厅 空的部屋",
-    "ascii": "是非曲直厅 空的部屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 是非曲直厅:空的部屋]",
     "exits": [
       {
@@ -2947,7 +2806,6 @@
     "id": "meikai-620-room",
     "location": "白玉楼:冥界の門",
     "displayName": "白玉楼 冥界の門",
-    "ascii": "白玉楼 冥界の門\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:冥界の門]",
     "exits": [
       {
@@ -2966,7 +2824,6 @@
     "id": "meikai-621-room",
     "location": "白玉楼:庭",
     "displayName": "白玉楼 庭",
-    "ascii": "白玉楼 庭\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:庭]",
     "exits": [
       {
@@ -2995,7 +2852,6 @@
     "id": "meikai-622-room",
     "location": "白玉楼:廊下",
     "displayName": "白玉楼 廊下",
-    "ascii": "白玉楼 廊下\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:廊下]",
     "exits": [
       {
@@ -3039,7 +2895,6 @@
     "id": "meikai-623-room",
     "location": "白玉楼:幽幽子私室",
     "displayName": "白玉楼 幽幽子私室",
-    "ascii": "白玉楼 幽幽子私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:幽幽子私室]",
     "exits": [
       {
@@ -3063,7 +2918,6 @@
     "id": "meikai-624-room",
     "location": "白玉楼:妖夢私室",
     "displayName": "白玉楼 妖夢私室",
-    "ascii": "白玉楼 妖夢私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:妖夢私室]",
     "exits": [
       {
@@ -3077,7 +2931,6 @@
     "id": "meikai-625-room",
     "location": "白玉楼:空室",
     "displayName": "白玉楼 空室",
-    "ascii": "白玉楼 空室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:空室]",
     "exits": [
       {
@@ -3091,7 +2944,6 @@
     "id": "meikai-626-room",
     "location": "白玉楼:廚房",
     "displayName": "白玉楼 廚房",
-    "ascii": "白玉楼 廚房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:廚房]",
     "exits": [
       {
@@ -3110,7 +2962,6 @@
     "id": "meikai-627-room",
     "location": "白玉楼:風呂",
     "displayName": "白玉楼 風呂",
-    "ascii": "白玉楼 風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:風呂]",
     "exits": [
       {
@@ -3124,7 +2975,6 @@
     "id": "meikai-628-room",
     "location": "白玉楼:居間",
     "displayName": "白玉楼 居間",
-    "ascii": "白玉楼 居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:居間]",
     "exits": [
       {
@@ -3153,7 +3003,6 @@
     "id": "meikai-629-room",
     "location": "白玉楼:西行妖",
     "displayName": "白玉楼 西行妖",
-    "ascii": "白玉楼 西行妖\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 白玉楼:西行妖]",
     "exits": [
       {
@@ -3172,7 +3021,6 @@
     "id": "meikai-630-room",
     "location": "八云邸:八雲邸玄関",
     "displayName": "八云邸 八雲邸玄関",
-    "ascii": "八云邸 八雲邸玄関\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:八雲邸玄関]",
     "exits": [
       {
@@ -3211,7 +3059,6 @@
     "id": "meikai-631-room",
     "location": "八云邸:八雲邸廊下",
     "displayName": "八云邸 八雲邸廊下",
-    "ascii": "八云邸 八雲邸廊下\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:八雲邸廊下]",
     "exits": [
       {
@@ -3260,7 +3107,6 @@
     "id": "meikai-632-room",
     "location": "八云邸:八雲邸庭",
     "displayName": "八云邸 八雲邸庭",
-    "ascii": "八云邸 八雲邸庭\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:八雲邸庭]",
     "exits": [
       {
@@ -3289,7 +3135,6 @@
     "id": "meikai-633-room",
     "location": "八云邸:紫私室",
     "displayName": "八云邸 紫私室",
-    "ascii": "八云邸 紫私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:紫私室]",
     "exits": [
       {
@@ -3313,7 +3158,6 @@
     "id": "meikai-634-room",
     "location": "八云邸:空部屋",
     "displayName": "八云邸 空部屋",
-    "ascii": "八云邸 空部屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:空部屋]",
     "exits": [
       {
@@ -3337,7 +3181,6 @@
     "id": "meikai-635-room",
     "location": "八云邸:橙私室",
     "displayName": "八云邸 橙私室",
-    "ascii": "八云邸 橙私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:橙私室]",
     "exits": [
       {
@@ -3361,7 +3204,6 @@
     "id": "meikai-636-room",
     "location": "八云邸:八雲邸風呂",
     "displayName": "八云邸 八雲邸風呂",
-    "ascii": "八云邸 八雲邸風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:八雲邸風呂]",
     "exits": [
       {
@@ -3375,7 +3217,6 @@
     "id": "meikai-637-room",
     "location": "八云邸:八雲邸廚房",
     "displayName": "八云邸 八雲邸廚房",
-    "ascii": "八云邸 八雲邸廚房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:八雲邸廚房]",
     "exits": [
       {
@@ -3389,7 +3230,6 @@
     "id": "meikai-638-room",
     "location": "八云邸:藍私室",
     "displayName": "八云邸 藍私室",
-    "ascii": "八云邸 藍私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:藍私室]",
     "exits": [
       {
@@ -3413,7 +3253,6 @@
     "id": "meikai-639-room",
     "location": "八云邸:八雲邸居間",
     "displayName": "八云邸 八雲邸居間",
-    "ascii": "八云邸 八雲邸居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 八云邸:八雲邸居間]",
     "exits": [
       {
@@ -3442,7 +3281,6 @@
     "id": "meikai-640-room",
     "location": "畜生界:異界の関所",
     "displayName": "畜生界 異界の関所",
-    "ascii": "畜生界 異界の関所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:異界の関所]",
     "exits": [
       {
@@ -3461,7 +3299,6 @@
     "id": "meikai-641-room",
     "location": "畜生界:畜生界大都市",
     "displayName": "畜生界 畜生界大都市",
-    "ascii": "畜生界 畜生界大都市\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:畜生界大都市]",
     "exits": [
       {
@@ -3495,7 +3332,6 @@
     "id": "meikai-642-room",
     "location": "畜生界:霊長園",
     "displayName": "畜生界 霊長園",
-    "ascii": "畜生界 霊長園\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:霊長園]",
     "exits": [
       {
@@ -3524,7 +3360,6 @@
     "id": "meikai-643-room",
     "location": "畜生界:霊長園の風呂",
     "displayName": "畜生界 霊長園の風呂",
-    "ascii": "畜生界 霊長園の風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:霊長園の風呂]",
     "exits": [
       {
@@ -3538,7 +3373,6 @@
     "id": "meikai-644-room",
     "location": "畜生界:袿姫的房間",
     "displayName": "畜生界 袿姫的房間",
-    "ascii": "畜生界 袿姫的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:袿姫的房間]",
     "exits": []
   },
@@ -3546,7 +3380,6 @@
     "id": "meikai-645-room",
     "location": "畜生界:磨弓的房間",
     "displayName": "畜生界 磨弓的房間",
-    "ascii": "畜生界 磨弓的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:磨弓的房間]",
     "exits": [
       {
@@ -3560,7 +3393,6 @@
     "id": "meikai-646-room",
     "location": "畜生界:八千慧宅の風呂",
     "displayName": "畜生界 八千慧宅の風呂",
-    "ascii": "畜生界 八千慧宅の風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:八千慧宅の風呂]",
     "exits": [
       {
@@ -3574,7 +3406,6 @@
     "id": "meikai-647-room",
     "location": "畜生界:八千慧宅の生活間",
     "displayName": "畜生界 八千慧宅の生活間",
-    "ascii": "畜生界 八千慧宅の生活間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:八千慧宅の生活間]",
     "exits": [
       {
@@ -3598,7 +3429,6 @@
     "id": "meikai-648-room",
     "location": "畜生界:八千慧宅の寝室",
     "displayName": "畜生界 八千慧宅の寝室",
-    "ascii": "畜生界 八千慧宅の寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:八千慧宅の寝室]",
     "exits": [
       {
@@ -3612,7 +3442,6 @@
     "id": "meikai-650-room",
     "location": "畜生界:早鬼宅の生活間",
     "displayName": "畜生界 早鬼宅の生活間",
-    "ascii": "畜生界 早鬼宅の生活間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:早鬼宅の生活間]",
     "exits": [
       {
@@ -3636,7 +3465,6 @@
     "id": "meikai-651-room",
     "location": "畜生界:早鬼宅の寝室",
     "displayName": "畜生界 早鬼宅の寝室",
-    "ascii": "畜生界 早鬼宅の寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:早鬼宅の寝室]",
     "exits": [
       {
@@ -3650,7 +3478,6 @@
     "id": "meikai-652-room",
     "location": "畜生界:早鬼宅の風呂",
     "displayName": "畜生界 早鬼宅の風呂",
-    "ascii": "畜生界 早鬼宅の風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:早鬼宅の風呂]",
     "exits": [
       {
@@ -3664,7 +3491,6 @@
     "id": "meikai-653-room",
     "location": "畜生界:尤魔宅の生活間",
     "displayName": "畜生界 尤魔宅の生活間",
-    "ascii": "畜生界 尤魔宅の生活間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:尤魔宅の生活間]",
     "exits": [
       {
@@ -3688,7 +3514,6 @@
     "id": "meikai-654-room",
     "location": "畜生界:尤魔宅の寝室",
     "displayName": "畜生界 尤魔宅の寝室",
-    "ascii": "畜生界 尤魔宅の寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:尤魔宅の寝室]",
     "exits": [
       {
@@ -3702,7 +3527,6 @@
     "id": "meikai-655-room",
     "location": "畜生界:尤魔宅の風呂",
     "displayName": "畜生界 尤魔宅の風呂",
-    "ascii": "畜生界 尤魔宅の風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 畜生界:尤魔宅の風呂]",
     "exits": [
       {
@@ -3716,7 +3540,6 @@
     "id": "moon",
     "location": "月之世界",
     "displayName": "槐安通路",
-    "ascii": "槐安通路\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界]",
     "exits": [
       {
@@ -3750,7 +3573,6 @@
     "id": "moon-1002-room",
     "location": "月之世界:月之都",
     "displayName": "月之世界 月之都",
-    "ascii": "月之世界 月之都\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:月之都]",
     "exits": [
       {
@@ -3784,7 +3606,6 @@
     "id": "moon-1003-room",
     "location": "月之世界:玉兎街",
     "displayName": "月之世界 玉兎街",
-    "ascii": "月之世界 玉兎街\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:玉兎街]",
     "exits": [
       {
@@ -3828,7 +3649,6 @@
     "id": "moon-1004-room",
     "location": "月之世界:広場",
     "displayName": "月之世界 広場",
-    "ascii": "月之世界 広場\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:広場]",
     "exits": [
       {
@@ -3862,7 +3682,6 @@
     "id": "moon-1005-room",
     "location": "月之世界:探女宅・居間",
     "displayName": "月之世界 探女宅・居間",
-    "ascii": "月之世界 探女宅・居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:探女宅・居間]",
     "exits": [
       {
@@ -3881,7 +3700,6 @@
     "id": "moon-1006-room",
     "location": "月之世界:探女宅・寝室",
     "displayName": "月之世界 探女宅・寝室",
-    "ascii": "月之世界 探女宅・寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:探女宅・寝室]",
     "exits": [
       {
@@ -3895,7 +3713,6 @@
     "id": "moon-1007-room",
     "location": "月之世界:闲置的房子",
     "displayName": "月之世界 闲置的房子",
-    "ascii": "月之世界 闲置的房子\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:闲置的房子]",
     "exits": [
       {
@@ -3909,7 +3726,6 @@
     "id": "moon-1008-room",
     "location": "月之世界:鈴瑚宅",
     "displayName": "月之世界 鈴瑚宅",
-    "ascii": "月之世界 鈴瑚宅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:鈴瑚宅]",
     "exits": [
       {
@@ -3923,7 +3739,6 @@
     "id": "moon-1009-room",
     "location": "月之世界:清蘭宅",
     "displayName": "月之世界 清蘭宅",
-    "ascii": "月之世界 清蘭宅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:清蘭宅]",
     "exits": [
       {
@@ -3937,7 +3752,6 @@
     "id": "moon-1010-room",
     "location": "月之世界:吃飯処",
     "displayName": "月之世界 吃飯処",
-    "ascii": "月之世界 吃飯処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:吃飯処]",
     "exits": [
       {
@@ -3956,7 +3770,6 @@
     "id": "moon-1011-room",
     "location": "月之世界:甘味処",
     "displayName": "月之世界 甘味処",
-    "ascii": "月之世界 甘味処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:甘味処]",
     "exits": [
       {
@@ -3975,7 +3788,6 @@
     "id": "moon-1012-room",
     "location": "月之世界:酒屋",
     "displayName": "月之世界 酒屋",
-    "ascii": "月之世界 酒屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:酒屋]",
     "exits": [
       {
@@ -3989,7 +3801,6 @@
     "id": "moon-1013-room",
     "location": "月之世界:八百屋",
     "displayName": "月之世界 八百屋",
-    "ascii": "月之世界 八百屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:八百屋]",
     "exits": [
       {
@@ -4003,7 +3814,6 @@
     "id": "moon-1014-room",
     "location": "月之世界:桃林",
     "displayName": "月之世界 桃林",
-    "ascii": "月之世界 桃林\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:桃林]",
     "exits": [
       {
@@ -4022,7 +3832,6 @@
     "id": "moon-1015-room",
     "location": "月之世界:砂浜",
     "displayName": "月之世界 砂浜",
-    "ascii": "月之世界 砂浜\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:砂浜]",
     "exits": [
       {
@@ -4041,7 +3850,6 @@
     "id": "moon-1016-room",
     "location": "月之世界:入海口",
     "displayName": "月之世界 入海口",
-    "ascii": "月之世界 入海口\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 月之世界:入海口]",
     "exits": [
       {
@@ -4060,7 +3868,6 @@
     "id": "moon-1020-room",
     "location": "绵月亭:綿月亭・門",
     "displayName": "绵月亭 綿月亭・門",
-    "ascii": "绵月亭 綿月亭・門\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:綿月亭・門]",
     "exits": [
       {
@@ -4089,7 +3896,6 @@
     "id": "moon-1021-room",
     "location": "绵月亭:綿月亭・玄関",
     "displayName": "绵月亭 綿月亭・玄関",
-    "ascii": "绵月亭 綿月亭・玄関\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:綿月亭・玄関]",
     "exits": [
       {
@@ -4118,7 +3924,6 @@
     "id": "moon-1022-room",
     "location": "绵月亭:一階回廊",
     "displayName": "绵月亭 一階回廊",
-    "ascii": "绵月亭 一階回廊\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:一階回廊]",
     "exits": [
       {
@@ -4167,7 +3972,6 @@
     "id": "moon-1023-room",
     "location": "绵月亭:門番詰め所",
     "displayName": "绵月亭 門番詰め所",
-    "ascii": "绵月亭 門番詰め所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:門番詰め所]",
     "exits": [
       {
@@ -4181,7 +3985,6 @@
     "id": "moon-1024-room",
     "location": "绵月亭:玉兎食堂",
     "displayName": "绵月亭 玉兎食堂",
-    "ascii": "绵月亭 玉兎食堂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:玉兎食堂]",
     "exits": [
       {
@@ -4205,7 +4008,6 @@
     "id": "moon-1025-room",
     "location": "绵月亭:玉兎詰め所",
     "displayName": "绵月亭 玉兎詰め所",
-    "ascii": "绵月亭 玉兎詰め所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:玉兎詰め所]",
     "exits": [
       {
@@ -4219,7 +4021,6 @@
     "id": "moon-1026-room",
     "location": "绵月亭:食堂",
     "displayName": "绵月亭 食堂",
-    "ascii": "绵月亭 食堂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:食堂]",
     "exits": [
       {
@@ -4238,7 +4039,6 @@
     "id": "moon-1027-room",
     "location": "绵月亭:厨房",
     "displayName": "绵月亭 厨房",
-    "ascii": "绵月亭 厨房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:厨房]",
     "exits": [
       {
@@ -4257,7 +4057,6 @@
     "id": "moon-1028-room",
     "location": "绵月亭:食料庫",
     "displayName": "绵月亭 食料庫",
-    "ascii": "绵月亭 食料庫\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:食料庫]",
     "exits": [
       {
@@ -4276,7 +4075,6 @@
     "id": "moon-1029-room",
     "location": "绵月亭:綿月亭・脱衣所",
     "displayName": "绵月亭 綿月亭・脱衣所",
-    "ascii": "绵月亭 綿月亭・脱衣所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:綿月亭・脱衣所]",
     "exits": [
       {
@@ -4295,7 +4093,6 @@
     "id": "moon-1030-room",
     "location": "绵月亭:綿月亭・風呂",
     "displayName": "绵月亭 綿月亭・風呂",
-    "ascii": "绵月亭 綿月亭・風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:綿月亭・風呂]",
     "exits": [
       {
@@ -4309,7 +4106,6 @@
     "id": "moon-1031-room",
     "location": "绵月亭:宝物庫",
     "displayName": "绵月亭 宝物庫",
-    "ascii": "绵月亭 宝物庫\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:宝物庫]",
     "exits": [
       {
@@ -4323,7 +4119,6 @@
     "id": "moon-1032-room",
     "location": "绵月亭:鈴仙二號私室",
     "displayName": "绵月亭 鈴仙二號私室",
-    "ascii": "绵月亭 鈴仙二號私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:鈴仙二號私室]",
     "exits": [
       {
@@ -4337,7 +4132,6 @@
     "id": "moon-1033-room",
     "location": "绵月亭:綿月亭・空的部屋",
     "displayName": "绵月亭 綿月亭・空的部屋",
-    "ascii": "绵月亭 綿月亭・空的部屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:綿月亭・空的部屋]",
     "exits": [
       {
@@ -4351,7 +4145,6 @@
     "id": "moon-1035-room",
     "location": "绵月亭:中庭",
     "displayName": "绵月亭 中庭",
-    "ascii": "绵月亭 中庭\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:中庭]",
     "exits": [
       {
@@ -4370,7 +4163,6 @@
     "id": "moon-1036-room",
     "location": "绵月亭:四阿",
     "displayName": "绵月亭 四阿",
-    "ascii": "绵月亭 四阿\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:四阿]",
     "exits": [
       {
@@ -4384,7 +4176,6 @@
     "id": "moon-1040-room",
     "location": "绵月亭:二階回廊",
     "displayName": "绵月亭 二階回廊",
-    "ascii": "绵月亭 二階回廊\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:二階回廊]",
     "exits": [
       {
@@ -4418,7 +4209,6 @@
     "id": "moon-1041-room",
     "location": "绵月亭:豊姫私室",
     "displayName": "绵月亭 豊姫私室",
-    "ascii": "绵月亭 豊姫私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:豊姫私室]",
     "exits": [
       {
@@ -4432,7 +4222,6 @@
     "id": "moon-1042-room",
     "location": "绵月亭:依姫私室",
     "displayName": "绵月亭 依姫私室",
-    "ascii": "绵月亭 依姫私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:依姫私室]",
     "exits": [
       {
@@ -4446,7 +4235,6 @@
     "id": "moon-1043-room",
     "location": "绵月亭:書斎",
     "displayName": "绵月亭 書斎",
-    "ascii": "绵月亭 書斎\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:書斎]",
     "exits": [
       {
@@ -4460,7 +4248,6 @@
     "id": "moon-1044-room",
     "location": "绵月亭:會客廳",
     "displayName": "绵月亭 會客廳",
-    "ascii": "绵月亭 會客廳\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 绵月亭:會客廳]",
     "exits": [
       {
@@ -4474,7 +4261,6 @@
     "id": "moon-1050-room",
     "location": "哆来咪宅:哆来咪宅・居間",
     "displayName": "哆来咪宅 哆来咪宅・居間",
-    "ascii": "哆来咪宅 哆来咪宅・居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 哆来咪宅:哆来咪宅・居間]",
     "exits": [
       {
@@ -4503,7 +4289,6 @@
     "id": "moon-1051-room",
     "location": "哆来咪宅:哆来咪宅・寝室",
     "displayName": "哆来咪宅 哆来咪宅・寝室",
-    "ascii": "哆来咪宅 哆来咪宅・寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 哆来咪宅:哆来咪宅・寝室]",
     "exits": [
       {
@@ -4517,7 +4302,6 @@
     "id": "moon-1052-room",
     "location": "哆来咪宅:哆来咪宅・倉庫",
     "displayName": "哆来咪宅 哆来咪宅・倉庫",
-    "ascii": "哆来咪宅 哆来咪宅・倉庫\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 哆来咪宅:哆来咪宅・倉庫]",
     "exits": [
       {
@@ -4531,7 +4315,6 @@
     "id": "moon-1053-room",
     "location": "哆来咪宅:哆来咪宅・洗面所",
     "displayName": "哆来咪宅 哆来咪宅・洗面所",
-    "ascii": "哆来咪宅 哆来咪宅・洗面所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 哆来咪宅:哆来咪宅・洗面所]",
     "exits": [
       {
@@ -4555,7 +4338,6 @@
     "id": "moon-1054-room",
     "location": "哆来咪宅:哆来咪宅・風呂",
     "displayName": "哆来咪宅 哆来咪宅・風呂",
-    "ascii": "哆来咪宅 哆来咪宅・風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 哆来咪宅:哆来咪宅・風呂]",
     "exits": [
       {
@@ -4569,7 +4351,6 @@
     "id": "moon-1055-room",
     "location": "哆来咪宅:哆来咪宅・廁所",
     "displayName": "哆来咪宅 哆来咪宅・廁所",
-    "ascii": "哆来咪宅 哆来咪宅・廁所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 哆来咪宅:哆来咪宅・廁所]",
     "exits": [
       {
@@ -4583,7 +4364,6 @@
     "id": "moon-1060-room",
     "location": "纯狐邸:純狐邸・玄関",
     "displayName": "纯狐邸 純狐邸・玄関",
-    "ascii": "纯狐邸 純狐邸・玄関\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:純狐邸・玄関]",
     "exits": [
       {
@@ -4602,7 +4382,6 @@
     "id": "moon-1061-room",
     "location": "纯狐邸:居間",
     "displayName": "纯狐邸 居間",
-    "ascii": "纯狐邸 居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:居間]",
     "exits": [
       {
@@ -4651,7 +4430,6 @@
     "id": "moon-1062-room",
     "location": "纯狐邸:廚房",
     "displayName": "纯狐邸 廚房",
-    "ascii": "纯狐邸 廚房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:廚房]",
     "exits": [
       {
@@ -4665,7 +4443,6 @@
     "id": "moon-1063-room",
     "location": "纯狐邸:純狐邸・空的部屋",
     "displayName": "纯狐邸 純狐邸・空的部屋",
-    "ascii": "纯狐邸 純狐邸・空的部屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:純狐邸・空的部屋]",
     "exits": [
       {
@@ -4679,7 +4456,6 @@
     "id": "moon-1064-room",
     "location": "纯狐邸:克勞恩皮絲私室",
     "displayName": "纯狐邸 克勞恩皮絲私室",
-    "ascii": "纯狐邸 克勞恩皮絲私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:克勞恩皮絲私室]",
     "exits": [
       {
@@ -4693,7 +4469,6 @@
     "id": "moon-1065-room",
     "location": "纯狐邸:庫房",
     "displayName": "纯狐邸 庫房",
-    "ascii": "纯狐邸 庫房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:庫房]",
     "exits": [
       {
@@ -4707,7 +4482,6 @@
     "id": "moon-1066-room",
     "location": "纯狐邸:純狐邸・脱衣所",
     "displayName": "纯狐邸 純狐邸・脱衣所",
-    "ascii": "纯狐邸 純狐邸・脱衣所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:純狐邸・脱衣所]",
     "exits": [
       {
@@ -4726,7 +4500,6 @@
     "id": "moon-1067-room",
     "location": "纯狐邸:純狐邸・風呂",
     "displayName": "纯狐邸 純狐邸・風呂",
-    "ascii": "纯狐邸 純狐邸・風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:純狐邸・風呂]",
     "exits": [
       {
@@ -4740,7 +4513,6 @@
     "id": "moon-1068-room",
     "location": "纯狐邸:純狐邸・中庭",
     "displayName": "纯狐邸 純狐邸・中庭",
-    "ascii": "纯狐邸 純狐邸・中庭\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:純狐邸・中庭]",
     "exits": [
       {
@@ -4754,7 +4526,6 @@
     "id": "moon-1070-room",
     "location": "纯狐邸:屋上",
     "displayName": "纯狐邸 屋上",
-    "ascii": "纯狐邸 屋上\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:屋上]",
     "exits": [
       {
@@ -4778,7 +4549,6 @@
     "id": "moon-1071-room",
     "location": "纯狐邸:純狐私室",
     "displayName": "纯狐邸 純狐私室",
-    "ascii": "纯狐邸 純狐私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:純狐私室]",
     "exits": [
       {
@@ -4792,7 +4562,6 @@
     "id": "moon-1072-room",
     "location": "纯狐邸:赫卡提亚私室",
     "displayName": "纯狐邸 赫卡提亚私室",
-    "ascii": "纯狐邸 赫卡提亚私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 纯狐邸:赫卡提亚私室]",
     "exits": [
       {
@@ -4806,7 +4575,6 @@
     "id": "reiten",
     "location": "命蓮寺",
     "displayName": "命蓮寺 山門",
-    "ascii": "命蓮寺 山門\n",
     "intro": "命蓮寺的山門，石燈籠靜靜守護著通往寺內的道路。",
     "exits": [
       {
@@ -4840,7 +4608,6 @@
     "id": "reiten-betsu",
     "location": "命蓮寺:別屋",
     "displayName": "命蓮寺 別屋",
-    "ascii": "命蓮寺 別屋\n",
     "intro": "寺內別屋，白蓮的家主初始位置，簡潔而整潔。",
     "exits": [
       {
@@ -4854,7 +4621,6 @@
     "id": "reiten-bochi",
     "location": "命蓮寺:墓地",
     "displayName": "命蓮寺 墓地",
-    "ascii": "命蓮寺 墓地\n",
     "intro": "寂靜的墓地，石碑林立，偶有山風吹過。",
     "exits": [
       {
@@ -4873,7 +4639,6 @@
     "id": "reiten-chouyaku",
     "location": "霊廟:調薬室",
     "displayName": "霊廟 調薬室",
-    "ascii": "霊廟 調薬室\n",
     "intro": "調藥室裡擺滿了各種草藥和煉藥器具。",
     "exits": [
       {
@@ -4887,7 +4652,6 @@
     "id": "reiten-daiba",
     "location": "命蓮寺:廚房",
     "displayName": "命蓮寺 廚房",
-    "ascii": "命蓮寺 廚房\n",
     "intro": "熱鬧的廚房，鍋碗瓢盆整齊排列，炊煙裊裊。",
     "exits": [
       {
@@ -4901,7 +4665,6 @@
     "id": "reiten-doma",
     "location": "命蓮寺:土間",
     "displayName": "命蓮寺 土間",
-    "ascii": "命蓮寺 土間\n",
     "intro": "鋪著石板的土間走廊，連接著寺內各個房間。",
     "exits": [
       {
@@ -4925,7 +4688,6 @@
     "id": "reiten-doujou",
     "location": "霊廟:道場",
     "displayName": "霊廟 道場",
-    "ascii": "霊廟 道場\n",
     "intro": "寬敞的道場，木劍和練功裝備齊全。",
     "exits": [
       {
@@ -4944,7 +4706,6 @@
     "id": "reiten-furo",
     "location": "命蓮寺:風呂",
     "displayName": "命蓮寺 風呂",
-    "ascii": "命蓮寺 風呂\n",
     "intro": "熱氣騰騰的澡堂，湯泉清澈，牆上貼著蓮花壁畫。",
     "exits": [
       {
@@ -4958,7 +4719,6 @@
     "id": "reiten-futsu",
     "location": "霊廟:布都私室",
     "displayName": "霊廟 布都私室",
-    "ascii": "霊廟 布都私室\n",
     "intro": "布都的私室，劍道裝備整齊排列。",
     "exits": [
       {
@@ -4972,7 +4732,6 @@
     "id": "reiten-hakuren",
     "location": "命蓮寺:白蓮私室",
     "displayName": "命蓮寺 白蓮私室",
-    "ascii": "命蓮寺 白蓮私室\n",
     "intro": "白蓮的私室，書籍與經卷堆積如山，散發著平靜的氣息。",
     "exits": [
       {
@@ -4996,7 +4755,6 @@
     "id": "reiten-hantsuurou",
     "location": "命蓮寺:梵鐘楼",
     "displayName": "命蓮寺 梵鐘楼",
-    "ascii": "命蓮寺 梵鐘楼\n",
     "intro": "高聳的梵鐘樓，鐘聲遠播，月夜下更顯肅穆。",
     "exits": [
       {
@@ -5010,7 +4768,6 @@
     "id": "reiten-hondou",
     "location": "命蓮寺:本堂",
     "displayName": "命蓮寺 本堂",
-    "ascii": "命蓮寺 本堂\n",
     "intro": "莊嚴的本堂，佛像端坐其上，檀香裊裊。",
     "exits": [
       {
@@ -5024,7 +4781,6 @@
     "id": "reiten-ichirin",
     "location": "命蓮寺:一輪私室",
     "displayName": "命蓮寺 一輪私室",
-    "ascii": "命蓮寺 一輪私室\n",
     "intro": "一輪的私室，武道裝備整齊排列。",
     "exits": [
       {
@@ -5048,7 +4804,6 @@
     "id": "reiten-jasen",
     "location": "霊廟:邪仙楼",
     "displayName": "霊廟 邪仙楼",
-    "ascii": "霊廟 邪仙楼\n",
     "intro": "邪仙樓，充滿了詭異的氣息，是寺內最神祕的建築。",
     "exits": [
       {
@@ -5062,7 +4817,6 @@
     "id": "reiten-jizou",
     "location": "命蓮寺:地蔵小路",
     "displayName": "命蓮寺 地蔵小路",
-    "ascii": "命蓮寺 地蔵小路\n",
     "intro": "地蔵石像排列的小路，通向寺外的參道。",
     "exits": [
       {
@@ -5081,7 +4835,6 @@
     "id": "reiten-joen",
     "location": "命蓮寺:女苑私室",
     "displayName": "命蓮寺 女苑私室",
-    "ascii": "命蓮寺 女苑私室\n",
     "intro": "精緻的女苑私室，窗邊種著竹林。",
     "exits": [
       {
@@ -5105,7 +4858,6 @@
     "id": "reiten-kaisui",
     "location": "霊廟:枯山水",
     "displayName": "霊廟 枯山水",
-    "ascii": "霊廟 枯山水\n",
     "intro": "枯山水庭園，石頭與砂紋構成禪意畫卷。",
     "exits": [
       {
@@ -5124,7 +4876,6 @@
     "id": "reiten-keizou",
     "location": "命蓮寺:経蔵",
     "displayName": "命蓮寺 経蔵",
-    "ascii": "命蓮寺 経蔵\n",
     "intro": "經藏內收藏著大量佛經，古舊的書卷散發著墨香。",
     "exits": [
       {
@@ -5138,7 +4889,6 @@
     "id": "reiten-koubou",
     "location": "命蓮寺:庫房",
     "displayName": "命蓮寺 庫房",
-    "ascii": "命蓮寺 庫房\n",
     "intro": "堆滿雜物的庫房，經卷和日常用品整齊堆放。",
     "exits": [
       {
@@ -5152,7 +4902,6 @@
     "id": "reiten-koudou",
     "location": "命蓮寺:講堂",
     "displayName": "命蓮寺 講堂",
-    "ascii": "命蓮寺 講堂\n",
     "intro": "講堂內陳列著經卷，僧眾在此誦經研討。",
     "exits": [
       {
@@ -5171,7 +4920,6 @@
     "id": "reiten-kyakuman",
     "location": "霊廟:客間",
     "displayName": "霊廟 客間",
-    "ascii": "霊廟 客間\n",
     "intro": "接待客人的客間，炬燵上桌，茶香裊裊。",
     "exits": [
       {
@@ -5190,7 +4938,6 @@
     "id": "reiten-living",
     "location": "命蓮寺:居間",
     "displayName": "命蓮寺 居間",
-    "ascii": "命蓮寺 居間\n",
     "intro": "溫暖的居間，炬燵上桌，主人與房客在此閒話。",
     "exits": [
       {
@@ -5219,7 +4966,6 @@
     "id": "reiten-mikono",
     "location": "霊廟:神子私室",
     "displayName": "霊廟 神子私室",
-    "ascii": "霊廟 神子私室\n",
     "intro": "神子的私室，巫女服裝掛在衣櫃裡。",
     "exits": [
       {
@@ -5233,7 +4979,6 @@
     "id": "reiten-musashi",
     "location": "命蓮寺:村紗私室",
     "displayName": "命蓮寺 村紗私室",
-    "ascii": "命蓮寺 村紗私室\n",
     "intro": "村紗的私室，船模和航海圖掛滿牆壁。",
     "exits": [
       {
@@ -5262,7 +5007,6 @@
     "id": "reiten-naizin",
     "location": "命蓮寺:納茲琳私室",
     "displayName": "命蓮寺 納茲琳私室",
-    "ascii": "命蓮寺 納茲琳私室\n",
     "intro": "納茲琳的私室，各種藥劑和魔法書籍散落各處。",
     "exits": [
       {
@@ -5286,7 +5030,6 @@
     "id": "reiten-nohemi",
     "location": "命蓮寺:鵺私室",
     "displayName": "命蓮寺 鵺私室",
-    "ascii": "命蓮寺 鵺私室\n",
     "intro": "鵺的私室，有些異樣的气息，籠中鳥鳴不絕。",
     "exits": [
       {
@@ -5315,7 +5058,6 @@
     "id": "reiten-okuin",
     "location": "命蓮寺:後院",
     "displayName": "命蓮寺 後院",
-    "ascii": "命蓮寺 後院\n",
     "intro": "寺內後院，種著花木，偶爾可見修行用的石燈。",
     "exits": [
       {
@@ -5339,7 +5081,6 @@
     "id": "reiten-reitohiroba",
     "location": "霊廟:霊廟広場",
     "displayName": "霊廟 霊廟広場",
-    "ascii": "霊廟 霊廟広場\n",
     "intro": "神霊廟的中心廣場，四通八達，通往各個房間。",
     "exits": [
       {
@@ -5378,7 +5119,6 @@
     "id": "reiten-reitoudai",
     "location": "霊廟:霊廟大門",
     "displayName": "霊廟 霊廟大門",
-    "ascii": "霊廟 霊廟大門\n",
     "intro": "神霊廟的大門，莊嚴肅穆，透著一股神秘氣息。",
     "exits": [
       {
@@ -5397,7 +5137,6 @@
     "id": "reiten-rouka",
     "location": "霊廟:廊下",
     "displayName": "霊廟 廊下",
-    "ascii": "霊廟 廊下\n",
     "intro": "神霊廟的走廊，連接著各個房間，燈光昏暗。",
     "exits": [
       {
@@ -5441,7 +5180,6 @@
     "id": "reiten-sei",
     "location": "命蓮寺:星私室",
     "displayName": "命蓮寺 星私室",
-    "ascii": "命蓮寺 星私室\n",
     "intro": "星的私室，天文望遠鏡架在窗邊，星空圖滿佈牆面。",
     "exits": [
       {
@@ -5465,7 +5203,6 @@
     "id": "reiten-seita",
     "location": "命蓮寺:境内",
     "displayName": "命蓮寺 境内",
-    "ascii": "命蓮寺 境内\n",
     "intro": "寬廣的寺內庭院，鐘聲遠播，修行者往來其中。",
     "exits": [
       {
@@ -5514,7 +5251,6 @@
     "id": "reiten-shuurou",
     "location": "霊廟:鐘楼",
     "displayName": "霊廟 鐘楼",
-    "ascii": "霊廟 鐘楼\n",
     "intro": "神霊廟的鐘樓，鐘聲悠揚。",
     "exits": [
       {
@@ -5528,7 +5264,6 @@
     "id": "reiten-sourou",
     "location": "命蓮寺:走廊",
     "displayName": "命蓮寺 走廊",
-    "ascii": "命蓮寺 走廊\n",
     "intro": "寬敞的走廊，晾著衣物，月光透過欄杆灑下。",
     "exits": [
       {
@@ -5557,7 +5292,6 @@
     "id": "reiten-sourou2",
     "location": "命蓮寺:廊下(別館)",
     "displayName": "命蓮寺 廊下(別館)",
-    "ascii": "命蓮寺 廊下(別館)\n",
     "intro": "別館的走廊，連接著各個私室，安靜平和。",
     "exits": [
       {
@@ -5616,7 +5350,6 @@
     "id": "reiten-tanuki",
     "location": "命蓮寺:猯藏の棲家",
     "displayName": "命蓮寺 猯藏の棲家",
-    "ascii": "命蓮寺 猯藏の棲家\n",
     "intro": "猯藏的居所，充滿了狸貓的趣味裝飾。",
     "exits": [
       {
@@ -5630,7 +5363,6 @@
     "id": "reiten-tato",
     "location": "霊廟:屠自古私室",
     "displayName": "霊廟 屠自古私室",
-    "ascii": "霊廟 屠自古私室\n",
     "intro": "屠自古的私室，充滿了山野的氣息。",
     "exits": [
       {
@@ -5644,7 +5376,6 @@
     "id": "reiten-youko",
     "location": "命蓮寺:響子私室",
     "displayName": "命蓮寺 響子私室",
-    "ascii": "命蓮寺 響子私室\n",
     "intro": "響子的私室，樂器聲時不時傳來。",
     "exits": [
       {
@@ -5663,7 +5394,6 @@
     "id": "reiten-yudou",
     "location": "霊廟:湯殿",
     "displayName": "霊廟 湯殿",
-    "ascii": "霊廟 湯殿\n",
     "intro": "神霊廟的公共澡堂，湯氣蒸騰。",
     "exits": [
       {
@@ -5677,7 +5407,6 @@
     "id": "reiten-zou",
     "location": "霊廟:蔵",
     "displayName": "霊廟 蔵",
-    "ascii": "霊廟 蔵\n",
     "intro": "神霊廟的倉庫，堆滿各類物資。",
     "exits": [
       {
@@ -5691,7 +5420,6 @@
     "id": "sanchou",
     "location": "妖怪之山・山顶",
     "displayName": "山頂入口",
-    "ascii": "山頂入口\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶]",
     "exits": [
       {
@@ -5725,7 +5453,6 @@
     "id": "sanchou-802-room",
     "location": "妖怪之山・山顶:橋",
     "displayName": "妖怪之山・山顶 橋",
-    "ascii": "妖怪之山・山顶 橋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:橋]",
     "exits": [
       {
@@ -5764,7 +5491,6 @@
     "id": "sanchou-803-room",
     "location": "妖怪之山・山顶:索道站",
     "displayName": "妖怪之山・山顶 索道站",
-    "ascii": "妖怪之山・山顶 索道站\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:索道站]",
     "exits": [
       {
@@ -5798,7 +5524,6 @@
     "id": "sanchou-804-room",
     "location": "妖怪之山・山顶:守矢神社鳥居",
     "displayName": "妖怪之山・山顶 守矢神社鳥居",
-    "ascii": "妖怪之山・山顶 守矢神社鳥居\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:守矢神社鳥居]",
     "exits": [
       {
@@ -5827,7 +5552,6 @@
     "id": "sanchou-805-room",
     "location": "妖怪之山・山顶:頂上",
     "displayName": "妖怪之山・山顶 頂上",
-    "ascii": "妖怪之山・山顶 頂上\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:頂上]",
     "exits": [
       {
@@ -5871,7 +5595,6 @@
     "id": "sanchou-806-room",
     "location": "妖怪之山・山顶:瀑布背面",
     "displayName": "妖怪之山・山顶 瀑布背面",
-    "ascii": "妖怪之山・山顶 瀑布背面\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:瀑布背面]",
     "exits": [
       {
@@ -5885,7 +5608,6 @@
     "id": "sanchou-807-room",
     "location": "妖怪之山・山顶:椛宅",
     "displayName": "妖怪之山・山顶 椛宅",
-    "ascii": "妖怪之山・山顶 椛宅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:椛宅]",
     "exits": [
       {
@@ -5904,7 +5626,6 @@
     "id": "sanchou-808-room",
     "location": "妖怪之山・山顶:文宅",
     "displayName": "妖怪之山・山顶 文宅",
-    "ascii": "妖怪之山・山顶 文宅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:文宅]",
     "exits": [
       {
@@ -5923,7 +5644,6 @@
     "id": "sanchou-809-room",
     "location": "妖怪之山・山顶:果宅",
     "displayName": "妖怪之山・山顶 果宅",
-    "ascii": "妖怪之山・山顶 果宅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:果宅]",
     "exits": [
       {
@@ -5942,7 +5662,6 @@
     "id": "sanchou-810-room",
     "location": "妖怪之山・山顶:山小屋",
     "displayName": "妖怪之山・山顶 山小屋",
-    "ascii": "妖怪之山・山顶 山小屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:山小屋]",
     "exits": [
       {
@@ -5961,7 +5680,6 @@
     "id": "sanchou-811-room",
     "location": "守矢神社:境内",
     "displayName": "守矢神社 境内",
-    "ascii": "守矢神社 境内\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:境内]",
     "exits": [
       {
@@ -5995,7 +5713,6 @@
     "id": "sanchou-812-room",
     "location": "守矢神社:本殿",
     "displayName": "守矢神社 本殿",
-    "ascii": "守矢神社 本殿\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:本殿]",
     "exits": [
       {
@@ -6014,7 +5731,6 @@
     "id": "sanchou-813-room",
     "location": "守矢神社:社務所",
     "displayName": "守矢神社 社務所",
-    "ascii": "守矢神社 社務所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:社務所]",
     "exits": [
       {
@@ -6028,7 +5744,6 @@
     "id": "sanchou-814-room",
     "location": "守矢神社:湖畔",
     "displayName": "守矢神社 湖畔",
-    "ascii": "守矢神社 湖畔\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:湖畔]",
     "exits": [
       {
@@ -6047,7 +5762,6 @@
     "id": "sanchou-815-room",
     "location": "守矢神社:庭",
     "displayName": "守矢神社 庭",
-    "ascii": "守矢神社 庭\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:庭]",
     "exits": [
       {
@@ -6071,7 +5785,6 @@
     "id": "sanchou-816-room",
     "location": "守矢神社:走廊",
     "displayName": "守矢神社 走廊",
-    "ascii": "守矢神社 走廊\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:走廊]",
     "exits": [
       {
@@ -6110,7 +5823,6 @@
     "id": "sanchou-817-room",
     "location": "守矢神社:神奈子私室",
     "displayName": "守矢神社 神奈子私室",
-    "ascii": "守矢神社 神奈子私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:神奈子私室]",
     "exits": [
       {
@@ -6134,7 +5846,6 @@
     "id": "sanchou-818-room",
     "location": "守矢神社:諏訪子私室",
     "displayName": "守矢神社 諏訪子私室",
-    "ascii": "守矢神社 諏訪子私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:諏訪子私室]",
     "exits": [
       {
@@ -6163,7 +5874,6 @@
     "id": "sanchou-819-room",
     "location": "守矢神社:居間",
     "displayName": "守矢神社 居間",
-    "ascii": "守矢神社 居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:居間]",
     "exits": [
       {
@@ -6192,7 +5902,6 @@
     "id": "sanchou-820-room",
     "location": "守矢神社:早苗私室",
     "displayName": "守矢神社 早苗私室",
-    "ascii": "守矢神社 早苗私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:早苗私室]",
     "exits": [
       {
@@ -6221,7 +5930,6 @@
     "id": "sanchou-821-room",
     "location": "守矢神社:土間",
     "displayName": "守矢神社 土間",
-    "ascii": "守矢神社 土間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:土間]",
     "exits": [
       {
@@ -6280,7 +5988,6 @@
     "id": "sanchou-822-room",
     "location": "守矢神社:廚房",
     "displayName": "守矢神社 廚房",
-    "ascii": "守矢神社 廚房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:廚房]",
     "exits": [
       {
@@ -6294,7 +6001,6 @@
     "id": "sanchou-823-room",
     "location": "守矢神社:空室",
     "displayName": "守矢神社 空室",
-    "ascii": "守矢神社 空室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:空室]",
     "exits": [
       {
@@ -6308,7 +6014,6 @@
     "id": "sanchou-824-room",
     "location": "守矢神社:廁所",
     "displayName": "守矢神社 廁所",
-    "ascii": "守矢神社 廁所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:廁所]",
     "exits": [
       {
@@ -6322,7 +6027,6 @@
     "id": "sanchou-825-room",
     "location": "守矢神社:風呂",
     "displayName": "守矢神社 風呂",
-    "ascii": "守矢神社 風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:風呂]",
     "exits": [
       {
@@ -6336,7 +6040,6 @@
     "id": "sanchou-826-room",
     "location": "守矢神社:廊下",
     "displayName": "守矢神社 廊下",
-    "ascii": "守矢神社 廊下\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 守矢神社:廊下]",
     "exits": [
       {
@@ -6370,7 +6073,6 @@
     "id": "sanchou-830-room",
     "location": "天界:玄雲海",
     "displayName": "天界 玄雲海",
-    "ascii": "天界 玄雲海\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 天界:玄雲海]",
     "exits": [
       {
@@ -6389,7 +6091,6 @@
     "id": "sanchou-831-room",
     "location": "比那名居邸:比那名居邸前",
     "displayName": "比那名居邸 比那名居邸前",
-    "ascii": "比那名居邸 比那名居邸前\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸前]",
     "exits": [
       {
@@ -6408,7 +6109,6 @@
     "id": "sanchou-832-room",
     "location": "天界:有頂天街",
     "displayName": "天界 有頂天街",
-    "ascii": "天界 有頂天街\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 天界:有頂天街]",
     "exits": [
       {
@@ -6432,7 +6132,6 @@
     "id": "sanchou-833-room",
     "location": "天界:桃園",
     "displayName": "天界 桃園",
-    "ascii": "天界 桃園\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 天界:桃園]",
     "exits": [
       {
@@ -6446,7 +6145,6 @@
     "id": "sanchou-834-room",
     "location": "比那名居邸:比那名居邸土間",
     "displayName": "比那名居邸 比那名居邸土間",
-    "ascii": "比那名居邸 比那名居邸土間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸土間]",
     "exits": [
       {
@@ -6480,7 +6178,6 @@
     "id": "sanchou-835-room",
     "location": "比那名居邸:比那名居邸會客廳",
     "displayName": "比那名居邸 比那名居邸會客廳",
-    "ascii": "比那名居邸 比那名居邸會客廳\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸會客廳]",
     "exits": [
       {
@@ -6499,7 +6196,6 @@
     "id": "sanchou-836-room",
     "location": "比那名居邸:比那名居邸厨房",
     "displayName": "比那名居邸 比那名居邸厨房",
-    "ascii": "比那名居邸 比那名居邸厨房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸厨房]",
     "exits": [
       {
@@ -6518,7 +6214,6 @@
     "id": "sanchou-837-room",
     "location": "比那名居邸:比那名居邸風呂",
     "displayName": "比那名居邸 比那名居邸風呂",
-    "ascii": "比那名居邸 比那名居邸風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸風呂]",
     "exits": [
       {
@@ -6532,7 +6227,6 @@
     "id": "sanchou-838-room",
     "location": "比那名居邸:比那名居邸居間",
     "displayName": "比那名居邸 比那名居邸居間",
-    "ascii": "比那名居邸 比那名居邸居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸居間]",
     "exits": [
       {
@@ -6566,7 +6260,6 @@
     "id": "sanchou-839-room",
     "location": "比那名居邸:比那名居邸和室",
     "displayName": "比那名居邸 比那名居邸和室",
-    "ascii": "比那名居邸 比那名居邸和室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸和室]",
     "exits": [
       {
@@ -6585,7 +6278,6 @@
     "id": "sanchou-840-room",
     "location": "比那名居邸:天子私室",
     "displayName": "比那名居邸 天子私室",
-    "ascii": "比那名居邸 天子私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:天子私室]",
     "exits": [
       {
@@ -6604,7 +6296,6 @@
     "id": "sanchou-841-room",
     "location": "比那名居邸:衣玖私室",
     "displayName": "比那名居邸 衣玖私室",
-    "ascii": "比那名居邸 衣玖私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:衣玖私室]",
     "exits": [
       {
@@ -6618,7 +6309,6 @@
     "id": "sanchou-842-room",
     "location": "比那名居邸:比那名居邸庫房",
     "displayName": "比那名居邸 比那名居邸庫房",
-    "ascii": "比那名居邸 比那名居邸庫房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 比那名居邸:比那名居邸庫房]",
     "exits": [
       {
@@ -6632,7 +6322,6 @@
     "id": "sanchou-851-room",
     "location": "妖怪之山・山顶:久侘歌の小屋",
     "displayName": "妖怪之山・山顶 久侘歌の小屋",
-    "ascii": "妖怪之山・山顶 久侘歌の小屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:久侘歌の小屋]",
     "exits": [
       {
@@ -6646,7 +6335,6 @@
     "id": "sanchou-852-room",
     "location": "妖怪之山・山顶:駒草の小屋",
     "displayName": "妖怪之山・山顶 駒草の小屋",
-    "ascii": "妖怪之山・山顶 駒草の小屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:駒草の小屋]",
     "exits": [
       {
@@ -6660,7 +6348,6 @@
     "id": "sanchou-853-room",
     "location": "妖怪之山・山顶:魅須丸の小屋",
     "displayName": "妖怪之山・山顶 魅須丸の小屋",
-    "ascii": "妖怪之山・山顶 魅須丸の小屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:魅須丸の小屋]",
     "exits": [
       {
@@ -6674,7 +6361,6 @@
     "id": "sanchou-854-room",
     "location": "饭纲丸邸:龙宅前院",
     "displayName": "饭纲丸邸 龙宅前院",
-    "ascii": "饭纲丸邸 龙宅前院\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅前院]",
     "exits": [
       {
@@ -6698,7 +6384,6 @@
     "id": "sanchou-855-room",
     "location": "妖怪之山・山顶:虹龍洞",
     "displayName": "妖怪之山・山顶 虹龍洞",
-    "ascii": "妖怪之山・山顶 虹龍洞\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:虹龍洞]",
     "exits": [
       {
@@ -6717,7 +6402,6 @@
     "id": "sanchou-856-room",
     "location": "妖怪之山・山顶:百百世の住処",
     "displayName": "妖怪之山・山顶 百百世の住処",
-    "ascii": "妖怪之山・山顶 百百世の住処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山顶:百百世の住処]",
     "exits": [
       {
@@ -6731,7 +6415,6 @@
     "id": "sanchou-860-room",
     "location": "饭纲丸邸:龙宅一楼走廊",
     "displayName": "饭纲丸邸 龙宅一楼走廊",
-    "ascii": "饭纲丸邸 龙宅一楼走廊\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅一楼走廊]",
     "exits": [
       {
@@ -6780,7 +6463,6 @@
     "id": "sanchou-861-room",
     "location": "饭纲丸邸:龙宅客厅",
     "displayName": "饭纲丸邸 龙宅客厅",
-    "ascii": "饭纲丸邸 龙宅客厅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅客厅]",
     "exits": [
       {
@@ -6794,7 +6476,6 @@
     "id": "sanchou-862-room",
     "location": "饭纲丸邸:龙宅餐厅",
     "displayName": "饭纲丸邸 龙宅餐厅",
-    "ascii": "饭纲丸邸 龙宅餐厅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅餐厅]",
     "exits": [
       {
@@ -6813,7 +6494,6 @@
     "id": "sanchou-863-room",
     "location": "饭纲丸邸:龙宅厨房",
     "displayName": "饭纲丸邸 龙宅厨房",
-    "ascii": "饭纲丸邸 龙宅厨房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅厨房]",
     "exits": [
       {
@@ -6827,7 +6507,6 @@
     "id": "sanchou-864-room",
     "location": "饭纲丸邸:龙宅厕所",
     "displayName": "饭纲丸邸 龙宅厕所",
-    "ascii": "饭纲丸邸 龙宅厕所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅厕所]",
     "exits": [
       {
@@ -6841,7 +6520,6 @@
     "id": "sanchou-865-room",
     "location": "饭纲丸邸:龙宅客卧(P865)",
     "displayName": "饭纲丸邸 龙宅客卧(P865)",
-    "ascii": "饭纲丸邸 龙宅客卧(P865)\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅客卧(P865)]",
     "exits": [
       {
@@ -6855,7 +6533,6 @@
     "id": "sanchou-866-room",
     "location": "饭纲丸邸:龙宅一楼浴室",
     "displayName": "饭纲丸邸 龙宅一楼浴室",
-    "ascii": "饭纲丸邸 龙宅一楼浴室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅一楼浴室]",
     "exits": [
       {
@@ -6869,7 +6546,6 @@
     "id": "sanchou-867-room",
     "location": "饭纲丸邸:后院",
     "displayName": "饭纲丸邸 后院",
-    "ascii": "饭纲丸邸 后院\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:后院]",
     "exits": [
       {
@@ -6888,7 +6564,6 @@
     "id": "sanchou-868-room",
     "location": "饭纲丸邸:龙宅二楼走廊",
     "displayName": "饭纲丸邸 龙宅二楼走廊",
-    "ascii": "饭纲丸邸 龙宅二楼走廊\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅二楼走廊]",
     "exits": [
       {
@@ -6927,7 +6602,6 @@
     "id": "sanchou-869-room",
     "location": "饭纲丸邸:龙宅客卧(P869)",
     "displayName": "饭纲丸邸 龙宅客卧(P869)",
-    "ascii": "饭纲丸邸 龙宅客卧(P869)\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅客卧(P869)]",
     "exits": [
       {
@@ -6941,7 +6615,6 @@
     "id": "sanchou-870-room",
     "location": "饭纲丸邸:龙宅二楼卫浴",
     "displayName": "饭纲丸邸 龙宅二楼卫浴",
-    "ascii": "饭纲丸邸 龙宅二楼卫浴\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙宅二楼卫浴]",
     "exits": [
       {
@@ -6955,7 +6628,6 @@
     "id": "sanchou-871-room",
     "location": "饭纲丸邸:工作间",
     "displayName": "饭纲丸邸 工作间",
-    "ascii": "饭纲丸邸 工作间\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:工作间]",
     "exits": [
       {
@@ -6969,7 +6641,6 @@
     "id": "sanchou-872-room",
     "location": "饭纲丸邸:典的卧室",
     "displayName": "饭纲丸邸 典的卧室",
-    "ascii": "饭纲丸邸 典的卧室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:典的卧室]",
     "exits": [
       {
@@ -6983,7 +6654,6 @@
     "id": "sanchou-873-room",
     "location": "饭纲丸邸:龙的卧室",
     "displayName": "饭纲丸邸 龙的卧室",
-    "ascii": "饭纲丸邸 龙的卧室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:龙的卧室]",
     "exits": [
       {
@@ -7002,7 +6672,6 @@
     "id": "sanchou-874-room",
     "location": "饭纲丸邸:大露台",
     "displayName": "饭纲丸邸 大露台",
-    "ascii": "饭纲丸邸 大露台\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 饭纲丸邸:大露台]",
     "exits": [
       {
@@ -7016,7 +6685,6 @@
     "id": "sanroku",
     "location": "妖怪之山・山麓",
     "displayName": "樹海道入口",
-    "ascii": "樹海道入口\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓]",
     "exits": [
       {
@@ -7050,7 +6718,6 @@
     "id": "sanroku-702-room",
     "location": "妖怪之山・山麓:山道・通往沼澤之道",
     "displayName": "妖怪之山・山麓 山道・通往沼澤之道",
-    "ascii": "妖怪之山・山麓 山道・通往沼澤之道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:山道・通往沼澤之道]",
     "exits": [
       {
@@ -7079,7 +6746,6 @@
     "id": "sanroku-703-room",
     "location": "妖怪之山・山麓:玄武之澤",
     "displayName": "妖怪之山・山麓 玄武之澤",
-    "ascii": "妖怪之山・山麓 玄武之澤\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:玄武之澤]",
     "exits": [
       {
@@ -7118,7 +6784,6 @@
     "id": "sanroku-704-room",
     "location": "妖怪之山・山麓:河童の宣傳站",
     "displayName": "妖怪之山・山麓 河童の宣傳站",
-    "ascii": "妖怪之山・山麓 河童の宣傳站\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:河童の宣傳站]",
     "exits": [
       {
@@ -7132,7 +6797,6 @@
     "id": "sanroku-705-room",
     "location": "妖怪之山・山麓:山道・中腹",
     "displayName": "妖怪之山・山麓 山道・中腹",
-    "ascii": "妖怪之山・山麓 山道・中腹\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:山道・中腹]",
     "exits": [
       {
@@ -7156,7 +6820,6 @@
     "id": "sanroku-706-room",
     "location": "妖怪之山・山麓:厄神的家",
     "displayName": "妖怪之山・山麓 厄神的家",
-    "ascii": "妖怪之山・山麓 厄神的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:厄神的家]",
     "exits": [
       {
@@ -7175,7 +6838,6 @@
     "id": "sanroku-707-room",
     "location": "妖怪之山・山麓:山道・分岐点",
     "displayName": "妖怪之山・山麓 山道・分岐点",
-    "ascii": "妖怪之山・山麓 山道・分岐点\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:山道・分岐点]",
     "exits": [
       {
@@ -7219,7 +6881,6 @@
     "id": "sanroku-708-room",
     "location": "妖怪之山・山麓:大蛤蟆之池",
     "displayName": "妖怪之山・山麓 大蛤蟆之池",
-    "ascii": "妖怪之山・山麓 大蛤蟆之池\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:大蛤蟆之池]",
     "exits": [
       {
@@ -7233,7 +6894,6 @@
     "id": "sanroku-709-room",
     "location": "妖怪之山・山麓:莉莉們的家",
     "displayName": "妖怪之山・山麓 莉莉們的家",
-    "ascii": "妖怪之山・山麓 莉莉們的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:莉莉們的家]",
     "exits": [
       {
@@ -7247,7 +6907,6 @@
     "id": "sanroku-710-room",
     "location": "妖怪之山・山麓:猫之里",
     "displayName": "妖怪之山・山麓 猫之里",
-    "ascii": "妖怪之山・山麓 猫之里\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:猫之里]",
     "exits": [
       {
@@ -7271,7 +6930,6 @@
     "id": "sanroku-711-room",
     "location": "妖怪之山・山麓:休憩所",
     "displayName": "妖怪之山・山麓 休憩所",
-    "ascii": "妖怪之山・山麓 休憩所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:休憩所]",
     "exits": [
       {
@@ -7300,7 +6958,6 @@
     "id": "sanroku-712-room",
     "location": "妖怪之山・山麓:間欠泉地下中樞",
     "displayName": "妖怪之山・山麓 間欠泉地下中樞",
-    "ascii": "妖怪之山・山麓 間欠泉地下中樞\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:間欠泉地下中樞]",
     "exits": [
       {
@@ -7319,7 +6976,6 @@
     "id": "sanroku-715-room",
     "location": "秋姊妹的家:秋姉妹的家・畑",
     "displayName": "秋姊妹的家 秋姉妹的家・畑",
-    "ascii": "秋姊妹的家 秋姉妹的家・畑\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 秋姊妹的家:秋姉妹的家・畑]",
     "exits": [
       {
@@ -7343,7 +6999,6 @@
     "id": "sanroku-716-room",
     "location": "秋姊妹的家:秋姉妹的家・土間",
     "displayName": "秋姊妹的家 秋姉妹的家・土間",
-    "ascii": "秋姊妹的家 秋姉妹的家・土間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 秋姊妹的家:秋姉妹的家・土間]",
     "exits": [
       {
@@ -7367,7 +7022,6 @@
     "id": "sanroku-717-room",
     "location": "秋姊妹的家:秋姉妹的家・寝室",
     "displayName": "秋姊妹的家 秋姉妹的家・寝室",
-    "ascii": "秋姊妹的家 秋姉妹的家・寝室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 秋姊妹的家:秋姉妹的家・寝室]",
     "exits": [
       {
@@ -7386,7 +7040,6 @@
     "id": "sanroku-718-room",
     "location": "秋姊妹的家:秋姉妹的家・居間",
     "displayName": "秋姊妹的家 秋姉妹的家・居間",
-    "ascii": "秋姊妹的家 秋姉妹的家・居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 秋姊妹的家:秋姉妹的家・居間]",
     "exits": [
       {
@@ -7410,7 +7063,6 @@
     "id": "sanroku-719-room",
     "location": "秋姊妹的家:秋姉妹的家・座敷",
     "displayName": "秋姊妹的家 秋姉妹的家・座敷",
-    "ascii": "秋姊妹的家 秋姉妹的家・座敷\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 秋姊妹的家:秋姉妹的家・座敷]",
     "exits": [
       {
@@ -7434,7 +7086,6 @@
     "id": "sanroku-720-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・廚房",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・廚房",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・廚房\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・廚房]",
     "exits": [
       {
@@ -7448,7 +7099,6 @@
     "id": "sanroku-721-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・風呂",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・風呂",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・風呂\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・風呂]",
     "exits": [
       {
@@ -7462,7 +7112,6 @@
     "id": "sanroku-722-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・道場",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・道場",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・道場\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・道場]",
     "exits": [
       {
@@ -7476,7 +7125,6 @@
     "id": "sanroku-723-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・二階客間",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・二階客間",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・二階客間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・二階客間]",
     "exits": [
       {
@@ -7505,7 +7153,6 @@
     "id": "sanroku-724-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・書斎",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・書斎",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・書斎\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・書斎]",
     "exits": [
       {
@@ -7519,7 +7166,6 @@
     "id": "sanroku-725-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・大鷲的房間",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・大鷲的房間",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・大鷲的房間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・大鷲的房間]",
     "exits": [
       {
@@ -7538,7 +7184,6 @@
     "id": "sanroku-726-room",
     "location": "仙人的宅邸　2-3F:仙人的宅邸・居間",
     "displayName": "仙人的宅邸　2-3F 仙人的宅邸・居間",
-    "ascii": "仙人的宅邸　2-3F 仙人的宅邸・居間\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　2-3F:仙人的宅邸・居間]",
     "exits": [
       {
@@ -7562,7 +7207,6 @@
     "id": "sanroku-727-room",
     "location": "仙人的宅邸　2-3F:仙人的宅邸・華扇私室",
     "displayName": "仙人的宅邸　2-3F 仙人的宅邸・華扇私室",
-    "ascii": "仙人的宅邸　2-3F 仙人的宅邸・華扇私室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　2-3F:仙人的宅邸・華扇私室]",
     "exits": [
       {
@@ -7576,7 +7220,6 @@
     "id": "sanroku-728-room",
     "location": "仙人的宅邸　2-3F:仙人的宅邸・空的部屋",
     "displayName": "仙人的宅邸　2-3F 仙人的宅邸・空的部屋",
-    "ascii": "仙人的宅邸　2-3F 仙人的宅邸・空的部屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　2-3F:仙人的宅邸・空的部屋]",
     "exits": [
       {
@@ -7590,7 +7233,6 @@
     "id": "sanroku-729-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・玄関",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・玄関",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・玄関\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・玄関]",
     "exits": [
       {
@@ -7624,7 +7266,6 @@
     "id": "sanroku-730-room",
     "location": "仙人的宅邸　1-2F:仙人的宅邸・庭",
     "displayName": "仙人的宅邸　1-2F 仙人的宅邸・庭",
-    "ascii": "仙人的宅邸　1-2F 仙人的宅邸・庭\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 仙人的宅邸　1-2F:仙人的宅邸・庭]",
     "exits": [
       {
@@ -7643,7 +7284,6 @@
     "id": "sanroku-731-room",
     "location": "妖怪之山・山麓:帚木",
     "displayName": "妖怪之山・山麓 帚木",
-    "ascii": "妖怪之山・山麓 帚木\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:帚木]",
     "exits": [
       {
@@ -7662,7 +7302,6 @@
     "id": "sanroku-732-room",
     "location": "妖怪之山・山麓:通向山頂的路",
     "displayName": "妖怪之山・山麓 通向山頂的路",
-    "ascii": "妖怪之山・山麓 通向山頂的路\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:通向山頂的路]",
     "exits": [
       {
@@ -7681,7 +7320,6 @@
     "id": "sanroku-733-room",
     "location": "妖怪之山・山麓:正邪的隠匿処",
     "displayName": "妖怪之山・山麓 正邪的隠匿処",
-    "ascii": "妖怪之山・山麓 正邪的隠匿処\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:正邪的隠匿処]",
     "exits": [
       {
@@ -7695,7 +7333,6 @@
     "id": "sanroku-734-room",
     "location": "妖怪之山・山麓:小屋",
     "displayName": "妖怪之山・山麓 小屋",
-    "ascii": "妖怪之山・山麓 小屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:小屋]",
     "exits": [
       {
@@ -7709,7 +7346,6 @@
     "id": "sanroku-735-room",
     "location": "妖怪之山・山麓:游泳場",
     "displayName": "妖怪之山・山麓 游泳場",
-    "ascii": "妖怪之山・山麓 游泳場\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:游泳場]",
     "exits": [
       {
@@ -7723,7 +7359,6 @@
     "id": "sanroku-736-room",
     "location": "圣域:圣域入口",
     "displayName": "圣域 圣域入口",
-    "ascii": "圣域 圣域入口\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:圣域入口]",
     "exits": [
       {
@@ -7752,7 +7387,6 @@
     "id": "sanroku-737-room",
     "location": "妖怪之山・山麓:招财猫的家",
     "displayName": "妖怪之山・山麓 招财猫的家",
-    "ascii": "妖怪之山・山麓 招财猫的家\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:招财猫的家]",
     "exits": [
       {
@@ -7766,7 +7400,6 @@
     "id": "sanroku-738-room",
     "location": "妖怪之山・山麓:森の深奥",
     "displayName": "妖怪之山・山麓 森の深奥",
-    "ascii": "妖怪之山・山麓 森の深奥\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:森の深奥]",
     "exits": [
       {
@@ -7790,7 +7423,6 @@
     "id": "sanroku-739-room",
     "location": "妖怪之山・山麓:秘天崖",
     "displayName": "妖怪之山・山麓 秘天崖",
-    "ascii": "妖怪之山・山麓 秘天崖\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:秘天崖]",
     "exits": [
       {
@@ -7804,7 +7436,6 @@
     "id": "sanroku-740-room",
     "location": "妖怪之山・山麓:山童の宣傳站",
     "displayName": "妖怪之山・山麓 山童の宣傳站",
-    "ascii": "妖怪之山・山麓 山童の宣傳站\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 妖怪之山・山麓:山童の宣傳站]",
     "exits": [
       {
@@ -7818,7 +7449,6 @@
     "id": "sanroku-741-room",
     "location": "圣域:猿猴通路",
     "displayName": "圣域 猿猴通路",
-    "ascii": "圣域 猿猴通路\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:猿猴通路]",
     "exits": [
       {
@@ -7837,7 +7467,6 @@
     "id": "sanroku-742-room",
     "location": "圣域:美天居所",
     "displayName": "圣域 美天居所",
-    "ascii": "圣域 美天居所\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:美天居所]",
     "exits": [
       {
@@ -7851,7 +7480,6 @@
     "id": "sanroku-743-room",
     "location": "圣域:圣域林道",
     "displayName": "圣域 圣域林道",
-    "ascii": "圣域 圣域林道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:圣域林道]",
     "exits": [
       {
@@ -7880,7 +7508,6 @@
     "id": "sanroku-744-room",
     "location": "圣域:合欢宅邸",
     "displayName": "圣域 合欢宅邸",
-    "ascii": "圣域 合欢宅邸\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:合欢宅邸]",
     "exits": [
       {
@@ -7894,7 +7521,6 @@
     "id": "sanroku-745-room",
     "location": "圣域:月都秘道",
     "displayName": "圣域 月都秘道",
-    "ascii": "圣域 月都秘道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:月都秘道]",
     "exits": [
       {
@@ -7908,7 +7534,6 @@
     "id": "sanroku-746-room",
     "location": "圣域:姥芽大宅",
     "displayName": "圣域 姥芽大宅",
-    "ascii": "圣域 姥芽大宅\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:姥芽大宅]",
     "exits": [
       {
@@ -7922,7 +7547,6 @@
     "id": "sanroku-747-room",
     "location": "圣域:圣域深道",
     "displayName": "圣域 圣域深道",
-    "ascii": "圣域 圣域深道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:圣域深道]",
     "exits": [
       {
@@ -7951,7 +7575,6 @@
     "id": "sanroku-748-room",
     "location": "圣域:魑魅的草棚",
     "displayName": "圣域 魑魅的草棚",
-    "ascii": "圣域 魑魅的草棚\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:魑魅的草棚]",
     "exits": [
       {
@@ -7970,7 +7593,6 @@
     "id": "sanroku-749-room",
     "location": "圣域:山中密道",
     "displayName": "圣域 山中密道",
-    "ascii": "圣域 山中密道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:山中密道]",
     "exits": [
       {
@@ -7999,7 +7621,6 @@
     "id": "sanroku-750-room",
     "location": "圣域:驯子的小屋",
     "displayName": "圣域 驯子的小屋",
-    "ascii": "圣域 驯子的小屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 圣域:驯子的小屋]",
     "exits": [
       {
@@ -8018,7 +7639,6 @@
     "id": "sanroku-751-room",
     "location": "浅间净秽山:浅间净秽山",
     "displayName": "浅间净秽山 浅间净秽山",
-    "ascii": "浅间净秽山 浅间净秽山\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:浅间净秽山]",
     "exits": [
       {
@@ -8042,7 +7662,6 @@
     "id": "sanroku-752-room",
     "location": "浅间净秽山:四季竖穴",
     "displayName": "浅间净秽山 四季竖穴",
-    "ascii": "浅间净秽山 四季竖穴\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:四季竖穴]",
     "exits": [
       {
@@ -8081,7 +7700,6 @@
     "id": "sanroku-753-room",
     "location": "浅间净秽山:浅间的房间",
     "displayName": "浅间净秽山 浅间的房间",
-    "ascii": "浅间净秽山 浅间的房间\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:浅间的房间]",
     "exits": [
       {
@@ -8095,7 +7713,6 @@
     "id": "sanroku-754-room",
     "location": "浅间净秽山:空房间(P754)",
     "displayName": "浅间净秽山 空房间(P754)",
-    "ascii": "浅间净秽山 空房间(P754)\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:空房间(P754)]",
     "exits": [
       {
@@ -8109,7 +7726,6 @@
     "id": "sanroku-755-room",
     "location": "浅间净秽山:化石丛林荒地",
     "displayName": "浅间净秽山 化石丛林荒地",
-    "ascii": "浅间净秽山 化石丛林荒地\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:化石丛林荒地]",
     "exits": [
       {
@@ -8138,7 +7754,6 @@
     "id": "sanroku-756-room",
     "location": "浅间净秽山:月海通路",
     "displayName": "浅间净秽山 月海通路",
-    "ascii": "浅间净秽山 月海通路\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:月海通路]",
     "exits": [
       {
@@ -8152,7 +7767,6 @@
     "id": "sanroku-757-room",
     "location": "浅间净秽山:巧克力河",
     "displayName": "浅间净秽山 巧克力河",
-    "ascii": "浅间净秽山 巧克力河\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:巧克力河]",
     "exits": [
       {
@@ -8166,7 +7780,6 @@
     "id": "sanroku-758-room",
     "location": "浅间净秽山:化石深道",
     "displayName": "浅间净秽山 化石深道",
-    "ascii": "浅间净秽山 化石深道\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:化石深道]",
     "exits": [
       {
@@ -8185,7 +7798,6 @@
     "id": "sanroku-759-room",
     "location": "浅间净秽山:磐永神社本殿",
     "displayName": "浅间净秽山 磐永神社本殿",
-    "ascii": "浅间净秽山 磐永神社本殿\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:磐永神社本殿]",
     "exits": [
       {
@@ -8204,7 +7816,6 @@
     "id": "sanroku-760-room",
     "location": "浅间净秽山:磐永神社内屋",
     "displayName": "浅间净秽山 磐永神社内屋",
-    "ascii": "浅间净秽山 磐永神社内屋\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:磐永神社内屋]",
     "exits": [
       {
@@ -8218,7 +7829,6 @@
     "id": "sanroku-761-room",
     "location": "浅间净秽山:浴室",
     "displayName": "浅间净秽山 浴室",
-    "ascii": "浅间净秽山 浴室\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:浴室]",
     "exits": [
       {
@@ -8232,7 +7842,6 @@
     "id": "sanroku-762-room",
     "location": "浅间净秽山:空房间(P762)",
     "displayName": "浅间净秽山 空房间(P762)",
-    "ascii": "浅间净秽山 空房间(P762)\n",
     "intro": "[not-authored: MAP_COMM location prose unavailable for 浅间净秽山:空房间(P762)]",
     "exits": [
       {
@@ -8246,7 +7855,6 @@
     "id": "shrine",
     "location": "神社",
     "displayName": "博麗神社",
-    "ascii": "         ____________________________\n        |__|__|__|__|__|__|__|__|__|_|\n            ||                    ||\n   =========||====================||=========\n            ||                    ||\n            ||                    ||\n       _____||____________________||_____\n      /                                  \\\n     /    .   博 麗 神 社   .              \\\n    /__________________________________ ___\\\n     ~   ~     ~     ~     ~     ~     ~\n",
     "intro": "晨雾未散，博麗神社的石阶上落着几片红叶，风铃轻响。",
     "exits": [
       {
@@ -8270,7 +7878,6 @@
     "id": "shrine-annex",
     "location": "神社:別屋",
     "displayName": "博麗神社 別屋",
-    "ascii": "      ┌──── 別屋 ────┐\n      │    安静的房间   │\n      └─────┬──────┘\n             庭\n",
     "intro": "庭院一侧的别屋，魅魔在神社区域的起始住处。",
     "exits": [
       {
@@ -8278,13 +7885,13 @@
         "toLocation": "神社:庭",
         "label": "前往 庭"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-annex.webp"
   },
   {
     "id": "shrine-aunn-home",
     "location": "神社:阿吽の棲家",
     "displayName": "博麗神社 阿吽の棲家",
-    "ascii": "      ┌──────────────┐\n      │    阿吽の棲家   │\n      │       石灯笼    │\n      │    ◇       ◇   │\n      └──────┬───────┘\n             境内\n",
     "intro": "境内一侧的守护兽住处。这里可以望见鸟居和参拜道，阿吽随时留意着来客。",
     "exits": [
       {
@@ -8292,13 +7899,13 @@
         "toLocation": "神社:境内",
         "label": "前往 境内"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-aunn-home.webp"
   },
   {
     "id": "shrine-bath",
     "location": "神社:風呂",
     "displayName": "博麗神社 風呂",
-    "ascii": "博麗神社 風呂\n",
     "intro": "蒸汽弥漫。木桶里的热水散发桧木香。",
     "exits": [
       {
@@ -8306,13 +7913,13 @@
         "toLocation": "神社:脱衣所",
         "label": "前往 脱衣所"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-bath.webp"
   },
   {
     "id": "shrine-chiyuri-room",
     "location": "神社:千百合私室",
     "displayName": "夢幻遺跡 千百合私室",
-    "ascii": "      ┌─ 千百合私室 ─┐\n      │    资料与船具   │\n      └─────┬──────┘\n           一階通路\n",
     "intro": "北白河千百合的私人房间。",
     "exits": [
       {
@@ -8320,13 +7927,13 @@
         "toLocation": "神社:夢幻遺跡・一階通路",
         "label": "前往 一階通路"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-chiyuri-room.webp"
   },
   {
     "id": "shrine-closet",
     "location": "神社:壁櫥間",
     "displayName": "博麗神社 壁櫥間",
-    "ascii": "      ┌── 壁櫥間 ──┐\n      │  衣箱  被褥  │\n      └────┬─────┘\n          霊夢私室\n",
     "intro": "灵梦私室相连的小壁橱间，卡娜的起始房间。",
     "exits": [
       {
@@ -8340,7 +7947,6 @@
     "id": "shrine-doma",
     "location": "神社:土間",
     "displayName": "博麗神社 土間",
-    "ascii": "博麗神社 土間\n",
     "intro": "玄关土间的地面冰凉。草鞋整齐排列。",
     "exits": [
       {
@@ -8358,13 +7964,13 @@
         "toLocation": "神社:居間",
         "label": "前往 居間"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-doma.webp"
   },
   {
     "id": "shrine-dressing",
     "location": "神社:脱衣所",
     "displayName": "博麗神社 脱衣所",
-    "ascii": "博麗神社 脱衣所\n",
     "intro": "更衣篮里叠着干净的浴巾。木板墙透着温泉的暖意。",
     "exits": [
       {
@@ -8383,7 +7989,6 @@
     "id": "shrine-fairy-basement",
     "location": "神社:三妖精之家・地下室",
     "displayName": "三妖精之家 地下室",
-    "ascii": "三妖精之家 地下室\n",
     "intro": "三妖精之家的地下室，阴暗安静。",
     "exits": [
       {
@@ -8391,13 +7996,13 @@
         "toLocation": "神社:三妖精之家・大廳",
         "label": "返回 大廳"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-fairy-basement.webp"
   },
   {
     "id": "shrine-fairy-bath",
     "location": "神社:三妖精之家・風呂",
     "displayName": "三妖精之家 風呂",
-    "ascii": "三妖精之家 風呂\n",
     "intro": "三妖精之家的浴室。",
     "exits": [
       {
@@ -8405,13 +8010,13 @@
         "toLocation": "神社:三妖精之家・大廳",
         "label": "返回 大廳"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-fairy-bath.webp"
   },
   {
     "id": "shrine-fairy-hall",
     "location": "神社:三妖精之家・大廳",
     "displayName": "三妖精之家 大廳",
-    "ascii": "      ┌─ 三妖精之家・大廳 ─┐\n      │       大树之家       │\n      └──────┬──────────┘\n             二階\n",
     "intro": "三月精共同生活的大厅，楼梯通向三人的私室。",
     "exits": [
       {
@@ -8439,13 +8044,13 @@
         "toLocation": "神社:三妖精之家・地下室",
         "label": "前往 地下室"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-fairy-hall.webp"
   },
   {
     "id": "shrine-fairy-hallway",
     "location": "神社:三妖精之家・二階廊下",
     "displayName": "三妖精之家 二階廊下",
-    "ascii": "      桑尼私室 ─ 二階廊下 ─ 露娜私室\n                      │\n                   斯塔私室\n",
     "intro": "二楼走廊连接桑尼、露娜和斯塔各自的房间。",
     "exits": [
       {
@@ -8468,13 +8073,13 @@
         "toLocation": "神社:斯塔私室",
         "label": "前往 斯塔私室"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-fairy-hallway.webp"
   },
   {
     "id": "shrine-fairy-kitchen",
     "location": "神社:三妖精之家・廚房",
     "displayName": "三妖精之家 廚房",
-    "ascii": "三妖精之家 廚房\n",
     "intro": "三妖精之家的小厨房，锅碗瓢盆乱糟糟地堆着。",
     "exits": [
       {
@@ -8482,13 +8087,13 @@
         "toLocation": "神社:三妖精之家・大廳",
         "label": "返回 大廳"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-fairy-kitchen.webp"
   },
   {
     "id": "shrine-forest",
     "location": "神社:鎮守之森",
     "displayName": "博麗神社 鎮守之森",
-    "ascii": "      森森森  鎮守之森  森森森\n             ┃\n         三妖精之家\n",
     "intro": "参道旁的镇守之森，林间道路通往三妖精之家。",
     "exits": [
       {
@@ -8506,13 +8111,13 @@
         "toLocation": "神社:温泉・脱衣所",
         "label": "前往 温泉"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-forest.webp"
   },
   {
     "id": "shrine-hondou",
     "location": "神社:本堂",
     "displayName": "博麗神社 本堂",
-    "ascii": "博麗神社 本堂\n",
     "intro": "烛火摇曳，木香淡淡。",
     "exits": [
       {
@@ -8525,13 +8130,13 @@
         "toLocation": "神社:土間",
         "label": "前往 土間"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-hondou.webp"
   },
   {
     "id": "shrine-ima",
     "location": "神社:居間",
     "displayName": "博麗神社 居間",
-    "ascii": "博麗神社 居間\n",
     "intro": "温暖的被炉摆在房间中央。",
     "exits": [
       {
@@ -8569,13 +8174,13 @@
         "toLocation": "神社:和室",
         "label": "前往 和室"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ima.webp"
   },
   {
     "id": "shrine-inchling-room",
     "location": "神社:小人的虫籠",
     "displayName": "博麗神社 小人的虫籠",
-    "ascii": "      ┌──────────────┐\n      │   小人的虫籠   │\n      │      ┌──┐     │\n      │  碗  │小槌│     │\n      └──┬───┴──┴──┬──┘\n        居間        走廊\n",
     "intro": "为小人族准备的小巧住处。针妙丸的碗与小槌被仔细收在一旁。",
     "exits": [
       {
@@ -8594,7 +8199,6 @@
     "id": "shrine-kaiko-hut",
     "location": "神社:贝子的暂居处",
     "displayName": "博麗神社 贝子的暂居处",
-    "ascii": "博麗神社 贝子的暂居处\n",
     "intro": "贝子暂时栖身的小屋，有床铺、厨房与餐桌。",
     "exits": [
       {
@@ -8608,7 +8212,6 @@
     "id": "shrine-keidai",
     "location": "神社:境内",
     "displayName": "博麗神社 境内",
-    "ascii": "博麗神社 境内\n",
     "intro": "铺着砂砾的广场。扫帚靠在墙边。",
     "exits": [
       {
@@ -8651,13 +8254,13 @@
         "toLocation": "神社:破舊小屋",
         "label": "前往 破舊小屋"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-keidai.webp"
   },
   {
     "id": "shrine-kitchen",
     "location": "神社:厨房",
     "displayName": "博麗神社 厨房",
-    "ascii": "博麗神社 厨房\n",
     "intro": "灶台擦得干净。茶壶搁在炉子上。",
     "exits": [
       {
@@ -8675,13 +8278,13 @@
         "toLocation": "神社:走廊",
         "label": "前往 走廊"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-kitchen.webp"
   },
   {
     "id": "shrine-large-warehouse",
     "location": "神社:大的倉庫",
     "displayName": "博麗神社 大的倉庫",
-    "ascii": "      ┌──────────────┐\n      │    大的倉庫    │\n      │  酒坛  木箱  袋 │\n      │  □□  □□  ○○ │\n      └──────┬───────┘\n             走廊\n",
     "intro": "神社深处的大仓库。酒坛与杂物堆得满满当当，萃香常把这里当作落脚处。",
     "exits": [
       {
@@ -8689,13 +8292,13 @@
         "toLocation": "神社:走廊",
         "label": "前往 走廊"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-large-warehouse.webp"
   },
   {
     "id": "shrine-luna-room",
     "location": "神社:露娜私室",
     "displayName": "三妖精之家 露娜私室",
-    "ascii": "      ┌─ 露娜私室 ─┐\n      │   月光与书本  │\n      └────┬─────┘\n          二階廊下\n",
     "intro": "露娜切露德的私人房间。",
     "exits": [
       {
@@ -8703,13 +8306,13 @@
         "toLocation": "神社:三妖精之家・二階廊下",
         "label": "前往 二階廊下"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-luna-room.webp"
   },
   {
     "id": "shrine-moriya-branch",
     "location": "神社:守矢神社分社",
     "displayName": "博麗神社 守矢神社分社",
-    "ascii": "      ┌─ 守矢神社分社 ─┐\n      │      注连绳      │\n      └─────┬────────┘\n            境内\n",
     "intro": "境内中的守矢分社。早苗、神奈子与诹访子来到神社区域时会在这里出现。",
     "exits": [
       {
@@ -8717,13 +8320,13 @@
         "toLocation": "神社:境内",
         "label": "前往 境内"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-moriya-branch.webp"
   },
   {
     "id": "shrine-niwa",
     "location": "神社:庭",
     "displayName": "博麗神社 庭",
-    "ascii": "博麗神社 庭\n",
     "intro": "后院的小庭院。晾衣竿上挂着白色布巾。",
     "exits": [
       {
@@ -8746,13 +8349,13 @@
         "toLocation": "神社:先代巫女的小屋",
         "label": "前往 先代巫女的小屋"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-niwa.webp"
   },
   {
     "id": "shrine-onsen",
     "location": "神社:温泉",
     "displayName": "博麗神社 温泉",
-    "ascii": "博麗神社 温泉\n",
     "intro": "露天温泉，水汽蒸腾，能望见远处的山林。",
     "exits": [
       {
@@ -8760,13 +8363,13 @@
         "toLocation": "神社:温泉・脱衣所",
         "label": "返回 脱衣所"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-onsen.webp"
   },
   {
     "id": "shrine-onsen-dressing",
     "location": "神社:温泉・脱衣所",
     "displayName": "博麗神社 温泉・脱衣所",
-    "ascii": "博麗神社 温泉・脱衣所\n",
     "intro": "温泉前的脱衣所，木质衣笼排列在墙边。",
     "exits": [
       {
@@ -8784,13 +8387,13 @@
         "toLocation": "神社:鎮守之森",
         "label": "前往 鎮守之森"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-onsen-dressing.webp"
   },
   {
     "id": "shrine-player-room",
     "location": "神社:自室",
     "displayName": "博麗神社 自室",
-    "ascii": "        ┌──────────────┐\n        │  博麗神社 自室  │\n        │              │\n        │  ┌──┐  ┌──┐  │\n        │  │被褥│  │矮桌│  │\n        │  └──┘  └──┘  │\n        └──────┬───────┘\n               居間\n",
     "intro": "这是你寄居神社后的房间。被褥、矮桌和随身物品都收拾在这里，夜里可以安心就寝。",
     "exits": [
       {
@@ -8804,7 +8407,6 @@
     "id": "shrine-plaza",
     "location": "神社:大广场",
     "displayName": "博麗神社 大广场",
-    "ascii": "博麗神社 大广场\n",
     "intro": "参道旁的开阔广场，适合训练与集会。",
     "exits": [
       {
@@ -8818,7 +8420,6 @@
     "id": "shrine-predecessor-hut",
     "location": "神社:先代巫女的小屋",
     "displayName": "博麗神社 先代巫女的小屋",
-    "ascii": "      ┌─ 先代巫女的小屋 ─┐\n      │      旧御札       │\n      └──────┬────────┘\n              庭\n",
     "intro": "庭后方的旧小屋，是先代巫女的住处。",
     "exits": [
       {
@@ -8826,13 +8427,13 @@
         "toLocation": "神社:庭",
         "label": "前往 庭"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-predecessor-hut.webp"
   },
   {
     "id": "shrine-reimu-room",
     "location": "神社:霊夢私室",
     "displayName": "博麗神社 霊夢の私室",
-    "ascii": "博麗神社 霊夢の私室\n",
     "intro": "灵梦的私人房间。被褥整齐叠在角落。",
     "exits": [
       {
@@ -8845,13 +8446,13 @@
         "toLocation": "神社:壁櫥間",
         "label": "前往 壁櫥間"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-reimu-room.webp"
   },
   {
     "id": "shrine-roka",
     "location": "神社:走廊",
     "displayName": "博麗神社 走廊",
-    "ascii": "博麗神社 走廊\n",
     "intro": "木制走廊连接各个房间。光影在地板上晃动。",
     "exits": [
       {
@@ -8904,13 +8505,13 @@
         "toLocation": "神社:贝子的暂居处",
         "label": "前往 贝子的暂居处"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-roka.webp"
   },
   {
     "id": "shrine-ruined-hut",
     "location": "神社:破舊小屋",
     "displayName": "博麗神社 破舊小屋",
-    "ascii": "博麗神社 破舊小屋\n",
     "intro": "境内角落的破旧小屋，勉强能住人，附有简陋的厨房与床铺。",
     "exits": [
       {
@@ -8918,13 +8519,13 @@
         "toLocation": "神社:境内",
         "label": "返回 境内"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruined-hut.webp"
   },
   {
     "id": "shrine-ruins-archive1",
     "location": "神社:夢幻遺跡・第一資料室",
     "displayName": "夢幻遺跡 第一資料室",
-    "ascii": "夢幻遺跡 第一資料室\n",
     "intro": "遗迹的第一资料室，书架林立。",
     "exits": [
       {
@@ -8932,13 +8533,13 @@
         "toLocation": "神社:夢幻遺跡・二階通路",
         "label": "返回 二階通路"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-archive1.webp"
   },
   {
     "id": "shrine-ruins-archive2",
     "location": "神社:夢幻遺跡・第二資料室",
     "displayName": "夢幻遺跡 第二資料室",
-    "ascii": "夢幻遺跡 第二資料室\n",
     "intro": "遗迹的第二资料室，尘封的卷宗堆满书架。",
     "exits": [
       {
@@ -8952,7 +8553,6 @@
     "id": "shrine-ruins-bath",
     "location": "神社:夢幻遺跡・浴室",
     "displayName": "夢幻遺跡 浴室",
-    "ascii": "夢幻遺跡 浴室\n",
     "intro": "遗迹内的浴室。",
     "exits": [
       {
@@ -8960,13 +8560,13 @@
         "toLocation": "神社:夢幻遺跡・洗面所",
         "label": "返回 洗面所"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-bath.webp"
   },
   {
     "id": "shrine-ruins-bridge",
     "location": "神社:夢幻遺跡・艦橋",
     "displayName": "夢幻遺跡 艦橋",
-    "ascii": "夢幻遺跡 艦橋\n",
     "intro": "遗迹的舰桥，舷窗外是无尽的虚空。",
     "exits": [
       {
@@ -8974,13 +8574,13 @@
         "toLocation": "神社:夢幻遺跡・二階通路",
         "label": "返回 二階通路"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-bridge.webp"
   },
   {
     "id": "shrine-ruins-corridor",
     "location": "神社:夢幻遺跡・一階通路",
     "displayName": "夢幻遺跡 一階通路",
-    "ascii": "      夢美私室 ─ 一階通路 ─ 千百合私室\n                    │\n                  遺跡前\n",
     "intro": "梦幻遗迹的一层通路，通往梦美与千百合的房间。",
     "exits": [
       {
@@ -9013,13 +8613,13 @@
         "toLocation": "神社:夢幻遺跡・二階通路",
         "label": "前往 二階通路"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-corridor.webp"
   },
   {
     "id": "shrine-ruins-dining",
     "location": "神社:夢幻遺跡・食堂兼談話室",
     "displayName": "夢幻遺跡 食堂兼談話室",
-    "ascii": "夢幻遺跡 食堂兼談話室\n",
     "intro": "遗迹的食堂兼谈话室，长桌横陈中央，与调理室直通。",
     "exits": [
       {
@@ -9032,13 +8632,13 @@
         "toLocation": "神社:夢幻遺跡・調理室",
         "label": "前往 調理室"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-dining.webp"
   },
   {
     "id": "shrine-ruins-front",
     "location": "神社:夢幻遺跡前",
     "displayName": "博麗神社 夢幻遺跡前",
-    "ascii": "      ■■■ 夢幻遺跡 ■■■\n             ┃\n            参道\n",
     "intro": "参道深处的梦幻遗迹入口。",
     "exits": [
       {
@@ -9051,13 +8651,13 @@
         "toLocation": "神社:夢幻遺跡・一階通路",
         "label": "进入 夢幻遺跡"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-front.webp"
   },
   {
     "id": "shrine-ruins-hallway2",
     "location": "神社:夢幻遺跡・二階通路",
     "displayName": "夢幻遺跡 二階通路",
-    "ascii": "夢幻遺跡 二階通路\n",
     "intro": "遗迹二楼的通路，通向舰桥与各资料室、研究室。",
     "exits": [
       {
@@ -9090,13 +8690,13 @@
         "toLocation": "神社:夢幻遺跡・倉庫",
         "label": "前往 倉庫"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-hallway2.webp"
   },
   {
     "id": "shrine-ruins-kitchen",
     "location": "神社:夢幻遺跡・調理室",
     "displayName": "夢幻遺跡 調理室",
-    "ascii": "夢幻遺跡 調理室\n",
     "intro": "遗迹的调理室，与食堂直通。",
     "exits": [
       {
@@ -9104,13 +8704,13 @@
         "toLocation": "神社:夢幻遺跡・食堂兼談話室",
         "label": "返回 食堂"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-kitchen.webp"
   },
   {
     "id": "shrine-ruins-lab",
     "location": "神社:夢幻遺跡・研究室",
     "displayName": "夢幻遺跡 研究室",
-    "ascii": "夢幻遺跡 研究室\n",
     "intro": "遗迹的研究室，散落着实验器具。",
     "exits": [
       {
@@ -9118,13 +8718,13 @@
         "toLocation": "神社:夢幻遺跡・二階通路",
         "label": "返回 二階通路"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-lab.webp"
   },
   {
     "id": "shrine-ruins-toilet",
     "location": "神社:夢幻遺跡・廁所",
     "displayName": "夢幻遺跡 廁所",
-    "ascii": "夢幻遺跡 廁所\n",
     "intro": "遗迹内的厕所。",
     "exits": [
       {
@@ -9132,13 +8732,13 @@
         "toLocation": "神社:夢幻遺跡・洗面所",
         "label": "返回 洗面所"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-toilet.webp"
   },
   {
     "id": "shrine-ruins-warehouse",
     "location": "神社:夢幻遺跡・倉庫",
     "displayName": "夢幻遺跡 倉庫",
-    "ascii": "夢幻遺跡 倉庫\n",
     "intro": "遗迹的仓库，存放着各种备品。",
     "exits": [
       {
@@ -9146,13 +8746,13 @@
         "toLocation": "神社:夢幻遺跡・二階通路",
         "label": "返回 二階通路"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-warehouse.webp"
   },
   {
     "id": "shrine-ruins-washroom",
     "location": "神社:夢幻遺跡・洗面所",
     "displayName": "夢幻遺跡 洗面所",
-    "ascii": "夢幻遺跡 洗面所\n",
     "intro": "遗迹一角的洗面所，连接浴室与厕所。",
     "exits": [
       {
@@ -9170,13 +8770,13 @@
         "toLocation": "神社:夢幻遺跡・廁所",
         "label": "前往 廁所"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-ruins-washroom.webp"
   },
   {
     "id": "shrine-saisenbako",
     "location": "神社:賽銭箱",
     "displayName": "博麗神社 賽銭箱",
-    "ascii": "博麗神社 賽銭箱\n",
     "intro": "赛钱箱上积了一层薄尘。",
     "exits": [
       {
@@ -9189,13 +8789,13 @@
         "toLocation": "神社:本堂",
         "label": "前往 本堂"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-saisenbako.webp"
   },
   {
     "id": "shrine-sando",
     "location": "神社:参道",
     "displayName": "博麗神社 参道",
-    "ascii": "博麗神社 参道\n",
     "intro": "长长的石阶通向山顶。鸟居矗立在晨雾中。石阶尽头便是通往幻想乡各地的山道。",
     "exits": [
       {
@@ -9233,13 +8833,13 @@
         "toLocation": "神社:大广场",
         "label": "前往 大广场"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-sando.webp"
   },
   {
     "id": "shrine-small-warehouse",
     "location": "神社:小的倉庫",
     "displayName": "博麗神社 小的倉庫",
-    "ascii": "+----------------------+\n|      SMALL STORE     |\n|  crates and shelves  |\n+----------------------+\n",
     "intro": "神社内部的小仓库。这里是留琴在原始配置中的初期位置。",
     "exits": [
       {
@@ -9247,13 +8847,13 @@
         "toLocation": "神社:走廊",
         "label": "前往 走廊"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-small-warehouse.webp"
   },
   {
     "id": "shrine-star-room",
     "location": "神社:斯塔私室",
     "displayName": "三妖精之家 斯塔私室",
-    "ascii": "      ┌─ 斯塔私室 ─┐\n      │   星光与饰物  │\n      └────┬─────┘\n          二階廊下\n",
     "intro": "斯塔萨菲雅的私人房间。",
     "exits": [
       {
@@ -9261,13 +8861,13 @@
         "toLocation": "神社:三妖精之家・二階廊下",
         "label": "前往 二階廊下"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-star-room.webp"
   },
   {
     "id": "shrine-storehouse",
     "location": "神社:庫房",
     "displayName": "博麗神社 庫房",
-    "ascii": "      ┌──── 庫房 ────┐\n      │ 木箱  道具  木箱 │\n      └─────┬──────┘\n            境内\n",
     "intro": "境内旁的库房，瑞灵以这里作为起始落脚处。",
     "exits": [
       {
@@ -9275,13 +8875,13 @@
         "toLocation": "神社:境内",
         "label": "前往 境内"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-storehouse.webp"
   },
   {
     "id": "shrine-sunny-room",
     "location": "神社:桑尼私室",
     "displayName": "三妖精之家 桑尼私室",
-    "ascii": "      ┌─ 桑尼私室 ─┐\n      │   阳光与杂物  │\n      └────┬─────┘\n          二階廊下\n",
     "intro": "桑尼米尔克的私人房间。",
     "exits": [
       {
@@ -9289,13 +8889,13 @@
         "toLocation": "神社:三妖精之家・二階廊下",
         "label": "前往 二階廊下"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-sunny-room.webp"
   },
   {
     "id": "shrine-temizuya",
     "location": "神社:手水舎",
     "displayName": "博麗神社 手水舎",
-    "ascii": "博麗神社 手水舎\n",
     "intro": "参道旁的手水舎，清澈的水从竹管中流出。",
     "exits": [
       {
@@ -9303,13 +8903,13 @@
         "toLocation": "神社:境内",
         "label": "返回 境内"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-temizuya.webp"
   },
   {
     "id": "shrine-toilet",
     "location": "神社:廁所",
     "displayName": "博麗神社 廁所",
-    "ascii": "博麗神社 廁所\n",
     "intro": "安静的厕所。",
     "exits": [
       {
@@ -9317,13 +8917,13 @@
         "toLocation": "神社:走廊",
         "label": "返回 走廊"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-toilet.webp"
   },
   {
     "id": "shrine-torii",
     "location": "神社:鳥居",
     "displayName": "博麗神社 鳥居",
-    "ascii": "博麗神社 鳥居\n",
     "intro": "朱红的鸟居高耸于头顶。境内就在前方。",
     "exits": [
       {
@@ -9336,13 +8936,13 @@
         "toLocation": "神社:境内",
         "label": "前往 境内"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-torii.webp"
   },
   {
     "id": "shrine-warehouse",
     "location": "神社:倉庫",
     "displayName": "博麗神社 倉庫",
-    "ascii": "博麗神社 倉庫\n",
     "intro": "堆放杂物的仓库，角落铺着能凑合睡一晚的被褥。",
     "exits": [
       {
@@ -9350,13 +8950,13 @@
         "toLocation": "神社:走廊",
         "label": "返回 走廊"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-warehouse.webp"
   },
   {
     "id": "shrine-washitsu",
     "location": "神社:和室",
     "displayName": "博麗神社 和室",
-    "ascii": "      ┌──── 和室 ────┐\n      │  榻榻米  能面   │\n      └─────┬──────┘\n            居間\n",
     "intro": "铺着榻榻米的和室，心在神社区域的起始房间。",
     "exits": [
       {
@@ -9364,13 +8964,13 @@
         "toLocation": "神社:居間",
         "label": "前往 居間"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-washitsu.webp"
   },
   {
     "id": "shrine-yumemi-room",
     "location": "神社:夢美私室",
     "displayName": "夢幻遺跡 夢美私室",
-    "ascii": "      ┌─ 夢美私室 ─┐\n      │  研究资料  仪器 │\n      └────┬─────┘\n          一階通路\n",
     "intro": "冈崎梦美的私人房间，研究资料堆满桌面。",
     "exits": [
       {
@@ -9378,13 +8978,13 @@
         "toLocation": "神社:夢幻遺跡・一階通路",
         "label": "前往 一階通路"
       }
-    ]
+    ],
+    "backgroundImage": "scenes/shrine-yumemi-room.webp"
   },
   {
     "id": "tikurin",
     "location": "迷途竹林",
     "displayName": "竹林入口",
-    "ascii": "竹林入口\n",
     "intro": "迷途竹林的入口，从人间之里方向踏入的旅人常在此迷路。",
     "exits": [
       {
@@ -9433,7 +9033,6 @@
     "id": "tikurin-bathroom",
     "location": "夢幻館:浴室",
     "displayName": "夢幻館 浴室",
-    "ascii": "夢幻館 浴室\n",
     "intro": "梦幻馆的浴室，西式的浴缸洁白光亮。",
     "exits": [
       {
@@ -9447,7 +9046,6 @@
     "id": "tikurin-clinic",
     "location": "永遠亭:診察室",
     "displayName": "永遠亭 診察室",
-    "ascii": "永遠亭 診察室\n",
     "intro": "永远亭的诊察室，永琳在此为患者看诊。",
     "exits": [
       {
@@ -9466,7 +9064,6 @@
     "id": "tikurin-corridor",
     "location": "永遠亭:廊下",
     "displayName": "永遠亭 廊下",
-    "ascii": "永遠亭 廊下\n",
     "intro": "永远亭的主廊道，连通宅邸各处。",
     "exits": [
       {
@@ -9510,7 +9107,6 @@
     "id": "tikurin-dining-room",
     "location": "夢幻館:用餐房間",
     "displayName": "夢幻館 用餐房間",
-    "ascii": "夢幻館 用餐房間\n",
     "intro": "梦幻馆的餐厅，长桌上铺着洁白的桌布。",
     "exits": [
       {
@@ -9524,7 +9120,6 @@
     "id": "tikurin-eientei-2f",
     "location": "永遠亭:二階廊下",
     "displayName": "永遠亭 二階廊下",
-    "ascii": "永遠亭 二階廊下\n",
     "intro": "永远亭二层的廊道。",
     "exits": [
       {
@@ -9548,7 +9143,6 @@
     "id": "tikurin-eientei-2f-empty",
     "location": "永遠亭:二階空的部屋",
     "displayName": "永遠亭 二階空的部屋",
-    "ascii": "永遠亭 二階空的部屋\n",
     "intro": "二层的一间空房，已经收拾整齐。",
     "exits": [
       {
@@ -9562,7 +9156,6 @@
     "id": "tikurin-eientei-2f-store",
     "location": "永遠亭:倉庫",
     "displayName": "永遠亭 倉庫",
-    "ascii": "永遠亭 倉庫\n",
     "intro": "二层的仓库，尘封着许久未用的杂物。",
     "exits": [
       {
@@ -9576,7 +9169,6 @@
     "id": "tikurin-eientei-backyard",
     "location": "永遠亭:後院",
     "displayName": "永遠亭 後院",
-    "ascii": "永遠亭 後院\n",
     "intro": "永远亭的后院，少有人至的僻静之地。",
     "exits": [
       {
@@ -9600,7 +9192,6 @@
     "id": "tikurin-eientei-basement",
     "location": "永遠亭:地下室",
     "displayName": "永遠亭 地下室",
-    "ascii": "永遠亭 地下室\n",
     "intro": "永远亭的地下室，隐秘而少有人知。",
     "exits": [
       {
@@ -9614,7 +9205,6 @@
     "id": "tikurin-eientei-bath",
     "location": "永遠亭:風呂",
     "displayName": "永遠亭 風呂",
-    "ascii": "永遠亭 風呂\n",
     "intro": "永远亭的浴室，热气氤氲，可透过窗看见月色。",
     "exits": [
       {
@@ -9628,7 +9218,6 @@
     "id": "tikurin-eientei-dressing",
     "location": "永遠亭:脱衣所",
     "displayName": "永遠亭 脱衣所",
-    "ascii": "永遠亭 脱衣所\n",
     "intro": "浴室旁的脱衣所，整齐地叠放着浴衣。",
     "exits": [
       {
@@ -9647,7 +9236,6 @@
     "id": "tikurin-eientei-garden",
     "location": "永遠亭:庭",
     "displayName": "永遠亭 庭",
-    "ascii": "永遠亭 庭\n",
     "intro": "永远亭的内院，栽种着药草的菜园。",
     "exits": [
       {
@@ -9666,7 +9254,6 @@
     "id": "tikurin-eientei-gate",
     "location": "永遠亭:永遠亭入口",
     "displayName": "永遠亭 永遠亭入口",
-    "ascii": "永遠亭 永遠亭入口\n",
     "intro": "永远亭的入口，被浓密的竹林环绕，唯有知情者才能找到这条路。",
     "exits": [
       {
@@ -9695,7 +9282,6 @@
     "id": "tikurin-eientei-hall",
     "location": "永遠亭:大廳",
     "displayName": "永遠亭 大廳",
-    "ascii": "永遠亭 大廳\n",
     "intro": "永远亭的大厅，宽敞的和室可供众人聚会。",
     "exits": [
       {
@@ -9719,7 +9305,6 @@
     "id": "tikurin-eientei-kitchen",
     "location": "永遠亭:廚房",
     "displayName": "永遠亭 廚房",
-    "ascii": "永遠亭 廚房\n",
     "intro": "永远亭的厨房，飘着熬药与做饭混合的气味。",
     "exits": [
       {
@@ -9748,7 +9333,6 @@
     "id": "tikurin-eientei-living",
     "location": "永遠亭:居間",
     "displayName": "永遠亭 居間",
-    "ascii": "永遠亭 居間\n",
     "intro": "永远亭的起居间，暖桌旁常有人闲坐。",
     "exits": [
       {
@@ -9777,7 +9361,6 @@
     "id": "tikurin-eientei-store",
     "location": "永遠亭:庫房",
     "displayName": "永遠亭 庫房",
-    "ascii": "永遠亭 庫房\n",
     "intro": "永远亭的库房，堆放着旧物与储备。",
     "exits": [
       {
@@ -9791,7 +9374,6 @@
     "id": "tikurin-eientei-wc",
     "location": "永遠亭:厠",
     "displayName": "永遠亭 厠",
-    "ascii": "永遠亭 厠\n",
     "intro": "永远亭内的厕所。",
     "exits": [
       {
@@ -9805,7 +9387,6 @@
     "id": "tikurin-eirin-room",
     "location": "永遠亭:永琳私室",
     "displayName": "永遠亭 永琳私室",
-    "ascii": "永遠亭 永琳私室\n",
     "intro": "八意永琳的私人房间，堆满了古老的医书与月之知识。",
     "exits": [
       {
@@ -9834,7 +9415,6 @@
     "id": "tikurin-elly-room",
     "location": "夢幻館:艾麗私室",
     "displayName": "夢幻館 艾麗私室",
-    "ascii": "夢幻館 艾麗私室\n",
     "intro": "艾丽的私人房间，角落里靠着她的大镰刀。",
     "exits": [
       {
@@ -9848,7 +9428,6 @@
     "id": "tikurin-empty-eientei",
     "location": "永遠亭:空的部屋",
     "displayName": "永遠亭 空的部屋",
-    "ascii": "永遠亭 空的部屋\n",
     "intro": "永远亭的一间空房，随时可供客人入住。",
     "exits": [
       {
@@ -9872,7 +9451,6 @@
     "id": "tikurin-empty-genmukan",
     "location": "夢幻館:空的部屋",
     "displayName": "夢幻館 空的部屋",
-    "ascii": "夢幻館 空的部屋\n",
     "intro": "梦幻馆的一间空房。",
     "exits": [
       {
@@ -9886,7 +9464,6 @@
     "id": "tikurin-empty-hut",
     "location": "迷途竹林:空的小屋",
     "displayName": "迷途竹林 空的小屋",
-    "ascii": "迷途竹林 空的小屋\n",
     "intro": "竹林中的一间空小屋，有人住进来便会整理一新。",
     "exits": [
       {
@@ -9905,7 +9482,6 @@
     "id": "tikurin-gengetsu-room",
     "location": "夢幻館:幻月私室",
     "displayName": "夢幻館 幻月私室",
-    "ascii": "夢幻館 幻月私室\n",
     "intro": "幻月的私人房间，充满了梦幻般的暖意。",
     "exits": [
       {
@@ -9919,7 +9495,6 @@
     "id": "tikurin-genkan",
     "location": "夢幻館:玄関",
     "displayName": "夢幻館 玄関",
-    "ascii": "夢幻館 玄関\n",
     "intro": "梦幻馆的玄关，西洋风的门厅透着异国情调。",
     "exits": [
       {
@@ -9953,7 +9528,6 @@
     "id": "tikurin-genmukan-corridor",
     "location": "夢幻館:廊下",
     "displayName": "夢幻館 廊下",
-    "ascii": "夢幻館 廊下\n",
     "intro": "梦幻馆的廊道，连接各个房间。",
     "exits": [
       {
@@ -9987,7 +9561,6 @@
     "id": "tikurin-genmukan-garden",
     "location": "夢幻館:庭",
     "displayName": "夢幻館 庭",
-    "ascii": "夢幻館 庭\n",
     "intro": "梦幻馆的庭院，与太阳花田相连。",
     "exits": [
       {
@@ -10011,7 +9584,6 @@
     "id": "tikurin-genmukan-hall",
     "location": "夢幻館:大堂",
     "displayName": "夢幻館 大堂",
-    "ascii": "夢幻館 大堂\n",
     "intro": "梦幻馆的大堂，宽敞明亮的西式厅堂。",
     "exits": [
       {
@@ -10060,7 +9632,6 @@
     "id": "tikurin-guest-wc",
     "location": "永遠亭:来客用廁所",
     "displayName": "永遠亭 来客用廁所",
-    "ascii": "永遠亭 来客用廁所\n",
     "intro": "供来客使用的厕所，打扫得干净整洁。",
     "exits": [
       {
@@ -10074,7 +9645,6 @@
     "id": "tikurin-hotspring",
     "location": "迷途竹林:温泉",
     "displayName": "迷途竹林 温泉",
-    "ascii": "迷途竹林 温泉\n",
     "intro": "竹林深处涌出的天然温泉，热气升腾。",
     "exits": [
       {
@@ -10088,7 +9658,6 @@
     "id": "tikurin-kagerou-house",
     "location": "迷途竹林:影狼的家",
     "displayName": "迷途竹林 影狼的家",
-    "ascii": "迷途竹林 影狼的家\n",
     "intro": "今泣月夜的居所，屋里透着野性的气息。",
     "exits": [
       {
@@ -10102,7 +9671,6 @@
     "id": "tikurin-kaguya-room",
     "location": "永遠亭:輝夜私室",
     "displayName": "永遠亭 輝夜私室",
-    "ascii": "永遠亭 輝夜私室\n",
     "intro": "蓬莱山辉夜的私人房间，奢华而慵懒的公主寝居。",
     "exits": [
       {
@@ -10126,7 +9694,6 @@
     "id": "tikurin-kurumi-room",
     "location": "夢幻館:胡桃私室",
     "displayName": "夢幻館 胡桃私室",
-    "ascii": "夢幻館 胡桃私室\n",
     "intro": "胡桃的私人房间，散落着少女的小物件。",
     "exits": [
       {
@@ -10140,7 +9707,6 @@
     "id": "tikurin-larva-house",
     "location": "迷途竹林:拉尔瓦的家",
     "displayName": "迷途竹林 拉尔瓦的家",
-    "ascii": "迷途竹林 拉尔瓦的家\n",
     "intro": "拉尔瓦的家，花田旁一间朴素的小屋。",
     "exits": [
       {
@@ -10154,7 +9720,6 @@
     "id": "tikurin-living-genmukan",
     "location": "夢幻館:生活間",
     "displayName": "夢幻館 生活間",
-    "ascii": "夢幻館 生活間\n",
     "intro": "梦幻馆的生活起居间，暖桌旁摆着几张沙发。",
     "exits": [
       {
@@ -10178,7 +9743,6 @@
     "id": "tikurin-lost-path",
     "location": "迷途竹林:迷失的小道",
     "displayName": "迷途竹林 迷失的小道",
-    "ascii": "迷途竹林 迷失的小道\n",
     "intro": "迷途竹林中错综的小道，一不留神便会迷失方向。",
     "exits": [
       {
@@ -10222,7 +9786,6 @@
     "id": "tikurin-medicine-house",
     "location": "迷途竹林:梅蒂欣的家",
     "displayName": "迷途竹林 梅蒂欣的家",
-    "ascii": "迷途竹林 梅蒂欣的家\n",
     "intro": "梅蒂欣·梅兰可莉的居所，弥漫着毒气的西式小屋。",
     "exits": [
       {
@@ -10236,7 +9799,6 @@
     "id": "tikurin-mid-corridor",
     "location": "永遠亭:中廊下",
     "displayName": "永遠亭 中廊下",
-    "ascii": "永遠亭 中廊下\n",
     "intro": "永远亭内侧的中廊，两旁是各位居民的房间。",
     "exits": [
       {
@@ -10285,7 +9847,6 @@
     "id": "tikurin-mokou-house",
     "location": "迷途竹林:妹紅的家",
     "displayName": "迷途竹林 妹紅的家",
-    "ascii": "迷途竹林 妹紅的家\n",
     "intro": "藤原妹红的居所，炉火终年不熄。",
     "exits": [
       {
@@ -10304,7 +9865,6 @@
     "id": "tikurin-mugetsu-room",
     "location": "夢幻館:夢月私室",
     "displayName": "夢幻館 夢月私室",
-    "ascii": "夢幻館 夢月私室\n",
     "intro": "梦月的私人房间，梦境与现实在此交界。",
     "exits": [
       {
@@ -10318,7 +9878,6 @@
     "id": "tikurin-mystia-house",
     "location": "迷途竹林:米斯蒂亜的家",
     "displayName": "迷途竹林 米斯蒂亜的家",
-    "ascii": "迷途竹林 米斯蒂亜的家\n",
     "intro": "米斯蒂娅·萝蕾拉的居所，兼作夜雀烤摊的据点。",
     "exits": [
       {
@@ -10337,7 +9896,6 @@
     "id": "tikurin-nameless-hill",
     "location": "迷途竹林:無名之丘",
     "displayName": "迷途竹林 無名之丘",
-    "ascii": "迷途竹林 無名之丘\n",
     "intro": "竹林边一座无名的小丘，视野开阔。",
     "exits": [
       {
@@ -10361,7 +9919,6 @@
     "id": "tikurin-passage",
     "location": "永遠亭:走廊",
     "displayName": "永遠亭 走廊",
-    "ascii": "永遠亭 走廊\n",
     "intro": "通往庭院的走廊，可以望见永远亭的内院。",
     "exits": [
       {
@@ -10405,7 +9962,6 @@
     "id": "tikurin-pharmacy",
     "location": "永遠亭:配药室",
     "displayName": "永遠亭 配药室",
-    "ascii": "永遠亭 配药室\n",
     "intro": "永远亭的配药室，架上摆满了各种草药与丹方。",
     "exits": [
       {
@@ -10434,7 +9990,6 @@
     "id": "tikurin-rabbit-den",
     "location": "迷途竹林:兎的洞穴",
     "displayName": "迷途竹林 兎的洞穴",
-    "ascii": "迷途竹林 兎的洞穴\n",
     "intro": "竹林中兔子们聚居的洞穴，铺着柔软的干草。",
     "exits": [
       {
@@ -10448,7 +10003,6 @@
     "id": "tikurin-ruined-house",
     "location": "迷途竹林:廃屋",
     "displayName": "迷途竹林 廃屋",
-    "ascii": "迷途竹林 廃屋\n",
     "intro": "竹林中的一间废屋，可供投宿者暂居。",
     "exits": [
       {
@@ -10467,7 +10021,6 @@
     "id": "tikurin-shrine-small",
     "location": "迷途竹林:祠",
     "displayName": "迷途竹林 祠",
-    "ascii": "迷途竹林 祠\n",
     "intro": "竹林中的一座小祠，供奉着不知名的神明。",
     "exits": [
       {
@@ -10491,7 +10044,6 @@
     "id": "tikurin-slant-bamboo",
     "location": "迷途竹林:斜角的竹林",
     "displayName": "迷途竹林 斜角的竹林",
-    "ascii": "迷途竹林 斜角的竹林\n",
     "intro": "斜生的竹子交错遮天，是竹林深处的一处岔口。",
     "exits": [
       {
@@ -10535,7 +10087,6 @@
     "id": "tikurin-store-genmukan",
     "location": "夢幻館:倉庫",
     "displayName": "夢幻館 倉庫",
-    "ascii": "夢幻館 倉庫\n",
     "intro": "梦幻馆的仓库，堆放着旧家具与杂物。",
     "exits": [
       {
@@ -10549,7 +10100,6 @@
     "id": "tikurin-sunflower-field",
     "location": "迷途竹林:太陽花田",
     "displayName": "迷途竹林 太陽花田",
-    "ascii": "迷途竹林 太陽花田\n",
     "intro": "一望无际的太阳花田，风见幽香常在此徘徊。",
     "exits": [
       {
@@ -10578,7 +10128,6 @@
     "id": "tikurin-terrace-genmukan",
     "location": "夢幻館:露台",
     "displayName": "夢幻館 露台",
-    "ascii": "夢幻館 露台\n",
     "intro": "幽香室外的露台，与花田遥遥相望。",
     "exits": [
       {
@@ -10592,7 +10141,6 @@
     "id": "tikurin-tewi-room",
     "location": "永遠亭:帝私室",
     "displayName": "永遠亭 帝私室",
-    "ascii": "永遠亭 帝私室\n",
     "intro": "因幡帝的私人房间，散落着各种恶作剧的道具。",
     "exits": [
       {
@@ -10611,7 +10159,6 @@
     "id": "tikurin-udonge-room",
     "location": "永遠亭:鈴仙私室",
     "displayName": "永遠亭 鈴仙私室",
-    "ascii": "永遠亭 鈴仙私室\n",
     "intro": "铃仙·优昙华院·因幡的私人房间，收拾得井井有条。",
     "exits": [
       {
@@ -10630,7 +10177,6 @@
     "id": "tikurin-veranda",
     "location": "夢幻館:陽台",
     "displayName": "夢幻館 陽台",
-    "ascii": "夢幻館 陽台\n",
     "intro": "梦幻馆的阳台，可以晾晒衣物、眺望月色。",
     "exits": [
       {
@@ -10649,7 +10195,6 @@
     "id": "tikurin-waiting",
     "location": "永遠亭:待合室",
     "displayName": "永遠亭 待合室",
-    "ascii": "永遠亭 待合室\n",
     "intro": "永远亭的候诊室，来求医的人在此等候。",
     "exits": [
       {
@@ -10678,7 +10223,6 @@
     "id": "tikurin-wc-genmukan",
     "location": "夢幻館:廁所",
     "displayName": "夢幻館 廁所",
-    "ascii": "夢幻館 廁所\n",
     "intro": "梦幻馆的厕所，一尘不染。",
     "exits": [
       {
@@ -10692,7 +10236,6 @@
     "id": "tikurin-well",
     "location": "迷途竹林:井戸",
     "displayName": "迷途竹林 井戸",
-    "ascii": "迷途竹林 井戸\n",
     "intro": "竹林中的一口古井，可以在此打水。",
     "exits": [
       {
@@ -10716,7 +10259,6 @@
     "id": "tikurin-yakitori-stall",
     "location": "迷途竹林:夜雀的小攤",
     "displayName": "迷途竹林 夜雀的小攤",
-    "ascii": "迷途竹林 夜雀的小攤\n",
     "intro": "米斯蒂娅的烤七鳃鳗小摊，夜里灯火与歌声交织。",
     "exits": [
       {
@@ -10750,7 +10292,6 @@
     "id": "tikurin-yuuka-room",
     "location": "夢幻館:幽香私室",
     "displayName": "夢幻館 幽香私室",
-    "ascii": "夢幻館 幽香私室\n",
     "intro": "风见幽香的私人房间，四处摆满了鲜花。",
     "exits": [
       {
@@ -10769,7 +10310,6 @@
     "id": "village",
     "location": "人間之里",
     "displayName": "人間之里 人里的門",
-    "ascii": "人間之里 人里的門\n",
     "intro": "人間之里的出入口，朱漆大门在阳光下泛着微光，来往的村民络绎不绝。",
     "exits": [
       {
@@ -10793,7 +10333,6 @@
     "id": "village-akyu",
     "location": "人間之里:阿求私室",
     "displayName": "人間之里 阿求私室",
-    "ascii": "人間之里 阿求私室\n",
     "intro": "稗田邸内的阿求私室，笔墨纸砚齐备，书稿成叠。",
     "exits": [
       {
@@ -10807,7 +10346,6 @@
     "id": "village-bankei",
     "location": "人間之里:蛮奇的房間",
     "displayName": "人間之里 蛮奇的房間",
-    "ascii": "人間之里 蛮奇的房間\n",
     "intro": "长屋中蛮奇的房间，有些异样的气息。",
     "exits": [
       {
@@ -10821,7 +10359,6 @@
     "id": "village-benben",
     "location": "人間之里:弁弁的房間",
     "displayName": "人間之里 弁弁的房間",
-    "ascii": "人間之里 弁弁的房間\n",
     "intro": "长屋中的一间房，琴弦声若有若无。",
     "exits": [
       {
@@ -10845,7 +10382,6 @@
     "id": "village-cafe",
     "location": "人間之里:咖啡館",
     "displayName": "人間之里 咖啡館",
-    "ascii": "人間之里 咖啡館\n",
     "intro": "南大街的咖啡馆，咖啡的焦香混着闲聊声。",
     "exits": [
       {
@@ -10859,7 +10395,6 @@
     "id": "village-east",
     "location": "人間之里:東大街",
     "displayName": "人間之里 東大街",
-    "ascii": "人間之里 東大街\n",
     "intro": "东大街两旁排着甜品店与寺子屋，孩子们的笑声不断。",
     "exits": [
       {
@@ -10918,7 +10453,6 @@
     "id": "village-geidontei",
     "location": "人間之里:鯢呑亭",
     "displayName": "人間之里 鯢呑亭",
-    "ascii": "人間之里 鯢呑亭\n",
     "intro": "西大街的鯢呑亭，食客推杯换盏，热闹非凡。",
     "exits": [
       {
@@ -10937,7 +10471,6 @@
     "id": "village-hanaya",
     "location": "人間之里:花屋",
     "displayName": "人間之里 花屋",
-    "ascii": "人間之里 花屋\n",
     "intro": "花屋里百花争艳，店主正在修剪枝叶。",
     "exits": [
       {
@@ -10956,7 +10489,6 @@
     "id": "village-hieda",
     "location": "人間之里:稗田邸",
     "displayName": "人間之里 稗田邸",
-    "ascii": "人間之里 稗田邸\n",
     "intro": "稗田家的宅邸，庭院修整得一丝不苟。",
     "exits": [
       {
@@ -10980,7 +10512,6 @@
     "id": "village-kashikiri",
     "location": "人間之里:貸切浴場",
     "displayName": "人間之里 貸切浴場",
-    "ascii": "人間之里 貸切浴場\n",
     "intro": "銭湯深处的包租浴场，可独享一池清水。",
     "exits": [
       {
@@ -10994,7 +10525,6 @@
     "id": "village-kashiten",
     "location": "人間之里:甜品店",
     "displayName": "人間之里 甜品店",
-    "ascii": "人間之里 甜品店\n",
     "intro": "东大街的甜品店，橱窗里摆着精致的甜点。",
     "exits": [
       {
@@ -11008,7 +10538,6 @@
     "id": "village-keine",
     "location": "人間之里:慧音宅",
     "displayName": "人間之里 慧音宅",
-    "ascii": "人間之里 慧音宅\n",
     "intro": "慧音的住所，书架与教案堆满书房。",
     "exits": [
       {
@@ -11032,7 +10561,6 @@
     "id": "village-koryori",
     "location": "人間之里:小料理屋",
     "displayName": "人間之里 小料理屋",
-    "ascii": "人間之里 小料理屋\n",
     "intro": "南大街的小料理屋，暖帘半卷，飘出炖菜的香气。",
     "exits": [
       {
@@ -11046,7 +10574,6 @@
     "id": "village-kosuzu",
     "location": "人間之里:小鈴私室",
     "displayName": "人間之里 小鈴私室",
-    "ascii": "人間之里 小鈴私室\n",
     "intro": "鈴奈庵后的小铃私室，古书与奇物散落各处。",
     "exits": [
       {
@@ -11060,7 +10587,6 @@
     "id": "village-kotobi",
     "location": "人間之里:小兎姫私室",
     "displayName": "人間之里 小兎姫私室",
-    "ascii": "人間之里 小兎姫私室\n",
     "intro": "警察署内的小兔姬私室，档案柜靠墙排列。",
     "exits": [
       {
@@ -11084,7 +10610,6 @@
     "id": "village-mai",
     "location": "人間之里:舞的房間",
     "displayName": "人間之里 舞的房間",
-    "ascii": "人間之里 舞的房間\n",
     "intro": "长屋中舞的房间，角落放着舞扇。",
     "exits": [
       {
@@ -11103,7 +10628,6 @@
     "id": "village-merry",
     "location": "人間之里:梅莉的房間",
     "displayName": "人間之里 梅莉的房間",
-    "ascii": "人間之里 梅莉的房間\n",
     "intro": "长屋中梅莉的房间，书架上多是外文典籍。",
     "exits": [
       {
@@ -11122,7 +10646,6 @@
     "id": "village-miyo",
     "location": "人間之里:美宵的房間",
     "displayName": "人間之里 美宵的房間",
-    "ascii": "人間之里 美宵的房間\n",
     "intro": "鯢呑亭后美宵的房间，安静而温馨。",
     "exits": [
       {
@@ -11136,7 +10659,6 @@
     "id": "village-nagaya",
     "location": "人間之里:長屋前",
     "displayName": "人間之里 長屋前",
-    "ascii": "人間之里 長屋前\n",
     "intro": "连排长屋前的小巷，晾衣竿与红灯笼错落。",
     "exits": [
       {
@@ -11225,7 +10747,6 @@
     "id": "village-north",
     "location": "人間之里:北大街",
     "displayName": "人間之里 北大街",
-    "ascii": "人間之里 北大街\n",
     "intro": "北大街通往稗田邸与警察署，相对幽静。",
     "exits": [
       {
@@ -11284,7 +10805,6 @@
     "id": "village-plaza",
     "location": "人間之里:中央広場",
     "displayName": "人間之里 中央広場",
-    "ascii": "人間之里 中央広場\n",
     "intro": "人来人往的中央广场，喷泉边坐着歇脚的村民，四面街道由此延伸。",
     "exits": [
       {
@@ -11343,7 +10863,6 @@
     "id": "village-police",
     "location": "人間之里:警察署",
     "displayName": "人間之里 警察署",
-    "ascii": "人間之里 警察署\n",
     "intro": "村里的警察署，小兔姬正倚在桌边打盹。",
     "exits": [
       {
@@ -11367,7 +10886,6 @@
     "id": "village-raiko",
     "location": "人間之里:雷鼓的房間",
     "displayName": "人間之里 雷鼓的房間",
-    "ascii": "人間之里 雷鼓的房間\n",
     "intro": "长屋中的一间房，隐约传来太鼓的节拍。",
     "exits": [
       {
@@ -11391,7 +10909,6 @@
     "id": "village-renko",
     "location": "人間之里:蓮子的房間",
     "displayName": "人間之里 蓮子的房間",
-    "ascii": "人間之里 蓮子的房間\n",
     "intro": "长屋中莲子的房间，墙上贴着星图。",
     "exits": [
       {
@@ -11410,7 +10927,6 @@
     "id": "village-rin",
     "location": "人間之里:麟的房间",
     "displayName": "人間之里 麟的房间",
-    "ascii": "人間之里 麟的房间\n",
     "intro": "长屋中麟的房间，陈设简朴。",
     "exits": [
       {
@@ -11424,7 +10940,6 @@
     "id": "village-room230",
     "location": "人間之里:空的部屋",
     "displayName": "人間之里 空的部屋",
-    "ascii": "人間之里 空的部屋\n",
     "intro": "长屋中一间空房，积着薄薄的灰尘。",
     "exits": [
       {
@@ -11438,7 +10953,6 @@
     "id": "village-room241",
     "location": "人間之里:空的部屋(241)",
     "displayName": "人間之里 空的部屋(241)",
-    "ascii": "人間之里 空的部屋(241)\n",
     "intro": "长屋中一间空房，暂无人居住。",
     "exits": [
       {
@@ -11452,7 +10966,6 @@
     "id": "village-room243",
     "location": "人間之里:空的部屋(243)",
     "displayName": "人間之里 空的部屋(243)",
-    "ascii": "人間之里 空的部屋(243)\n",
     "intro": "长屋中一间空房，暂无人居住。",
     "exits": [
       {
@@ -11466,7 +10979,6 @@
     "id": "village-ryobo",
     "location": "人間之里:瞭望樓",
     "displayName": "人間之里 瞭望樓",
-    "ascii": "人間之里 瞭望樓\n",
     "intro": "高耸的瞭望楼，登顶可俯瞰整个村子与远方的博麗神社。",
     "exits": [
       {
@@ -11485,7 +10997,6 @@
     "id": "village-ryujin",
     "location": "人間之里:龍神像",
     "displayName": "人間之里 龍神像",
-    "ascii": "人間之里 龍神像\n",
     "intro": "广场一角的龙神像静静矗立，村民偶尔驻足合掌。",
     "exits": [
       {
@@ -11504,7 +11015,6 @@
     "id": "village-sakaya",
     "location": "人間之里:酒屋",
     "displayName": "人間之里 酒屋",
-    "ascii": "人間之里 酒屋\n",
     "intro": "南大街的酒屋，酒坛排列到天花板，空气中弥漫着酒香。",
     "exits": [
       {
@@ -11518,7 +11028,6 @@
     "id": "village-sento",
     "location": "人間之里:銭湯",
     "displayName": "人間之里 銭湯",
-    "ascii": "人間之里 銭湯\n",
     "intro": "东大街的公共澡堂，汤气蒸腾，富士山壁画泛着水光。",
     "exits": [
       {
@@ -11537,7 +11046,6 @@
     "id": "village-shokuryo",
     "location": "人間之里:食料品店",
     "displayName": "人間之里 食料品店",
-    "ascii": "人間之里 食料品店\n",
     "intro": "食料品店的货架上摆满米面蔬果，讨价还价声此起彼伏。",
     "exits": [
       {
@@ -11556,7 +11064,6 @@
     "id": "village-shukaisho",
     "location": "人間之里:集会所",
     "displayName": "人間之里 集会所",
-    "ascii": "人間之里 集会所\n",
     "intro": "村里的集会所，公告板上贴满告示与寻人启事。",
     "exits": [
       {
@@ -11575,7 +11082,6 @@
     "id": "village-shukuya",
     "location": "人間之里:情人用宿屋",
     "displayName": "人間之里 情人用宿屋",
-    "ascii": "人間之里 情人用宿屋\n",
     "intro": "西大街深处的情人旅馆，招牌低调，门帘低垂。",
     "exits": [
       {
@@ -11589,7 +11095,6 @@
     "id": "village-south",
     "location": "人間之里:南大街",
     "displayName": "人間之里 南大街",
-    "ascii": "人間之里 南大街\n",
     "intro": "热闹的南大街，酒屋和小料理屋的香气飘散在空气中。",
     "exits": [
       {
@@ -11638,7 +11143,6 @@
     "id": "village-suzunan",
     "location": "人間之里:鈴奈庵",
     "displayName": "人間之里 鈴奈庵",
-    "ascii": "人間之里 鈴奈庵\n",
     "intro": "东大街的书店兼小铃家，新书与旧刊堆得满满当当。",
     "exits": [
       {
@@ -11657,7 +11161,6 @@
     "id": "village-terakoya",
     "location": "人間之里:寺子屋",
     "displayName": "人間之里 寺子屋",
-    "ascii": "人間之里 寺子屋\n",
     "intro": "寺子屋里传来朗朗读书声，慧音先生正在授课。",
     "exits": [
       {
@@ -11681,7 +11184,6 @@
     "id": "village-toilet",
     "location": "人間之里:公用廁所",
     "displayName": "人間之里 公用廁所",
-    "ascii": "人間之里 公用廁所\n",
     "intro": "村里的公共厕所，还算整洁。",
     "exits": [
       {
@@ -11695,7 +11197,6 @@
     "id": "village-well",
     "location": "人間之里:公用水井",
     "displayName": "人間之里 公用水井",
-    "ascii": "人間之里 公用水井\n",
     "intro": "村中的公共水井，井水清冽，村民在此打水闲谈。",
     "exits": [
       {
@@ -11709,7 +11210,6 @@
     "id": "village-west",
     "location": "人間之里:西大街",
     "displayName": "人間之里 西大街",
-    "ascii": "人間之里 西大街\n",
     "intro": "西大街连着花屋与长屋，飘来阵阵花香与炊烟。",
     "exits": [
       {
@@ -11763,7 +11263,6 @@
     "id": "village-yaoya",
     "location": "人間之里:八百屋",
     "displayName": "人間之里 八百屋",
-    "ascii": "人間之里 八百屋\n",
     "intro": "八百屋的蔬菜堆得像小山，店员正吆喝着今日特价。",
     "exits": [
       {
@@ -11782,7 +11281,6 @@
     "id": "village-yatsuhashi",
     "location": "人間之里:八橋的房間",
     "displayName": "人間之里 八橋的房間",
-    "ascii": "人間之里 八橋的房間\n",
     "intro": "长屋中的一间房，墙边堆着点心盒子。",
     "exits": [
       {
@@ -11806,7 +11304,6 @@
     "id": "village-yuki",
     "location": "人間之里:雪的房間",
     "displayName": "人間之里 雪的房間",
-    "ascii": "人間之里 雪的房間\n",
     "intro": "长屋中雪的房间，窗台上摆着小雪兔。",
     "exits": [
       {

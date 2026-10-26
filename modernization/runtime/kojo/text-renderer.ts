@@ -1,7 +1,16 @@
 import type { Rng } from "../command/types.js";
 import type { GameState } from "../state/index.js";
+import type { CharaSlot } from "../state/game-state.js";
 import { showBottom, showLowerUnderwear, showTop, showUpperUnderwear } from "../state/clothing.js";
 import { talentDisplayName } from "../state/talent-categories.js";
+import {
+  CFLAG_ID,
+  EQUIP_SLOT,
+  EXP_ID,
+  PALAM_ID,
+  PALAMLV,
+  TALENT_ID,
+} from "../state/settlement.js";
 
 export type KojoNameReference = number | string;
 export type KojoNameResolver = (
@@ -44,6 +53,188 @@ const NIPPLE_FORMATTER_RE = /%NIPPLE_DESCRIPTION\(\s*(TARGET|MASTER|PLAYER|\d+)\
 const CSTR_TOKEN_RE = /%CSTR:(\d+):(\d+)%/g;
 const NICKNAME_TOKEN_RE = /%NICKNAME:(\d+)%/g;
 const INNERMOST_FUNCTION_FORMATTER_RE = /%([A-Z0-9_]+)\(([^%\r\n]*)\)%/gi;
+const HIP_FORMATTER_RE = /%HIP\(\s*(TARGET|MASTER|PLAYER|\d+)\s*(?:,\s*([01])\s*)?(?:,\s*\d+\s*)?\)%/gi;
+
+/**
+ * `@HIP` adjective pool — EVENT_MESSAGE.ERB:553-601 (the fork's UTF-8
+ * Simplified Chinese wording). Index = the SELECTCASE arm 0-49; arms 38-49
+ * map the four fantasy tiers onto a shared adjective each.
+ */
+const HIP_ADJECTIVES: readonly string[] = [
+  "犹如去壳鸡蛋般白嫩的", // 0 — 幼儿体型
+  "没什么肉但手感极佳的", // 1
+  "孩童般稚嫩的", // 2
+  "娇小的", // 3
+  "可爱的", // 4
+  "娇小可爱的", // 5 — -1 纤细体型
+  "纤细匀称的", // 6
+  "形状优美的", // 7
+  "小巧纤细的", // 8
+  "玲珑小巧的", // 9
+  "白嫩嫩的", // 10
+  "雪白弹嫩的", // 11
+  "吹弹可破的娇嫩", // 12
+  "洋溢着少女气息的紧致", // 13 — 普通/有肉体型
+  "弹性极好洋溢着青春活力的", // 14
+  "弹性极好洋溢着青春活力的", // 15
+  "弹嫩紧致的", // 16
+  "不带一丝赘肉的娇嫩", // 17
+  "手感好到舍不得松手的", // 18
+  "美型且紧致的", // 19
+  "圆润紧致的", // 20
+  "线条匀称优美的", // 21
+  "雪白水润的", // 22
+  "肉肉的", // 23 — 大屁股
+  "丰满桃形的", // 24
+  "从身材上难以想象的丰满", // 25
+  "曲线诱人且弹性十足的", // 26
+  "一看就是安产型的", // 27
+  "丰满浑圆的", // 28
+  "丰腴却没有赘肉的", // 29
+  "带着成熟魅力的", // 30
+  "肉感十足的", // 31 — 巨臀
+  "成熟魅惑的丰满", // 32
+  "丰腴浑圆、肉感极佳的", // 33
+  "带着女性媚香的硕大", // 34
+  "臀浪满溢而出的", // 35
+  "熟透了的水蜜桃般的丰盈", // 36
+  "令人欲罢不能的丰硕", // 37
+  "令人无法移开视线的硕大", // 38-40 — 幻想
+  "令人无法移开视线的硕大", // 39
+  "令人无法移开视线的硕大", // 40
+  "荡漾着白花花臀浪的", // 41-43
+  "荡漾着白花花臀浪的", // 42
+  "荡漾着白花花臀浪的", // 43
+  "夺走人理性的巨大", // 44-46
+  "夺走人理性的巨大", // 45
+  "夺走人理性的巨大", // 46
+  "仿佛将人吸住的超大", // 47-49
+  "仿佛将人吸住的超大", // 48
+  "仿佛将人吸住的超大", // 49
+];
+
+/** `@HIP` SELECTCASE ranges per ヒップサイズ (TALENT:108) — ERB:525-537. */
+function hipAdjectiveRange(hipSize: number): readonly [number, number] {
+  if (hipSize < -1) return [0, 13];
+  if (hipSize === -1) return [5, 20];
+  if (hipSize === 0) return [13, 23];
+  if (hipSize === 1) return [13, 31];
+  if (hipSize < 4) return [23, 38];
+  return [23, 50];
+}
+
+/** `@HIP` TEXTR noun pools per body shape — ERB:639-648. */
+function hipNounPool(hipSize: number, bodyType: number): readonly string[] {
+  if (bodyType === -2 && hipSize <= -2) return ["屁屁", "屁股", "粉臀", "玉臀", "俏臀"];
+  if (hipSize < 0) return ["屁屁", "屁股", "臀部", "粉臀", "玉臀", "俏臀"];
+  if (hipSize < 2) return ["屁股", "臀部", "粉臀", "玉臀", "俏臀", "雪臀", "翘臀"];
+  return ["屁股", "臀部", "雪臀", "玉臀", "肉尻", "肥臀", "翘臀"];
+}
+
+/** `@TOKANJIT` (INFO.ERB:954) — number → 汉字 numeral; liang mode = ARG:1. */
+function toKanjiNumeral(value: number, liangMode: boolean): string {
+  const digits = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  if (value >= 10000) return "ＢＵＧ";
+  let out = "";
+  let hasPrev = false;
+  const thousands = Math.floor(value / 1000);
+  if (thousands > 0) {
+    out += (thousands === 2 && liangMode ? "两" : digits[thousands]!) + "千";
+    hasPrev = true;
+  }
+  const hundreds = Math.floor(value / 100) % 10;
+  if (hundreds > 0) {
+    out += (hundreds === 2 && liangMode ? "两" : digits[hundreds]!) + "百";
+    hasPrev = true;
+  } else if (hasPrev && value % 100 > 0) {
+    out += "零";
+  }
+  const tens = Math.floor(value / 10) % 10;
+  if (tens > 0) {
+    // @HIP never passes ARG:2, so a leading 1 keeps the non-abbreviated
+    // "一十" form (INFO.ERB:983-988).
+    out += digits[tens]! + "十";
+    hasPrev = true;
+  } else if (hasPrev && value % 10 > 0 && !out.endsWith("零")) {
+    out += "零";
+  }
+  const units = value % 10;
+  if (units > 0) {
+    out += units === 2 && liangMode && !hasPrev ? "两" : digits[units]!;
+  }
+  return out;
+}
+
+/**
+ * `@HIP` status-prefix arm — ERB:522-540. RNG consumption follows the
+ * upstream IF/ELSEIF order under Emuera's short-circuit `&&`
+ * (OperatorMethod.AndIntInt): a false left operand never rolls the RAND on
+ * its right. The 欲情 gate uses the base-game PALAMLV table
+ * (`PALAMLV[4] = 10000`; the MAGIC_DLC_好感亲密重做 branch lowers it to
+ * 1000 and stays deferred with the DLC itself). The GETMETH_INT
+ * transparency lookup is hard-wired to "汗湿": the fork passes simplified
+ * 半透明(后) while CLOTHES_METH tables key on 半透明(後), so GETMETH_INT
+ * always returns 0 and the upstream ternary always picks the cold arm.
+ * Nested %SHOW_下半身内衣%/%PANTSNAME% tokens are emitted for the later
+ * passes of `substituteKojoStateFormatters` to expand.
+ */
+function hipPrefix(slot: CharaSlot, charaNum: number, rng: Rng): string {
+  const equip = (id: number) => slot.state.EQUIP?.[id] ?? 0;
+  if ((slot.state.PALAM?.[PALAM_ID.欲情] ?? 0) >= PALAMLV[4]!) {
+    if (rng.int(4) === 0) {
+      if (equip(EQUIP_SLOT.レオタード) || equip(EQUIP_SLOT.ボディースーツ)) {
+        return `紧贴着湿透%SHOW_下半身内衣(${charaNum},3)%、`;
+      }
+      if (equip(EQUIP_SLOT.下半身内衣１)) {
+        return `紧贴着汗湿%PANTSNAME(${equip(EQUIP_SLOT.下半身内衣１)}, ${charaNum})%、`;
+      }
+      if (equip(EQUIP_SLOT.下半身内衣２)) {
+        return `紧贴着汗湿%PANTSNAME(${equip(EQUIP_SLOT.下半身内衣２)}, ${charaNum})%、`;
+      }
+      return "浮现出晶莹汗珠、";
+    }
+  }
+  if (rng.int(5) === 0) {
+    const births = slot.state.EXP?.[EXP_ID.出産経験] ?? 0;
+    if (births !== 0 && (slot.state.TALENT?.[TALENT_ID.ヒップサイズ] ?? 0) <= 0) {
+      return `很难想象属于${toKanjiNumeral(births, true)}个孩子母亲、`;
+    }
+  }
+  if (rng.int(5) === 0) {
+    if (
+      (slot.state.CFLAG?.[CFLAG_ID.乳ランクアップ] ?? 0) !== 0 &&
+      (slot.state.TALENT?.[TALENT_ID.ヒップサイズ] ?? 0) > 0
+    ) {
+      // The ternary's condition is already guaranteed by this ELSEIF arm.
+      return "怀孕后更显媚惑、";
+    }
+  }
+  return "";
+}
+
+/**
+ * `@HIP(ARG, ARG:1 = 1)` — EVENT_MESSAGE.ERB:516-664, ported verbatim:
+ * status prefix (gated by ARG:1) + ヒップサイズ-tiered adjective +
+ * TEXTR noun. Rolls exactly like the ERB: a failed IF chain arm, one
+ * RAND(lo,hi) for the adjective, one RAND:len for the @TEXTR noun.
+ */
+function hipDescription(
+  slot: CharaSlot,
+  charaNum: number,
+  withPrefix: boolean,
+  rng: Rng,
+): string {
+  const hipSize = slot.state.TALENT?.[TALENT_ID.ヒップサイズ] ?? 0;
+  const bodyType = slot.state.TALENT?.[TALENT_ID.体型] ?? 0;
+  // Evaluation order == upstream RNG consumption order: the status prefix
+  // arm rolls first, then the tiered adjective, then the TEXTR noun.
+  const prefix = withPrefix ? hipPrefix(slot, charaNum, rng) : "";
+  const [lo, hi] = hipAdjectiveRange(hipSize);
+  const adjective = HIP_ADJECTIVES[lo + rng.int(hi - lo)] ?? HIP_ADJECTIVES[lo]!;
+  const nouns = hipNounPool(hipSize, bodyType);
+  const noun = nouns[rng.int(nouns.length)] ?? nouns[0]!;
+  return prefix + adjective + noun;
+}
 
 const FSYN_CN_ALTERNATIVES: Readonly<Record<string, readonly string[]>> = {
   揉弄: ["揉弄", "爱抚", "抚弄", "把玩"],
@@ -188,6 +379,20 @@ function evaluateCommonFormatter(
       return resolvedReference(reference, options)
         ?? options.numericFallback?.(reference)
         ?? null;
+    }
+    case "K17_CNAME": {
+      const rawSubject = formatterString(args[0]).trim().toUpperCase();
+      const reference = rawSubject === "" || rawSubject === "MASTER" || rawSubject === "PLAYER" || rawSubject === "0"
+        ? 0
+        : rawSubject === "TARGET"
+          ? options.charaNum
+          : Number(rawSubject);
+      if (!Number.isSafeInteger(reference)) return null;
+      return reference === 0
+        ? options.masterName || options.state.master.callName || "主角"
+        : resolvedReference(reference, options)
+          ?? options.numericFallback?.(reference)
+          ?? (reference === options.charaNum ? options.targetName ?? options.targetFallback ?? "对方" : null);
     }
     case "SPLIT_G": {
       const source = formatterString(args[0]);
@@ -441,7 +646,8 @@ export function substituteKojoCallNames(
 ): string {
   if (
     !text.includes("%CALLNAME:") &&
-    !text.includes("MASTERNAME")
+    !text.includes("MASTERNAME") &&
+    !/%[A-Z0-9_]+\([^%\r\n]*\)%/i.test(text)
   ) {
     return text;
   }
@@ -489,7 +695,7 @@ export function substituteKojoCallNames(
   out = out
     .replace(/%MASTERNAME:\d+%/g, masterName)
     .replace(/\[MASTERNAME:\d+\]/g, masterName);
-  return out;
+  return substituteKojoCommonFormatters(out, options);
 }
 
 /** Resolve the browser-safe clothing formatter subset used by authored kojo. */
@@ -503,7 +709,15 @@ export function substituteKojoStateFormatters(
         ? 0
         : Number(rawSubject);
   const common = substituteKojoCommonFormatters(text, options);
-  const clothing = common.replace(CLOTHING_FORMATTER_RE, (token, formatter: string, rawSubject: string) => {
+  // HIP runs before the clothing/pants passes so its prefix arm can emit
+  // nested %SHOW_下半身内衣%/%PANTSNAME% tokens for them to expand.
+  const hip = common.replace(HIP_FORMATTER_RE, (token, rawSubject: string, prefixFlag: string | undefined) => {
+    const subject = subjectFor(rawSubject);
+    const slot = subject === 0 ? options.state.master : options.state.charas[subject];
+    if (!slot || !options.rng) return token;
+    return hipDescription(slot, subject, prefixFlag !== "0", options.rng);
+  });
+  const clothing = hip.replace(CLOTHING_FORMATTER_RE, (token, formatter: string, rawSubject: string) => {
     const subject = subjectFor(rawSubject);
     const slot = subject === 0 ? options.state.master : options.state.charas[subject];
     if (!slot) return token;
@@ -561,7 +775,7 @@ export function renderKojoText(
   return substituteKojoCallNames(
     selectTextrAlternatives(text, options.rng),
     options,
-  );
+  ).replace(/\[K17_CNAME\(\)\]/gi, options.masterName || options.state.master.callName || "主角");
 }
 
 /**

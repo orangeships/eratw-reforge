@@ -1,4 +1,4 @@
-/* Compact player presentation. The classic era surface stays untouched. */
+/* Compact immersive player presentation. */
 .game-client--immersive {
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 8px;
@@ -433,7 +433,7 @@
 .game-client--immersive .game-client__scene-slot {
   overflow: hidden;
   border: 1px solid #343434;
-  background: #050505;
+  background: #000;
 }
 
 .text-game-info,
@@ -569,6 +569,27 @@
   border-radius: 0;
 }
 
+.text-game-info__portrait-update {
+  margin-top: 7px;
+}
+
+.text-game-info__action {
+  width: 100%;
+  padding: 3px 5px;
+  border: 1px solid #4b4b4b;
+  border-radius: 0;
+  color: #d6c27b;
+  background: #151516;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.text-game-info__action:hover {
+  color: #fff0a8;
+  border-color: #8d7d47;
+}
+
 .text-game-info .status-bar__palam-grid {
   grid-template-columns: minmax(0, 1fr);
   gap: 3px;
@@ -579,9 +600,108 @@
   grid-template-columns: 3.4em 1.2em minmax(20px, 1fr) 3.6em;
 }
 
+.portrait-variant-picker {
+  margin-top: 8px;
+  padding: 6px;
+  border: 1px solid #3b3b3b;
+  background: #0b0b0c;
+  font-family: var(--era-mono);
+}
+
+.portrait-variant-picker__heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #d9d9d9;
+  font-size: 12px;
+}
+
+.portrait-variant-picker__current,
+.portrait-variant-picker__note {
+  color: #888;
+  font-size: 11px;
+}
+
+.portrait-variant-picker__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.portrait-variant-picker__option {
+  display: flex;
+  min-width: 64px;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #444;
+  border-radius: 0;
+  color: #d8d8d8;
+  background: #161617;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.portrait-variant-picker__option:hover:not(:disabled),
+.portrait-variant-picker__option--active {
+  border-color: #d1b868;
+  color: #ffe49a;
+}
+
+.portrait-variant-picker__option:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.portrait-variant-picker__preview {
+  display: block;
+  width: 56px;
+  height: 76px;
+  overflow: hidden;
+}
+
+.portrait-variant-picker:not(.portrait-variant-picker--compact) .portrait-variant-picker__preview {
+  width: 76px;
+  height: 100px;
+}
+
+.portrait-variant-picker__preview--empty {
+  border: 1px dashed #444;
+}
+
+.portrait-variant-picker__note {
+  margin: 6px 0 0;
+}
+
+.morning-menu__portrait-update-layout {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.35fr) minmax(280px, 1fr);
+  gap: 12px;
+}
+
+.morning-menu__portrait-roster {
+  display: flex;
+  max-height: 55vh;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.morning-menu__portrait-roster .morning-menu__choice {
+  border-radius: 0;
+  text-align: left;
+}
+
+.morning-menu__portrait-detail {
+  min-width: 0;
+}
+
 .text-game-right {
   display: grid;
-  grid-template-rows: minmax(128px, 0.62fr) minmax(180px, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 6px;
   overflow: hidden;
   border: 0;
@@ -598,12 +718,122 @@
   overflow: hidden;
 }
 
+/* Keep the ordinary scene readable as a document in the middle column. The
+   the three-column surface puts the
+   room name, prose and roster in a stable vertical order instead. */
+.game-client--immersive .scene-view {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #000;
+}
+
+.game-client--immersive .scene-view__header {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  padding: 10px 14px 0;
+  background: #000;
+}
+
+.game-client--immersive .scene-view__place {
+  position: static;
+  transform: none;
+  margin: 0 0 7px;
+  color: #e0e0e0;
+  font-size: calc(var(--era-fs) + 5px);
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-shadow: none;
+}
+
+.game-client--immersive .scene-view__ascii,
+.game-client--immersive .scene-view__ambient {
+  max-width: none;
+  padding: 0 0 7px;
+}
+
+.game-client--immersive .scene-view__intro,
+.game-client--immersive .scene-view__ambient {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.game-client--immersive .scene-view__stage {
+  position: relative;
+  inset: auto;
+  flex: 1 1 340px;
+  min-height: 320px;
+  padding: 8px 0 72px;
+  overflow: hidden;
+}
+
+.game-client--immersive .scene-view__roster {
+  position: static;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0 10px;
+  margin: 0 0 4px;
+  overflow: visible;
+}
+
+/* With a backdrop image the header strip blends into the scene instead of
+   sitting as a solid black bar: a top-dark→clear gradient keeps the place
+   name and intro prose readable while the photo shows through below. */
+.game-client--immersive .scene-view--has-bg .scene-view__header {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.5) 78%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+.game-client--immersive .scene-view--has-bg .scene-view__bg-toggle {
+  top: 12px;
+}
+
 .text-game-ambient__lines,
 .text-game-history {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
+}
+
+.text-game-ambient__scene-context {
+  flex: 0 0 auto;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid #3b4348;
+  color: #d7d7d7;
+  font-family: "MS Gothic", "Noto Sans Mono CJK SC", monospace;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.text-game-ambient__scene-context p { margin: 0; }
+.text-game-ambient__scene-context p + p { margin-top: 4px; }
+.text-game-ambient__place { color: #fff; font-weight: 700; letter-spacing: .05em; }
+
+.text-game-ambient__scene-events {
+  flex: 0 1 auto;
+  max-height: 42%;
+  padding: 8px 10px 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-bottom: 1px solid #3b4348;
+  scrollbar-gutter: stable;
+}
+
+.text-game-ambient__scene-event {
+  margin: 0 0 6px;
+  color: #dbe4ec;
+  font-family: var(--era-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .text-game-ambient__line,
@@ -669,7 +899,7 @@
   }
 
   .text-game-right {
-    grid-template-rows: minmax(140px, auto) minmax(240px, auto);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
     min-height: 420px;
   }
 }
@@ -685,9 +915,73 @@
     min-height: 430px;
   }
 
+  .morning-menu__portrait-update-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .morning-menu__portrait-roster {
+    max-height: 30vh;
+  }
+
   .text-game-info__section,
   .text-game-ambient,
   .text-game-history-panel {
     padding: 7px;
+  }
+}
+
+/* Android narrow screens: keep the three information surfaces in one bounded,
+   scrollable middle zone. The desktop grid's min-content heights otherwise
+   let the scene and right column paint over Act_COM on narrow screens. */
+@media (max-width: 800px) {
+  .game-client--immersive .game-client__middle {
+    display: flex;
+    flex: 0 0 clamp(360px, 52dvh, 480px);
+    min-height: 0;
+    flex-direction: column;
+    gap: 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .game-client--immersive .text-game-info {
+    flex: 0 0 auto;
+    max-height: min(26dvh, 220px);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .game-client--immersive .game-client__scene-slot {
+    flex: 0 0 clamp(250px, 40dvh, 360px);
+    height: auto;
+    min-height: 0;
+  }
+
+  .game-client--immersive .game-client__scene-slot > .scene-view,
+  .game-client--immersive .game-client__scene-slot .scene-view__stage {
+    min-height: 0;
+  }
+
+  .game-client--immersive .text-game-right {
+    flex: 0 0 min(40dvh, 300px);
+    min-height: 220px;
+    max-height: 300px;
+  }
+
+  .game-client--immersive .game-client__bottom {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .game-client--immersive .excom-row {
+    flex: 0 0 auto;
+    max-height: 96px;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 }

@@ -1,0 +1,139 @@
+.game-client.game-client--h-session {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100dvh;
+  min-height: 550px;
+  overflow: hidden;
+  background: #0d0c0e;
+}
+
+.game-client--h-session > .game-client__middle,
+.game-client--h-session > .game-client__bottom,
+.game-client--h-session > .excom-row,
+.game-client--h-session > .game-client__docks,
+.game-client--h-session > .game-client__footer {
+  display: none;
+}
+
+.game-client--h-session .status-bar__present,
+.game-client--h-session .status-bar__rule,
+.game-client--h-session .status-bar__hints { display: none; }
+
+.h-session-view {
+  position: relative;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) max-content;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+  padding: 8px;
+  color: #e4dce0;
+  background: radial-gradient(circle at 24% 30%, #31212a 0, #171317 42%, #0d0c0e 100%);
+}
+
+.h-session-view__command-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.h-session-view__eyebrow {
+  color: #d78da8;
+  font-size: .75em;
+  letter-spacing: .22em;
+}
+
+.h-session-view__stage {
+  display: grid;
+  grid-template-columns: minmax(200px, 27%) minmax(0, 1fr) minmax(190px, 20%);
+  gap: 8px;
+  min-height: 0;
+}
+
+.h-session-view__character,
+.h-session-view__narrative,
+.h-session-view__status,
+.h-session-view__commands {
+  min-width: 0;
+  border: 1px solid #614650;
+  background: rgba(12, 10, 12, .83);
+}
+
+.h-session-view__character { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.h-session-view__portrait { position: relative; flex: 0 0 min(26dvh, 250px); min-height: 100px; overflow: hidden; }
+.h-session-view__portrait-image { display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 100%; object-fit: contain; object-position: bottom center; }
+.h-session-view__portrait-fallback { display: grid; place-items: center; height: 100%; color: #b39aa3; background: linear-gradient(145deg, #31232b, #100e11); }
+.h-session-view__character-caption { flex: 0 0 auto; display: grid; gap: 3px; padding: 8px 10px; background: #141014; }
+.h-session-view__character-caption span { color: #cbbcc2; font-size: .84em; overflow-wrap: anywhere; }
+
+.h-session-view__narrative { display: flex; flex-direction: column; gap: .65em; min-height: 0; overflow: auto; padding: 14px 18px; line-height: 1.7; }
+.h-session-view__narrative > p { margin: 0; white-space: pre-wrap; }
+.h-session-view__empty { padding: 8px 12px; color: #b39aa3; }
+.h-session-view__choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.h-session-view__choices button { border: 1px solid #a35f76; border-radius: 4px; padding: 5px 9px; color: #f3dae3; background: #35212a; font: inherit; cursor: pointer; }
+.h-session-view__choices button:hover { border-color: #efabc4; background: #59303e; }
+.h-session-view__choices button:disabled { opacity: .55; cursor: not-allowed; }
+.h-session-view__choices button:focus-visible,
+.h-session-view__commands .command-filter-row__btn:focus-visible { outline: 2px solid #f4b8cd; outline-offset: 2px; }
+.h-session-view__status { overflow: auto; padding: 8px; }
+.h-session-view__body-prose { margin-top: 12px; border-top: 1px solid #614650; padding-top: 8px; line-height: 1.7; overflow-wrap: anywhere; }
+.h-session-view__body-prose p { margin: 0 0 .7em; }
+.h-session-view__body-prose strong { color: #efb1c7; }
+.h-session-view__status .status-bar__h-session { display: grid; gap: 5px; border: 0; padding: 0; background: none; }
+.h-session-view__status .status-bar__h-session-gauges { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.h-training-stats { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 8px; font-size: .85em; }
+.h-training-stats section { display: grid; min-width: 0; gap: 8px; padding-bottom: 12px; }
+.h-training-stats h3 { margin: 0; font-size: 1em; color: #efb1c7; }
+.h-training-stats .status-bar__bars,
+.h-training-stats .status-bar__relation { display: grid; gap: 4px; }
+.h-training-stats .status-bar__who { display: none; }
+.h-training-stats .bar { display: grid; grid-template-columns: 2.8em minmax(25px, 1fr) auto; gap: 4px; align-items: center; }
+.h-training-stats .status-bar__palam-grid { grid-template-columns: minmax(0, 1fr); }
+.h-training-stats .status-bar__palam-item { min-width: 0; }
+.h-session-view__settings { margin-top: 10px; padding: 5px 10px; color: #f3dae3; background: #35212a; border: 1px solid #a35f76; border-radius: 4px; font: inherit; cursor: pointer; }
+.h-session-view__settings:focus-visible { outline: 2px solid #f4b8cd; outline-offset: 2px; }
+
+.h-session-view__commands { display: grid; gap: 6px; max-height: min(37dvh, 320px); min-height: 104px; overflow: auto; padding: 8px; }
+.h-session-view__commands .h-exit-controls { flex: 0 0 auto; margin: 0; }
+.h-session-view__commands .command-grid { max-height: none; overflow: visible; }
+.h-session-view__commands .command-grid__group { border: 0; }
+.h-session-view .command-filter-row__label { color: #d78da8; }
+.h-session-view .command-filter-row__btn { border-color: #755965; color: #f3dae3; background: #291e24; }
+.h-session-view .command-filter-row__btn:hover { border-color: #e5a2b9; box-shadow: 0 0 9px #e5a2b933; }
+.h-session-view .command-filter-row__btn--off { color: #8b727d; border-color: #49343d; }
+
+@media (max-width: 1000px) {
+  .h-session-view__stage { grid-template-columns: minmax(155px, 26%) minmax(0, 1fr); }
+  .h-session-view__status { grid-column: 1 / -1; max-height: 105px; }
+  .h-session-view__status .status-bar__h-session { display: flex; flex-wrap: wrap; }
+  .h-session-view--body-prose .h-session-view__status { max-height: min(24dvh, 210px); }
+}
+
+@media (max-width: 700px) {
+  .game-client--h-session { height: 100dvh; min-height: 0; }
+  .game-client--h-session .status-bar__weather,
+  .game-client--h-session .status-bar__weather-detail,
+  .game-client--h-session .status-bar__timezone { display: none; }
+  .h-session-view { padding: 5px; gap: 5px; }
+  .h-session-view__stage { grid-template-columns: minmax(130px, 38%) minmax(0, 1fr); grid-template-rows: minmax(160px, 1fr) auto; }
+  .h-session-view__portrait { flex-basis: 110px; }
+  .h-session-view__portrait-image { transform: scale(.55); transform-origin: center bottom; }
+  .h-session-view__character-caption { padding: 5px; }
+  .h-session-view__status { grid-column: 1 / -1; max-height: 78px; }
+  .h-session-view__status { display: flex; flex-direction: column; }
+  .h-session-view__settings { order: -1; align-self: flex-start; margin: 0 0 6px; }
+  .h-training-stats { padding: 5px; font-size: .75em; }
+  .h-training-stats .bar { grid-template-columns: 2.8em minmax(0, 1fr); }
+  .h-training-stats .bar__num { grid-column: 1 / -1; text-align: right; }
+  .h-training-stats .status-bar__relation { overflow-wrap: anywhere; }
+  .h-training-stats .status-bar__palam-item { grid-template-columns: 3.4em 1em minmax(12px, 1fr) 3em; }
+  .h-training-stats .status-bar__palam-value { white-space: normal; overflow-wrap: anywhere; }
+  .h-training-stats .status-bar__hbody { min-width: 0; display: grid; font-size: inherit; }
+  .h-training-stats .status-bar__hbody-line { white-space: normal; overflow-wrap: anywhere; }
+  .h-session-view__narrative { padding: 8px; }
+  .h-session-view__commands { height: min(31dvh, 260px); max-height: none; min-height: 0; }
+  .h-session-view__command-top { align-items: stretch; flex-direction: column-reverse; }
+}

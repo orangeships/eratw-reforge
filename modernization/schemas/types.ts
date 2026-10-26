@@ -136,6 +136,8 @@ export interface StatusMessage {
   source: "system" | "apply_intent" | "validator" | "watcher";
   /** The text to display in the TextWindow. */
   text: string;
+  /** Explicit player feedback for a rejected command, separate from bookkeeping. */
+  presentation?: "command-feedback";
 }
 
 /**
@@ -151,12 +153,38 @@ export interface Narration {
   /** The narrative line to display. */
   text: string;
   /**
-   * Presentation lane for player-facing prose. Command-result prose stays
-   * `inline` (including legacy events where this field is absent); world
-   * ambience is retained in the scene/history but must not interrupt the
-   * command interaction transcript.
+   * Presentation lane for player-facing prose. `inline` is command
+   * transcript prose (including legacy events where this field is absent);
+   * `ambient` is scene-description prose retained in the scene/history but
+   * not allowed to interrupt the command interaction transcript.
    */
   presentation?: "inline" | "ambient";
+  /**
+   * Optional rich result card. `omikuji` is the shrine fortune draw;
+   * `gather` is the 採集 find + 说明文 pair (`@MESSAGE_COM445`, which prints
+   * the count-delta line in green via `SETCOLOR 0x00FF00` then the item's
+   * 地文 introduction after a `DRAWLINE`).
+   */
+  surface?: "omikuji" | "gather" | "diary" | "item-use" | "stall";
+  /**
+   * Structured COM406 page data. The fallback `text` remains printable in
+   * minimal/history views; the immersive client uses this payload to render
+   * the dedicated diary book without parsing decorated prose.
+   */
+  diary?: {
+    bookTitle: string;
+    pageId: string;
+    body: string;
+    kind: "dated" | "record" | "authored";
+    /** 0-based game day. Present only when the source actually records it. */
+    dayIndex?: number;
+    /** Stable display order for sources that have no trustworthy date. */
+    sequence?: number;
+    /** Authored DIARY slot, distinct from the source page number. */
+    authoredSlot?: number;
+    unread?: boolean;
+  };
+  tone?: "plain" | "auspicious" | "ominous" | "notice";
   /**
    * Optional attribution: which chara this narration is about (0 = master /
    * global). Set by the night-settlement producers (ABLUP level-ups, ONANISM,
@@ -164,6 +192,20 @@ export interface Narration {
    * per-character block. Absent ⇒ a global line (DAYEVENT / farm / clock).
    */
   charaNum?: number;
+  /** Presentation hint for authored world events that need a special image. */
+  portrait?: "onanism";
+  /**
+   * Marks a ComfDef migration-fallback narration (`def.narration`). When the
+   * command has an authored TRAIN_MESSAGE route that produced text, the
+   * resolver drops these so the upstream common prose is the only narration —
+   * mirroring the 411 precedent of retiring English placeholders once the
+   * authored text is wired.
+   * `train-message` identifies common command prose for selective L1 context;
+   * it does not change the display lane or the already-settled game result.
+   * `world-movement` keeps witnessed NPC arrivals/departures in AI fact context
+   * even when they use the ambient display lane.
+   */
+  origin?: "comf-fallback" | "counter" | "train-message" | "banquet" | "mark" | "world-movement";
 }
 
 /**
@@ -189,7 +231,19 @@ export interface DialogueLine {
   form?: string;
   /** Shell-only provenance marker. Authored lines omit it; AI text never
    *  changes state and remains distinguishable in UI/debug surfaces. */
-  origin?: "ai";
+  origin?: "ai" | "counter" | "mark";
+  /** Validated AI continuation. A bound selection may supply narrative evidence;
+   * it never enters the gameplay intent path or directly settles world effects. */
+  aiChoice?: {
+    /** The current story this optional response addresses; not an execution grant. */
+    storyArcId?: string;
+    options: Array<{
+      label: string;
+      lines: Array<{ text: string; form: "PRINTFORML" | "PRINTFORMDL" }>;
+    }>;
+  };
+  /** Presentation hint; the deterministic event remains the authority. */
+  portrait?: "onanism";
 }
 
 /** A committed presentation request from an authored ERB kojo path. It has no

@@ -8,6 +8,30 @@ import {
 import type { MobGirlCandidateProfile } from "../../../modernization/runtime/world/dynamic-characters.js";
 import MobPortrait from "./MobPortrait.js";
 
+/** 体力/気力 色条 — upstream `BASIC_STATE` renders both as BASE_BAR (緑/青). */
+function StatBar({
+  label,
+  value,
+  max,
+  tone,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  tone: "stamina" | "will";
+}) {
+  const fill = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  return (
+    <span className={`mob-girl-profile__stat mob-girl-profile__stat--${tone}`}>
+      <b>{label}</b>
+      <span className="mob-girl-profile__stat-track" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemax={Math.max(0, max)}>
+        <span className="mob-girl-profile__stat-fill" style={{ width: `${fill}%` }} />
+      </span>
+      <em>{value}/{max}</em>
+    </span>
+  );
+}
+
 export default function MobGirlCandidatePanel({
   profile,
   onLoadingChange,
@@ -122,8 +146,8 @@ export default function MobGirlCandidatePanel({
         <div className="mob-girl-profile__facts">
           <span><b>相遇地点</b>{profile.location}</span>
           <span><b>接触方式</b>{profile.encounterType}</span>
-          <span><b>体力</b>{profile.stamina.value}/{profile.stamina.max}</span>
-          <span><b>气力</b>{profile.will.value}/{profile.will.max}</span>
+          <StatBar label="体力" value={profile.stamina.value} max={profile.stamina.max} tone="stamina" />
+          <StatBar label="气力" value={profile.will.value} max={profile.will.max} tone="will" />
           <span><b>好感</b>{profile.favor}</span>
           <span><b>信赖</b>{profile.trust}</span>
           <span>

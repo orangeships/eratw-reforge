@@ -311,7 +311,7 @@ export function runOnanism(state: GameState, deps: OnanismDeps): ObservationEven
   // the top of every per-chara iteration below.
   let currentChara = 0;
   const nar = (text: string): void => {
-    events.push({ kind: "NARRATION", timestamp: now(), charaNum: currentChara, text });
+    events.push({ kind: "NARRATION", timestamp: now(), charaNum: currentChara, text, portrait: "onanism" });
   };
 
   const charaNums = Object.keys(state.charas)
@@ -351,6 +351,7 @@ export function runOnanism(state: GameState, deps: OnanismDeps): ObservationEven
               charaNum,
               text: line.text,
               form: line.form,
+              portrait: "onanism",
             });
           }
         }
@@ -417,6 +418,7 @@ export function runOnanism(state: GameState, deps: OnanismDeps): ObservationEven
             charaNum,
             text: line.text,
             form: line.form,
+            portrait: "onanism",
           });
         }
       }

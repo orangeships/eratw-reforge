@@ -104,7 +104,7 @@ export const comf132Def: ComfDef = {
   },
 
   narration: (_c, favorDelta) =>
-    `%CALLNAME:MASTER% — 対面座位される；好感度 ${
+    `%CALLNAME:TARGET%主导了与%CALLNAME:MASTER%的对面座位；好感度 ${
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };

@@ -21,25 +21,38 @@
 import type { CommandContext, CommandResult, ExecCheck, HandlerEntry } from "../types.js";
 import type { ObservationEvent } from "../../../schemas/types.js";
 import { cloneGameState, type CharaSlot, type GameState } from "../../state/game-state.js";
+import { publishHookFallback, selectNarrativeHook } from "../../story/dialogue-hook.js";
 import { removeItem } from "../../state/items.js";
 import {
   CFLAG_ID,
   TEQUIP_ID,
-  advanceTimeTicks,
+  applyCommandTimeCost,
   times,
 } from "../../state/settlement.js";
-import { applySourceCheck, settleSourcePalam } from "../source-check.js";
+import {
+  finalizeTrainingMarkAcquisitionChecks,
+  applyOneMinuteHCommandTimeCorrection,
+  applySourceCheck,
+  settleSourcePalam,
+} from "../source-check.js";
 import { stripBottom, stripTop } from "../../state/clothing-write.js";
 import { isEquipped, setEquipped } from "../../state/tequip.js";
 import { applyKojoEffects } from "../../kojo/effects.js";
 import { kojoHostEventsToObservationEvents } from "../command-kojo.js";
-import { setTflag, snapshotKojoSource } from "../../state/tflag.js";
+import { setTflag, snapshotKojoSource, TFLAG_ID } from "../../state/tflag.js";
 import { compileGate, mergedGateFor } from "./compile-gate.js";
+import { resolveCommandDisplayName } from "../display-name.js";
+import { requiresHMode } from "../h-mode.js";
+import {
+  checkHBaseResourceAvailability,
+  type HBaseResourceCheckResult,
+} from "../h-base-resources.js";
 import {
   MUL_POSITIVE,
   type ComfCtx,
   type ComfDef,
   type ComfOutcome,
+  type ComfOutcomeResolution,
 } from "./comf-def.js";
 
 /**
@@ -51,11 +64,20 @@ import {
  * helpers historically appended `好感度 ±N` for dev visibility; this removes
  * it at the emission boundary so individual defs need not change.
  */
-function stripSettlement(text: string): string {
-  return text
+export function stripSettlement(text: string, label: string): string {
+  const prose = text
     .replace(/\s*[；;]\s*好感度\s*[+-]?\d+\s*\.?\s*$/u, "")
     .replace(/\s*好感度\s*[+-]?\d+\s*\.?\s*$/u, "")
     .replace(/\s+$/u, "");
+  // Migration summaries append the internal ERB command label as a gloss.
+  // This is diagnostic metadata, not authored prose or a translation route.
+  const gloss = ` — ${label}`;
+  if (prose.endsWith(gloss)) return prose.slice(0, -gloss.length);
+  // Several migrated defs use a shortened internal gloss (for example the
+  // COM123 definition says 足コキする while its fallback ends in 足コキ). The
+  // separator appears only in these ComfDef summaries, never in authored
+  // TRAIN_MESSAGE text, so remove that trailing metadata here as well.
+  return prose.replace(/\s+—\s+[^—；;。.!?！？]+$/u, "");
 }
 
 /**
@@ -71,6 +93,7 @@ export function buildComfCtx(
   next: GameState,
   targetNum: number,
   outcome: ComfOutcome,
+  branch?: string,
 ): ComfCtx {
   const master = next.master;
   const hasTarget = targetNum > 0 && !!next.charas[targetNum];
@@ -83,6 +106,7 @@ export function buildComfCtx(
     t: t as CharaSlot,
     master,
     outcome,
+    ...(branch === undefined ? {} : { branch }),
     hasTarget,
     tAbl: (id) => t?.state.ABL[id] ?? 0,
     mAbl: (id) => master.state.ABL[id] ?? 0,
@@ -131,15 +155,64 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
   const requiresTarget = def.requiresTarget ?? true;
   // Merge the faithfully-extracted @COM_ABLE gate (generated from the ERBs)
   // under any gate the ComfDef declares explicitly (the def's fields win).
-  const baseExecCheck = compileGate(mergedGateFor(def.commandNo, def.gate), requiresTarget, def.label);
+  const baseExecCheck = def.gateOverride ??
+    compileGate(mergedGateFor(def.commandNo, def.gate), requiresTarget, def.label);
   // Slice B/C: an item-gated command (consume or require) gates on holding
   // ≥ qty of the item. 浴室PLAY 地垫门 (bathMatRequired) 同样组合.
   const needsItem = def.consumeItem?.id ?? def.requiresItem;
-  const needsGate = needsItem !== undefined || def.bathMatRequired;
+  const checksHBaseResources =
+    requiresHMode(def.commandNo) &&
+    (def.downbase !== undefined || def.targetDownbase !== undefined);
+  const needsGate = needsItem !== undefined || def.bathMatRequired || checksHBaseResources;
+
+  const checkHBaseResources = (ctx: CommandContext): HBaseResourceCheckResult => {
+    if (!requiresHMode(def.commandNo)) return { ok: true };
+
+    const target = ctx.target > 0 ? ctx.state.charas[ctx.target] : undefined;
+    if (requiresTarget && !target) return { ok: true };
+
+    const toggleOwner = requiresTarget
+      ? target
+      : ctx.state.master;
+    // An equipped toggle is a removal arm: makeComfHandler returns before
+    // DOWNBASE/body/SOURCE, so removal has no resource cost either.
+    if (def.toggleTequip !== undefined && toggleOwner && isEquipped(toggleOwner, def.toggleTequip)) {
+      return { ok: true };
+    }
+
+    const preview = buildComfCtx(ctx, ctx.state, ctx.target, 0);
+    const masterCosts = typeof def.downbase === "function"
+      ? def.downbase(preview)
+      : def.downbase ?? {};
+    const targetCosts = def.targetDownbase === undefined || !target
+      ? {}
+      : typeof def.targetDownbase === "function"
+        ? def.targetDownbase(preview)
+        : def.targetDownbase;
+
+    return checkHBaseResourceAvailability(ctx, {
+      master: masterCosts,
+      target: targetCosts,
+    });
+  };
+
   const execCheck: ExecCheck | undefined = needsGate
-    ? ((ctx: CommandContext) => {
+      ? ((ctx: CommandContext) => {
         const qty = def.consumeItem?.qty ?? 1;
-        if (needsItem !== undefined && (ctx.state.items?.[needsItem] ?? 0) < qty) {
+        const toggleOwner = requiresTarget
+          ? ctx.state.charas[ctx.target]
+          : ctx.state.master;
+        const isRemovingEquippedItem =
+          def.consumeItem === undefined &&
+          def.requiresItem !== undefined &&
+          def.toggleTequip !== undefined &&
+          toggleOwner !== undefined &&
+          isEquipped(toggleOwner, def.toggleTequip);
+        if (
+          needsItem !== undefined &&
+          (ctx.state.items?.[needsItem] ?? 0) < qty &&
+          !isRemovingEquippedItem
+        ) {
           return {
             ok: false as const,
             reason: { kind: "precondition" as const, message: `缺少道具（id ${needsItem}）。` },
@@ -155,12 +228,22 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
             };
           }
         }
-        return baseExecCheck ? baseExecCheck(ctx) : { ok: true as const };
+        const baseResult = baseExecCheck ? baseExecCheck(ctx) : { ok: true as const };
+        if (!baseResult.ok) return baseResult;
+        return checksHBaseResources ? checkHBaseResources(ctx) : { ok: true as const };
       }) as ExecCheck
     : baseExecCheck;
 
   return {
     commandNo: def.commandNo,
+    // Upstream renders each button through `@COM{n}_DISPLAY` — a per-state
+    // name (抜く（Ｖ）, 解除跳蛋, 结束接吻…). The shared resolver supplies it for
+    // every ComfDef, so a hand-written handler only needs its own displayCheck
+    // when it has no upstream `_DISPLAY` (none overlap).
+    displayCheck: (ctx: CommandContext) => {
+      const label = resolveCommandDisplayName(def.commandNo, ctx.state, ctx.target);
+      return label === undefined ? { shown: true } : { shown: true, labelOverride: label };
+    },
     ...(execCheck ? { execCheck } : {}),
     ...(def.canExecute ? { canExecute: def.canExecute } : {}),
     ...(def.hModeMenuCheck ? { hModeMenuCheck: def.hModeMenuCheck } : {}),
@@ -182,6 +265,21 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
         };
       }
 
+      const resourceResult = checkHBaseResources(ctx);
+      if (!resourceResult.ok) {
+        return {
+          state: ctx.state as never,
+          events: [{
+            kind: "STATUS_MESSAGE",
+            timestamp: ctx.now(),
+            source: "system",
+            text: resourceResult.reason.message,
+          }],
+          outcome: "blocked",
+          failReason: resourceResult.reason,
+        };
+      }
+
       let next = cloneGameState(ctx.state);
       const master = next.master;
 
@@ -197,7 +295,7 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
             setEquipped(targetSlot, def.toggleTequip, false);
             return {
               state: next,
-              events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "解除了装备。" }],
+              events: [{ kind: "NARRATION", timestamp: ctx.now(), text: def.toggleOffNarration ?? "解除了装备。" }],
               outcome: "noop",
             };
           }
@@ -206,10 +304,32 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
       }
 
       // 2. Outcome roll (通常 arm; GET_SUCCESS_RATE deferred → 0).
-      const roll = ctx.rng.int(maxRoll);
-      const outcome: ComfOutcome = roll < greatThreshold ? 1 : roll >= failThreshold ? -1 : 0;
-      setTflag(next, 193, outcome);
-      if (next.turnContext?.frame) next.turnContext.frame.outcome = outcome;
+      const selected = def.resolveOutcome?.(ctx, next);
+      const resolution: ComfOutcomeResolution | undefined =
+        typeof selected === "object" ? selected : undefined;
+      let outcome = resolution?.outcome ?? (typeof selected === "number" ? selected : undefined);
+      if (outcome === undefined) {
+        const roll = ctx.rng.int(maxRoll);
+        outcome = roll < greatThreshold ? 1 : roll >= failThreshold ? -1 : 0;
+      }
+      for (const [id, value] of Object.entries(resolution?.tflags ?? {})) {
+        setTflag(next, Number(id), value);
+      }
+      if (!resolution || resolution.outcomeFlag === undefined) {
+        setTflag(next, TFLAG_ID.SELECTCOM的分岐, outcome);
+      } else if (resolution.outcomeFlag !== null) {
+        setTflag(next, TFLAG_ID.SELECTCOM的分岐, resolution.outcomeFlag);
+      }
+      if (next.turnContext?.frame) {
+        if (!resolution || resolution.frameOutcome === undefined) {
+          next.turnContext.frame.outcome = outcome;
+        } else if (resolution.frameOutcome !== null) {
+          next.turnContext.frame.outcome = resolution.frameOutcome;
+        }
+      }
+      if (resolution?.returnEarly === "noop") {
+        return { state: next, events: [], outcome: "noop" };
+      }
 
       // A present, real target slot. For `requiresTarget` commands this
       // is always true (the precondition above guaranteed it). For
@@ -217,7 +337,9 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
       // family) it is false when the player acted alone — the SOURCE
       // settlement + dialogue are then skipped, but time/downbase/body
       // still run.
-      const c = buildComfCtx(ctx, next, ctx.target, outcome);
+      // Self SOURCE ownership is explicit. An incidental focused NPC must not
+      // redirect a master-only action into target settlement or personal kojo.
+      const c = buildComfCtx(ctx, next, def.settleSourcesOnMaster ? 0 : ctx.target, outcome, resolution?.branch);
       const hasTarget = c.hasTarget;
 
       // 3. SOURCE build, then 4-6: outcome / master-ability / TEQUIP scaling.
@@ -240,8 +362,14 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
       //    NARRATION the advance produces if it crosses midnight (R1, Phase
       //    8 两图收口) — a command run late at night narrates the wage/
       //    cleaning cashout the same way sleep does. Usually [].
-      const timeCost = typeof def.timeCost === "function" ? def.timeCost(c) : def.timeCost;
-      const dayEndEvents = advanceTimeTicks(next, timeCost);
+      const baseTimeCost = typeof def.timeCost === "function" ? def.timeCost(c) : def.timeCost;
+      const timeCost = applyOneMinuteHCommandTimeCorrection(
+        next,
+        def.commandNo,
+        ctx.target,
+        baseTimeCost,
+      );
+      const dayEndEvents = applyCommandTimeCost(next, timeCost);
 
       // 7b. DOWNBASE — master BASE drain (体力/気力 consumed by the action).
       //     Positive values = drain (match Emuera's DOWNBASE convention).
@@ -252,6 +380,20 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
         for (const [id, v] of Object.entries(downbase)) {
           const i = Number(id);
           master.state.BASE[i] = (master.state.BASE[i] ?? 0) - v;
+        }
+      }
+
+      // 7c. Target-side DOWNBASE uses the same declared cost that the H menu
+      //     and resolver preflight checked, avoiding a second body-local value.
+      const targetDownbase = def.targetDownbase === undefined
+        ? undefined
+        : typeof def.targetDownbase === "function"
+          ? def.targetDownbase(c)
+          : def.targetDownbase;
+      if (hasTarget && targetDownbase) {
+        for (const [id, value] of Object.entries(targetDownbase)) {
+          const i = Number(id);
+          c.t.state.BASE[i] = (c.t.state.BASE[i] ?? 0) - value;
         }
       }
 
@@ -281,20 +423,19 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
       let dialogueEvents: ObservationEvent[] = [];
       let kojoHostEvents: ObservationEvent[] = [];
       if (hasTarget) {
+        // Settle the master first so target ORGASM_ADD can observe the
+        // master's current-turn NOWEX for SYNCED_ORGASM.
+        if (masterSources) {
+          settleSourcePalam(next, master, master, masterSources);
+        }
+
         // Parity QA P-15 ③ — pass the TRUST_CALC seed when the command drives
         // 信頼度 (most omit → 0 → TRUST_CALC skipped, faithful).
         const trustSeed = def.trustSeed?.(c) ?? 0;
         const settled = applySourceCheck(next, ctx.target, sources, favorBias, trustSeed);
+        finalizeTrainingMarkAcquisitionChecks(next, ctx.target);
         favorDelta = settled.favorDelta;
         favorEvents = settled.events;
-
-        // 9b. Master's own SOURCE (`SOURCE:PLAYER:*`) for dual-participant
-        //     commands — settled into the master's PALAM without 好感度
-        //     (B1b). EraTW pre-scales the master's pleasure by the master's
-        //     own state; we settle it with the master as subject.
-        if (masterSources) {
-          settleSourcePalam(next, master, master, masterSources);
-        }
 
         // 10. Chara reaction lines (kojo, Phase 6). Suppressed when the
         //     def declares a `kojoGate` that the current context fails
@@ -303,12 +444,17 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
         //     nap must NOT surface the nap-together kojo upstream gates on
         //     the SOURCE path).
         const kojoAllowed = def.kojoGate ? def.kojoGate(c) : true;
+        const generatedHook = ctx.commandNo === 300 && kojoAllowed && ctx.narrativeHookGeneration
+          ? selectNarrativeHook(next, ctx.target, ctx.commandNo) : undefined;
+        const hookLines = !generatedHook && ctx.commandNo === 300 && kojoAllowed
+          ? publishHookFallback(next, ctx.target, ctx.commandNo, `command:${ctx.commandNo}:${ctx.target}:${next.time.tickValue}`)
+          : null;
         const kojoResolution =
-          ctx.dialogueRouter && kojoAllowed
+          ctx.dialogueRouter && kojoAllowed && !hookLines && !generatedHook
             ? ctx.dialogueRouter.collectDetailed?.(ctx.target, ctx.commandNo, next, ctx.rng)
             : undefined;
-        const kojoLines = kojoResolution?.lines ??
-          (ctx.dialogueRouter && kojoAllowed
+        const kojoLines = hookLines?.map((text, line) => ({ text, line, form: "PRINTL" as const })) ?? kojoResolution?.lines ??
+          (ctx.dialogueRouter && kojoAllowed && !generatedHook
             ? ctx.dialogueRouter.collect(ctx.target, ctx.commandNo, next, ctx.rng)
             : []);
         if (kojoResolution?.effects.length) {
@@ -322,14 +468,34 @@ export function makeComfHandler(def: ComfDef): HandlerEntry {
           form: l.form,
         }));
         kojoHostEvents = kojoHostEventsToObservationEvents(kojoResolution?.hostEvents, ctx.target, ctx.now);
+      } else if (def.settleSourcesOnMaster && Object.keys(sources).length > 0) {
+        // Self-pleasure commands have no NPC target, but they still traverse
+        // SOURCE_CHECK's converter/ORGASM/afterglow path on MASTER. Do not
+        // call applySourceCheck with target 0: chara 0 is the player slot,
+        // not an entry in `state.charas`, and it would also run target-only
+        // favor/reaction semantics.
+        settleSourcePalam(next, master, master, sources);
       }
+
+      const postSettlementNarration = def.afterSettlement?.(c);
 
       const events: ObservationEvent[] = [
         {
           kind: "NARRATION",
           timestamp: ctx.now(),
-          text: stripSettlement(def.narration(c, favorDelta)),
+          text: stripSettlement(def.narration(c, favorDelta), def.label),
+          // Migration-fallback marker: when the authored TRAIN_MESSAGE route
+          // produced prose this turn, `withTrainMessage` drops this line so
+          // the upstream common narration is not doubled.
+          origin: "comf-fallback",
         },
+        ...(postSettlementNarration
+          ? [{
+              kind: "NARRATION" as const,
+              timestamp: ctx.now(),
+              text: postSettlementNarration,
+            }]
+          : []),
         ...favorEvents.map((e) => ({ ...e, timestamp: ctx.now() })),
         ...dialogueEvents,
         ...kojoHostEvents,

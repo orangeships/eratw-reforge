@@ -342,7 +342,7 @@ export function finishPlayerSleep(
   dailyEvent?: { sleepSeed: number; answer?: PromptAnswer },
 ): SleepSettlementEvents {
   const session = state.sleepSession;
-  if (!session) return [];
+  if (!session) return createSleepSettlementEvents();
   // A DAILYEVENT prompt is a continuation boundary, not a partially-complete
   // settlement. Preserve the caller's state so direct runtime consumers have
   // the same transactional contract as the Zustand adapter.
@@ -369,6 +369,12 @@ export function finishPlayerSleep(
     weatherAtBedtime.gensokyoWeatherSystem[0] ??
     0;
   const oldTick = state.time.tickValue;
+  // Preserve who was actually in the sleeping room. Schedule projection can
+  // move unrelated characters into a newly selected home before おはよう;
+  // those overnight arrivals must not retroactively become wake witnesses.
+  const morningGreetingCandidates = Object.values(state.charas)
+    .filter((slot) => sameRoom(slot.location, state.master.location))
+    .map((slot) => slot.charaNum);
   // P1-#5 Slice E: snapshot the day index before `advanceClock` so the
   // post-midnight InitializeBeforeTrain can be gated on the day-tick.
   const oldDayIndex = state.time.dayIndex;
@@ -380,17 +386,28 @@ export function finishPlayerSleep(
   // Conception owns the pre-cleanup donor/EX snapshot. The modern morning
   // initializer clears day-scoped EX, so this must precede advanceClock and
   // runInitializeBeforeTrain even though its narration is displayed later.
-  const settlementDay = Math.floor((state.time.tickValue + sleepMinutes) / MINUTES_PER_DAY);
+  const settlementDay = Math.max(
+    state.time.dayIndex,
+    Math.floor((state.time.tickValue + sleepMinutes) / MINUTES_PER_DAY),
+  );
   const pregnancyEvents: ObservationEvent[] = rng && settlementDay > oldDayIndex
     ? runPregnancySettlement(state, { now, rng, settlementDay })
     : [];
   const { events: clockEvents } = advanceClock(state, sleepMinutes, now, { runDayEnd: true });
-  const scheduleEvents = reprojectSchedules(
+  // The player is unconscious during this fast-forward.  Keep the RNG wired
+  // so work runtimes, free actions, encounter moves and natural drift settle
+  // normally, but short-circuit player-visible EVENT kojo at the upstream
+  // `CAN_SEE` boundary. Morning owns the first visible greeting after wake.
+  reprojectSchedules(
     state,
     oldTick,
     state.time.tickValue,
     now,
-    router && rng ? { dialogueRouter: router, rng } : undefined,
+    {
+      ...(router ? { dialogueRouter: router } : {}),
+      ...(rng ? { rng } : {}),
+      observationMode: "unobserved",
+    },
   );
 
   // DAYEVENT (Slice 1) — night subevent fires AFTER day-end (which ran
@@ -440,6 +457,7 @@ export function finishPlayerSleep(
       sleepSeed: dailyEvent.sleepSeed,
       now,
       answer: dailyEvent.answer,
+      router,
     });
     dailyEventDiagnostics = resolved.diagnostics;
     if (resolved.pending) {
@@ -448,7 +466,7 @@ export function finishPlayerSleep(
         for (const key of Object.keys(mutableState)) delete mutableState[key];
         Object.assign(mutableState, rollbackSnapshot);
       }
-      const paused = [] as SleepSettlementEvents;
+      const paused = createSleepSettlementEvents();
       paused.pendingDailyEvent = resolved.pending;
       if (dailyEventDiagnostics.length > 0) paused.dailyEventDiagnostics = dailyEventDiagnostics;
       return paused;
@@ -555,7 +573,7 @@ export function finishPlayerSleep(
   // (AFTERTRA.ERB:267-273). The day-end monologue for every 面識 character,
   // tagged with charaNum so the night screen folds it into that character's
   // block as the leading `▼〜的呢喃` section. No-op without router/rng.
-  const tsubuyakiEvents: ObservationEvent[] = runTsubuyaki(state, { now, router, rng });
+  const tsubuyakiEvents: ObservationEvent[] = runTsubuyaki(state, { now, router, rng, settlementDayIndex: oldDayIndex });
 
   // CHARA_DIARY_AFTERTRAIN (AFTERTRA.ERB:650) — nightly diary render. The
   // modern runtime models the upstream per-chara loop: BEFORE_CHECK iterates
@@ -627,9 +645,7 @@ export function finishPlayerSleep(
   // day-cycle.ts. `runMorning` runs them in `MORNING_PHASES` order, each with
   // its own `needs` gate (router/rng), and returns the concatenated events in
   // exactly the pre-S1 order. Zero behavior change.
-  const morningEvents = runMorning(state, { now, router, rng });
-
-  const clockNarrations = clockEvents.filter((e) => e.kind === "NARRATION");
+  const morningEvents = runMorning(state, { now, router, rng, morningGreetingCandidates });
 
   // Night-settlement DISPLAY stream (实玩反馈 2026-07-04 重构). Flat order is
   // still the upstream `@EVENTEND` settlement order — DAYEVENT → 呢喃 →
@@ -641,11 +657,6 @@ export function finishPlayerSleep(
   // thing dropped from the display (the PALAM→JUEL convert still ran above; we
   // just don't print the deltas — only the resulting ABLUP level-ups show).
   const nightReportEvents: ObservationEvent[] = [
-    {
-      kind: "NARRATION",
-      timestamp: now(),
-      text: "一天结束了。",
-    },
     ...nightEvents,
     ...modularDailyEvents,
     ...yasaiEvents,
@@ -660,10 +671,22 @@ export function finishPlayerSleep(
     ...sourceAblupEvents,
     ...ablupEvents,
     ...fallEvents,
-    ...clockNarrations,
+    // Sleep still advances banquet state, but its offscreen program beats
+    // belong to the world clock, not the player's night settlement report.
+    ...clockEvents.filter((event) => event.kind !== "NARRATION" || event.origin !== "banquet"),
   ];
 
+  // Compatibility callers historically received this marker in the flat
+  // result.  The NightSettlementScreen already owns the same heading, so keep
+  // it out of `nightReportOnly` to avoid showing it twice.
+  const dayEndSummary: ObservationEvent = {
+    kind: "NARRATION",
+    timestamp: now(),
+    text: "一天结束了。",
+  };
+
   const nightSettlementEvents: ObservationEvent[] = [
+    dayEndSummary,
     ...nightReportEvents,
     ...recovery.events,
     ...soundly.events,
@@ -671,25 +694,41 @@ export function finishPlayerSleep(
   ];
 
   const allEvents = [
-    ...scheduleEvents,
     ...nightSettlementEvents,
   ];
   // Night-screen DISPLAY set: keep the 小剧场 (narrative + 呢喃 + fall-state
   // prose + day-end money) and the ABLUP level-up lines, but drop ONANISM's
   // per-grant numeric ledger (`自慰经验＋N` / `〜之珠 ＋N`) — 实玩反馈
   // 2026-07-04: only 升级行 should show for numeric changes. The full ledger
-  // stays in `allEvents` (eventLog / history); onanism's own output is
-  // unchanged (its tests still see the lines).
+  // stays in the dedicated night report; it is not copied into the next
+  // morning's persistent event log. Direct runtime callers still receive the
+  // compatibility `allEvents` array, while the structured categories below
+  // decide which UI/history surface owns each event.
   const nightDisplayEvents = nightReportEvents.filter(
     (e) => !(e.kind === "NARRATION" && isNumericLedgerLine(e.text)),
   );
+  const morningDialogue = morningEvents.filter((event) => event.kind === "DIALOGUE_LINE");
+  const persistentHistory = [
+    ...recovery.events,
+    ...soundly.events,
+    ...morningEvents.filter((event) => event.kind !== "DIALOGUE_LINE"),
+  ];
   // Night-report stream: the night screen renders the upstream-like settlement
   // stream, ending at RANK_POINT money before the UI enters SHOP. Wake recovery
-  // / morning pipeline events still return to the caller's eventLog, but are
-  // not printed on the night-settlement screen.
+  // / morning pipeline events are returned in separate structured categories;
+  // the store appends only `persistentHistory` and queues `morningDialogue`.
   state.nightReport = nightDisplayEvents;
-  const result = allEvents as SleepSettlementEvents;
+  const result = createSleepSettlementEvents(allEvents, {
+    nightReportOnly: nightDisplayEvents,
+    morningDialogue,
+    persistentHistory,
+  });
   if (dailyEventDiagnostics.length > 0) result.dailyEventDiagnostics = dailyEventDiagnostics;
+  // EVENT 31 and nightly frustration have consumed the previous day's
+  // encounter marker. The wake state starts a fresh day.
+  if (oldDayIndex !== state.time.dayIndex) {
+    for (const slot of Object.values(state.charas)) slot.state.TCVAR[TCVAR_ID.今天有否见面] = 0;
+  }
   return result;
 }
 
@@ -791,9 +830,26 @@ import { resolveEventKojoAndApply } from "../../kojo/effects.js";
 import { TFLAG_ID, getTflag, setTflag } from "../../state/tflag.js";
 
 export type SleepSettlementEvents = ObservationEvent[] & {
+  /** Events owned by the dedicated night-report surface only. */
+  nightReportOnly?: ObservationEvent[];
+  /** Morning dialogue that belongs in the owner-aware dialogue queue. */
+  morningDialogue?: ObservationEvent[];
+  /** Non-report history events safe to append to the persistent event log. */
+  persistentHistory?: ObservationEvent[];
   pendingDailyEvent?: DailyEventPending;
   dailyEventDiagnostics?: DailyEventDiagnostic[];
 };
+
+function createSleepSettlementEvents(
+  events: ObservationEvent[] = [],
+  categories: Partial<Pick<SleepSettlementEvents, "nightReportOnly" | "morningDialogue" | "persistentHistory">> = {},
+): SleepSettlementEvents {
+  const result = events as SleepSettlementEvents;
+  result.nightReportOnly = categories.nightReportOnly ?? [];
+  result.morningDialogue = categories.morningDialogue ?? [];
+  result.persistentHistory = categories.persistentHistory ?? [];
+  return result;
+}
 
 /**
  * Is this a per-grant numeric ledger line that the night SCREEN should hide

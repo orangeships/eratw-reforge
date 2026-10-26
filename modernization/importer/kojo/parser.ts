@@ -222,7 +222,7 @@ const PRINTBUTTON_RE = /^PRINTBUTTONC?\s+"(.*)"\s*,\s*"?([^",]*?)"?\s*$/;
 const INPUT_RE = /^(INPUTS?|\$INPUT[A-Z]*|INPUTSTR)\b/;
 const WAIT_RE = /^(WAIT|WAITANYKEY|FORCEWAIT)\b/;
 const SELECTCASE_RESULT_RE = /^SELECTCASE\s+RESULTS?\b/;
-const PRINTED_OPTION_RE = /^\s*(PRINT(?:FORM)?D?L)\s+\[([^\]]+)\]\s*[-－—:：]?\s*(.+)$/;
+const PRINTED_OPTION_RE = /^\s*(PRINT(?:FORM)?D?[LW])\s+\[([^\]]+)\]\s*[-－—:：]?\s*(.+)$/;
 const LABEL_RE = /^\$[^\s]+$/;
 /** First value of a `CASE "v"[, "w"…]` / `CASE v` line (choice matching). */
 const CASE_VALUE_RE = /^CASE\s+"?([^",]*?)"?\s*(?:,|$)/;
@@ -875,6 +875,7 @@ const KOJO_JOB_IDS: Readonly<Record<string, number>> = {
 function parseValue(raw: string, symbols: ScopedKojoSymbols): KojoValue | null {
   const value = normalizeColonWhitespace(stripOuterParens(raw));
   if (/^[+-]?\d+$/.test(value)) return { kind: "number", value: Number(value) };
+  if (/^[+-]?0x[\da-f]+$/i.test(value)) return { kind: "number", value: Number(value) };
   const jobId = KOJO_JOB_IDS[value];
   if (jobId !== undefined) return { kind: "number", value: jobId };
   const bitConstant = /^1p(\d+)$/i.exec(value);
@@ -3152,6 +3153,20 @@ export function parseFunc(
   let pendingBareInput = false;
 
   function flushPendingButtons(): void {
+    if (pendingBareInput && pendingButtons.length > 0) {
+      appendNode({
+        type: "choice",
+        line: pendingButtons[0]?.fallbackLine?.line ?? 0,
+        options: pendingButtons.map((button) => ({
+          label: button.label,
+          value: button.value,
+          body: newSeq(),
+        })),
+      });
+      pendingButtons = [];
+      pendingBareInput = false;
+      return;
+    }
     for (const button of pendingButtons) {
       if (button.fallbackLine) appendLine(button.fallbackLine);
     }
@@ -3241,9 +3256,25 @@ export function parseFunc(
     let m: RegExpExecArray | null;
 
     const declaration = /^#(DIMS?)\s+(?:(?:CONST|DYNAMIC|SAVEDATA|GLOBAL|LOCAL|REF)\s+)*([\p{L}_][\p{L}\p{N}_]*)/iu.exec(lineText.trim());
+    const scalarInitializer = /^#DIM\s+(?:(?:CONST|DYNAMIC|SAVEDATA|GLOBAL|LOCAL|REF)\s+)*[\p{L}_][\p{L}\p{N}_]*\s*=\s*(.+)$/iu.exec(lineText.trim());
     if (declaration?.[1]?.toUpperCase() === "DIMS") namedStringLocals.add(declaration[2]!);
     else if (declaration) namedLocals.add(declaration[2]!);
     if (COMPILE_TIME_DECLARATION_RE.test(lineText.trim())) {
+      // A scalar #DIM initializer is evaluated when the ERB function starts.
+      // Preserve numeric initializers in the per-call VM; dropping them made
+      // later predicates see an unbound local (for example K31's kojo version).
+      if (declaration?.[1]?.toUpperCase() === "DIM" && scalarInitializer?.[1]) {
+        const initialValue = parseValue(scalarInitializer[1], symbols);
+        if (initialValue) {
+          currentSink()?.children.push({
+            type: "local-set",
+            target: { kind: "named", name: declaration[2]! },
+            op: "set",
+            value: initialValue,
+            line: lineNo,
+          });
+        }
+      }
       continue;
     }
 
@@ -3256,6 +3287,8 @@ export function parseFunc(
     ) {
       const text = earlyPrint[2]!.trim();
       if (text.length > 0) {
+        if (pendingButtons.length > 0) flushPendingButtons();
+        else if (pendingBareInput) pendingBareInput = false;
         appendLine(buildKojoLine(earlyPrint[1] as ParsedKojoPrintForm, text, lineNo, ctx, opts));
       }
       continue;
@@ -3407,7 +3440,7 @@ export function parseFunc(
       pendingButtons.push({
         label: printedOption[3]!.trim(),
         value: printedOption[2]!.trim(),
-        fallbackLine: buildKojoLine(printedOption[1] as KojoLine["form"], lineText.replace(/^PRINT(?:FORM)?D?L\s+/, "").trim(), lineNo, ctx, opts),
+        fallbackLine: buildKojoLine(printedOption[1] as KojoLine["form"], lineText.replace(/^PRINT(?:FORM)?D?[LW]\s+/, "").trim(), lineNo, ctx, opts),
       });
       continue;
     }
@@ -3417,7 +3450,6 @@ export function parseFunc(
       continue;
     }
     if (INPUT_RE.test(lineText)) {
-      if (pendingButtons.length > 0) continue;
       pendingBareInput = true;
       continue;
     }

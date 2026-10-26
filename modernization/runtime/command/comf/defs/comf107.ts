@@ -84,8 +84,15 @@ export const comf107Def: ComfDef = {
 
   hModeMenuCheck: com107Check,
 
-  // Target drain lives in body (factory downbase is master-only).
+  // ERB 84-85: target drain is shared with the resource preflight.
   downbase: {},
+  targetDownbase: (c) => {
+    const mul = kinbakuDrainMul(c.t.state.EXP[EXP_ID.緊縛経験] ?? 0);
+    return {
+      [BASE_ID.体力]: times(10, mul),
+      [BASE_ID.気力]: times(80, mul),
+    };
+  },
 
   buildSources: (_c) => {
     // ERB 87-90: 苦痛 60, 恐怖 180, 屈従 100, 反感 350.
@@ -99,11 +106,6 @@ export const comf107Def: ComfDef = {
   },
 
   body: (c) => {
-    // ERB 84-85: target 体力 10 / 気力 80 drain, scaled by 緊縛経験 (ERB 95-104).
-    const mul = kinbakuDrainMul(c.t.state.EXP[EXP_ID.緊縛経験] ?? 0);
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - times(10, mul);
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - times(80, mul);
-
     // ERB 108: 緊縛経験 (target) += 1.
     c.t.state.EXP[EXP_ID.緊縛経験] = (c.t.state.EXP[EXP_ID.緊縛経験] ?? 0) + 1;
   },

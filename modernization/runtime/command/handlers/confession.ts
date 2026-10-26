@@ -44,23 +44,16 @@ import {
 import { getTflag, TFLAG_ID } from "../../state/tflag.js";
 import { presentNpcs } from "../../scene/presence.js";
 import { computeConsentJudgement, computeShinchitsu } from "../../state/attitude.js";
+import { canMakeLover } from "../../state/lover.js";
 import { askYn, requireYesNo } from "../prompt.js";
+
+/** CAN_MAKE_恋人 (DATE_CMN.ERB:294-302): 恋人 slot limit vs current count.
+ *  Lives in `state/lover.ts` so the date settlement can share it; re-exported
+ *  here because this module is the command-side entry point. */
+export { canMakeLover };
 
 /** `CFLAG:既成事實` bit 2 = 恋人 (kojo-symbols 合意_恋人: 4). */
 const LOVER_BIT = 1 << 2;
-
-/** CAN_MAKE_恋人 (DATE_CMN.ERB:294-302): 恋人 slot limit vs current count. */
-export function canMakeLover(state: CommandContext["state"]): boolean {
-  // 左拥右抱 (polyamory talent on MASTER) bypasses the limit.
-  if ((state.master.state.TALENT[TALENT_ID.左拥右抱] ?? 0) !== 0) return true;
-  const extra = state.flagStore[FLAG_ID.追加恋人枠] ?? 0;
-  const limit = 1 + extra;
-  let count = 0;
-  for (const slot of Object.values(state.charas)) {
-    if ((slot.state.TALENT[TALENT_ID.恋人] ?? 0) !== 0) count++;
-  }
-  return count < limit;
-}
 
 function check352(
   state: CommandContext["state"],

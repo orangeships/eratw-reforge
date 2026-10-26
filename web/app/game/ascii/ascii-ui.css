@@ -1,0 +1,491 @@
+/* Player presentation. Rules, authoring tools and saved state keep their owners. */
+@font-face {
+  font-family: EraHalf;
+  src: local("MS Gothic"), local("MS-Gothic"), local("ＭＳ ゴシック");
+  unicode-range: U+0020-005B, U+005D-007E;
+}
+:is(.ascii-ui, body:has(.ascii-ui)) {
+  --era-mono: EraHalf, SimHei, "MS Gothic", "Sarasa Mono SC", monospace;
+  --era-fs: 16px;
+  --era-bg: #000;
+  --era-panel: #000;
+  --era-panel-raised: #000;
+  --era-line: #3a3a3a;
+  --era-line-soft: #222;
+  --era-text: #c8c8c8;
+  --era-muted: #858585;
+  --era-green: #87d787;
+  --era-cyan: #5fd7ff;
+  --era-blue: #8787ff;
+  --era-gold: #ffd75f;
+  color: var(--era-text);
+  background: #000;
+  font: 16px/1.35 var(--era-mono);
+  scrollbar-color: #444 #000;
+  scrollbar-width: thin;
+}
+.ascii-ui *, .ascii-ui *::before, .ascii-ui *::after { box-sizing: border-box; }
+.ascii-ui :is(button, input, select, textarea) { font-family: var(--era-mono); border-radius: 0; }
+.ascii-ui button { color: inherit; background: transparent; box-shadow: none; font-weight: 400; }
+.ascii-ui button:not(:disabled):hover { color: #fff; background: transparent; box-shadow: none; }
+.ascii-ui button:focus-visible { outline: 1px dashed var(--era-cyan); outline-offset: 2px; }
+.ascii-ui button:disabled { color: #616161; cursor: default; }
+.ascii-ui :is(input, select, textarea) { color: #fff; background: #060606; border: 1px solid #555; }
+.ascii-ui h1, .ascii-ui h2, .ascii-ui h3 { font-family: var(--era-mono); font-weight: 400; letter-spacing: 0; }
+.ascii-ui .app-header { margin-bottom: 10px; padding: 0 1ch; border-bottom: 1px dashed #333; }
+.ascii-ui .app-header h1 { margin: 0; font-size: 16px; color: var(--era-cyan); }
+.ascii-ui .status-pill { border: 0; border-radius: 0; background: #000; }
+
+/* A bounded middle row keeps every command reachable at short window heights. */
+.ascii-ui .game-client.game-client--immersive {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
+  height: 100dvh;
+  min-height: 0;
+  gap: 4px;
+  padding: 2px 1ch 6px;
+  background: #000;
+  font: inherit;
+  overflow: hidden;
+}
+.ascii-ui .game-client__top { padding: 0; }
+.ascii-ui .game-client__top .status-bar {
+  padding: 0 0 4px;
+  border: 0;
+  border-bottom: 1px dashed #3a3a3a;
+  background: #000;
+  border-radius: 0;
+  box-shadow: none;
+  font: inherit;
+}
+.ascii-ui .status-bar__line { gap: 1ch; font-size: 1em; }
+.ascii-ui .status-bar__money { color: var(--era-gold); margin-left: auto; }
+.ascii-ui .status-bar__time { color: #fff; }
+.ascii-ui .status-bar__rule { color: #333; margin: 0; }
+.ascii-ui .status-bar__tsp-row { margin: 2px 0; }
+.ascii-ui .status-bar__timestop { font: inherit; border: 0; padding: 0 1ch; background: #000; }
+.ascii-ui .game-client--immersive .game-client__middle {
+  display: grid;
+  grid-template-columns: clamp(30ch, 26%, 46ch) minmax(0, 1fr) clamp(32ch, 30%, 58ch);
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  gap: 2ch;
+  overflow: hidden;
+}
+.ascii-ui .game-client--immersive .game-client__scene-slot { min-width: 0; min-height: 0; border: 0; background: #000; }
+.ascii-ui :is(.text-game-info, .text-game-right, .text-game-ambient, .text-game-history-panel) {
+  min-height: 0;
+  min-width: 0;
+  border: 0;
+  background: #000;
+  border-radius: 0;
+  font: inherit;
+}
+.ascii-ui .text-game-info { padding: 0; overflow-y: auto; scrollbar-gutter: auto; }
+.ascii-ui .text-game-info__section { padding: 0 0 6px; border: 0; }
+.ascii-ui :is(.text-game-info__heading, .text-game-panel__heading) {
+  display: flex;
+  align-items: center;
+  gap: 1ch;
+  margin: 0 0 3px;
+  overflow: hidden;
+  color: var(--era-cyan);
+  font: inherit;
+  white-space: nowrap;
+}
+.ascii-ui :is(.text-game-info__heading, .text-game-panel__heading)::after {
+  content: "--------------------------------------------------------------------------------";
+  color: #3a3a3a;
+  overflow: hidden;
+  flex: 1;
+}
+.ascii-ui .text-game-info :is(.status-bar__workline, .status-bar__bars, .status-bar__relation, .status-bar__hbody, .status-bar__situation) { gap: 1px; font-size: 1em; line-height: 1.3; }
+.ascii-ui .text-game-info :is(.status-bar__who, .status-bar__work-target) { font-size: 1em; color: var(--era-gold); }
+.ascii-ui .text-game-info .bar { display: grid; grid-template-columns: 4ch max-content minmax(0, 1fr); gap: 1ch; align-items: baseline; }
+.ascii-ui .bar__ascii { display: inline; white-space: pre; }
+.bar__ascii { display: none; }
+.ascii-ui .bar__track { display: inline-block; height: auto; width: auto; background: none; border: 0; border-radius: 0; overflow: visible; line-height: inherit; }
+.ascii-ui .bar__fill { display: none; }
+.ascii-ui .bar--red .bar__ascii { color: #87d787; }
+.ascii-ui .bar--green .bar__ascii { color: #8787ff; }
+.ascii-ui .bar--cyan .bar__ascii { color: #5fd7ff; }
+.ascii-ui .bar--yellow .bar__ascii { color: #ffd75f; }
+.ascii-ui .bar--purple .bar__ascii { color: #af87ff; }
+.ascii-ui .text-game-info .bar__num { font-size: 1em; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ascii-ui .text-game-info .status-bar__relation { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); column-gap: 3ch; row-gap: 0; }
+.ascii-ui .text-game-info .status-bar__relation .status-bar__who { grid-column: 1 / -1; }
+.ascii-ui .status-bar__rel { white-space: nowrap; }
+.ascii-ui .text-game-info .status-bar__rel--fury { grid-column: 1 / -1; }
+.ascii-ui .text-game-info .status-bar__palam-head { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 1ch; }
+.ascii-ui :is(.status-bar__ability-btn, .text-game-info__action) { width: auto; padding: 0 1ch; border: 0; color: #aaa; background: #000; }
+.ascii-ui .text-game-info .status-bar__palam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(24ch, 1fr)); gap: 0 2ch; }
+.ascii-ui .text-game-info .status-bar__palam-item { display: grid; grid-template-columns: 6ch 2ch max-content minmax(0, 1fr); gap: .5ch; align-items: baseline; min-width: 0; }
+.ascii-ui .text-game-info :is(.status-bar__palam-label, .status-bar__palam-level, .status-bar__palam-value) { font-size: 1em; white-space: nowrap; overflow: hidden; }
+.ascii-ui .text-game-info .status-bar__palam-label { color: #9a9a9a; }
+.ascii-ui .text-game-info .status-bar__palam-level { color: var(--era-gold); text-align: right; }
+.ascii-ui .text-game-info .status-bar__palam-track { display: inline; height: auto; background: none; border: 0; border-radius: 0; overflow: visible; color: #af87ff; }
+.ascii-ui .text-game-info .status-bar__palam-fill { display: none; }
+.ascii-ui .text-game-info :is(.status-bar__sleepiness, .status-bar__alcohol-state, .status-bar__fortune, .text-game-info__target-status) { margin: 3px 0 0; padding: 0; border: 0; background: none; font-size: 1em; }
+.ascii-ui .text-game-right { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: .5em; font-size: 1em; }
+.ascii-ui :is(.text-game-ambient, .text-game-history-panel) { display: flex; flex-direction: column; overflow: hidden; }
+.ascii-ui .text-game-ambient__lines, .ascii-ui .text-game-history { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-gutter: auto; }
+.ascii-ui .text-game-ambient__scene-events { max-height: 45%; flex: 0 1 auto; border-bottom: 1px dashed #3a3a3a; }
+.ascii-ui .text-game-ambient__scene-context { border-bottom: 1px dashed #3a3a3a; font: inherit; padding: 0 0 4px; }
+.ascii-ui .text-game-ambient__place { font-weight: 400; letter-spacing: 0; }
+.ascii-ui .text-game-ambient__streaming { color: var(--era-gold); font-size: 1em; }
+.ascii-ui :is(.text-game-ambient, .text-game-history-panel) { padding: 4px 0 0; }
+.ascii-ui :is(.text-game-ambient__line, .text-game-ambient__scene-event, .text-game-history .scene-view__line) { font: inherit; line-height: 1.45; margin: 0 0 .35em; }
+.ascii-ui :is(.text-game-ambient__scene-events, .text-game-ambient__scene-context) { padding: 0; border: 0; background: none; }
+.ascii-ui .scene-view__line--NARRATION { color: #b0b0b0; }
+.ascii-ui .scene-view__line--COMMAND_ISSUED { color: #808080; }
+
+/* Scene glyphs decode in; portraits retain their resource crops and colors. */
+.ascii-ui .scene-view--ascii-shell { position: relative; isolation: isolate; height: 100%; overflow: hidden; background: #000; border: 0; }
+.ascii-ui .scene-view--ascii-shell .scene-view__header {
+  flex: 0 0 auto;
+  z-index: 2;
+  position: relative;
+  padding: 4px 1ch;
+  background: transparent;
+}
+.ascii-ui .scene-view--ascii-shell .scene-view__place { font: inherit; letter-spacing: 0; margin: 0 0 .5em; color: #fff; }
+.ascii-ui .scene-view--ascii-shell .scene-view__place::before { content: "-- "; color: #666; }
+.ascii-ui .scene-view--ascii-shell .scene-view__place::after { content: " --"; color: #666; }
+.ascii-ui .scene-view--ascii-shell :is(.scene-view__intro, .scene-view__ambient) { font: inherit; font-size: .9em; color: #aaa; }
+.ascii-ui .scene-view--ascii-shell .scene-view__stage { position: relative; inset: auto; min-height: 0; flex: 1 1 0; z-index: 1; padding: 0 0 1em; }
+.ascii-ui .scene-view--ascii-shell .scene-view__roster { margin: 0 0 auto; padding: 0 1ch; background: transparent; }
+.ascii-ui .scene-view--ascii-shell .scene-view__portraits { min-height: 0; flex: 1; align-items: flex-end; justify-content: safe center; width: 100%; padding: 0; gap: 1ch; overflow-x: auto; }
+.ascii-ui .scene-view--ascii-shell .scene-view__portrait { flex: 0 0 auto; max-width: none; min-width: 0; padding: 0; margin: 0; border: 0; background: transparent; box-shadow: none; border-radius: 0; animation: ascii-materialize 180ms steps(6) both; }
+.ascii-ui .scene-view--ascii-shell .scene-view__portrait:hover { background: transparent; }
+.ascii-ui .scene-view--ascii-shell .scene-view__portrait-img { filter: none; width: auto; height: auto; background: transparent; }
+.ascii-ui .scene-view__portrait-name { display: inline-block; margin: 3px auto 0; padding: 0 .7ch; border: 0; border-radius: 0; background: #000; color: #c8c8c8; font: inherit; }
+.ascii-ui .scene-view__portrait--selected .scene-view__portrait-name { background: var(--era-gold); color: #000; }
+.ascii-ui .scene-view__roster-name { border: 0; border-radius: 0; font: inherit; background: #000; padding: 0 .5ch; }
+.ascii-ui .scene-view__roster-name::before { content: "["; }
+.ascii-ui .scene-view__roster-name::after { content: "]"; }
+.ascii-backdrop { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; font: 16px/18px EraHalf, Consolas, monospace; }
+.ascii-backdrop__artwork { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ascii-scene-motion { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.scene-view__weather-preview { display: inline-flex; align-items: center; margin-left: 1ch; font: inherit; color: #999; }
+.scene-view__weather-preview select { max-width: 12ch; padding: 0; font: inherit; color: #c8c8c8; background: #000; border: 0; }
+.ascii-tone-0 { color: #191919; } .ascii-tone-1 { color: #282828; }
+.ascii-tone-2 { color: #393939; } .ascii-tone-3 { color: #4b4b4b; }
+.ascii-tone-4 { color: #606060; } .ascii-tone-5 { color: #485868; }
+.ascii-backdrop--stopped { filter: sepia(.7) hue-rotate(160deg) saturate(1.5); }
+
+/* Commands stay native buttons; numbers are visual labels from the existing ID. */
+.ascii-ui .game-client--immersive :is(.game-client__bottom, .excom-row) { margin: 0; padding: 3px 0; border: 0; border-top: 1px dashed #3a3a3a; background: #000; max-height: min(22dvh, 180px); overflow: auto; }
+.ascii-ui .command-grid { padding: 0; gap: 4px; background: #000; border: 0; }
+.ascii-ui .command-grid__group { display: flex; flex-wrap: wrap; gap: 2px 1ch; align-items: baseline; margin: 0; padding: 0; border: 0; }
+.ascii-ui .command-grid__label { color: #808080; font: inherit; flex-basis: 100%; padding: 0; }
+.ascii-ui .command-grid__btn { min-height: 24px; min-width: 0; padding: 1px .5ch; border: 0; font: inherit; text-align: left; white-space: normal; flex: 0 0 19ch; background: #000; box-shadow: none; }
+.ascii-ui .command-grid__btn[data-command-no]::before { content: "[" attr(data-command-no) "] "; color: #858585; }
+.ascii-ui .command-grid__btn--narrative-opening::before { content: "> "; }
+.ascii-ui .command-grid__btn--highlighted { color: var(--era-gold); background: #000; }
+.ascii-ui .command-grid__btn--narrative-opening { color: #ffe57a; }
+.ascii-ui :is(.command-filter-row, .excom-row__tools) { gap: 1ch; padding: 0; font: inherit; }
+.ascii-ui :is(.command-filter-row__btn, .excom-row__btn, .excom-row__collapse, .h-exit-controls__button) { min-height: 24px; padding: 0 .6ch; font: inherit; border: 0; background: #000; box-shadow: none; }
+.ascii-ui .command-filter-row__btn { text-decoration: none; }
+.ascii-ui .command-filter-row__btn--off { color: #616161; text-decoration: line-through; }
+.ascii-ui .game-client__footer { min-height: 20px; padding: 0; color: #858585; background: #000; border: 0; font: inherit; }
+.ascii-ui .game-client__prev { font: inherit; }
+
+/* ===== One text size across the whole console =====
+ * styles.css sizes nearly every console element as `calc(var(--era-fs) - Npx)`
+ * and a few rules step down again with .9em / .85em / .75em. Those steps were
+ * tuned for the 17px era console; under this skin the base is 16px, so the
+ * survivors render at 12–15.2px and the left info panel, the right ambient
+ * panel and the command row below read as three different sizes.
+ *
+ * Every text surface of the main view and the H session now inherits the single
+ * 16px base on every breakpoint. Only deliberately decorative text stays smaller:
+ * the command-line hint, the 上回指令 footer and the empty-command placeholder.
+ * Rules sit after the ones above on purpose — same specificity, later wins. */
+.ascii-ui :is(
+  .text-game-info,
+  .text-game-right,
+  .scene-view--ascii-shell :is(.scene-view__intro, .scene-view__ambient)
+) { font-size: 1em; }
+.ascii-ui :is(
+  .text-game-info :is(.status-bar__palam, .status-bar__ability-btn),
+  .command-grid__empty,
+  .command-filter-row__label
+) { font-size: 1em; }
+/* The H session keeps its own left/center/right/command split; its side panels
+ * inherited the era offsets from styles.css / h-session.css and so ran smaller
+ * than the narrative next to them. */
+.ascii-ui .h-session-view :is(
+  .status-bar__h-session,
+  .status-bar__hbody,
+  .status-bar__palam,
+  .status-bar__ability-btn
+) { font-size: 1em; }
+.ascii-ui :is(.h-training-stats, .h-session-view__character-caption span, .h-session-view__eyebrow, .h-exit-controls__label) { font-size: 1em; }
+/* H session, continued: the transcript lines, the 好感 row and the bar readout
+ * sit outside the status-bar hooks above, so they still carried `-1px` / `-2px`
+ * / `-4px`. One size, no breakpoint — the readout is a value, not chrome. */
+.ascii-ui .h-session-view__narrative :is(p, .scene-view__line) { font-size: 1em; }
+.ascii-ui .h-training-stats :is(.status-bar__bars, .status-bar__relation, .status-bar__who, .bar__num) { font-size: 1em; }
+
+/* Opening, menus, save slots, maps and dialogs share the terminal palette. */
+.ascii-ui .pre-screen { font: inherit; padding: 24px 3ch; }
+.ascii-ui .pre-screen--title { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100dvh - 50px); }
+.ascii-title { color: var(--era-gold); font: clamp(9px, 1.4vw, 18px)/1.15 EraHalf, Consolas, monospace; white-space: pre; margin: 0 0 2em; max-width: 100%; animation: ascii-materialize 900ms steps(18) both; }
+.ascii-ui .pre-screen__menu--title { display: flex; flex-direction: column; width: min(100%, 440px); border-block: 1px dashed #686868; padding: 1.2em 2ch; gap: .5em; }
+.ascii-ui .pre-screen__menu--title button { font: inherit; padding: .4em 2ch; text-align: left; border: 0; width: 100%; }
+.ascii-ui :is(.pre-screen__menu button, .pre-screen__load-panel, .pre-screen__choice, .morning-menu__choice, .morning-menu__panel, .night-settlement, .newgame-initialization, .minimal-newgame) { border-radius: 0; background: #000; color: var(--era-text); box-shadow: none; font-family: var(--era-mono); }
+.ascii-ui .pre-screen__dev { margin-top: 1.5em; font: inherit; font-size: .85em; color: #858585; }
+.ascii-ui :is(.morning-menu, .night-settlement, .newgame-initialization) { background: #000; font-family: var(--era-mono); }
+.ascii-ui :is(.morning-menu__panel, .pre-screen__load-panel) { border: 1px dashed #555; }
+/* H retains its session surface and all choices, with the same visual language. */
+.ascii-ui .game-client.game-client--h-session { display: flex; min-height: 0; background: #000; }
+.ascii-ui .game-client--h-session > .game-client__middle { display: none; }
+.ascii-ui .h-session-view { background: #000; color: var(--era-text); padding: 4px 0; gap: 6px; font: inherit; }
+.ascii-ui .h-session-view__stage { grid-template-columns: minmax(180px, 24%) minmax(0, 1fr) minmax(210px, 26%); gap: 2ch; }
+.ascii-ui :is(.h-session-view__character, .h-session-view__narrative, .h-session-view__status, .h-session-view__commands) { background: #000; border: 0; }
+.ascii-ui .h-session-view__narrative { padding: 1ch; border-block: 1px dashed #444; line-height: 1.55; }
+.ascii-ui .h-session-view__character-caption { background: #000; }
+.ascii-ui .h-session-view__character-caption strong { color: var(--era-gold); font-weight: 400; }
+.ascii-ui .h-training-stats h3 { color: var(--era-cyan); border-bottom: 1px dashed #444; padding-bottom: 4px; }
+.ascii-ui .h-session-view__commands { border-top: 1px dashed #444; padding: 4px 0; max-height: 28dvh; overflow: auto; }
+.ascii-ui .h-session-view__choices button { background: #000; color: var(--era-cyan); border: 1px dashed #555; border-radius: 0; font: inherit; }
+.ascii-ui .h-session-view__settings { background: #000; border: 0; border-radius: 0; font: inherit; }
+.ascii-ui .h-session-view__portrait { animation: ascii-materialize 180ms steps(6) both; }
+.ascii-ui .h-session-view :is(.h-session-view__eyebrow, .command-filter-row__label) { color: var(--era-muted); }
+.ascii-ui .h-session-view .status-bar__palam-track { background: #090909; border-color: #333; }
+.ascii-ui .h-session-view .status-bar__palam-fill { background: #486878; }
+.ascii-ui .h-session-view .command-grid__empty { color: var(--era-muted); }
+
+.ascii-ui :is(.pre-screen__field, .pre-card, .residence-info, .residence-mappreview, .kojo-select__row, .colored-map, .world-map, .morning-menu__group, .ai-settings, .ai-settings__section, .ci-panel__pagebody, .ci-panel__tabs, .ci-panel__head, .commission-popup__header, .commission-popup__body, .night-settlement__panel) {
+  background: #000; border-radius: 0; box-shadow: none; font-family: var(--era-mono); border-color: #444;
+}
+.ascii-ui :is(.residence-info__introline, .pre-card__meta, .morning-menu__topline, .morning-menu__statline, .morning-menu__choice) { font-family: var(--era-mono); font-style: normal; }
+.ascii-ui :is(.residence-tabs, .ai-settings__tabs) { display: flex; flex-wrap: wrap; gap: .5ch; }
+.ascii-ui .residence-tab { flex: 0 0 auto; white-space: nowrap; padding: .4em 1ch; border: 0; }
+.ascii-ui :is(.pre-card--active, .residence-tab--active, .pre-screen button.is-active, .ci-panel__tab--active, .ai-settings__tabs .is-active) { color: var(--era-gold); border-color: var(--era-gold); background: #000; }
+.ascii-ui :is(.colored-map__header, .world-map__header) { background: #000; border-bottom: 1px dashed #555; font-family: var(--era-mono); }
+.ascii-ui .colored-map__roombtn { border: 0; border-radius: 0; font-family: var(--era-mono); }
+.ascii-ui .kojo-debug__launch { right: 6px; bottom: 44px; border: 0; padding: 0 4px; background: #000; color: #666; box-shadow: none; }
+
+.ascii-portrait-mask { position: absolute; inset: 0 0 24px; margin: 0; overflow: hidden; pointer-events: none; background: #000; font: 8px/8px Consolas, monospace; animation: ascii-mask-out 180ms steps(6) forwards; }
+.ascii-command-line { display: flex; align-items: center; justify-content: flex-end; gap: 1ch; order: 4; min-width: 0; color: #aaa; font: inherit; }
+.ascii-command-line__hint { margin-right: auto; font-size: .85em; color: #858585; }
+.ascii-command-line label { display: flex; align-items: center; }
+.ascii-ui .ascii-command-line input { width: 6ch; height: 1.4em; padding: 0; border: 0; border-bottom: 1px solid #555; background: #000; font: inherit; }
+.ascii-ui .ascii-command-line button { padding: 0 .5ch; font: inherit; border: 0; }
+.ascii-cursor { color: var(--era-cyan); animation: ascii-blink 1s steps(1) infinite; }
+.ascii-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Dialogs. Some portal to <body>, so the scope is "the page shows the ASCII UI". */
+body:has(.ascii-ui) :is(.interaction-box__scrim, .ci-panel__scrim, .commission-popup-scrim, .ai-settings__scrim, .excom-panel__scrim, .diary-book__scrim, .tackle-shop__scrim, .kojo-debug__backdrop, .morning-menu__modal-scrim, .outing-event-layer) {
+  background: rgba(0, 0, 0, .86);
+  backdrop-filter: none;
+}
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) {
+  color: var(--era-text);
+  background: #000;
+  border: 1px dashed #6c6c6c;
+  border-radius: 0;
+  box-shadow: 0 0 0 1ch #000;
+  backdrop-filter: none;
+  font: 16px/1.4 var(--era-mono);
+  letter-spacing: 0;
+  animation: ascii-panel-in 220ms steps(6) both;
+}
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) :not(img, canvas, svg, [class*="fill"], [class*="__dot"], .ci-panel__title-role, .diary-book__index-entry i, .outing-event-dialog__motion i) {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  border-radius: 0;
+  border-color: #3a3a3a;
+  text-shadow: none;
+  font-family: var(--era-mono);
+  letter-spacing: 0;
+}
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) :is(h1, h2, h3, h4, strong, b) { font-weight: 400; }
+body:has(.ascii-ui) :is(.ci-panel__head, .ai-settings__head, .excom-panel__head, .commission-popup__header, .diary-book__header, .kojo-debug__head, .morning-menu__modal-head, .tackle-shop > header, .interaction-box__speaker, .prompt-menu__question, .event-choice-panel__question) {
+  color: var(--era-cyan);
+  border: 0;
+  border-bottom: 1px dashed #3a3a3a;
+  font-weight: 400;
+}
+body:has(.ascii-ui) :is(.ci-panel__title, .excom-panel__title, .commission-popup__title, .ai-settings__head > span:first-child, .morning-menu__modal-head > span:first-child, .interaction-box__speaker)::before { content: "┌ "; color: #6c6c6c; }
+body:has(.ascii-ui) :is(.ci-panel__title, .excom-panel__title, .commission-popup__title, .ai-settings__head > span:first-child, .morning-menu__modal-head > span:first-child, .interaction-box__speaker)::after { content: " ┐"; color: #6c6c6c; }
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) :is(button, [role="button"]) {
+  color: var(--era-text);
+  border: 0;
+  font: inherit;
+  transition: none;
+}
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) :is(button, [role="button"]):not(:disabled):hover {
+  color: #fff;
+  background: transparent;
+  box-shadow: none;
+}
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) :is(button, [role="button"]):disabled { color: #5a5a5a; }
+body:has(.ascii-ui) :is(
+  .interaction-box__btn--choice,
+  .prompt-menu__btn,
+  .event-choice-panel__option,
+  .walk-encounter__choices button,
+  .outing-event-frame__btn,
+  .outing-event-dialog__continue,
+  .commission-popup__btn:not(.commission-popup__btn--close),
+  .morning-menu__choice:not([data-testid$="close"]),
+  .date-invitation-card__actions button
+):not(:disabled) {
+  position: relative;
+  padding: 1px 1ch 1px 3ch;
+  text-align: left;
+}
+body:has(.ascii-ui) :is(
+  .interaction-box__btn--choice,
+  .prompt-menu__btn,
+  .event-choice-panel__option,
+  .walk-encounter__choices button,
+  .outing-event-frame__btn,
+  .outing-event-dialog__continue,
+  .commission-popup__btn:not(.commission-popup__btn--close),
+  .morning-menu__choice:not([data-testid$="close"]),
+  .date-invitation-card__actions button
+)::before {
+  content: "> ";
+  position: absolute;
+  inset-inline-start: 1ch;
+  top: 50%;
+  transform: translateY(-50%);
+  display: block;
+  width: 1ch;
+  color: var(--era-green);
+  visibility: hidden;
+}
+body:has(.ascii-ui) .morning-menu__command-code::before {
+  content: "> ";
+  color: var(--era-green);
+  visibility: hidden;
+}
+body:has(.ascii-ui) .morning-menu__command:not(:disabled):hover .morning-menu__command-code::before { visibility: visible; }
+body:has(.ascii-ui) .tackle-shop__columns button > span > b::before {
+  content: "> ";
+  color: var(--era-green);
+  visibility: hidden;
+}
+body:has(.ascii-ui) .tackle-shop__columns button:not(:disabled):hover > span > b::before { visibility: visible; }
+body:has(.ascii-ui) :is(
+  .interaction-box__btn--choice,
+  .prompt-menu__btn,
+  .event-choice-panel__option,
+  .walk-encounter__choices button,
+  .outing-event-frame__btn,
+  .outing-event-dialog__continue,
+  .commission-popup__btn:not(.commission-popup__btn--close),
+  .morning-menu__choice:not([data-testid$="close"]),
+  .date-invitation-card__actions button
+):not(:disabled):hover::before { visibility: visible; }
+body:has(.ascii-ui) :is(.ci-panel__close, .commission-popup__close, .ai-settings__head button, .excom-panel__head button, .kojo-debug__head button, .morning-menu__modal-head button) { padding: 0 .5ch; color: #9a9a9a; }
+body:has(.ascii-ui) :is(.ci-panel__tab--active, .ai-settings__tabs .is-active, .diary-book__index-entry.is-active, [aria-pressed="true"]) { color: var(--era-gold); }
+body:has(.ascii-ui) :is(.ci-panel__tab--active, .ai-settings__tabs .is-active, .diary-book__index-entry.is-active)::before { content: "> "; }
+body:has(.ascii-ui) .ci-panel__tab { flex: 0 0 auto; min-height: 2em; white-space: nowrap; font-weight: 400; }
+body:has(.ascii-ui) .ci-panel__tab::before { content: "> "; visibility: hidden; }
+body:has(.ascii-ui) .ci-panel__tab--active::before { visibility: visible; }
+body:has(.ascii-ui) .ai-settings__enable { background: transparent !important; color: var(--era-green) !important; border: 1px dashed var(--era-green) !important; }
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) :is(input, select, textarea) { color: #fff; border: 0; border-bottom: 1px solid #555; }
+body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) textarea { border: 1px dashed #555; }
+body:has(.ascii-ui) :is(.ci-panel__bar, .excom-panel__bar) { display: block; height: .7em; border: 1px dashed #3a3a3a; overflow: hidden; }
+body:has(.ascii-ui) :is(.ci-panel__barfill, .excom-panel__bar-fill) { display: block; height: 100%; background: var(--era-green); border-radius: 0; }
+body:has(.ascii-ui) :is(.ci-panel__ability-cell, .ci-panel__talent-tag, .ci-panel__taste-tag, .ci-panel__reltag, .ci-panel__compat-row, .ci-panel__uwaki-row, .ci-panel__fallcard, .ci-panel__basic, .ci-panel__narrative, .ai-settings__section, .ai-settings__samples, .ai-settings__debug-list, .excom-panel__calendar-wrap, .diary-book__index, .interaction-box__choice) { border-style: dashed; }
+body:has(.ascii-ui) .ai-settings__section { padding: .5em 1ch; }
+body:has(.ascii-ui) .ci-panel__title-role { color: #000; background: var(--era-gold); padding: 0 .5ch; }
+
+/* Kojo box: the portrait column is part of the frame, not a separate card. */
+body:has(.ascii-ui) .interaction-box__portrait { border-right: 1px dashed #3a3a3a; }
+body:has(.ascii-ui) .interaction-box__speaker { padding: 6px 2ch 4px; }
+body:has(.ascii-ui) .interaction-box__stream { padding: 1em 2ch; border-bottom: 1px dashed #3a3a3a; }
+body:has(.ascii-ui) .interaction-box__line { font-size: 1em; line-height: 1.6; margin: .2em 0; }
+body:has(.ascii-ui) .interaction-box__line--DIALOGUE_LINE { color: #ffd7e0; }
+body:has(.ascii-ui) .interaction-box__line--NARRATION { color: #c8c8c8; }
+body:has(.ascii-ui) :is(.interaction-box__line--STATUS_MESSAGE, .interaction-box__line--COMMAND_ISSUED) { color: #6c6c6c; font-size: .9em; }
+body:has(.ascii-ui) .interaction-box__line--ai-stream { animation: ascii-line-in 160ms steps(2) both; }
+body:has(.ascii-ui) .interaction-box__ai-badge { color: #6c6c6c; border: 0; padding: 0; }
+body:has(.ascii-ui) .interaction-box__ai-badge::before { content: "["; }
+body:has(.ascii-ui) .interaction-box__ai-badge::after { content: "]"; }
+body:has(.ascii-ui) .interaction-box__ai-pending { margin: .4em 0 0; color: var(--era-cyan); animation: none; opacity: 1; }
+body:has(.ascii-ui) .interaction-box__controls { padding: 4px 2ch; border-top: 0; gap: .5ch 1ch; }
+body:has(.ascii-ui) .interaction-box__ai-chat-input { padding: 4px 2ch; border-top: 1px dashed #3a3a3a; }
+body:has(.ascii-ui) .interaction-box__line--omikuji { color: var(--era-gold); border-color: #6c6c6c; border-style: dashed; font-family: var(--era-mono); }
+body:has(.ascii-ui) .interaction-box__line--omikuji-auspicious { color: #ff5f5f; }
+body:has(.ascii-ui) .interaction-box__line--omikuji-ominous { color: #af87ff; }
+body:has(.ascii-ui) .interaction-box__line--omikuji-notice { color: #c8a050; }
+body:has(.ascii-ui) .walk-encounter__portrait-fallback { border: 1px dashed #3a3a3a; }
+body:has(.ascii-ui) .walk-encounter__portrait-fallback::before { display: none; }
+body:has(.ascii-ui) .walk-encounter__kojo { border-left: 1px dashed #6c6c6c; padding-left: 1ch; }
+body:has(.ascii-ui) .outing-event-frame { background: #000; }
+
+/* Text motion: printed one glyph at a time with a noisy head. */
+.ascii-type-head { white-space: pre; }
+.ascii-type-head__noise { color: #3f8fa8; }
+.ascii-spinner { color: var(--era-cyan); white-space: pre; }
+.ascii-spinner__dots { color: #6c6c6c; }
+
+/* Number motion: the text node stays exact; the overlay counts toward it. */
+.ascii-number { position: relative; display: inline-block; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ascii-number__value { position: relative; }
+.ascii-number__value--rolling { color: transparent !important; }
+.ascii-number__value--rolling::after { content: attr(data-roll); position: absolute; left: 0; top: 0; white-space: nowrap; color: #fff; }
+.ascii-number--gain .ascii-number__value--rolling::after { color: #afffaf; }
+.ascii-number--loss .ascii-number__value--rolling::after { color: #ff8787; }
+.ascii-number--gain .ascii-number__value { animation: ascii-flash-gain 1.2s steps(6) both; }
+.ascii-number--loss .ascii-number__value { animation: ascii-flash-loss 1.2s steps(6) both; }
+.ascii-number__delta { position: absolute; left: calc(100% + .5ch); top: 0; z-index: 3; color: #87d787; white-space: nowrap; pointer-events: none; animation: ascii-number-rise 1.2s steps(6) forwards; }
+.ascii-number__delta--loss { color: #ff5f5f; }
+.ascii-number__delta::after { content: attr(data-delta); }
+.ascii-bar { white-space: pre; }
+.ascii-bar :is(.ascii-bar__filled, .ascii-bar__gain, .ascii-bar__loss) { display: inline-block; height: .8em; vertical-align: -.05em; overflow: hidden; background: currentColor; letter-spacing: 0; }
+.ascii-bar__gain { color: #fff; text-shadow: 0 0 6px currentColor; }
+.ascii-bar__loss { color: #ff5f5f; }
+.ascii-bar__empty { color: #3a3a3a; }
+@keyframes ascii-materialize { from { clip-path: inset(100% 0 0); opacity: .2; } to { clip-path: inset(0); opacity: 1; } }
+@keyframes ascii-panel-in { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(-2ch); } }
+@keyframes ascii-line-in { from { opacity: .35; } to { opacity: 1; } }
+@keyframes ascii-flash-gain { 0%, 50% { color: #afffaf; } 100% { color: inherit; } }
+@keyframes ascii-flash-loss { 0%, 50% { color: #ff8787; } 100% { color: inherit; } }
+@keyframes ascii-number-rise { 0% { transform: translateY(0); opacity: 1; } 66% { opacity: 1; } 100% { transform: translateY(-2.6em); opacity: 0; } }
+@keyframes ascii-blink { 50% { opacity: 0; } }
+@keyframes ascii-mask-out { from { clip-path: inset(0); opacity: 1; } to { clip-path: inset(0 0 100%); opacity: 0; visibility: hidden; } }
+
+@media (max-width: 1100px) {
+  .ascii-ui { --era-fs: 14px; font-size: 14px; }
+  .ascii-ui .game-client--immersive .game-client__middle { grid-template-columns: clamp(28ch, 30%, 38ch) minmax(0, 1fr) clamp(28ch, 30%, 40ch); gap: 1ch; }
+  .ascii-ui .scene-view--ascii-shell .scene-view__portrait-img { max-height: 32dvh; }
+  .ascii-ui .text-game-info .bar { gap: .6ch; }
+}
+@media (max-width: 850px) {
+  .ascii-ui .game-client--immersive .game-client__middle { display: grid; grid-template-columns: minmax(200px, 38%) minmax(0, 1fr); grid-template-rows: minmax(230px, 1fr) auto; gap: 6px 1ch; overflow-y: auto; flex: initial; }
+  .ascii-ui .text-game-info { grid-row: 1 / 3; max-height: none; overflow-y: auto; }
+  .ascii-ui .game-client--immersive .game-client__scene-slot { min-height: 230px; }
+  .ascii-ui .text-game-right { grid-column: 2; min-height: 160px; max-height: 28dvh; grid-template-columns: 1fr; grid-template-rows: minmax(0,1fr) minmax(0,1fr); }
+  .ascii-ui .h-session-view__stage { grid-template-columns: minmax(130px, 30%) minmax(0,1fr); overflow-y: auto; }
+  .ascii-ui .h-session-view__status { grid-column: 1 / -1; max-height: 22dvh; }
+}
+@media (max-width: 540px) {
+  .ascii-ui .game-client--immersive .game-client__middle { display: flex; flex-direction: column; overflow-y: auto; gap: 8px; }
+  .ascii-ui .game-client--immersive .text-game-info { order: 2; flex: 0 0 auto; max-height: 34dvh; overflow-y: auto; }
+  .ascii-ui .game-client--immersive .game-client__scene-slot { order: 1; }
+  .ascii-ui .text-game-right { order: 3; }
+  .ascii-ui .text-game-info__section { padding-bottom: 4px; min-width: 0; }
+  .ascii-ui .game-client--immersive .game-client__scene-slot { flex: 0 0 300px; min-height: 300px; }
+  .ascii-ui .text-game-right { flex: 0 0 220px; min-height: 220px; max-height: none; }
+  .ascii-ui .game-client--immersive .game-client__bottom { max-height: 24dvh; }
+  .ascii-ui .game-client--immersive .excom-row { display: flex; flex-direction: column; align-items: stretch; max-height: 96px; overflow-y: auto; overflow-x: hidden; }
+  .ascii-ui .game-client--immersive .excom-row__tools { flex: 0 0 auto; flex-wrap: wrap; min-width: 0; width: 100%; }
+  .ascii-ui .game-client--immersive .excom-row__collapse { flex: 0 0 auto; }
+  .ascii-ui .command-grid__btn { flex-basis: calc(50% - 1ch); min-height: 30px; }
+  .ascii-ui .h-session-view__stage { grid-template-columns: 140px minmax(0,1fr); gap: 1ch; }
+  .ascii-ui .h-training-stats .bar__ascii { font-size: 10px; }
+  .ascii-ui .h-session-view__command-top { flex-wrap: wrap; }
+  .ascii-ui .ascii-title { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body:has(.ascii-ui) *, body:has(.ascii-ui) *::before, body:has(.ascii-ui) *::after,
+  .ascii-ui *, .ascii-ui *::before, .ascii-ui *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

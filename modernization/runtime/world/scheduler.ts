@@ -33,7 +33,9 @@ import { crossedTimeZone, TIME_ZONE_NARRATION } from "./time-of-day.js";
 import { applyConfiguredSchedule, configuredEventsBetween } from "./configured-schedule.js";
 import { roomIdToLocation, setSlotLocation } from "./room-id-location.js";
 import { applyNaturalDrift } from "../state/base-natural-drift.js";
-import { atOwnHome, atPlayerBase } from "./location-predicates.js";
+import { atOwnHome, atPlayerBase, mapIdOfLocation } from "./location-predicates.js";
+import { roomCatalogEntryForId } from "./room-catalog.js";
+import { canEnterRoom } from "./map-can-move.js";
 import { applyWeatherExposure } from "../weather/effects.js";
 import { syncDrunkenness } from "../state/alcohol.js";
 import {
@@ -45,7 +47,8 @@ import {
 import { beginOrRefreshWork, ensureWorkRuntime, finishWork, isEventManagedWork, workRuntimeEntryAt } from "./work/work-system.js";
 import { jobSceneProse, workloadRemainingProse } from "./work/job-prose.js";
 import { isInVisitWindow } from "./work/visit.js";
-import { advancedRoamStep, evictFromPrivateRoom } from "./work/roam-advanced.js";
+import { advancedRoamStep, evictFromPrivateRoom, isGravityPointActive } from "./work/roam-advanced.js";
+import { selectQolVisitorTarget } from "./qol-visitors.js";
 import { getScheduleProvider } from "./schedule-provider.js";
 import { encounterTargetLocation, runEncounterTimezoneMove } from "./encounter.js";
 import { kickOutOfBedroom } from "./kick-out.js";
@@ -61,14 +64,23 @@ import {
 } from "./free-action.js";
 import { relationOf } from "./relation.js";
 import type { CharaSlot } from "../state/index.js";
+import {
+  recordAgentDailyActivity,
+  recordAgentDailyLocationVisit,
+  recordAgentDailyWorldInterval,
+} from "../agent/daily-ledger.js";
 
-/** Optional kojo deps for `reprojectSchedules`. When present, an observable
- *  true `@KITAKU` transition fires 帰宅口上 (EVENT 20, arm 1 通常帰宅)
- *  before the move narration. Ordinary detailed-map room movement is not a
- *  return-home event. Absent ⇒ narration only. */
+/** Optional runtime deps for `reprojectSchedules`.
+ *
+ * `observationMode: "unobserved"` is the faithful sleep-fast-forward path:
+ * canonical movement/work/free-action/drift projection still receives the
+ * deterministic RNG, while player-visible EVENT kojo is short-circuited at
+ * the same boundary as upstream `CAN_SEE`.  This is deliberately different
+ * from omitting deps, which also disables RNG-owned world projection. */
 export interface ReprojectKojoDeps {
   dialogueRouter?: DialogueRouter;
   rng?: Rng;
+  observationMode?: "visible" | "unobserved";
 }
 
 /** Short room label for move narration: "神社:境内" → "境内"; "人間之里" → itself. */
@@ -88,6 +100,50 @@ function minuteOfDay(tick: number): number {
   return ((tick % 1440) + 1440) % 1440;
 }
 
+/** GET_ENTRANCE(MAIN_MAP) for the four selectable property maps. */
+const PLAYER_BASE_ENTRANCE_ROOM_ID: Readonly<Record<number, number>> = {
+  0: 22,
+  1: 140,
+  2: 201,
+  3: 301,
+};
+
+/** @主人公物件へ向かう: authored CFLAG landing room first; otherwise choose
+ * and retain the full QOL weighted destination while entering at GET_ENTRANCE. */
+function visitorLandingLocation(state: GameState, slot: CharaSlot): string | null {
+  const home = state.homeLocation ?? state.master.homeLocation ?? state.master.location;
+  const mapId = mapIdOfLocation(home);
+  if (mapId === null) return null;
+  const configured = slot.state.CFLAG[CFLAG_ID.来訪位置_博 + mapId] ?? 0;
+  const room = roomCatalogEntryForId(configured);
+  if (room?.mapId === mapId && canEnterRoom(state, room.location, slot)) {
+    slot.state.TCVAR[TCVAR_ID.INITIAL_VISITATION_POINT] = 0;
+    return room.location;
+  }
+
+  const pointId = TCVAR_ID.INITIAL_VISITATION_POINT;
+  let point = slot.state.TCVAR[pointId] ?? 0;
+  if (point > 0) {
+    const targetRoom = roomCatalogEntryForId(point);
+    if (!targetRoom || targetRoom.mapId !== mapId || !canEnterRoom(state, targetRoom.location, slot)) {
+      point = 0;
+    }
+  } else if (point < 0 && !state.charas[-point]) {
+    point = 0;
+  }
+  if (!point) point = selectQolVisitorTarget(state, slot, mapId);
+  slot.state.TCVAR[pointId] = point;
+
+  const entranceId = PLAYER_BASE_ENTRANCE_ROOM_ID[mapId];
+  const entrance = entranceId ? roomCatalogEntryForId(entranceId) : undefined;
+  if (entrance && canEnterRoom(state, entrance.location, slot)) return entrance.location;
+  if (point > 0) {
+    const targetRoom = roomCatalogEntryForId(point);
+    if (targetRoom?.mapId === mapId && canEnterRoom(state, targetRoom.location, slot)) return targetRoom.location;
+  }
+  return null;
+}
+
 function emitEventKojo(
   events: ObservationEvent[],
   deps: ReprojectKojoDeps | undefined,
@@ -97,6 +153,7 @@ function emitEventKojo(
   arm: number,
   args: number[],
 ): void {
+  if (deps?.observationMode === "unobserved") return;
   if (!deps?.dialogueRouter || !deps.rng) return;
   const lines = resolveEventKojoAndApply(deps.dialogueRouter, state, charaNum, arm, deps.rng, args);
   for (const line of lines) {
@@ -133,8 +190,69 @@ function movementProjectionLocked(state: GameState, slot: CharaSlot): boolean {
     slot.state.CFLAG[CFLAG_ID.陪睡中] ||
     slot.state.CFLAG[CFLAG_ID.诶嘿嘿] ||
     slot.state.CFLAG[CFLAG_ID.同行] ||
-    slot.state.TCVAR[TCVAR_ID.泥酔],
+    slot.state.TCVAR[TCVAR_ID.泥酔] ||
+    heldAtNarrativeScene(state, slot),
   );
+}
+
+/** Only an activated story owns its staged cast. A scheduled/ready plan must
+ * not freeze ordinary NPC movement or reserve a passer-by at the future scene.
+ * The active hold expires with the event window, including parked stories.
+ * Sleep and work keep their own authority; this gates autonomous roaming.
+ */
+function heldAtNarrativeScene(state: GameState, slot: CharaSlot): boolean {
+  const now = state.time.tickValue;
+  return (state.narrativeEvents ?? []).some((event) =>
+    event.status === "active"
+    && now <= event.windowEndTick
+    && event.participantIds.includes(slot.charaNum)
+    && event.locationIds.includes(slot.location));
+}
+
+/** Resolve the retained room/friend QOL target, clearing stale destinations. */
+function visitorGoalLocation(state: GameState, slot: CharaSlot): string | null {
+  const point = slot.state.TCVAR[TCVAR_ID.INITIAL_VISITATION_POINT] ?? 0;
+  if (!point) return null;
+  let location: string | null = null;
+  if (point > 0) {
+    location = roomCatalogEntryForId(point)?.location ?? null;
+  } else {
+    const friend = state.charas[-point];
+    if (friend && atPlayerBase(state, friend.charaNum)) location = friend.location;
+  }
+  if (!location || mapIdOfLocation(location) !== mapIdOfLocation(slot.location)) {
+    delete slot.state.TCVAR[TCVAR_ID.INITIAL_VISITATION_POINT];
+    return null;
+  }
+  if (location === slot.location) {
+    delete slot.state.TCVAR[TCVAR_ID.INITIAL_VISITATION_POINT];
+    return null;
+  }
+  return location;
+}
+
+/** One legal graph hop toward a visitor's QOL destination. */
+function nextRoomToward(state: GameState, slot: CharaSlot, target: string): string | null {
+  const start = slot.location;
+  if (start === target) return null;
+  const queue: Array<{ location: string; firstHop: string | null }> = [
+    { location: start, firstHop: null },
+  ];
+  const visited = new Set([start]);
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const colon = current.location.indexOf(":");
+    const prefix = colon < 0 ? current.location : current.location.slice(0, colon);
+    const room = colon < 0 ? "" : current.location.slice(colon + 1);
+    for (const next of _ROOM_NEIGHBORS.get(prefix)?.get(room) ?? []) {
+      if (visited.has(next) || !canEnterRoom(state, next, slot)) continue;
+      const firstHop = current.firstHop ?? next;
+      if (next === target) return firstHop;
+      visited.add(next);
+      queue.push({ location: next, firstHop });
+    }
+  }
+  return null;
 }
 
 /**
@@ -144,8 +262,8 @@ function movementProjectionLocked(state: GameState, slot: CharaSlot): boolean {
  * `ScheduleProvider` first, and falls back to THIS when it defers (null).
  *
  *   1. 仕事 window (real `JOB_仕事内容` data) → 職場. Priority over roaming/visit.
- *   2. 拠点来訪 visitor in their `@VISIT` window → the master's base
- *      (`@主人公物件へ向かう`); window closed → heads home (`@KITAKU`).
+ *   2. 拠点来訪 visitor enters the base map once, then roams during `@VISIT`;
+ *      window closed → heads home (`@KITAKU`).
  *   3. `CFLAG:遭遇位置` during the activity window → spot representative room.
  *   4. Shrine resident not working → `@角色移動処理` roam (roam.ts); null = stayed.
  *   5. Off-shrine / no roam → `@KITAKU` (home).
@@ -157,6 +275,9 @@ function deterministicNpcLocation(
   tick: number,
   elapsed: number,
 ): string | null {
+  // NOTE: `TCVAR:なるべく動かない` is NOT read here. It is consumed once per
+  // reprojection by `reprojectSchedules`, which suppresses this function for the
+  // held characters across every boundary slice — see the comment there.
   // `@VISIT` / work windows are minutes-of-day; `tick` is absolute tickValue.
   const tickMin = minuteOfDay(tick);
 
@@ -171,18 +292,34 @@ function deterministicNpcLocation(
   // but stop the modern roam fallback from making these states run away.
   if (movementProjectionLocked(state, slot)) return null;
 
-  // 拠点来訪: a chara flagged by `@来訪フラグ` (visit-flags.ts) spends their
-  // activity window at the master's base — faithful `@主人公物件へ向かう`
-  // (MOVEMENT_SUB.ERB:211-214). Note: a flagged visitor is never a 神社在住
-  // resident (`@来訪可能` excludes them), so this block fully owns their motion
-  // — when their window closes they head home (`@KITAKU`), NOT the resident roam.
-  // The upstream per-map landing room CFLAG:(450+map) / `@QOL_VISITOR_LOCATION_
-  // SELECTION` random pick is deferred (no CSV import); the MVP lands them at the
-  // master's base room.
+  // @訪問帰宅処理 only calls @主人公物件へ向かう while outside MAIN_MAP.
+  // Once inside, visitors participate in ordinary room roaming, not repeated
+  // projection to MASTER's private room. @KITAKU ends this visit for the day.
   if (slot.state.CFLAG[CFLAG_ID.拠点来訪]) {
-    if (isInVisitWindow(slot, tickMin)) {
-      return state.homeLocation ?? state.master.location;
+    if (slot.state.CFLAG[CFLAG_ID.来訪不能]) {
+      delete slot.state.CFLAG[CFLAG_ID.拠点来訪];
+      delete slot.state.TCVAR[TCVAR_ID.INITIAL_VISITATION_POINT];
+      return slot.homeLocation ?? null;
     }
+    if (isInVisitWindow(slot, tickMin)) {
+      if (!atPlayerBase(state, slot.charaNum)) return visitorLandingLocation(state, slot);
+      const activity = state.freeActions?.[slot.charaNum];
+      if (activity && activity.remainingMinutes > 0 && canContinueFreeAction(state, slot, activity)) return null;
+      if (elapsed <= 0) return null;
+      let goal = visitorGoalLocation(state, slot);
+      if (goal && isGravityPointActive(state, slot)) {
+        delete slot.state.TCVAR[TCVAR_ID.INITIAL_VISITATION_POINT];
+        goal = null;
+      }
+      if (goal) {
+        if (slot.location.startsWith("神社:")) return advancedRoamStep(state, slot, elapsed, goal);
+        return nextRoomToward(state, slot, goal);
+      }
+      if (slot.location.startsWith("神社:")) return advancedRoamStep(state, slot, elapsed);
+      return roamInHomeMap(slot, tick, slot.location, state);
+    }
+    delete slot.state.TCVAR[TCVAR_ID.INITIAL_VISITATION_POINT];
+    if (atPlayerBase(state, slot.charaNum)) delete slot.state.CFLAG[CFLAG_ID.拠点来訪];
     return slot.homeLocation ?? slot.location;
   }
 
@@ -272,8 +409,8 @@ function visitWindowHasClosed(visit: number, ret: number, t: number): boolean {
  *  freezing (the old seed had no time term and read the same home room every
  *  call). Stays near home (1 hop) so it can never wander into an unbuilt room;
  *  the full 停留率/引力点 roam engine lands with the generic multi-map rewrite. */
-function roamInHomeMap(slot: CharaSlot, tick: number): string | null {
-  const home = slot.homeLocation ?? slot.location;
+function roamInHomeMap(slot: CharaSlot, tick: number, mapHome?: string, state?: GameState): string | null {
+  const home = mapHome ?? slot.homeLocation ?? slot.location;
   const homeColon = home.indexOf(":");
   const prefix = homeColon === -1 ? home : home.slice(0, homeColon);
   const current = slot.location === prefix || slot.location.startsWith(`${prefix}:`)
@@ -281,8 +418,9 @@ function roamInHomeMap(slot: CharaSlot, tick: number): string | null {
     : home;
   const currentColon = current.indexOf(":");
   const currentRoom = currentColon === -1 ? "" : current.slice(currentColon + 1);
-  const neighbors = _ROOM_NEIGHBORS.get(prefix)?.get(currentRoom);
-  if (!neighbors || neighbors.length === 0) return current === home ? null : home;
+  const neighbors = _ROOM_NEIGHBORS.get(prefix)?.get(currentRoom)
+    ?.filter((location) => !state || canEnterRoom(state, location, slot));
+  if (!neighbors || neighbors.length === 0) return mapHome !== undefined || current === home ? null : home;
   const hourBucket = Math.floor((((tick % 1440) + 1440) % 1440) / 60);
   // +1 phase = stay in the current room; stable within the
   // hour (turn-based re-projection runs many times per band → no jitter).
@@ -421,9 +559,13 @@ function reprojectScheduleInterval(
   now: () => number,
   deps?: ReprojectKojoDeps,
   emitProgressKojo = true,
+  /** CharaNums whose location this reprojection must leave alone
+   *  (`TCVAR:なるべく動かない`, consumed once by `reprojectSchedules`). */
+  heldLocations: ReadonlySet<number> = new Set(),
 ): ObservationEvent[] {
   if (newMin === oldMin) return [];
   const events: ObservationEvent[] = [];
+  recordAgentDailyWorldInterval(state, oldMin, newMin);
 
   // Time-of-day band crossing (upstream `IF LOCAL != TIME:2` in
   // 日時天候管理.ERB:170). When the 7-band 時間帯 changes, emit one ambient
@@ -442,14 +584,38 @@ function reprojectScheduleInterval(
   // Snapshot 睡眠 BEFORE the CSV overlay flips it, so we can spot the 就寝
   // transition (0→1) that drives the kick-out-on-sleep hook below.
   const wasAsleep = new Map<number, boolean>();
+  const locationBeforeProjection = new Map<number, string>();
   for (const slot of Object.values(state.charas)) {
     wasAsleep.set(slot.charaNum, !!(slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0));
+    locationBeforeProjection.set(slot.charaNum, slot.location);
   }
 
   // CSV sleep/wake overlay (every chara). Owns the 睡眠 flag + the home
   // relocation on sleep. Awake charas fall through to the work/visit/home
   // projection below; asleep charas stay where the overlay put them (home).
   applyConfiguredSchedule(state, oldMin, newMin);
+  for (const slot of Object.values(state.charas)) {
+    if (locationBeforeProjection.get(slot.charaNum) !== slot.location) {
+      recordAgentDailyLocationVisit(state, slot.charaNum, slot.location, newMin);
+      if (deps?.observationMode !== "unobserved" && !state.master.state.CFLAG[CFLAG_ID.睡眠]) {
+        const from = locationBeforeProjection.get(slot.charaNum);
+        const leaving = from === state.master.location;
+        const arriving = slot.location === state.master.location;
+        if (leaving || arriving) {
+          const goingToSleep = !wasAsleep.get(slot.charaNum) && !!slot.state.CFLAG[CFLAG_ID.睡眠];
+          events.push({
+            kind: "NARRATION", timestamp: now(), presentation: "ambient",
+            origin: "world-movement", charaNum: slot.charaNum,
+            text: leaving
+              ? goingToSleep
+                ? `${charaName(slot)}困倦地离开了，回${roomLabel(slot.location)}休息去了。`
+                : `${charaName(slot)}往${roomLabel(slot.location)}去了。`
+              : `${charaName(slot)}来到了这里。`,
+          });
+        }
+      }
+    }
+  }
 
   // @CHARA_MOVEMENT projection for each awake NPC. Narrate a move ONLY when
   // it's relevant to the player — the chara left the master's room or arrived
@@ -466,7 +632,13 @@ function reprojectScheduleInterval(
   // walks into an ALREADY-sleeping NPC's room is the 侵入/room-lock path
   // (handled elsewhere), NOT a kick — so we only act on the 0→1 transition.
   if (!(state.master.state.CFLAG[CFLAG_ID.睡眠] ?? 0)) {
-    for (const slot of Object.values(state.charas)) {
+    // Same charaNum-iteration rule as the main projection pass below: a
+    // kick's kojo re-materialises `state.charas`, so later iterations must
+    // re-read their slot instead of holding a pre-clone reference.
+    const kickCheckCharaNums = Object.values(state.charas).map((s) => s.charaNum);
+    for (const kickCharaNum of kickCheckCharaNums) {
+      const slot = state.charas[kickCharaNum];
+      if (!slot) continue;
       const nowAsleep = !!(slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0);
       if (!nowAsleep || wasAsleep.get(slot.charaNum)) continue; // not a 0→1 flip
       if (!slot.homeLocation || slot.location !== slot.homeLocation) continue;
@@ -484,8 +656,21 @@ function reprojectScheduleInterval(
   for (const slot of Object.values(state.charas)) {
     actionBeforeProjection.set(slot.charaNum, slot.state.CFLAG[CFLAG_ID.行动] ?? 0);
   }
-  for (const slot of Object.values(state.charas)) {
-    if (slot.state.CFLAG[CFLAG_ID.睡眠]) continue;
+  // Iterate charaNums, not live slot references. Every effect-bearing kojo
+  // below (`resolveEventKojoAndApply` → `applyKojoEffects`) re-materialises
+  // `state.charas` via `Object.assign(state, …)`, so a snapshot of slot
+  // objects taken here would go stale: any write after such an emit (work
+  // CFLAGs, `setSlotLocation`) would land on an orphaned pre-clone object and
+  // be silently lost (worker never moves, EVENT 13 arm 1 replays forever).
+  const projectedCharaNums = Object.values(state.charas).map((s) => s.charaNum);
+  for (const charaNum of projectedCharaNums) {
+    let slot = state.charas[charaNum];
+    if (!slot || slot.state.CFLAG[CFLAG_ID.睡眠]) continue;
+    // Re-read the chara's (possibly replaced) slot after a state-replacing
+    // kojo commit. A missing slot would be a state corruption; bail out.
+    const refetchSlot = (): void => {
+      slot = state.charas[charaNum];
+    };
     const tickMin = minuteOfDay(newMin);
     let work = workRuntimeEntryAt(state, slot.charaNum, tickMin);
     const wasWorking = (slot.state.CFLAG[CFLAG_ID.行动] ?? 0) === ACTION_WORKING;
@@ -495,6 +680,16 @@ function reprojectScheduleInterval(
     let workStartText: string | null = null;
     if (work) {
       beginOrRefreshWork(state, slot, work, tickMin);
+      // Upstream `JOB_仕事開始終了処理` unconditionally rewrites the workplace
+      // location at work start. A stale お招き (OMANEKI) marker left on a
+      // scheduled worker would keep them movement-locked inside the guest
+      // room forever (CFLAG:招待 is one of the `movementProjectionLocked`
+      // gates), so clear it here. Flag-only cleanup: 招待 stays in the lock
+      // list for every non-working state, and the master's own marker is
+      // untouched (omanekiLeave owns that side).
+      if ((slot.state.CFLAG[CFLAG_ID.招待] ?? 0) !== 0) {
+        slot.state.CFLAG[CFLAG_ID.招待] = 0;
+      }
       // `@仕事宴会処理` ends ordinary accompaniment before moving the NPC
       // to a real workplace (JOB_仕事開始終了処理.ERB:171-181). Leaving this
       // flag set made the schedule move a companion away, then the next
@@ -523,9 +718,10 @@ function reprojectScheduleInterval(
       }
       if (!wasWorking) {
         if (slot.location === here || work.location === here) {
-          const label = JOB_LABEL[work.jobType] ?? "仕事";
+          const label = JOB_LABEL[work.jobType] ?? "工作";
           workStartText = `${charaName(slot)}为了${label}，往${roomLabel(work.location)}去了。`;
           emitEventKojo(events, deps, state, now, slot.charaNum, 13, [1, 0]);
+          refetchSlot();
         }
       // Long command advances are projected through internal boundaries for
       // state accuracy. A working NPC's ambient progress kojo must remain one
@@ -563,6 +759,7 @@ function reprojectScheduleInterval(
         if (!(slot.charaNum === 10 && work.jobType === JOB_ID.お酒)) {
           emitEventKojo(events, deps, state, now, slot.charaNum, 13, [2, bucket]);
         }
+        refetchSlot();
       }
     } else if (wasWorking && !isEventManagedWork(slot.state.CFLAG[CFLAG_ID.职种] ?? 0)) {
       const finished = finishWork(state, slot, now);
@@ -576,6 +773,7 @@ function reprojectScheduleInterval(
         });
         emitEventKojo(events, deps, state, now, slot.charaNum, 13, [3, 0]);
       }
+      refetchSlot();
     }
     // Work has been started/advanced above.  The original movement pass then
     // applies the same state gate before visitor/roam movement; honour it here
@@ -588,9 +786,13 @@ function reprojectScheduleInterval(
     // model. The provider is responsible for the @MAP_CAN_MOVE_0 gate.
     const provider = getScheduleProvider();
     const override = provider ? provider.decideLocation(state, slot.charaNum, newMin) : null;
-    const toLoc = override ?? deterministicNpcLocation(state, slot, newMin, elapsed);
+    const toLoc = heldLocations.has(slot.charaNum)
+      ? null
+      : (override ?? deterministicNpcLocation(state, slot, newMin, elapsed));
     const fromLoc = slot.location;
     if (!toLoc || toLoc === fromLoc) continue;
+    const arrivingVisitor = Boolean(slot.state.CFLAG[CFLAG_ID.拠点来訪]) &&
+      !atPlayerBase(state, slot.charaNum);
     const visitWindowEnded = isInVisitWindow(slot, minuteOfDay(oldMin)) &&
       !isInVisitWindow(slot, tickMin);
     const evicted = evictFromPrivateRoom(state, slot, toLoc);
@@ -603,6 +805,22 @@ function reprojectScheduleInterval(
       });
     }
     setSlotLocation(slot, toLoc);
+    if (arrivingVisitor && atPlayerBase(state, slot.charaNum) && atPlayerBase(state, 0) &&
+        !state.master.state.CFLAG[CFLAG_ID.睡眠] && !state.master.state.CFLAG[CFLAG_ID.诶嘿嘿] &&
+        deps?.observationMode !== "unobserved") {
+      events.push({ kind: "NARRATION", timestamp: now(),
+        text: `【${charaName(slot)}来访了，到了${roomLabel(toLoc)}。】`, presentation: "ambient" });
+    }
+    recordAgentDailyLocationVisit(state, slot.charaNum, toLoc, newMin);
+    if (!work) {
+      recordAgentDailyActivity(state, slot.charaNum, {
+        kind: "roam",
+        startTick: newMin,
+        endTick: newMin,
+        location: toLoc,
+        label: `从${fromLoc}移动到${toLoc}`,
+      });
+    }
 
     // Path #1 of `@被从寝室赶了出来` (`@CHARA_SLEEP` Block B, SLEEP.ERB:159-184):
     // an awake NPC returns to their own 私室 and finds the AWAKE master
@@ -626,6 +844,7 @@ function reprojectScheduleInterval(
         // narration correctly does not fire for this NPC).
         here = state.master.location;
       }
+      refetchSlot();
     }
 
     let text: string | null = null;
@@ -637,6 +856,7 @@ function reprojectScheduleInterval(
       const actuallyReturningHome = visitWindowEnded && toLoc === slot.homeLocation;
       if (actuallyReturningHome && deps?.dialogueRouter && deps.rng) {
         emitEventKojo(events, deps, state, now, slot.charaNum, 20, [1]);
+        refetchSlot();
       }
       text = workStartText ?? `${charaName(slot)}往${roomLabel(toLoc)}去了。`;
     } else if (toLoc === here && fromLoc !== here) {
@@ -646,12 +866,14 @@ function reprojectScheduleInterval(
       // passing through to a job in the player's room) stay narration-only.
       if (slot.state.CFLAG[CFLAG_ID.拠点来訪] && deps?.dialogueRouter && deps.rng) {
         emitEventKojo(events, deps, state, now, slot.charaNum, 4, [3, 0]);
+        refetchSlot();
       }
       text = workStartText ?? `${charaName(slot)}来到了这里。`;
     }
     // Both rooms away from the player → silent (远处的移动不播报).
     if (text !== null) {
-      events.push({ kind: "NARRATION", timestamp: now(), text, presentation: "ambient" });
+      events.push({ kind: "NARRATION", timestamp: now(), text, presentation: "ambient",
+        origin: "world-movement", charaNum: slot.charaNum });
     }
   }
 
@@ -660,7 +882,9 @@ function reprojectScheduleInterval(
   // drains while working). Runs after the projection so it sees each chara's
   // final position this tick. The master's own drift (勃起 etc.) is DLC/H-centric.
   const lapse = newMin - oldMin;
-  applyNaturalDrift(state.master, here, lapse);
+  const driftRandomInt = deps?.rng ? (maxExclusive: number) => deps.rng!.int(maxExclusive) : undefined;
+  const noAnger = (state.flagStore[FLAG_ID.不会生气] ?? 0) !== 0;
+  applyNaturalDrift(state.master, here, lapse, { randomInt: driftRandomInt, noAnger });
   applyWeatherExposure(state, state.master, lapse);
   for (const slot of Object.values(state.charas)) {
     const currentAction = slot.state.CFLAG[CFLAG_ID.行动] ?? 0;
@@ -668,7 +892,11 @@ function reprojectScheduleInterval(
     // NPC sleep recovery is settled once from each character's configured
     // sleep-window overlap by finishPlayerSleep. Do not stack ordinary idle
     // recovery over the same overnight interval.
-    applyNaturalDrift(slot, here, lapse, { ordinaryRest: !state.sleepSession });
+    applyNaturalDrift(slot, here, lapse, {
+      ordinaryRest: !state.sleepSession,
+      randomInt: driftRandomInt,
+      noAnger,
+    });
     applyWeatherExposure(state, slot, lapse);
     slot.state.CFLAG[CFLAG_ID.行动] = currentAction;
   }
@@ -691,7 +919,12 @@ function reprojectScheduleInterval(
 
   if (lapse > 0) {
     state.freeActions ??= {};
-    for (const slot of Object.values(state.charas)) {
+    // charaNum iteration (same reason as the main pass): EVENT 32 below can
+    // re-materialise `state.charas`, so `slot` must be re-read afterwards.
+    const freeActionCharaNums = Object.values(state.charas).map((s) => s.charaNum);
+    for (const freeActionCharaNum of freeActionCharaNums) {
+      let slot = state.charas[freeActionCharaNum];
+      if (!slot) continue;
       const current = state.freeActions[slot.charaNum];
       if (current && !canContinueFreeAction(state, slot, current)) {
         interruptFreeAction(state, slot, current);
@@ -703,6 +936,8 @@ function reprojectScheduleInterval(
         if (advanced.text) events.push(freeActionEvent(now, advanced.text));
         if (slot.location === here) {
           emitEventKojo(events, deps, state, now, slot.charaNum, 32, [current.type, advanced.event32Phase]);
+          slot = state.charas[freeActionCharaNum];
+          if (!slot) continue;
         }
         if (!advanced.completed) {
           chainFreeActionFollowers(state, slot, current, here, events, now, deps?.rng);
@@ -809,6 +1044,31 @@ export function reprojectSchedules(
   const events: ObservationEvent[] = [];
   let cursor = oldMin;
 
+  // なるべく動かない — `@角色移動処理` ERB 134-138:
+  //
+  //     IF TCVAR:ARG:なるべく動かない && !無差別移動
+  //         TCVAR:ARG:なるべく動かない = 0
+  //         RETURN
+  //
+  // "Try not to move" means "do not relocate me for this turn", and it is
+  // consumed doing so. `@吃飯` sets it on every eater (ERB 748) and
+  // `assembleForMeal` sets it on everyone drawn in by the smell, which is what
+  // keeps a guest in the master's room instead of letting the schedule put her
+  // back the moment the meal resolves.
+  //
+  // Read ONCE here rather than inside `deterministicNpcLocation`: one command
+  // walks N internal boundary slices (see the doc above), while upstream runs
+  // exactly ONE movement pass per command. A per-slice consume honoured the
+  // hold in the first slice and let a later one relocate the character anyway —
+  // the game announced "闻着饭菜的香味过来了" and then showed her somewhere else.
+  const held = new Set<number>();
+  for (const [numText, slot] of Object.entries(state.charas)) {
+    if (!slot) continue;
+    if ((slot.state.TCVAR[TCVAR_ID.なるべく動かない] ?? 0) === 0) continue;
+    slot.state.TCVAR[TCVAR_ID.なるべく動かない] = 0;
+    held.add(Number(numText));
+  }
+
   try {
     for (const boundary of projectionBoundaryTicks(state, oldMin, newMin)) {
       const calendar = calendarAtProjectionTick(finalTime, boundary);
@@ -825,6 +1085,7 @@ export function reprojectSchedules(
           now,
           deps,
           boundary === newMin,
+          held,
         ),
       );
       cursor = boundary;

@@ -158,6 +158,12 @@ export function weekdayName(dayIndex: number): string {
   return youbi[((dayIndex + 1) % 7 + 7) % 7]!;
 }
 
+/** Simplified Chinese weekday label for player-facing UI. */
+export function weekdayLabelZh(dayIndex: number): string {
+  const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+  return weekdays[((dayIndex % 7) + 7) % 7]!;
+}
+
 /**
  * `@IS_WEEKDAY(ARG)` (`日時天候管理.ERB:243-250`) — 1 iff 月–金 (weekday
  * index 1–5). `DAY` 1-based → `(dayIndex + 1) % 7 ∈ [1,5]`.

@@ -28,6 +28,7 @@ export type {
   KojoResolution,
   KojoResolutionStatus,
   KojoDiagnostic,
+  CounterKojoMetadata,
   KojoCommandIndex,
   VariantIndex,
   FuncLocation,
@@ -40,6 +41,7 @@ export {
   resolveKojoNodeDetailed,
   resolveKojoFunctionDetailed,
   resolveKojoNodeWithChoices,
+  hasActionableKojoNode,
 } from "./static-router.js";
 export { applyKojoEffects } from "./effects.js";
 export {
@@ -58,7 +60,7 @@ export {
   type RebellionMarkLevel,
 } from "./mark-kojo.js";
 export { palamKojoKey } from "./palam-kojo.js";
-export { iraiKojoSelectorKeys } from "./irai-kojo.js";
+export { iraiKojoSelectorKeys, mergeIraiKojoResolutions } from "./irai-kojo.js";
 export { isKojoAiFallbackEligible } from "./ai-fallback.js";
 export {
   createNativeDialogueRouter,
@@ -81,7 +83,8 @@ export {
   type KojoCategoryRoute,
 } from "./category-routes.js";
 export { KOJO_CATEGORY_ROUTES } from "./category-routes.generated.js";
-export { KojoCache } from "./kojo-cache.js";
+export { KojoCache, KOJO_PRELOAD_CONCURRENCY } from "./kojo-cache.js";
+export { collectNightKojoFilePaths } from "./night-preload.js";
 export { resolveActiveKojoVariantCode } from "./variant-selection.js";
 export { resolveDiaryCall } from "./diary-call.js";
 export {

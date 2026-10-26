@@ -357,7 +357,8 @@ export function appendStoneContestPlacement(state: Readonly<GameState>, operatio
   const normalized = normalizeStoneOperation({ ...operation, frame: clamp(operation.frame, session.elapsedFrames, STONE_CONTEST_DURATION_FRAMES) });
   if (last && normalized.frame - last.frame < 10) return next;
   const difficulty = stoneContestDifficulty(next);
-  const queue = stoneCandidateQueue(session.seed, difficulty, session.operations);
+  const replay = replayForSession(next, session, normalized.frame);
+  const queue = stoneCandidateQueue(session.seed, difficulty, session.operations, replay.bodies);
   const candidate = queue.find((entry) => entry.candidateId === normalized.candidateId);
   if (!candidate) return next;
   session.operations.push({ ...normalized, sizeQ: candidate.sizeQ });
@@ -368,15 +369,19 @@ function desireWobble(slot: CharaSlot | undefined): number {
   return Math.max(0, stat(slot, "ABL", 11) * 35);
 }
 
-function replayForSession(state: Readonly<GameState>, session: StoneContestSession, untilFrame = session.elapsedFrames): StoneReplayResult {
+export function stoneContestReplayConfig(state: Readonly<GameState>) {
+  const session = state.stoneContestSession!;
   const partnerWobble = session.mode === "couple" ? desireWobble(state.charas[session.partner]) : 0;
-  return replayStoneOperations(session.operations, {
+  return {
     seed: session.seed,
     difficulty: stoneContestDifficulty(state),
-    untilFrame,
     supportToleranceQ: STRATEGY_TOLERANCE[session.strategy] - desireWobble(state.master) - partnerWobble,
     rescueCollapse: session.item === "small-hat",
-  });
+  };
+}
+
+function replayForSession(state: Readonly<GameState>, session: StoneContestSession, untilFrame = session.elapsedFrames): StoneReplayResult {
+  return replayStoneOperations(session.operations, { ...stoneContestReplayConfig(state), untilFrame });
 }
 
 export function previewStoneContestReplay(state: Readonly<GameState>): StoneReplayResult | null {

@@ -152,6 +152,31 @@ export function stainSwapInsertA(target: CharaSlot, master: CharaSlot): void {
     getStain(target, STAIN_PART.腸内) | getStain(master, STAIN_PART.Ｐ);
 }
 
+/**
+ * Reverse V insertion (`target.P -> master.V`). CCOMF80/83/84/86 use the
+ * target's penis as the actor, so the ordinary V helper's
+ * `target.V <-> master.P` orientation is wrong here. The upstream reverse
+ * arms OR the target's external P soil with the master's internal V soil;
+ * preserve the same condom gate and mutual-OR semantics in the state layer.
+ */
+export function stainSwapReverseInsertV(target: CharaSlot, master: CharaSlot): void {
+  if (readTequip(master, EQUIP_CONDOM) !== 0) return;
+  const targetPenis = getStain(target, STAIN_PART.Ｐ);
+  const masterV = getStain(master, STAIN_PART.膣内);
+  target.state.STAIN[STAIN_PART.Ｐ] = targetPenis | masterV;
+  master.state.STAIN[STAIN_PART.膣内] = masterV | targetPenis;
+}
+
+/** Reverse A insertion (`target.P -> master.A`), with the same bounded
+ * condom-gated transfer as the upstream CCOMF90/93/94 arms. */
+export function stainSwapReverseInsertA(target: CharaSlot, master: CharaSlot): void {
+  if (readTequip(master, EQUIP_CONDOM) !== 0) return;
+  const targetPenis = getStain(target, STAIN_PART.Ｐ);
+  const masterAnal = getStain(master, STAIN_PART.腸内);
+  target.state.STAIN[STAIN_PART.Ｐ] = targetPenis | masterAnal;
+  master.state.STAIN[STAIN_PART.腸内] = masterAnal | targetPenis;
+}
+
 // =====================================================================
 // Display — `@INFO_CHARA_STAIN` (INFO.ERB:215-240)
 // =====================================================================

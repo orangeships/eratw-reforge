@@ -1,6 +1,6 @@
 import type { GameState, AcceptedEventRanking } from "../state/game-state.js";
 
-export type EventChannel = "daily" | "outing-departure" | "outing-return" | "banquet";
+export type EventChannel = "daily" | "outing-departure" | "outing-return" | "banquet" | "story";
 
 export interface EventCandidate {
   id: number;

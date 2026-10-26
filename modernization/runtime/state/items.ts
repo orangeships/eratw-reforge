@@ -46,6 +46,12 @@ export const ITEM_ID = {
   /** DAILY_EV2 / upstream DAILY_EV23 miracle stone. */
   奇跡之石: 530,
   潤滑液: 40,
+  /** クリスマスプレゼント — the Christmas present `@GIFT` offers at the end of
+   *  a date on Dec 24 (DATE_CMN.ERB:248). CSV/Item.als id=94. */
+  聖誕禮物: 94,
+  /** 簡易泳池 — without it the player cannot take chara 93 out (CAN_DATE,
+   *  DATE_CMN.ERB / 外出先から帰宅.ERB:190). CSV/Item.als id=38. */
+  簡易泳池: 38,
   避孕套: 45,
   姜黄飲料: 510,
   /** プレイマット / 塑料地墊 — enables normal sex in a bathroom. */
@@ -66,6 +72,13 @@ export const ITEM_ID = {
   特制竹箒: 907,
   槲葉糕: 212,
   冰淇淋: 213,
+  折畳傘: 36,
+  壊掉的傘: 140,
+  魚: 707,
+  好吃的魚: 708,
+  虫: 709,
+  稀有昆虫: 710,
+  龍珠: 647,
   紅茶: 215,
   糖: 216,
   大回復薬: 503,

@@ -124,6 +124,7 @@ export const comf67Def: ComfDef = {
 
   // ERB 41-42: master's own BASE drain.
   downbase: { [BASE_ID.体力]: 40, [BASE_ID.気力]: 50 },
+  targetDownbase: { [BASE_ID.体力]: 50, [BASE_ID.気力]: 60 },
 
   buildSources: (): Record<number, number> => ({
     // ERB 70-76, normal branch (target-side).
@@ -140,10 +141,6 @@ export const comf67Def: ComfDef = {
   }),
 
   body: (c) => {
-    // ERB 66-67: target shares a BASE drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 50;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 60;
-
     // EXP grants (ERB 98-116, normal branch).
     const grant = (
       slot: { state: { EXP: Record<number, number> } },

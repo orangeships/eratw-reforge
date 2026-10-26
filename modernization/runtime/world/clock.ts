@@ -1,13 +1,15 @@
 /**
  * Phase 8 — `advanceClock`: the single in-game time authority.
  *
- * Advances `state.time.tickValue` by `minutes`, recomputes `hourOfDay` /
+ * Advances `state.time.tickValue` by elapsed `minutes`, recomputes `hourOfDay` /
  * `dayIndex`, and — faithfully to eraTW — fires the day-end settlement
  * (`runDayEnd`) once per crossed midnight. eraTW fires day-end from the
  * main loop when `TIME` crosses a day boundary (`@INFO_GO_NEXTDAY`,
  * `INFO.ERB:1232`: `SIF TIME <= 1440: RETURN`, then `DAY++; TIME -= 1440`);
- * `advanceClock` is the modernized equivalent: `dayIndex = floor(tickValue
- * / 1440)`, and each time that floor increments, `runDayEnd` runs.
+ * `advanceClock` is the modernized equivalent: normal elapsed time advances
+ * `dayIndex` at the next 1440-minute boundary. A separate legacy TIME
+ * correction can move `tickValue` backward without decrementing DAY or
+ * replaying world-time side effects.
  *
  * Both other time paths delegate here, and — since DAY-CYCLE-PLAN §S3 — all
  * three (sleep / command / scheduler) fire day-end on a midnight cross:
@@ -20,15 +22,17 @@
  *     `makeComfHandler` splices them into the command result (R1) so 熬夜
  *     past midnight narrates the wage/cleaning cashout. Other call sites use
  *     it as a `void` statement (no cross → `[]`).
- * Because `tickValue` is shared monotonic state, each midnight is crossed —
- * and settled — exactly once, by whichever path advances across it first.
+ * Each DAY boundary is settled exactly once, by whichever positive-time path
+ * advances across it first. ERA's One_Minute_Man H correction is a direct TIME
+ * adjustment, not elapsed world time, and does not undo a settled DAY.
  *
  * **Tick rate** (locked 8.1): 1 in-game minute = 1.5 real seconds
  * (`MS_PER_TICK`). 1440 min = 24 in-game hours = 36 real minutes per
  * in-game day.
  *
- * `tickValue` is monotonic minutes since boot (not modulo 1440); the
- * scheduler (`scheduler.ts`) does the modulo for slot lookup.
+ * `tickValue` is the absolute ERA stamp `DAY*1440 + TIME`, not modulo 1440.
+ * It normally increases with elapsed time; a source-faithful H correction may
+ * decrement TIME without decrementing DAY or reversing elapsed-world effects.
  *
  * **In-place mutation contract:** mutates `state.time` fields in place
  * (NOT replacing the `time` object). Load-bearing — `phase-4-apply-intent
@@ -48,6 +52,7 @@ import type { ObservationEvent } from "../../schemas/types.js";
 import { runDayEnd } from "../state/day-end.js";
 import { advanceDishFreshness } from "../state/dish-freshness.js";
 import { progressBugTrap } from "../state/bug-catching.js";
+import { decayHAfterglowForWorldTime, shiftHAfterglowBuffers } from "../state/h-afterglow.js";
 import { CFLAG_ID, FLAG_ID, decrementEffectTimers } from "../state/settlement.js";
 import { runWeatherSystemTick } from "../weather/weather-system.js";
 import { advanceBanquetsInPlace } from "./banquet.js";
@@ -90,11 +95,11 @@ function advanceCompanionTimers(state: GameState, minutes: number): void {
   }
 }
 
-function nextWeatherBoundaryAfter(tick: number): number {
-  const dayStart = Math.floor(tick / 1440) * 1440;
-  const minute = ((tick % 1440) + 1440) % 1440;
+function nextWeatherBoundaryAfter(tick: number, dayIndex: number): number {
+  const dayStart = dayIndex * 1440;
   for (const boundary of WEATHER_BOUNDARIES) {
-    if (boundary > minute) return dayStart + boundary;
+    const absoluteBoundary = dayStart + boundary;
+    if (absoluteBoundary > tick) return absoluteBoundary;
   }
   return dayStart + 1440 + WEATHER_BOUNDARIES[0]!;
 }
@@ -108,7 +113,11 @@ function advanceClockInterval(
   now: () => number,
   shouldRunDayEnd: boolean,
 ): ObservationEvent[] {
-  const oldDay = Math.floor(state.time.tickValue / 1440);
+  const oldDay = Math.max(
+    state.time.dayIndex,
+    Math.floor(state.time.tickValue / 1440),
+  );
+  state.time.dayIndex = oldDay;
   const oldTick = state.time.tickValue;
   const prevHourOfDay = Math.floor((((oldTick % 1440) + 1440) % 1440) / 60);
 
@@ -121,7 +130,15 @@ function advanceClockInterval(
   decrementEffectTimers(state, minutes);
   const newMinOfDay = ((state.time.tickValue % 1440) + 1440) % 1440;
   state.time.hourOfDay = Math.floor(newMinOfDay / 60);
-  state.time.dayIndex = Math.floor(state.time.tickValue / 1440);
+  // DAY is an explicit upstream counter. A short negative TIME correction
+  // may put DAY*1440+TIME below the day's absolute boundary; do not roll DAY
+  // back, and do not repeat its already-run settlement when TIME catches up.
+  state.time.dayIndex = Math.max(oldDay, Math.floor(state.time.tickValue / 1440));
+
+  // Apply H decay before day-end can change state that affects its rate.
+  // The carry in h-afterglow.ts makes these chronological intervals exactly
+  // equivalent to one uninterrupted advance.
+  decayHAfterglowForWorldTime(state, oldTick, state.time.tickValue);
 
   const events: ObservationEvent[] = [];
   for (const e of runWeatherSystemTick(state, now, prevHourOfDay)) {
@@ -138,13 +155,16 @@ function advanceClockInterval(
     }
   }
   const banquet = advanceBanquetsInPlace(state, minutes);
-  events.push(...banquet.events.map((event) => ({ ...event, timestamp: now() })));
+  events.push(...banquet.events.map((event) => event.kind === "NARRATION"
+    ? { ...event, timestamp: now(), origin: "banquet" as const }
+    : { ...event, timestamp: now() }));
   return events;
 }
 
 /**
- * The single in-game time authority. Advance `state.time` by `minutes`
- * (ERA `TIME` units = minutes), recompute `hourOfDay` / `dayIndex`, emit a
+ * The single in-game elapsed-time authority. Advance `state.time` by
+ * nonnegative `minutes` (ERA `TIME` units = minutes), recompute `hourOfDay` /
+ * `dayIndex`, emit a
  * `TIME_TICK` event, and fire `runDayEnd` once per crossed midnight
  * (restamping its events with `now()`). Mutates `state.time` in place.
  *
@@ -168,6 +188,15 @@ export function advanceClock(
   if ((state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0) {
     return { state, events: [] };
   }
+
+  // Old saves and isolated callers may carry a stale dayIndex. Normalize it
+  // before choosing this DAY's weather boundaries; a short negative TIME
+  // correction is preserved because its explicit dayIndex is greater than
+  // floor(tickValue / 1440).
+  state.time.dayIndex = Math.max(
+    state.time.dayIndex,
+    Math.floor(state.time.tickValue / 1440),
+  );
 
   const finalTick = state.time.tickValue + minutes;
 
@@ -197,7 +226,10 @@ export function advanceClock(
   // settlement were skipped. Keep one public TIME_TICK for compatibility while
   // applying each world boundary in chronological order.
   while (state.time.tickValue < finalTick) {
-    const nextBoundary = nextWeatherBoundaryAfter(state.time.tickValue);
+    const nextBoundary = nextWeatherBoundaryAfter(
+      state.time.tickValue,
+      state.time.dayIndex,
+    );
     const intervalEnd = Math.min(finalTick, nextBoundary);
     events.push(
       ...advanceClockInterval(
@@ -210,6 +242,35 @@ export function advanceClock(
   }
 
   return { state, events };
+}
+
+/**
+ * Apply a signed ERA clock adjustment. Positive values are elapsed time and
+ * use the full world clock. Negative values model source-authored `TIME -= N`
+ * corrections: they update the absolute DAY*1440+TIME stamp and display hour,
+ * but do not reverse companion leases, timers, weather, or a DAY settlement
+ * that already ran. The upstream One_Minute_Man branch uses this for H
+ * commands whose own COM body has no positive TIME cost.
+ */
+export function applyEraTimeAdjustment(
+  state: GameState,
+  deltaMinutes: number,
+  now: () => number,
+): { state: GameState; events: ObservationEvent[] } {
+  const delta = Math.trunc(deltaMinutes);
+  if (delta >= 0) return advanceClock(state, delta, now);
+  state.time.dayIndex = Math.max(
+    state.time.dayIndex,
+    Math.floor(state.time.tickValue / 1440),
+  );
+  state.time.tickValue += delta;
+  shiftHAfterglowBuffers(state, delta);
+  const minuteOfDay = ((state.time.tickValue % 1440) + 1440) % 1440;
+  state.time.hourOfDay = Math.floor(minuteOfDay / 60);
+  return {
+    state,
+    events: [{ kind: "TIME_TICK", timestamp: now(), tickValue: state.time.tickValue }],
+  };
 }
 
 /**
@@ -233,7 +294,7 @@ export function pinClockToMinute(
   now: () => number,
 ): { state: GameState; events: ObservationEvent[] } {
   const target = (((Math.trunc(minuteOfDay) % 1440) + 1440) % 1440);
-  const dayStart = Math.floor(state.time.tickValue / 1440) * 1440;
+  const dayStart = state.time.dayIndex * 1440;
   const delta = dayStart + target - state.time.tickValue;
   if (delta <= 0) return { state, events: [] };
   return advanceClock(state, delta, now);
@@ -252,8 +313,8 @@ export function tickClock(
   const minutes = Math.max(0, Math.floor(realDeltaMs / MS_PER_TICK));
   // DAY-CYCLE-PLAN §S3: runDayEnd defaults to true — the autonomous scheduler
   // tick fires day-end on a midnight cross (was `{ runDayEnd: false }`, commit
-  // 20e0372a, no stated reason). tickValue is shared monotonic state, so each
-  // midnight is crossed — and settled — exactly once, by whichever path
-  // (command / scheduler / sleep) advances across it first.
+  // 20e0372a, no stated reason). The authoritative dayIndex ensures each
+  // forward DAY boundary is settled once, even if a prior command directly
+  // corrected TIME without rewinding DAY.
   return advanceClock(state, minutes, now);
 }

@@ -471,7 +471,7 @@ export function exDishNamePrefix(taste: string): string {
 export function assembleDishTaste(
   dish: DishEntry,
   month: string,
-  opts: { ingredientName?: string; charaTags?: string; rng?: { int(max: number): number } } = {},
+  opts: { ingredientName?: string; charaTags?: string; rng?: { int(max: number): number }; practice?: boolean } = {},
 ): string {
   let t = applySeasonalTaste(dish.taste, month);
   if (opts.ingredientName) t = ingredientTasteAdd(t, opts.ingredientName);
@@ -480,6 +480,7 @@ export function assembleDishTaste(
   t += "できたて/";
   t += dish.name + "/";
   t += dish.type + "/";
+  if (opts.practice) t = t.split("过季/").join("") + "練習/";
   if (t.includes("中立温度/")) t = t.replace("中立温度/", month === "夏之月" ? "冷/" : "温暖/");
   return t;
 }

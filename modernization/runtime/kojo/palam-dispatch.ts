@@ -2,7 +2,9 @@ import type { ObservationEvent } from "../../schemas/types.js";
 import type { CommandContext } from "../command/types.js";
 import { createRng } from "../command/rng.js";
 import { commandKojoSeed } from "../command/command-kojo.js";
+import { hEjaculationKojoRoutes } from "../command/h-ejaculation-semantics.js";
 import type { KojoStagedEffect, PalamKojoKind } from "./types.js";
+import { CFLAG_ID, EX_ID, TCVAR_ID } from "../state/settlement.js";
 
 /**
  * PALAMCNG dispatch — the post-settlement reaction layer that the original
@@ -23,7 +25,29 @@ export interface PalamCngKojoCollection {
   effects: KojoStagedEffect[];
 }
 
-const COMMAND_PALAM_PHASES: readonly PalamKojoKind[] = ["C"];
+interface PalamPhase {
+  kind: PalamKojoKind;
+  detail?: string | number;
+}
+
+function commandPalamPhases(ctx: CommandContext, target: number): PalamPhase[] {
+  const targetSlot = ctx.state.charas[target];
+  const frame = ctx.state.turnContext?.frame;
+  const targetNowEx = frame?.nowExByChara[target] ?? {};
+  const masterNowEx = frame?.nowExByChara[ctx.state.master.charaNum] ?? {};
+  const prank = (targetSlot?.state.CFLAG[CFLAG_ID.恶作剧] ?? 0) !== 0;
+  const phases: PalamPhase[] = [];
+  const orgasmed = [EX_ID.Ｃ絶頂, EX_ID.Ｖ絶頂, EX_ID.Ａ絶頂, EX_ID.Ｂ絶頂, EX_ID.Ｍ絶頂]
+    .some((id) => (targetNowEx[id] ?? 0) > 0);
+  if (orgasmed) phases.push({ kind: prank ? "B2" : "B" });
+  if ((masterNowEx[EX_ID.射精] ?? 0) > 0) {
+    const recordedSite = ctx.state.master.state.TCVAR[TCVAR_ID.已射精部位FLAG] ?? 0;
+    const markerMask = targetSlot?.state.TCVAR[TCVAR_ID.口上出力用射精部位] ?? 0;
+    phases.push(...hEjaculationKojoRoutes(markerMask, recordedSite, prank));
+  }
+  phases.push({ kind: "C" });
+  return phases;
+}
 
 /** Translate PALAMCNG lines into session-owned DIALOGUE_LINE events. */
 function linesToEvents(
@@ -56,21 +80,26 @@ export function collectCommandPalamCng(
   const rng = createRng(commandKojoSeed(ctx));
   const events: ObservationEvent[] = [];
   const effects: KojoStagedEffect[] = [];
-  for (const kind of COMMAND_PALAM_PHASES) {
+  let ejaculationRouteSelected = false;
+  for (const phase of commandPalamPhases(ctx, target)) {
+    const isEjaculationRoute = phase.kind === "A" || phase.kind === "A2";
+    if (isEjaculationRoute && ejaculationRouteSelected) continue;
     const detailed = ctx.dialogueRouter.resolvePalamKojoDetailed?.(
       target,
-      kind,
-      undefined,
+      phase.kind,
+      phase.detail,
       ctx.state,
       rng,
     );
     if (!detailed) {
       const lines =
-        ctx.dialogueRouter.resolvePalamKojo?.(target, kind, undefined, ctx.state, rng) ?? [];
+        ctx.dialogueRouter.resolvePalamKojo?.(target, phase.kind, phase.detail, ctx.state, rng) ?? [];
       events.push(...linesToEvents(lines, target, ctx.now()));
+      if (isEjaculationRoute && lines.length > 0) ejaculationRouteSelected = true;
       continue;
     }
     if (detailed.status !== "resolved" && detailed.status !== "partial") continue;
+    if (isEjaculationRoute) ejaculationRouteSelected = true;
     if (detailed.effects.length > 0) effects.push(...detailed.effects);
     events.push(...linesToEvents(detailed.lines, target, ctx.now()));
   }

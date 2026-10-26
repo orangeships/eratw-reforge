@@ -13,23 +13,32 @@
  *
  * **Ported faithfully (handler layer):**
  *   - **execCheck** (`@COM_ABLE415`, ERB 103-143): `FLAG:70` block, `TARGET<1`
- *     block, `CFLAG:睡眠` (TARGET) block, `DISH_NAME==""` block, TARGET 空腹
- *     gate, `CFLAG:诶嘿嘿` block. (軽食以外 `INROOM` + `BATHCHECK` defer.)
- *   - **ASK_YN** "只和两人吃?" (ERB 10-16) — interactive prompt (B9) deferred;
- *     MVP defaults to `TARGET_ONLY = true` (the "yes" branch: just TARGET
- *     eats, group loop skipped). In the single-char trial both branches are
- *     identical (only TARGET present), so this is lossless there.
+ *     block, `CFLAG:睡眠` (TARGET) block, `DISH_NAME==""` block, `BATHCHECK`
+ *     (MASTER's room), 軽食以外 は室内 (`INROOM`), TARGET 空腹 gate,
+ *     `CFLAG:诶嘿嘿` block. The two room gates reuse the same
+ *     `location-predicates` helpers 414 already uses, so 415 is strict where
+ *     414 is not: upstream gates 415 on `DISH_TYPE != "軽食"` (ERB 131) but 414
+ *     only on `DISH_TYPE == "主食"` (ERB 322).
+ *   - **ASK_YN** "只和两人吃?" (ERB 10-16) — interactive prompt (B9); the
+ *     "no" (group) branch runs `CALL AssembleForMeal` (`COMF415.ERB:15` →
+ *     `集合.ERB:299-347`, see `world/assemble-for-meal.ts`) BEFORE the eat
+ *     loop, upstream order preserved: ASK_YN → assemble → 実食. Direct
+ *     runtime callers without a prompt answer keep the historical
+ *     private-meal default (`TARGET_ONLY = true`).
  *   - **participant loop** (ERB 51-91): reuses `runMealParticipant` (the
  *     shared `@COM414_実食` orchestration from `meal.ts`). TARGET gets
  *     BONUS=1. **No master eat** (the serve semantics).
+ *   - **per-eater prose**: `%CALLNAME%的评价………… N点` (`COMF414.ERB:745`)
+ *     + the `TFLAG:193` reaction line (`EVENT_MESSAGE_COM400.ERB:419-432`,
+ *     the solo "快乐的时光" arm because the master is not eating).
  *   - **TIME += EAT_TIME** + `CFLAG:MASTER:同行 += EAT_TIME` (ERB 94-96).
  *
- * **DEFERRED:** same cluster as 414 (see meal.ts header) + the ASK_YN
- * `TARGET_ONLY = false` group arm (B9 interactive). TFLAG:信頼度管理 /
+ * **DEFERRED:** same cluster as 414 (see meal.ts header). TFLAG:信頼度管理 /
  * TFLAG:授乳コマンド (no consumer). 料理リセット (空腹 gate prevents re-eat).
  */
 
 import type { GameState } from "../../state/game-state.js";
+import type { ObservationEvent } from "../../../schemas/types.js";
 import type { HandlerEntry } from "../types.js";
 import { requireYesNo, type PromptSpec } from "../prompt.js";
 import { cloneGameState } from "../../state/game-state.js";
@@ -37,11 +46,14 @@ import { selectPresentCharas } from "../../scene/presence.js";
 import {
   CFLAG_ID,
   FLAG_ID,
+  TCVAR_ID,
   advanceTimeTicks,
   getMasterCflag,
 } from "../../state/settlement.js";
 import { clearDish, getDish, tasteCount } from "../../state/dish.js";
-import { runMealParticipant } from "./meal.js";
+import { bathCheck, inRoom } from "../../world/location-predicates.js";
+import { runMealParticipant, mealEaterEvents } from "./meal.js";
+import { assembleForMeal } from "../../world/assemble-for-meal.js";
 
 // ---------------------------------------------------------------------------
 // execCheck — `@COM_ABLE415` core (ERB 103-143)
@@ -68,10 +80,18 @@ function checkServeEligible(
   if (!getDish(state)) {
     return { ok: false, reason: { kind: "precondition", message: "没有料理可以招待。" } };
   }
-  // ERB 128: BATHCHECK — defer (no ROOMDATA).
-  // ERB 131: 軽食以外は屋内 (INROOM) — defer (no ROOMDATA).
-  // ERB 134-139: 食べたばかり — TARGET must be hungry (bare TCVAR → TARGET).
   const dish = getDish(state)!;
+  // ERB 128: BATHCHECK(CFLAG:MASTER:現在位置) — 風呂場飯禁止. Note this is the
+  // MASTER's room, same subject as 414's arm.
+  if (bathCheck(state, state.master.location)) {
+    return { ok: false, reason: { kind: "precondition", message: "浴室里不方便招待。" } };
+  }
+  // ERB 131: `DISH_TYPE != "軽食" && !INROOM(...)` — everything except 軽食 must
+  // be served indoors. Deliberately stricter than 414's 主食-only arm (ERB 322).
+  if (dish.type !== "軽食" && inRoom(state, state.master.location) === 0) {
+    return { ok: false, reason: { kind: "precondition", message: "这道菜只能在室内招待。" } };
+  }
+  // ERB 134-139: 食べたばかり — TARGET must be hungry (bare TCVAR → TARGET).
   const isDessert = dish.type === "甜点";
   const clockId = isDessert ? 313 : 312;
   const threshold = tSlot.state.TCVAR[clockId] ?? 0;
@@ -132,25 +152,39 @@ export const serveMealHandlerEntry: HandlerEntry = {
       };
     }
 
-    // ASK_YN "只和两人吃?" (ERB 10-16). Yes keeps the meal private; no
-    // runs the non-target present-character loop before the target's bonus.
-    // Direct runtime callers without the UI prompt retain the historical
-    // private-meal default; normal command dispatch always supplies ASK_YN.
+    // ASK_YN "只和两人吃?" (ERB 10-16). Yes keeps the meal private; the "no"
+    // (group) branch assembles hungry nearby NPCs first (ERB 15) before the
+    // eat loop. Direct runtime callers without the UI prompt retain the
+    // historical private-meal default; normal command dispatch supplies ASK_YN.
     const targetOnly = ctx.promptAnswer ? requireYesNo(ctx.promptAnswer) : true;
 
     const eatTime = dish.type === "主食" ? 40 : 20;
     let tflag194 = 0;
     if (tasteCount(dish.taste, "跳蛋")) tflag194 = 2;
 
-    // CVARSET 料理評価値 = 0 (ERB 17) — zero present NPCs.
+    const events: ObservationEvent[] = [];
+    // Group arm: CALL AssembleForMeal (COMF415.ERB:15) → smell lines.
+    if (!targetOnly) {
+      for (const slot of assembleForMeal(next, dish.type === "甜点")) {
+        events.push({
+          kind: "NARRATION",
+          timestamp: ctx.now(),
+          text: `${slot.callName ?? `#${slot.charaNum}`}闻着饭菜的香味过来了`,
+        });
+      }
+    }
+
+    // CVARSET 料理評価値 = 0 (ERB 17) — zero present NPCs (incl. assembled).
+    next.master.state.TCVAR[TCVAR_ID.料理評価値] = 0;
     const present = selectPresentCharas(next, next.master.location);
     const npcNums = present
       .filter((s) => s.charaNum !== 0)
       .map((s) => s.charaNum)
       .sort((a, b) => a - b);
-    for (const n of npcNums) next.charas[n]!.state.TCVAR[306] = 0;
+    for (const n of npcNums) next.charas[n]!.state.TCVAR[TCVAR_ID.料理評価値] = 0;
 
     const participantNames: string[] = [];
+    const eaterEvents: ObservationEvent[] = [];
     // Non-target group loop (ERB 55-86) — skipped when TARGET_ONLY.
     if (!targetOnly) {
       for (const n of npcNums) {
@@ -163,12 +197,19 @@ export const serveMealHandlerEntry: HandlerEntry = {
           tflag194,
           ctx.rng,
         );
-        if (other.ate) participantNames.push(next.charas[n]?.callName ?? `#${n}`);
+        if (other.ate) {
+          participantNames.push(next.charas[n]?.callName ?? `#${n}`);
+          eaterEvents.push(...mealEaterEvents(next, n, other.tflag193, dish.name, /*serve*/ true, ctx.now));
+        }
       }
     }
     // TARGET eats with BONUS=1 (ERB 91). No master eat (serve semantics).
-    const r = runMealParticipant(next, target, eatTime, true, tflag194, ctx.rng);
-    if (r.ate) participantNames.push(next.charas[target]?.callName ?? `#${target}`);
+    // isTarget: only the TARGET's meal drives TFLAG:信頼度管理 (ERB 93).
+    const r = runMealParticipant(next, target, eatTime, true, tflag194, ctx.rng, /*isTarget*/ true);
+    if (r.ate) {
+      participantNames.push(next.charas[target]?.callName ?? `#${target}`);
+      eaterEvents.push(...mealEaterEvents(next, target, r.tflag193, dish.name, /*serve*/ true, ctx.now));
+    }
 
     // TIME += EAT_TIME (ERB 94) + CFLAG:MASTER:同行 += EAT_TIME (ERB 95-96).
     // Preserve the pre-tick master companion value before the clock's
@@ -182,13 +223,16 @@ export const serveMealHandlerEntry: HandlerEntry = {
     // COMF415 shares the meal-reset command tag with COMF414 upstream.
     clearDish(next);
 
-    const tierWord =
-      r.tflag193 === 1 ? "对方吃得很满意。" : r.tflag193 === -1 ? "对方似乎不太满意。" : "";
+    // Event order mirrors meal.ts: smell lines → summary opener → per-eater
+    // 评价行 + TFLAG:193 reaction line (upstream's single-tier summary word
+    // is superseded by the per-eater reaction lines).
     const guests = participantNames.length > 0 ? participantNames.join("、") : "没有人";
-    const text = `向${guests}招待了${dish.name}。${tierWord}（经过 ${eatTime} 分钟）`;
+    const text = `向${guests}招待了${dish.name}。（经过 ${eatTime} 分钟）`;
+    events.push({ kind: "NARRATION", timestamp: ctx.now(), text });
+    events.push(...eaterEvents);
     return {
       state: next,
-      events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text }],
+      events,
       outcome: "ok" as const,
     };
   },

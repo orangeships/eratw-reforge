@@ -44,7 +44,7 @@ import type { ObservationEvent } from "../../schemas/types.js";
 // a benign 3-module cycle (settlement → clock → day-end → settlement);
 // every cross-module reference is inside a function body, resolved at call
 // time. See `runtime/world/clock.ts` header.
-import { advanceClock } from "../world/clock.js";
+import { advanceClock, applyEraTimeAdjustment } from "../world/clock.js";
 
 export { TFLAG_ID } from "./tflag.js";
 
@@ -118,6 +118,8 @@ export const CFLAG_ID = {
   /** 地位 — rank. 征服/受動 converters branch on TARGET.地位 vs PLAYER.地位. */
   地位: 310,
   初期位置: 311,
+  /** お招き — master is sleeping in another character's room. */
+  お招き: 336,
   睡眠: 313,
   /** 延迟 — temporary delay flag; blocks 自由行動 and several commands. */
   延迟: 333,
@@ -153,6 +155,18 @@ export const CFLAG_ID = {
   膣内射精: 286,
   /** 肛門射精 (CFLAG.als:287). Cleared by bathing. */
   肛門射精: 287,
+  /** V-deflowering reason bitset (CFLAG.als:503). */
+  処女喪失対象: 503,
+  /** V-deflowering partner (CFLAG.als:504). */
+  処女喪失相手: 504,
+  /** A-deflowering reason bitset (CFLAG.als:508). */
+  アナル処女喪失対象: 508,
+  /** Upstream alias for the same A-deflowering reason slot. */
+  尻穴処女喪失対象: 508,
+  /** A-deflowering partner (CFLAG.als:509). */
+  アナル処女喪失相手: 509,
+  /** Upstream alias for the same A-deflowering partner slot. */
+  尻穴処女喪失相手: 509,
   /** 口内精液 (CFLAG.als:288). Cleared by bathing. */
   口内精液: 288,
   /** 脸上精液 (CFLAG.als:289). Cleared by bathing. */
@@ -201,6 +215,7 @@ export const CFLAG_ID = {
   每日礼物: 399,
   処女喪失記念日: 502,
   尻穴処女喪失記念日: 507,
+  アナル処女喪失記念日: 507,
   初吻喪失記念日: 510,
   /** 初吻喪失对手 / ファーストキス喪失相手 (CFLAG.csv id=511). */
   初吻喪失对手: 511,
@@ -218,6 +233,8 @@ export const CFLAG_ID = {
   /** 累計膣内射精 — sender-side lifetime 中出し volume (CFLAG.als:519). */
   累計膣内射精: 519,
   强行内射: 530,
+  /** Upstream CFLAG 377: reverse/H-entry hard block. */
+  推倒禁止: 377,
   /** 生理周期 — 0..9 estrus cycle stage (肉体情報_W 危险日梯). */
   生理周期: 900,
   /** 子宮内精子 — persistent uterine-semen flag (AutoConst_CFLAG.ERH:443, id=901).
@@ -250,6 +267,10 @@ export const CFLAG_ID = {
    *  Used by the upstream release settlement for the one-time relationship
    *  reaction. */
   時間停止バレ: 345,
+  /** 现在忙得抽不出手 — the dedicated upstream masturbation-session latch
+   *  (CFLAG 346). 433 starts it and 751 clears it; it is intentionally
+   *  separate from the ordinary 诶嘿嘿/H-mode flag. */
+  现在忙得抽不出手: 346,
   自慰过了: 347,
   职种: 350,
   来訪時間: 352,
@@ -266,12 +287,16 @@ export const CFLAG_ID = {
   /** 翌日来訪 — "will visit tomorrow" reservation (危険日 KIKENBIHOUMON / 祈願).
    *  A Phase-1 guaranteed-visit input. CFLAG.als id=362. */
   翌日来訪: 362,
+  /** 全年 — annual new-year resolution reset latch (CFLAG.als id=361). */
+  全年: 361,
   /** 最後に来訪した日 — DAY of this chara's last visit; drives the recency
    *  damping in `@来訪フラグ` (visits clump less). CFLAG.als id=365. */
   最後に来訪した日: 365,
   /** 最後に会った日 — DAY of this chara's last in-person meeting. Stamped by
    *  @ONABARE (NASIKUZUSI.ERB:6) and other meeting ceremonies. CFLAG.csv id=384. */
   最後に会った日: 384,
+  /** 本来の初期位置 — original home while QOL_STAYOVER temporarily moves a guest. */
+  本来の初期位置: 386,
   /** Hatate's authored food-report progress gate (`固有依頼042`, CFLAG 1005). */
   はたて美食記事: 1005,
   /** 来訪抑制値 — extra divisor added to the visit RAND (raises = less likely).
@@ -279,6 +304,8 @@ export const CFLAG_ID = {
   来訪抑制値: 366,
   /** 来訪不能 — hard "cannot visit" flag (kojo-driven). CFLAG.als id=379. */
   来訪不能: 379,
+  /** CSV/CFLAG.csv: per-map visitor landing rooms, maps 0..10 at 450..460. */
+  来訪位置_博: 450,
   /** 依頼状況 — commission state; ==3 (達成) forces a guaranteed visit in
    *  `@来訪フラグ` Phase 1. CFLAG.als id=403. */
   依頼状況: 403,
@@ -306,6 +333,10 @@ export const CFLAG_ID = {
   恥じらい: 550,
   别颜有: 562,
   别立有: 563,
+  /** 立绘替换包选择 — 0 is the authored/default pack; positive values
+   * select the per-character alternate portrait package.  The available
+   * range is dimension-specific and comes from 别顔有 / 别立有. */
+  差し替え適用: 564,
   /** 潜伏状態 — per-chara stealth BIT (CFLAG.als id=526). bit0 set by COMF356
    *  物陰に誘う (`SETBIT CFLAG:TARGET:潜伏状態,0`). */
   潜伏状態: 526,
@@ -343,8 +374,9 @@ export const CFLAG_ID = {
   /** 清醒劑 — sobriety counter, raised +180 by `清醒/` dish taste
    *  (COMF414 吃飯 non-DLC). CFLAG.als id=385. Consumer (醒酒) not yet ported. */
   清醒劑: 385,
-  /** 今日の運勢 — today's fortune score (0-999), nudged by `奇跡/`/`幸運/` dish
-   *  taste. CFLAG.als id=378. Consumer (運勢) not yet ported. */
+  /** 今日の運勢 — today's fortune score (0-999), seeded by BEFORETRAIN and
+   *  rewritten by the base FORTUNE command; dishes can nudge the same value.
+   *  CFLAG.als id=378. */
   今日の運勢: 378,
   /** 不會喝酒 — "can't-handle-drink" counter (COMF332 お酒をふるまう). Raised
    *  +1 when a palatable alcohol (TASTE>=15) is drunk; lowered -1 when a
@@ -392,6 +424,11 @@ export const CFLAG_ID = {
   ただならぬ開放感ソース追加: 295,
 } as const;
 
+/** Named keys for upstream `#DIM SAVEDATA` slots, which are not FLAG ids. */
+export const SAVEDATA_KEY = {
+  OneMinuteMan: "One_Minute_Man",
+} as const;
+
 /** Top-level FLAG ids (global state, not per-chara). From `FLAG.als`. */
 export const FLAG_ID = {
   妊娠開关: 1025,
@@ -399,6 +436,11 @@ export const FLAG_ID = {
   兒童の性別: 1065,
   住宿人物: 15,
   宴会開催FLAG: 30,
+  /** 长筒襪着用 — upstream `FLAG_长筒襪着用` (AutoConst_FLAG.ERH:10). A **global
+   *  option** toggled in OPTION.ERB:511, not a per-character worn state: when
+   *  on, `@F衣装セット76` / `@F衣装セット92` pick 吊带袜 over 袜子. The modern
+   *  runtime exposes no toggle yet, so it reads 0. See `world/outfit-f-variants.ts`. */
+  长筒襪着用: 2,
   /** Selected alcohol contributed by Reimu's banquet commission (FLAG 37). */
   宴会差し入れ: 37,
   /** Canonical event-start flag (AutoConst_FLAG id 1). */
@@ -417,6 +459,8 @@ export const FLAG_ID = {
    *  magic-DLC option menu; defaults 0 in a non-DLC trial → MAX(0,1000)=1000.
    *  Modeled in `flagStore`. */
   魔法强度: 1098,
+  /** アナル開発無効 — global option disabling anal-development counter arms. */
+  アナル開発無効: 1079,
   /** 魔法印记开关 — magic-mark toggle (FLAG.als id=1099, DLC). When on, COMF233
    *  sets `SOURCE:魔力印记 = 1` (the magic-mark settlement arm). Modeled in
    *  `flagStore`. */
@@ -440,6 +484,10 @@ export const FLAG_ID = {
   每日变更事件: 9,
   /** 時間停止 — global time-stop active. */
   時間停止: 70,
+  /** 不会生气 — global option that suppresses anger drift. */
+  不会生气: 236,
+  /** 神簽契約 — Reimu's recurring fortune-slip contract. */
+  神簽契約: 76,
   /** 收藏隙間 — portable collection-gap ownership/date marker. */
   收藏隙間: 86,
   /** C隙間自動仕様 — automatically send acquired panties to the gap. */
@@ -490,6 +538,9 @@ export const FLAG_ID = {
   /** 追加恋人枠 — extra lover slots beyond the default 1 (CAN_MAKE_恋人,
    *  DATE_CMN.ERB:294-302). FLAG.csv id=50. */
   追加恋人枠: 50,
+  /** 告白禁止 — suppress the confession arm of `DATE_EVENT`
+   *  (DATE_CMN.ERB:180). AutoConst_FLAG.ERH `#DIM CONST FLAG_告白禁止 = 1061`. */
+  告白禁止: 1061,
   /** 立絵種類 — portrait kind (AutoConst_FLAG.ERH:288 `#DIM CONST FLAG_立絵種類
    *  = 1047` / CSV/FLAG.als:246). 0=立絵 (full-body), 1=顔絵 (face). GET_BASESTYLE
    *  (IMAGE.ERB:862-894) picks the resource-name prefix; CALC_EXPRESSION_CORE
@@ -511,9 +562,17 @@ export const FLAG_ID = {
   デート相手: 73,
   /** 新聞購読 - whether the player receives authored newspaper notices. */
   新聞購読: 75,
+  /** 傘耐久度 — Kogasa's foldable-umbrella repair durability. */
+  傘耐久度: 96,
+  /** 開運大紋購入回数 — Tewi's optional fortune-charm purchase count. */
+  開運大紋購入回数: 852,
+  /** 泳池 — optional pool modification bitfield used by 443's tool branch. */
+  泳池: 1022,
   /** 気絶中断 — fainted/interrupted sleep marker. BEFORETRAIN divides sleep
    *  recovery time by 5 and then clears this flag. */
   気絶中断: 200,
+  /** 一時滞在 — charaNum of the current overnight guest. */
+  一時滞在: 582,
   /** 抱負 — new-year resolution buff (FLAG.csv id=72). ==1 → 中毒-ABL jewel
    *  demand ×0.75 (ABL_UP_DATA.ERB:1837). */
   抱負: 72,
@@ -651,6 +710,10 @@ export const BASE_ID = {
   法力: 7,
   TSP: 8,
   情緒: 10,
+  /** ムード — ERB/Headers/AutoConst_Base.ERH `BASE_ムード = 10` (CSV/Base.csv:10).
+   *  Canonical ERB spelling of {@link 情緒}; `DATE_EVENT_CHECKSUM`
+   *  (DATE_CMN.ERB:215) reads it as `BASE:ARG:ムード / 50`. */
+  ムード: 10,
   理性: 11,
   憤怒: 12,
   仕事量: 13,
@@ -671,6 +734,22 @@ export const BASE_ID = {
   /** 潜伏率 — stealth success rate (Base.als id=16). Set to 100 by COMF356
    *  物陰に誘う on ambush entry. */
   潜伏率: 16,
+  // ---- Slice 2 (2026-09-18): upstream-authoritative ids ----
+  // Transcribed from ERB/Headers/AutoConst_Base.ERH. Additive only: no
+  // runtime code reads these yet (state-layer groundwork, Step 1).
+  /** Ｃ/Ｖ/Ａ/Ｂ/Ｍ絶頂余韻 (id=30-34) — per-channel afterglow, each
+   *  capped at 600 by @UPDATE_ORGASM_AFTERGLOW. The scalar
+   *  `BASE:絶頂余韻` (id=35) is derived from these as
+   *  `MIN(HIGHEST + SUM_REST / 6, 800)`. */
+  Ｃ絶頂余韻: 30,
+  Ｖ絶頂余韻: 31,
+  Ａ絶頂余韻: 32,
+  Ｂ絶頂余韻: 33,
+  Ｍ絶頂余韻: 34,
+  /** 剩余工作量 (`CSV/Base.csv:13`)。`WORKING` / `CHARA_HOLIDAY` 读它
+   *  判定「今天还有没有活」。现代目前不写，所以恒为 0 → `工作量 <= 0` 恒真
+   *  → `WORKING` 恒假（少图，fail-closed 的安全侧）。常量先补上。 */
+  工作量: 13,
 } as const;
 
 /**
@@ -688,8 +767,24 @@ export const BASE_ID = {
  * `帮忙工作量` ("work done"). Both mean "target's accumulated work".
  */
 export const TCVAR_ID = {
-  /** 清掃経験 — daily cleaning mirror used by GO_OUT_EV05. */
-  清掃経験: 70,
+  /** QOL visitor destination: room id or negative friend id (AutoConst_TCVAR.ERH:289). */
+  INITIAL_VISITATION_POINT: 916,
+  /** 清掃経験 — daily cleaning mirror used by GO_OUT_EV05
+   *  (`GO_OUT_EV05_お姉さんとイイコト.ERB:80`: `TCVAR:MASTER:清掃経験 += 5`).
+   *
+   *  **id 修正 (2026-09-18, Slice 1):** was 70, which is upstream
+   *  `TCVAR_指令Ｃ補正` (`AutoConst_TCVAR.ERH:31`). Upstream
+   *  `TCVAR_清掃経験` is **470** (`AutoConst_TCVAR.ERH:266`) — the 70 came
+   *  from the EXP table, where `EXP_清掃経験 = 70` (`AutoConst_exp.ERH:66`).
+   *  `kojo/kojo-symbols.json:2515` already had the correct TCVAR mapping
+   *  (470), so before this fix `outing-events.ts` wrote slot 70 while any
+   *  kojo reading `TCVAR:清掃経験` read slot 470 — two different slots. */
+  清掃経験: 470,
+  /** 斗虫参加可否 — daily 斗虫 participation marker. TCVAR.csv id=334.
+   *  -1 = everyone in the room is exhausted and refuses; 0 = ready;
+   *  2 = joined one duel; `placement + 10` after a battle royale. Resets with
+   *  the day cycle like every other TCVAR. Read/written by COMF483 ムシバトル. */
+  斗虫参加可否: 334,
   /** 强行 — command-local coercion marker read by authored acceptance
    * helpers such as Ruukoto's K2_CONSCIOUS_AND_TOLERANT. TCVAR.als id=200. */
   强行: 200,
@@ -721,6 +816,13 @@ export const TCVAR_ID = {
   工作礼物: 324,
   工作開始: 325,
   工作結束: 326,
+  /** 喝醉 (`AutoConst_TCVAR.ERH` = 145)。`SHIRAHU(ARG)` 读它判定「有意识」。
+   *  现代目前不写这个槽，所以读出来恒为 0 —— `!烂醉` 恒真 = 「没醉」，
+   *  正好是 fail-closed 的安全侧。常量先补上，等真有地方写它时就能直接用。 */
+  烂醉: 145,
+  /** 活动服装覆盖 (`AutoConst_TCVAR.ERH` EVENT_CLOTHING_SET = 911)。
+   *  `CURRENT_CLOTHES_SET` 的第 1 分支读它（`CHECK_CLO.ERB:52-53`）。 */
+  EVENT_CLOTHING_SET: 911,
   /** TARGET's running 会話 accumulator (ERB: `TCVAR:301`, .als 会話累計値).
    *  COMF300 会話 / COMF23 ピロートーク add to it each talk. The scheduler
    *  (`MOVEMENT_SUB.ERB`) decays it by TIME_PROGRESS and, while it is `> 100`,
@@ -809,10 +911,15 @@ export const TCVAR_ID = {
    *  partner-led (诶嘿嘿==2) H mode; COMF850 抜け出す reads `GETBIT(随便,0)`
    *  for the struggle arm. Per-chara (target scope). */
   随便: 320,
+  /** COM_ABLE350's special-location exception (TCVAR.csv id 317). */
+  特殊事件: 317,
   /** Counter行動 — current counter-action id (TCVAR.als id=20). The
    *  partner-led (诶嘿嘿==2) counter subsystem index; COMF360/361 read it to
    *  pick the COUNTER_SIKOU slot to nudge. Defer to 0 (no counter active). */
   Counter行動: 20,
+  /** EVENTCOMEND2's short/previous training-history mirrors (ids 10/110). */
+  調教履歴: 10,
+  調教履歴保存: 110,
   // --- H-mode insertion / thrust (COMF317 腰を動かす V, COMF318 …Ａ) — TCVAR.als ---
   /** 射精箇所 — ejaculation-site flag (TCVAR.als id=2). -1=避孕套 1=膣内
    *  2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具
@@ -822,6 +929,8 @@ export const TCVAR_ID = {
   /** 射精快感強度 — thrust strength (TCVAR.als id=4). `500 + ABL:腰*50 +
    *  ABL:膣(or 肛門)*50` on PLAYER; flat 1500 on TARGET. */
   射精快感強度: 4,
+  /** 已射精部位FLAG — the current turn's ejaculation site, copied by EVENTCOMEND. */
+  已射精部位FLAG: 12,
   /** V挿入管理フラグ — "PLAYER is inserted into TARGET's V" (TCVAR.als id=100).
    *  Set = PLAYER by the insertion command; `@COM_ABLE317` gates on
    *  `TCVAR:TARGET:100 == PLAYER`. (Insertion itself deferred → COMF317/318
@@ -831,10 +940,34 @@ export const TCVAR_ID = {
   /** A挿入管理フラグ — anal-insertion mirror of {@link V挿入管理} (id=101).
    *  `@COM_ABLE318` gates on `TCVAR:TARGET:101 == PLAYER`. */
   A挿入管理: 101,
+  /** V被中出FLAG / sender record (TCVAR ids 102-103). */
+  V被中出FLAG: 102,
+  Vに中出しした角色番号: 103,
+  Vに中出ししたキャラの番号: 103,
+  /** A被中出FLAG / sender record (TCVAR ids 104-105). */
+  A被中出FLAG: 104,
+  Aに中出しした角色番号: 105,
+  Aに中出ししたキャラの番号: 105,
+  /** ゴム使用済み — the active insertion partner has already consumed a
+   * condom; `EQUIP_INCERT_V/A` stops adding continuous insertion effects. */
+  ゴム使用済み: 113,
+  /** Per-turn pleasure/pose bookkeeping consumed by EVENTCOMEND2. */
+  快楽強度: 106,
+  要去了: 107,
+  射精槽増加量: 111,
+  前ターン射精箇所: 112,
   /** 行為者 — "who is acting this turn" (TCVAR id=116, bare int — no .als
    *  label). PLAYER for master-initiated thrust. COMF317/318 set
    *  `TCVAR:116 = PLAYER` (=0, the master index) each thrust. */
   行為者: 116,
+  体勢: 120,
+  体勢制御: 121,
+  位置関係: 122,
+  位置関係制御: 123,
+  /** 射精我慢 — EVENT_SHOOT divisor exponent (TCVAR.als id=124). */
+  射精我慢: 124,
+  /** A-deflowering marker, paired with 破瓜 (TCVAR.csv id=17). */
+  Ａ破瓜: 17,
   /** 亲热 — intimacy intensity on the actor (TCVAR.als id=130). `@COM_ABLE317`
    *  requires `TCVAR:MASTER:亲热 >= 2` (unless sleeping). Set by the foreplay
    *  ladder; deferred (clean trial = 0 → gate blocks awake thrust unless the
@@ -848,6 +981,9 @@ export const TCVAR_ID = {
   /** ＦＫ喪失 — first-kiss-lost flag (TCVAR.als id=63). Set to 1 by COMF19
    *  キス継続 on the target (marks "has been kissed"). */
   ＦＫ喪失: 63,
+  /** キス日時 — last ordinary kiss timestamp (TCVAR.als id=314); COMF312
+   *  uses TIME_PROGRESS against it for its conditional 60-minute gate. */
+  キス日時: 314,
   /** 利尿剤 — diuretic effect timer (TCVAR.csv id=141). Set to 60 by COMF182
    *  利尿剤; decremented by WorldScheduler. `@COM_ABLE144` 放尿 gates
    *  `TCVAR:利尿剤 == 0 && TALENT:漏尿癖 == 0 → RETURN 0`; `@COM144` clears
@@ -889,6 +1025,73 @@ export const TCVAR_ID = {
   /** 今天有否见面 — met-the-master-today flag (AutoConst_TCVAR.ERH:120,
    *  id=182). Halves the nightly frustration accrual (AFTERTRA.ERB:1130). */
   今天有否见面: 182,
+  // ---- Slice 2 (2026-09-18): upstream-authoritative ids ----
+  // Transcribed from ERB/Headers/AutoConst_TCVAR.ERH. Additive only: no
+  // runtime code reads these yet (state-layer groundwork, Step 1).
+  /** 避孕套 — condom state mirror (TCVAR.csv id=3). */
+  避孕套: 3,
+  /** 筆下ろし — male first-time marker (id=16). */
+  筆下ろし: 16,
+  /** Counter行動的派生 — counter-action sub-variant (id=21). */
+  Counter行動的派生: 21,
+  /** MASTER_COUNTER制御 — master counter control (id=26). */
+  MASTER_COUNTER制御: 26,
+  /** Counter行動決定フラグ — counter action decided this turn (id=30). */
+  Counter行動決定フラグ: 30,
+  /** 口上出力用射精部位 — ejaculation site for kojo output (id=50). */
+  口上出力用射精部位: 50,
+  /** 缩略显示 — suppress this chara's EXP readout (id=60). */
+  缩略显示: 60,
+  /** 童貞喪失 / Ａ喪失発生 — virginity-loss markers (id=61 / 62). */
+  童貞喪失: 61,
+  Ａ喪失発生: 62,
+  /** 指令Ｃ/Ｖ/Ａ/Ｂ/Ｍ補正 (id=70-74) — per-command pleasure modifiers,
+   *  written by the COM body and applied in SOURCE_CBVA.ERB:749 as
+   *  `CUP:快X = CUP:快X * (100 + TCVAR:指令X補正) / 100`.
+   *  (id=70 was previously mislabelled 清掃経験; fixed in Slice 1.) */
+  指令Ｃ補正: 70,
+  指令Ｖ補正: 71,
+  指令Ａ補正: 72,
+  指令Ｂ補正: 73,
+  指令Ｍ補正: 74,
+  /** 口内/膣内/肛内射精補正 (id=75-77) — ejaculation modifiers. */
+  口内射精補正: 75,
+  膣内射精補正: 76,
+  肛内射精補正: 77,
+  /** 勃起判定 — erection check marker (id=115). */
+  勃起判定: 115,
+  /** 懇願 — pleading marker (id=117). */
+  懇願: 117,
+  /** 挑逗回数 — edging count within the current build-up (id=118).
+   *  Read by `@挑逗発生`; reset to 0 on a real orgasm. */
+  挑逗回数: 118,
+  /** 嗜虐フラグ — sadism flag (id=125). */
+  嗜虐フラグ: 125,
+  /** 誤爆挿入フラグ — accidental-insertion flag (id=126). */
+  誤爆挿入フラグ: 126,
+  /** 時姦刻印取得用 — pending time-stop-brand level written by
+   *  ORGASM_ADD; consumed by @MARK_GOT_CHECK (id=131). */
+  時姦刻印取得用: 131,
+  /** 外に出すから — "I'll pull out" declaration (id=188). */
+  外に出すから: 188,
+  /** 次回Counter — force the next counter action id (id=202). */
+  次回Counter: 202,
+  /** 絶頂余韻_BUFFER — afterglow decay buffer timestamp (id=206). */
+  絶頂余韻_BUFFER: 206,
+  /** Runtime-only base-12 channel remainders for continuous afterglow decay.
+   * Upstream TCVAR.csv leaves id 207 unassigned; absent in old saves means 0. */
+  絶頂余韻_DECAY_REMAINDER: 207,
+  /** 本来の服装 — upstream `TCVAR_本当の服装` (AutoConst_TCVAR.ERH:330,
+   *  TCVAR.als:330). `@OKIGAE` (衣服/CLOTHES.ERB:857-858) records the
+   *  character's `CFLAG:基本服装セット` here before a temporary change;
+   *  `SET_DATE`'s end branch reads it back to restore the original outfit. */
+  本来の服装: 330,
+  /** 中止接吻 — upstream `TCVAR_中止接吻` (AutoConst_TCVAR.ERH:183). Set by the
+   *  `SP_EVENT 1` kiss kojo to veto `ADD_KISS` (DATE_CMN.ERB:127). */
+  中止接吻: 183,
+  /** 連住禁止 — upstream `TCVAR_連住禁止` (kojo-symbols.json id=319). Blocks the
+   *  stay-over arm of the date time-up handler (デート終了タイムアップ処理:56). */
+  連住禁止: 319,
 } as const;
 
 /**
@@ -933,6 +1136,28 @@ export const EX_ID = {
   アナル精液残量: 26,
   /** 妊娠判定用精液量 — conception-check amount used by `充填率(..., 5)`. */
   妊娠判定用精液量: 80,
+  // ---- Slice 2 (2026-09-18): upstream-authoritative ids ----
+  // Transcribed from ERB/Headers/AutoConst_ex.ERH. Additive only: no
+  // runtime code reads these yet (state-layer groundwork, Step 1).
+  /** 二重/三重/四重/五重絶頂 (id=6-9) — multi-channel orgasm markers.
+   *  Written by ORGASM_ADD; the value encodes which channel combination
+   *  fired (1..10 / 1..5). Read by the 絶頂 kojo routes. */
+  二重絶頂: 6,
+  三重絶頂: 7,
+  四重絶頂: 8,
+  五重絶頂: 9,
+  /** 無自覚Ｃ/Ｖ/Ａ/Ｂ/Ｍ絶頂 (id=50-54) — orgasms the chara did not
+   *  register (time-stop or sleeping). */
+  無自覚Ｃ絶頂: 50,
+  無自覚Ｖ絶頂: 51,
+  無自覚Ａ絶頂: 52,
+  無自覚Ｂ絶頂: 53,
+  無自覚Ｍ絶頂: 54,
+  /** TotalEX / 時間停止TotalEX(_TRACKER) (id=55-57) — per-turn totals
+   *  used by the time-stop bookkeeping. */
+  TotalEX: 55,
+  時間停止TotalEX: 56,
+  時間停止TotalEX_TRACKER: 57,
 } as const;
 
 /**
@@ -968,6 +1193,8 @@ export const PALAM_ID = {
  * consumed by `applySourceCheck`; it is not persisted in `GameState`.
  */
 export const SOURCE_ID = {
+  /** Simplified-source compatibility alias used by migrated request data. */
+  恭顺: 16,
   快Ｃ: 0,
   快Ｖ: 1,
   快Ａ: 2,
@@ -987,6 +1214,16 @@ export const SOURCE_ID = {
   歓楽: 20,
   征服: 21,
   受動: 22,
+  /** 誘惑 — counter/partner-led invitation source (source.als id=50). */
+  誘惑: 50,
+  /** 侮辱 — humiliation source (source.als id=51). */
+  侮辱: 51,
+  /** 挑発 — provocation source (source.als id=52). */
+  挑発: 52,
+  /** 奉仕 — service source (source.als id=53). */
+  奉仕: 53,
+  /** 強要 — coercion source (source.als id=54). */
+  強要: 54,
   不潔: 30,
   鬱屈: 31,
   逸脱: 32,
@@ -998,6 +1235,18 @@ export const SOURCE_ID = {
    *  五重绝顶魔法 when `FLAG:魔法印记开关` is on; consumer = the 魔力印记
    *  settlement arm (DLC, deferred). */
   魔力印记: 233,
+} as const;
+
+/** STAIN body-part ids (`AutoConst_Stain.ERH`). */
+export const STAIN_ID = {
+  口: 0,
+  手: 1,
+  Ｐ: 2,
+  Ｖ: 3,
+  Ａ: 4,
+  Ｂ: 5,
+  膣内: 6,
+  腸内: 7,
 } as const;
 
 /**
@@ -1054,6 +1303,38 @@ export const TEQUIP_ID = {
   Ｖ性交: 50,
   /** Ａ性交 — active anal intercourse partner (TEQUIP.csv id=51). */
   Ａ性交: 51,
+  /** 六九式 — active 69-position state; EVENT_COUNTER delegates to its
+   * dedicated pose handler instead of selecting a normal counter action. */
+  六九式: 54,
+  /**
+   * 接触状態の履歴リング — `EVENTCOMEND2.ERB:100-105` (「体位の保存」).
+   *
+   * The ring is a **flat array of 10 components × 4 depths**, indexed
+   * `100 + component + 10 * depth`:
+   *
+   *   component: 1=Ｐ(阴茎) 2=Ｃ(阴蒂) 3=指 4=口 5=Ｂ(胸) 6=Ｖ(膣)
+   *              7=Ａ(肛門) 8=足 9=腋 10=体位
+   *   depth:     0=current 1=previous 2=two-back 3=three-back
+   *
+   * So these four constants are the **base of each depth** (component 0),
+   * not four separate pose values. The upstream per-slot aliases spell the
+   * same memory differently — `TEQUIP_阴茎２ = 111` is *component 1 at
+   * depth 1*, and `TEQUIP_体位 = 110` / `TEQUIP_体位２ = 120` are
+   * *component 10 at depth 0 / 1* (`AutoConst_Tequip.ERH:81-100`).
+   * Cross-checked at `SOURCE_POSE.ERB:189` (`MASTER_POSE` reads
+   * `TEQUIP:(TARGET):(100 + ARG + 10 * ARG:2)`).
+   *
+   * NOTE: `handlers/event-com-end.ts shiftPoseHistory` currently iterates
+   * `offset 1..11`; upstream `FOR LOCAL:1, 1, 11` is **end-exclusive**, i.e.
+   * 1..10. The state-layer writer `shiftTouchHistory` owns this boundary.
+   */
+  体位履歴現在: 100,
+  体位履歴前回: 110,
+  体位履歴二回前: 120,
+  体位履歴三回前: 130,
+  /** Canonical upstream aliases: component 10 of the contact ring. */
+  体位: 110,
+  体位２: 120,
   上半身裸露状態: 3,
   上衣脱衣完毕: 5,
   /** 避孕套 — equipped condom (TEQUIP.csv id=35). */
@@ -1067,6 +1348,7 @@ export const TEQUIP_ID = {
   後庭拉珠: 15,
   乳頭夾: 16,
   搾乳機: 17,
+  乳房電極: 24,
   眼罩: 18,
   縄: 19,
   口球: 20,
@@ -1088,6 +1370,72 @@ export const TEQUIP_ID = {
   /** SWIMMING — swimming state (Tequip.csv id=900). @INFO_SITUATION shows
    *  `<游泳中>` / `<和X约会中玩水>` while equipped. */
   SWIMMING: 900,
+  // ---- Slice 2 (2026-09-18): upstream-authoritative ids ----
+  // Transcribed from ERB/Headers/AutoConst_Tequip.ERH. Additive only: no
+  // runtime code reads these yet (state-layer groundwork, Step 1).
+  /** 下半身ずらし状態 — bottom clothing shifted aside (Tequip.csv id=2). */
+  下半身ずらし状態: 2,
+  /** 浣腸 — enema (id=21). */
+  浣腸: 21,
+  /** 拡張氣球 — dilation balloon (id=22). */
+  拡張氣球: 22,
+  /** 肛門電極 — anal electrode (id=23). */
+  肛門電極: 23,
+  /** 媚薬 — aphrodisiac *equipped* (id=26). NOTE: TCVAR:媚薬=140 is the
+   *  status/duration namespace; this is the equipment slot. */
+  媚薬: 26,
+  /** 利尿剤 — diuretic *equipped* (id=27); cf. TCVAR:利尿剤=141. */
+  利尿剤: 27,
+  /** 视频拍摄 — video recording play mode (id=28). */
+  视频拍摄: 28,
+  /** 淋浴 — shower play mode (id=32). */
+  淋浴: 32,
+  /** 挿入禁止 — insertion forbidden (id=36). */
+  挿入禁止: 36,
+  /** 睡眠薬 — sleeping drug (id=37). */
+  睡眠薬: 37,
+  /** 吸乳头 — ongoing nipple-suck (id=41). */
+  吸乳头: 41,
+  /** 揉胸 — ongoing breast-rub (id=42). */
+  揉胸: 42,
+  /** 吸乳头自慰 — solo variant (id=43). */
+  吸乳头自慰: 43,
+  /** 揉胸自慰 — solo variant (id=44). */
+  揉胸自慰: 44,
+  /** 子宮 — uterus depth; feeds `850 + TEQUIP:子宮 * 100` in the
+   *  insertion-continuation ejaculation strength (id=49). */
+  子宮: 49,
+  /** 顔面騎乗 — face-sitting (id=52). */
+  顔面騎乗: 52,
+  /** Ａ顔面騎乗 — anal face-sitting (id=53). */
+  Ａ顔面騎乗: 53,
+  /** Ｖコンボ / Ａコンボ — combo-play markers (id=78 / 79). */
+  Ｖコンボ: 78,
+  Ａコンボ: 79,
+  /** 結界発動 — barrier active (id=81). */
+  結界発動: 81,
+  /** 接触部位 101-108 — `TEQUIP:n:10X = Y` means "n's part X is in
+   *  contact with MASTER's part Y" (`@TOUCH_SET`, SOURCE_POSE.ERB:79).
+   *  See runtime/state/touch-state.ts for the ring model. */
+  Ｐ接触部位: 101,
+  Ｃ接触部位: 102,
+  指接触部位: 103,
+  口接触部位: 104,
+  Ｂ接触部位: 105,
+  Ｖ接触部位: 106,
+  Ａ接触部位: 107,
+  足接触部位: 108,
+  /** 第二接触槽 111-117 — the same components one depth back
+   *  (component X at depth 1), not separate body parts.
+   *  `SOURCE.ERB:110-118` promotes 116/117 into 106/107 when
+   *  intercourse continues and the value is not 3 (指). */
+  阴茎２: 111,
+  阴蒂２: 112,
+  指２: 113,
+  口２: 114,
+  胸２: 115,
+  膣２: 116,
+  肛門２: 117,
 } as const;
 
 /** TALENT ids read by converters / FAVOR_CALC / KOJO predicates.
@@ -1105,19 +1453,38 @@ export const TALENT_ID = {
   /** 胆量 — courage (-1 coward, 1 brave). CHARA_ATTITUDE/抱き寄せ arms read it
    *  but the 押し倒す entry doesn't branch on it directly. Talent.csv line 16. */
   胆量: 10,
+  /** 度胸 — ERB/Headers/AutoConst_Talent.ERH:20 `TALENT_度胸 = 10`. Canonical
+   *  ERB spelling of {@link 胆量}; `DATE_EVENT_CHECKSUM` (DATE_CMN.ERB:216)
+   *  reads it as `TALENT:ARG:度胸 * 10`. */
+  度胸: 10,
+  /** 応答 — response/pride tendency used by the upstream COUNTER_TYPE coercion arm. */
+  応答: 12,
   /** 自尊心 — self-esteem (-1 low / 1 high). 抱き寄せ必要値 adds +30 when high
    *  (ATTITUDE.ERB:347). Talent.csv line 25. */
   自尊心: 13,
+  /** Talent 21: indifferent personality; ENDURE subtracts 30 when non-zero. */
+  冷漠: 21,
+  /** 無関心 — ERB/Headers/AutoConst_Talent.ERH:37 `TALENT_無関心 = 21`. Canonical
+   *  ERB spelling of {@link 冷漠}; read by `DATE_EVENT_CHECKSUM`. */
+  無関心: 21,
+  /** 感情缺乏 — suppresses several brand-driven 従順 changes. Talent.als id=22. */
+  感情缺乏: 22,
   心情: 15,
   /** 性的兴趣 — interest-in-sex (-1 dislike / 1 likes). 抱き寄せ必要値 subtracts -20
    *  when high (ATTITUDE.ERB:347). Talent.csv line 39. */
   性的兴趣: 23,
+  /** 性的興味 — ERB/Headers/AutoConst_Talent.ERH:41 `TALENT_性的興味 = 23`.
+   *  Canonical ERB spelling of {@link 性的兴趣}; read by
+   *  `DATE_EVENT_CHECKSUM` (DATE_CMN.ERB:216). */
+  性的興味: 23,
   /** 一線越えない — "has not crossed the line" (all ABL hard to raise). */
   一線越えない: 25,
   /** 無知 — ignorance of sexual matters. 抱き寄せ必要値 subtracts -50
    *  (ATTITUDE.ERB:362); also a gate in 抱き寄せ for 初次拥抱=2 vs =1. Talent.csv line 47. */
   無知: 27,
   貞操: 30,
+  /** 倒錯的 — COMF357 reason reduction; Talent.als id=80. */
+  倒錯的: 80,
   /** 羞恥心 — shame (-1 shameless / 1 shy). COMF356 物陰に誘う gate
    *  (`ABL:露出癖 + TALENT:羞恥心 < 3` → refuse). Talent.csv line 57. */
   羞恥心: 33,
@@ -1125,10 +1492,18 @@ export const TALENT_ID = {
   自己愛: 31,
   /** 抵抗 — resistance. Adds 鬱屈 SOURCE; commands harder to run. */
   抵抗: 32,
+  /** 目立ちたがり — show-off personality; adds +2 to GET_SUCCESS_RATE.
+   *  Talent.als id=26. */
+  目立ちたがり: 26,
+  /** 容易高潮 — easily brought to climax; adds +10 to GET_SUCCESS_RATE.
+   *  Talent.als id=72. */
+  容易高潮: 72,
   /** 性別嗜好 — sexual-orientation preference (-1 both sexes, 0 hetero,
    *  1 same-sex). CHARA_ATTITUDE/抱き寄せ必要値 gate (ATTITUDE.ERB:351, 369).
    *  Talent.csv line 104. */
   性別嗜好: 81,
+  /** Talent 86: small-devil; ENDURE adds 20 when present. */
+  小悪魔: 86,
   /** 風騷 — "lewd / easy". +400 to 合意判定 (ATTITUDE.ERB:77) → 態度 almost
    *  always 3 → 抱き寄せ unblockable. Talent.csv line 148. */
   風騷: 142,
@@ -1141,6 +1516,8 @@ export const TALENT_ID = {
   /** 施虐狂 — sadist (commands easier as 調教者; reverses 身を任せる/抵抗
    *  direction). Talent.csv line 109. */
   施虐狂: 82,
+  /** 擅長用針 — adds abnormal EXP on a level-3 pain brand from COM103. id=53. */
+  擅長用針: 53,
   /** 変化 — shape-shift ability holder. COMF358 他者変身 gates on it.
    *  Talent.csv line 145. */
   変化: 139,
@@ -1150,6 +1527,8 @@ export const TALENT_ID = {
   /** 炮友 — "fuck-buddy" (a 陥落素質). +30 to 合意判定 (ATTITUDE.ERB:42).
    *  Talent.csv line 186. */
   炮友: 185,
+  /** 精力超群 — halves the player's H-mode ejaculation gauge ceiling. */
+  精力超群: 152,
   /** 嫉妬 — jealousy (Talent.als id=84). L1 of CALC_EXPRESSION_CORE: 嫉妬 &&
    *  デート相手==CHARA && TARGET!=CHARA → forced 憤怒 (QOL_IMAGE.ERB:1434-1435). */
   嫉妬: 84,
@@ -1295,6 +1674,8 @@ export const TALENT_ID = {
   /** 胸围 — bust size (-2 絶壁 … 2 爆乳). ONANISM type-5 Ｂ乳 text variants.
    *  Talent.csv id=105. */
   胸围: 105,
+  /** Ｍ感度 — masochist sensitivity (-1 鈍感 / 1 敏感). id=106. */
+  Ｍ感度: 106,
   /** 自慰しやすい — prone to masturbation; -200 on the ONANISM trigger
    *  threshold (AFTERTRA.ERB:878). Talent.csv id=60. */
   自慰しやすい: 60,
@@ -1363,6 +1744,8 @@ export const TALENT_ID = {
   非童貞: 1,
   /** 魅力 — charm (SIZE 補正: 腰-5% 胸+5% 臀+5% 体重-5%). id=92. */
   魅力: 92,
+  /** 美脚 — beautiful legs; contributes to the EVENT_COUNTER footjob weight. */
+  美脚: 95,
   /** ヒップサイズ — hip size (-2 纖臀 … 2 豊臀). id=108. SIZE 臀圍補正. */
   ヒップサイズ: 108,
   /** 母乳体質 — lactation (1 可以哺乳 / 2 泌乳体质). id=149. 肉体情報_B. */
@@ -1381,6 +1764,12 @@ export const TALENT_ID = {
   妾: 222,
   /** 風俗嬢 — 温泉从业员 (1 风俗娘 … 4 熟悉的娼妇). id=199. 工作地点/素质高亮. */
   風俗嬢: 199,
+  // ---- Slice 2 (2026-09-18): upstream-authoritative ids ----
+  // Transcribed from ERB/Headers/AutoConst_TALENT.ERH. Additive only: no
+  // runtime code reads these yet (state-layer groundwork, Step 1).
+  /** 妄想的産物 — "figment of imagination" talent (id=189); ORGASM_ADD
+   *  skips the 体力/気力 MAXBASE growth for charas that have it. */
+  妄想的産物: 189,
 } as const;
 
 /**
@@ -1395,12 +1784,18 @@ export const MARK_ID = {
    *  floor. AutoConst_Mark.ERH:9, id=3. */
   /** 苦痛 — pain brand (Mark.als id=0). Shown in 7×7 ABL grid. */
   苦痛: 0,
+  /** 苦痛刻印 — canonical ERB spelling (`AutoConst_Mark.ERH:9`). The kojo
+   *  symbol table keys this brand by the ERB name, so both spellings are
+   *  provided (Slice 1 alias fix, 2026-09-18). */
+  苦痛刻印: 0,
   /** 快乐 — pleasure brand (Mark.als id=1). */
   快乐: 1,
   /** 快楽刻印 — canonical ERB spelling for the pleasure brand. */
   快楽刻印: 1,
   /** 不埒 — lewdness brand (Mark.als id=2). */
   不埒: 2,
+  /** 不埒刻印 — canonical ERB spelling. */
+  不埒刻印: 2,
   /** 反感 — dislike brand (Mark.als id=3). */
   反感: 3,
   反発刻印: 3,
@@ -1411,6 +1806,8 @@ export const MARK_ID = {
   反発取得履歴: 4,
   /** 时奸 — time-stop assault brand (Mark.als id=5). */
   时奸: 5,
+  /** 時姦刻印 — canonical ERB spelling for the time-stop brand. */
+  時姦刻印: 5,
 } as const;
 
 /**
@@ -1457,6 +1854,10 @@ export const ABL_ID = {
   清扫技能: 40,
   話術技能: 41,
   战斗能力: 42,
+  /** 戦闘能力 — combat ability (CSV/Abl.csv id=42). Scales MBP 斗虫 battle power
+   *  ×1.00..×2.00 (COMF483 `@MBP`, `ERB/コマンド関連/COMF/日常系/COMF483 ムシバトル.ERB:937-952`)
+   *  and the 480 弾幕勝負 bomb budget. */
+  戦闘能力: 42,
   教養: 43,
   料理技能: 44,
   音楽技能: 45,
@@ -1480,6 +1881,16 @@ export const EXP_ID = {
   /** 約會経験 — date experience (both master & target; COMF603/610/615 etc. `++`).
    *  exp.als id=77 (ERB `EXP_約會経験 = 77`, `exp.csv:73`). */
   約會経験: 77,
+  /** デート経験 — ERB/Headers/AutoConst_exp.ERH:71 `EXP_デート経験 = 77`.
+   *  Canonical ERB spelling of {@link 約會経験}; read by
+   *  `DATE_EVENT_CHECKSUM` (DATE_CMN.ERB:208/211). */
+  デート経験: 77,
+  /** 百合経験 — same-sex female experience; COMF312 grants +2 to both.
+   *  exp.als id=51 (`AutoConst_EXP.ERH`). */
+  百合経験: 51,
+  /** 断袖経験 — same-sex male experience; COMF312 grants +2 to both.
+   *  exp.als id=52 (`AutoConst_EXP.ERH`). */
+  断袖経験: 52,
   /** 料理経験 — cooking experience (COMF615 お弁当 `+= LOCAL:2` by 親密+奉仕 tier).
    *  exp.als id=76 (`exp.als:72`). */
   料理経験: 76,
@@ -1603,6 +2014,48 @@ export const EXP_ID = {
   /** 異常清掃経験 — anomaly-cleaning XP (master; +1 when LOCAL:3 == 1 in
    *  the 诶嘿嘿 arm of COMF410 ERB 145-152, also from time-stop arm). exp.als id=78. */
   異常清掃経験: 78,
+  // ---- Slice 2 (2026-09-18): upstream-authoritative ids ----
+  // Transcribed from ERB/Headers/AutoConst_exp.ERH. Additive only: no
+  // runtime code reads these yet (state-layer groundwork, Step 1).
+  /** 時姦経験 — time-stop assault XP (id=58). */
+  時姦経験: 58,
+  /** 無自覚Ｃ/Ｖ/Ａ/Ｂ/Ｍ経験 (id=60-64) — granted from SOURCE.ERB:750-752
+   *  when an 感覚 EXP is gained during time-stop or 恶作剧. */
+  無自覚Ｃ経験: 60,
+  無自覚Ｖ経験: 61,
+  無自覚Ａ経験: 62,
+  無自覚Ｂ経験: 63,
+  無自覚Ｍ経験: 64,
+  /** 体位別絶頂経験 (id=101-118 / 131-138) — which position the climax
+   *  happened in. The index is derived by
+   *  `新性交模块各体位绝顶经验索引算出` (魔改内容/Misc.ERB:417):
+   *  Ｖ (TEQUIP:50 > -1): 体位 1-5 -> +100, 体位 6-25 -> +105;
+   *  Ａ (TEQUIP:51 > -1): 体位 1-5 -> +105, 体位 6-25 -> +125.
+   *  Requires the 体位 slot (TEQUIP:110), which is Step 1 groundwork. */
+  正常位Ｖ絶頂経験: 101,
+  後背位Ｖ絶頂経験: 102,
+  騎乗位Ｖ絶頂経験: 103,
+  対面座位Ｖ絶頂経験: 104,
+  背面座位Ｖ絶頂経験: 105,
+  正常位Ａ絶頂経験: 106,
+  後背位Ａ絶頂経験: 107,
+  騎乗位Ａ絶頂経験: 108,
+  対面座位Ａ絶頂経験: 109,
+  背面座位Ａ絶頂経験: 110,
+  小人飞机杯Ｖ绝顶经验: 111,
+  背面骑乘式Ｖ绝顶经验: 112,
+  站立正常式Ｖ绝顶经验: 113,
+  站立后入式Ｖ绝顶经验: 114,
+  火车便当式Ｖ绝顶经验: 116,
+  抱起后入式Ｖ绝顶经验: 117,
+  站式小人飞机杯Ｖ绝顶经验: 118,
+  小人飞机杯Ａ绝顶经验: 131,
+  背面骑乘式Ａ绝顶经验: 132,
+  站立正常式Ａ绝顶经验: 133,
+  站立后入式Ａ绝顶经验: 134,
+  火车便当式Ａ绝顶经验: 136,
+  抱起后入式Ａ绝顶经验: 137,
+  站式小人飞机杯Ａ绝顶经验: 138,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -1803,15 +2256,114 @@ export function advanceTimeTicks(
   state: GameState,
   delta: number,
 ): ObservationEvent[] {
+  if (delta <= 0) return [];
+  if (queueCommandTimeOperation(state, "elapsed", delta)) return [];
   // DAY-CYCLE-PLAN §S3: runDayEnd defaults to true — a command that crosses
   // midnight (熬夜) now fires day-end (wages / gate resets / dirt / calendar /
   // weather forecast), faithful to eraTW's @INFO_GO_NEXTDAY (INFO.ERB:1232).
   // The prior `{ runDayEnd: false }` (commit 20e0372a, no stated reason) made
   // staying up past midnight silently skip the whole day-end.
+  const before = state.time.tickValue;
   const { events } = advanceClock(state, delta, () => 0);
+  const elapsed = Math.max(0, state.time.tickValue - before);
+  if (elapsed > 0 && state.turnContext?.frame) {
+    state.turnContext.frame.elapsedMinutes =
+      (state.turnContext.frame.elapsedMinutes ?? 0) + elapsed;
+  }
   // Surface only the day-end NARRATIONs (wage/cleaning cashout); the
   // TIME_TICK is an internal clock signal, not player-facing here.
   return events.filter((e) => e.kind === "NARRATION");
+}
+
+/**
+ * Apply a command's signed ERA TIME cost. Positive costs are elapsed world
+ * time; negative source corrections adjust the clock without replaying or
+ * reversing world-time side effects.
+ */
+export function applyCommandTimeCost(
+  state: GameState,
+  deltaMinutes: number,
+): ObservationEvent[] {
+  if (deltaMinutes >= 0) return advanceTimeTicks(state, deltaMinutes);
+  const adjustment = Math.trunc(deltaMinutes);
+  if (adjustment < 0 && queueCommandTimeOperation(state, "adjustment", adjustment)) return [];
+  return applyEraTimeAdjustment(state, deltaMinutes, () => 0).events
+    .filter((event) => event.kind === "NARRATION");
+}
+
+function queueCommandTimeOperation(
+  state: GameState,
+  kind: "elapsed" | "adjustment",
+  minutes: number,
+): boolean {
+  const frame = state.turnContext?.frame;
+  if (!frame?.batchCommandTime) return false;
+  if (kind === "elapsed" && (state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0) return true;
+
+  frame.commandTimeOrigin ??= {
+    tickValue: state.time.tickValue,
+    dayIndex: state.time.dayIndex,
+    hourOfDay: state.time.hourOfDay,
+  };
+  frame.commandTimeOperations ??= [];
+  frame.commandTimeOperations.push({ kind, minutes });
+
+  // Commands can inspect their post-cost TIME (for cooldowns and authored
+  // timestamp fields), while world-time effects wait for one final clock run.
+  state.time.tickValue += minutes;
+  state.time.dayIndex = Math.max(state.time.dayIndex, Math.floor(state.time.tickValue / 1440));
+  const minuteOfDay = ((state.time.tickValue % 1440) + 1440) % 1440;
+  state.time.hourOfDay = Math.floor(minuteOfDay / 60);
+  return true;
+}
+
+/** Commit this H command's queued elapsed-time segments after its handler. */
+export function flushCommandTimeBatch(
+  state: GameState,
+  now: () => number,
+): ObservationEvent[] {
+  const frame = state.turnContext?.frame;
+  if (!frame?.batchCommandTime) return [];
+
+  const operations = frame.commandTimeOperations ?? [];
+  const origin = frame.commandTimeOrigin;
+  frame.batchCommandTime = false;
+  delete frame.commandTimeOperations;
+  delete frame.commandTimeOrigin;
+  if (!origin || operations.length === 0) return [];
+
+  // Restore the command-start clock, then replay each contiguous elapsed-time
+  // segment as one authoritative advance. Signed TIME corrections remain
+  // distinct because they do not replay world-time side effects.
+  state.time.tickValue = origin.tickValue;
+  state.time.dayIndex = origin.dayIndex;
+  state.time.hourOfDay = origin.hourOfDay;
+
+  const events: ObservationEvent[] = [];
+  for (let index = 0; index < operations.length;) {
+    const operation = operations[index]!;
+    if (operation.kind === "adjustment") {
+      const adjusted = applyEraTimeAdjustment(state, operation.minutes, now);
+      events.push(...adjusted.events.filter((event) => event.kind === "NARRATION"));
+      index++;
+      continue;
+    }
+
+    let elapsedMinutes = operation.minutes;
+    index++;
+    while (index < operations.length && operations[index]!.kind === "elapsed") {
+      elapsedMinutes += operations[index]!.minutes;
+      index++;
+    }
+    const before = state.time.tickValue;
+    const advanced = advanceClock(state, elapsedMinutes, now);
+    const elapsed = Math.max(0, state.time.tickValue - before);
+    if (elapsed > 0) {
+      frame.elapsedMinutes = (frame.elapsedMinutes ?? 0) + elapsed;
+    }
+    events.push(...advanced.events.filter((event) => event.kind === "NARRATION"));
+  }
+  return events;
 }
 
 // ---------------------------------------------------------------------------

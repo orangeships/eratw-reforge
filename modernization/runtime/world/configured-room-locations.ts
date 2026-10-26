@@ -1,6 +1,8 @@
 /**
  * Numeric eraTW room ids used by the currently bundled characters' CSV
- * `CFLAG:初期位置`, adapted to the modern runtime's string room keys.
+ * `CFLAG:初期位置`, adapted to the modern runtime's string room keys. Built
+ * map rooms are resolved through `ROOM_CATALOG`; this table is only the
+ * compatibility fallback for configured homes outside that catalog.
  *
  * This table translates identifiers only. It does not assign activities or
  * infer routes. Missing ids deliberately resolve to null so an unimplemented
@@ -9,7 +11,7 @@
 import { CFLAG_ID } from "../state/settlement.js";
 import { buildCharaSlot, type CharaStatsLike } from "../state/load-chara.js";
 import type { GameState } from "../state/game-state.js";
-import { GENERATED_ROOM_ID_TO_LOCATION } from "./generated-room-locations.js";
+import { roomCatalogLocationForId } from "./room-catalog.js";
 
 const CONFIGURED_ROOM_LOCATIONS: Readonly<Record<number, string>> = {
   // mapId 0 - 博丽神社区域
@@ -99,7 +101,7 @@ const CONFIGURED_ROOM_LOCATIONS: Readonly<Record<number, string>> = {
 };
 
 export function resolveConfiguredRoomLocation(roomId: number): string | null {
-  return GENERATED_ROOM_ID_TO_LOCATION[roomId] ?? CONFIGURED_ROOM_LOCATIONS[roomId] ?? null;
+  return roomCatalogLocationForId(roomId) ?? CONFIGURED_ROOM_LOCATIONS[roomId] ?? null;
 }
 
 /** location → id, the inverse of CONFIGURED_ROOM_LOCATIONS. Used by the

@@ -1,18 +1,22 @@
 /**
  * Phase 7 (Wave 4h) — the last Wave 4 H-mode remainder: COMF144 放尿 (full
  * faithful port) + COMF71 二穴挿し / COMF122 助手を犯させる / COMF185 助手を
- * 犯す / COMF511 二本フェラ / COMF26 抜く (faithful BLOCKED — their @COM_ABLE
- * gates ride on subsystems we don't model).
+ * 犯す / COMF511 二本フェラ (faithful BLOCKED) / COMF26 抜く (bounded
+ * deterministic withdrawal core).
  *
- * Why one full + five blocked: the modern runtime has NO `TEQUIP` equipment
- * namespace and NO `ASSI` (助手) concept (both systematically deferred to the
- * COMABLE/equipment layer — see comf100..148 def headers). Five of these six
- * commands' reachability depends on exactly those:
+ * Why the four remain blocked: the modern runtime has no `ASSI` (助手) concept
+ * (deferred to the COMABLE/equipment layer — see comf100..148 def headers).
+ * COMF26 now owns the modeled insertion-state withdrawal path. COMF71 has a
+ * bounded single-target 双槍 route; ordinary multi-participant reachability
+ * and the other three commands still depend on the missing assistant graph:
  *
  *   - **COMF71 二穴挿し** — `@COM_ABLE71` resolves `MASTER_POSE(SET_V/A,SET_P)`
  *     (who the player is currently inserted into) and gates on
  *     `TEQUIP:Ｖセックス/Ａセックス` insertion state + 体格/処女/潤滑 ladders.
- *     Without the insertion-pose tracker the gate never opens.
+ *     The modern route now validates one existing insertion, adds the second
+ *     channel, settles both V/A pain/source arms once, and preserves both
+ *     links for COM26/session cleanup. Ordinary ASSI/multi-target selection
+ *     remains fail-closed.
  *   - **COMF122 助手を犯させる** — `@COM_ABLE122` gates `PLAYER != ASSI` (the
  *     player char IS the assistant) + `TALENT:ASSI:2 & 1` (female assistant).
  *     No ASSI slot → never executable. (Body is also a COM_ORDER reasonwall.)
@@ -22,10 +26,9 @@
  *     TCVAR:MASTER/ASSI:0`). ASSI gap.
  *   - **COMF26 抜く** — `@COM_ABLE26` gates `TEQUIP:Ｖセックス != PLAYER &&
  *     TEQUIP:Ａセックス != PLAYER → RETURN 0` (must be inserted to withdraw).
- *     Insertion-pose gap. The 868-line body is the climax/withdrawal state
- *     machine (`TFLAG:SELECTCOMの分岐` success/prevent/accident + condom
- *     economy + 充填率 + 童貞/処女 arms) — faithfully deferred as blocked,
- *     not an empty shell.
+ *     The modern path validates the modeled insertion links, offers the
+ *     deterministic inside/outside/none choice, settles residue/experience,
+ *     and always clears the insertion state.
  *
  * **COMF144 放尿** is the one we CAN port fully — its gates ride on
  * `FLAG:おもらし有効` (option toggle, off by default), `TCVAR:利尿剤`
@@ -63,21 +66,39 @@
 
 import type { CommandContext, HandlerEntry } from "../types.js";
 import { cloneGameState } from "../../state/game-state.js";
-import { applySourceCheck } from "../source-check.js";
+import { applySourceCheck, settleSourcePalam } from "../source-check.js";
+import {
+  applyHSourceCheck,
+  applyHInsertionPain,
+  recordHChannelHistory,
+  settleHEjaculation,
+} from "../h-v-a-settlement.js";
+import {
+  activeHInsertionSite,
+  activeHInsertionSites,
+  clearHInsertionState,
+  settleHInsertionHistory,
+  syncHInsertionChannel,
+} from "../training-session.js";
 import {
   ABL_ID,
   BASE_ID,
+  CFLAG_ID,
   EXP_ID,
   FLAG_ID,
   SOURCE_ID,
   TALENT_ID,
   TCVAR_ID,
   TEQUIP_ID,
+  advanceTimeTicks,
   getMasterBase,
+  expLv,
   setMasterBase,
   times,
 } from "../../state/settlement.js";
-import { readTequip } from "../../state/tequip.js";
+import { isEquipped, readTequip, setEquipped } from "../../state/tequip.js";
+import { bodyFillRate } from "../../state/body-fill-rate.js";
+import { checkHBaseResourceAvailability } from "../h-base-resources.js";
 
 const PLAYER = 0;
 
@@ -183,24 +204,184 @@ export const comf144HandlerEntry: HandlerEntry = {
 };
 
 // ===========================================================================
-// COMF71 二穴挿し — faithful BLOCKED (insertion-pose / TEQUIP gap)
+// COMF71 二穴挿し — bounded single-target dual-insertion route
 // ===========================================================================
+
+const COM71_BLOCKED_EQUIPMENT = [
+  TEQUIP_ID.振動棒,
+  TEQUIP_ID.肛用振動棒,
+  TEQUIP_ID.後庭拉珠,
+  TEQUIP_ID.浣腸,
+  TEQUIP_ID.拡張氣球,
+  TEQUIP_ID.肛門電極,
+] as const;
+
+function comf71Gate(ctx: CommandContext) {
+  const target = ctx.state.charas[ctx.target];
+  if (!target) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "双穴插入需要在场的目标角色。" } };
+  }
+  if (ctx.actor !== PLAYER) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "双穴插入的有界路线只接受主人作为行为者。" } };
+  }
+
+  // The modern state has one selected target and no ASSI identity graph. The
+  // only route we can settle without guessing a second character is the
+  // upstream 双槍 self route: both holes belong to this already selected
+  // futanari target, and exactly one channel is currently occupied.
+  if ((ctx.state.master.state.TALENT[TALENT_ID.双槍] ?? 0) !== 1) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "普通双穴路线仍需要第二参与者（ASSI）身份。" } };
+  }
+  if ((ctx.state.master.state.BASE[BASE_ID.勃起] ?? 0) < 1000) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "双槍插入需要主人勃起度达到 1000。" } };
+  }
+
+  const activeSites = activeHInsertionSites(ctx.state, ctx.target);
+  if (activeSites.length !== 1) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "双穴插入需要目标已有且仅有一个 V／A 插入状态。" } };
+  }
+
+  const sex = target.state.TALENT[TALENT_ID.性別] ?? 0;
+  if ((sex & 1) === 0 || (sex & 2) === 0) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "有界双槍路线只接受同时具备 V 与 P 的目标。" } };
+  }
+  if (COM71_BLOCKED_EQUIPMENT.some((id) => readTequip(ctx.state.master, id) !== 0 || readTequip(target, id) !== 0)) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "当前插入道具会阻止双穴插入。" } };
+  }
+  if (readTequip(ctx.state.master, TEQUIP_ID.新妻PLAY) !== 0 || readTequip(target, TEQUIP_ID.新妻PLAY) !== 0) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "新妻 PLAY 中不能进行双穴插入。" } };
+  }
+  if (readTequip(target, TEQUIP_ID.下半身着衣状況) > 1) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "目标下半身衣着尚未解除。" } };
+  }
+
+  const timeStop = (ctx.state.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
+  if (!timeStop && (target.state.EXP[EXP_ID.Ａ経験] ?? 0) < expLv(3)) {
+    return { ok: false as const, reason: { kind: "precondition" as const, message: "清醒状态下需要足够的 A 经验才能双穴插入。" } };
+  }
+  return checkHBaseResourceAvailability(ctx, timeStop
+    ? { master: { [BASE_ID.TSP]: 220 } }
+    : {
+        master: { [BASE_ID.体力]: 40, [BASE_ID.気力]: 220 },
+        target: { [BASE_ID.体力]: 160, [BASE_ID.気力]: 350 },
+      });
+}
 
 export const comf71HandlerEntry: HandlerEntry = {
   commandNo: 71,
-  execCheck: (_ctx: CommandContext) => {
-    // @COM_ABLE71 resolves MASTER_POSE(SET_V/A,SET_P) — who PLAYER is inserted
-    // into — and gates on TEQUIP:Ｖセックス/Ａセックス insertion state. The
-    // insertion-pose tracker (TEQUIP namespace) is unmodeled → no partner is
-    // ever "inserted" → LOCAL:2 == 0 → RETURN 0. Faithful: not executable.
-    return { ok: false, reason: { kind: "precondition", message: "双穴插入需要已进入插入状态（插入姿势／TEQUIP 尚未建模）。" } };
-  },
+  hModeMenuCheck: comf71Gate,
+  execCheck: comf71Gate,
   handler: (ctx: CommandContext) => {
+    const gate = comf71Gate(ctx);
+    if (!gate.ok) {
+      return {
+        state: cloneGameState(ctx.state),
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: `（双穴插入：${gate.reason.message}）` }],
+        outcome: "blocked" as const,
+        failReason: gate.reason,
+      };
+    }
+
+    const next = cloneGameState(ctx.state);
+    const target = next.charas[ctx.target]!;
+    const master = next.master;
+    const existingSite = activeHInsertionSite(next, ctx.target)!;
+    const secondSite = existingSite === "v" ? "a" : "v";
+    syncHInsertionChannel(next, ctx.target, secondSite, PLAYER);
+
+    master.state.TCVAR[TCVAR_ID.行為者] = PLAYER;
+    target.state.TCVAR[TCVAR_ID.行為者] = PLAYER;
+    master.state.TCVAR[TCVAR_ID.射精箇所] = existingSite === "v" ? 2 : 1;
+    master.state.TCVAR[TCVAR_ID.射精快感強度] = existingSite === "v" ? 2500 : 1500;
+    target.state.TCVAR[TCVAR_ID.射精箇所] = existingSite === "v" ? 1 : 2;
+    target.state.TCVAR[TCVAR_ID.射精快感強度] = existingSite === "v" ? 1500 : 2500;
+
+    const timeStop = (next.flagStore[FLAG_ID.時間停止] ?? 0) !== 0;
+    const masterSources: Record<number, number> = {
+      [SOURCE_ID.快Ｃ]: 400,
+    };
+    const targetSources: Record<number, number> = {
+      [SOURCE_ID.快Ｃ]: 400,
+      [SOURCE_ID.快Ｖ]: 400,
+      [SOURCE_ID.快Ａ]: 400,
+    };
+
+    if (timeStop) {
+      setMasterBase(next, BASE_ID.TSP, (getMasterBase(next, BASE_ID.TSP) ?? 0) - 220);
+      targetSources[SOURCE_ID.苦痛] = 650;
+      const virgin = target.state.TALENT[TALENT_ID.処女] ?? 0;
+      if (virgin === 1) targetSources[SOURCE_ID.苦痛] += 2750;
+      else if (virgin === 2) targetSources[SOURCE_ID.苦痛] += 1750;
+      addExp(master, EXP_ID.時姦経験);
+    } else {
+      setMasterBase(next, BASE_ID.体力, (getMasterBase(next, BASE_ID.体力) ?? 0) - 40);
+      setMasterBase(next, BASE_ID.気力, (getMasterBase(next, BASE_ID.気力) ?? 0) - 220);
+      target.state.BASE[BASE_ID.体力] = (target.state.BASE[BASE_ID.体力] ?? 0) - 160;
+      target.state.BASE[BASE_ID.気力] = (target.state.BASE[BASE_ID.気力] ?? 0) - 350;
+      Object.assign(targetSources, {
+        [SOURCE_ID.性行動]: 500,
+        [SOURCE_ID.屈従]: 1000,
+        [SOURCE_ID.逸脱]: 500,
+        [SOURCE_ID.反感]: 500,
+        [SOURCE_ID.情愛]: 300,
+        [SOURCE_ID.苦痛]: 1300,
+      });
+      if ((target.state.TALENT[TALENT_ID.自己愛] ?? 0) < 0 || (target.state.TALENT[TALENT_ID.抵抗] ?? 0) !== 0) {
+        // The unqualified TARGET and LOCAL arms collapse to the same selected
+        // slot in this bounded single-target route, so both +500 additions
+        // are retained instead of silently losing one source arm.
+        targetSources[SOURCE_ID.鬱屈] = (targetSources[SOURCE_ID.鬱屈] ?? 0) + 1000;
+      }
+      if ((target.state.TALENT[TALENT_ID.貞操] ?? 0) !== 0 && (target.state.TALENT[TALENT_ID.恋慕] ?? 0) === 0) {
+        targetSources[SOURCE_ID.反感] = (targetSources[SOURCE_ID.反感] ?? 0) + 1000;
+      }
+      const virgin = target.state.TALENT[TALENT_ID.処女] ?? 0;
+      if (virgin === 1) {
+        targetSources[SOURCE_ID.苦痛] += 5500;
+        targetSources[SOURCE_ID.反感] += 3000;
+      } else if (virgin === 2) {
+        targetSources[SOURCE_ID.苦痛] += 3500;
+        targetSources[SOURCE_ID.反感] += 1000;
+      }
+    }
+
+    // COM71 calls both PAIN_CHECK_V and PAIN_CHECK_A before SOURCE_CHECK.
+    // Apply both ladders to one source map so ORGASM_ADD/CUP flush runs once.
+    const withVainPain = applyHInsertionPain(targetSources, target, "v");
+    const settledSources = applyHInsertionPain(withVainPain, target, "a");
+    settleSourcePalam(next, master, master, masterSources);
+    const settled = applySourceCheck(next, ctx.target, settledSources, 0);
+
+    addExp(master, EXP_ID.挿入経験);
+    addExp(target, EXP_ID.挿入経験);
+    addExp(target, EXP_ID.Ｖ性交経験);
+    addExp(target, EXP_ID.Ａ性交経験);
+
+    const virgin = target.state.TALENT[TALENT_ID.処女] ?? 0;
+    if (virgin === 1 || virgin === 2) {
+      const anomalyBit = 1 << 9;
+      if (((target.state.CFLAG[CFLAG_ID.異常経験] ?? 0) & anomalyBit) === 0) {
+        addExp(target, EXP_ID.異常経験, 2);
+        target.state.CFLAG[CFLAG_ID.異常経験] = (target.state.CFLAG[CFLAG_ID.異常経験] ?? 0) | anomalyBit;
+      }
+    }
+    const history = [
+      ...recordHChannelHistory(next, ctx.target, "v"),
+      ...recordHChannelHistory(next, ctx.target, "a"),
+    ];
+
     return {
-      state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（双穴插入：插入姿势状态机尚未建模。）" }],
-      outcome: "blocked",
-      failReason: { kind: "precondition", message: "MASTER_POSE／TEQUIP 的 V／A 插入状态子系统尚未实现" },
+      state: next,
+      events: [
+        {
+          kind: "NARRATION" as const,
+          timestamp: ctx.now(),
+          text: `%CALLNAME:MASTER% 进行了双穴插入。好感度 ${settled.favorDelta >= 0 ? "+" : ""}${settled.favorDelta}。`,
+        },
+        ...settled.events,
+        ...history.map((text) => ({ kind: "NARRATION" as const, timestamp: ctx.now(), text })),
+      ],
+      outcome: "ok" as const,
     };
   },
 };
@@ -284,35 +465,148 @@ export const comf511HandlerEntry: HandlerEntry = {
   },
 };
 
-// ===========================================================================
-// COMF26 抜く — faithful BLOCKED (insertion-pose / TEQUIP gap)
-// ===========================================================================
+function addExp(slot: { state: { EXP: Record<number, number> } }, id: number, amount = 1): void {
+  slot.state.EXP[id] = (slot.state.EXP[id] ?? 0) + amount;
+}
 
 export const comf26HandlerEntry: HandlerEntry = {
   commandNo: 26,
-  execCheck: (_ctx: CommandContext) => {
-    // @COM_ABLE26: `TEQUIP:Ｖセックス != PLAYER && TEQUIP:Ａセックス != PLAYER
-    // → RETURN 0` (must be inserted to withdraw). Insertion-pose tracker
-    // (TEQUIP namespace) unmodeled → never inserted → RETURN 0. Faithful.
-    return { ok: false, reason: { kind: "precondition", message: "拔出需要已进入插入状态（V／A 性交与 TEQUIP 尚未建模）。" } };
+  // COMABLE26 is still marked incomplete because its original gate is
+  // expressed through TEQUIP pose links.  COM26 itself now owns the
+  // canonical V/A-link check below, so expose exactly that bounded gate to
+  // the H menu and to resolveCommand instead of failing closed before the
+  // handler can settle the modeled withdrawal path.
+  hModeMenuCheck: (ctx: CommandContext) => {
+    if (!ctx.state.charas[ctx.target]) {
+      return { ok: false, reason: { kind: "precondition", message: "拔出需要在场的目标角色。" } };
+    }
+    return activeHInsertionSite(ctx.state, ctx.target)
+      ? { ok: true }
+      : { ok: false, reason: { kind: "precondition", message: "当前没有可解除的 V／A 插入状态。" } };
+  },
+  execCheck: (ctx: CommandContext) => {
+    if (!ctx.state.charas[ctx.target]) {
+      return { ok: false, reason: { kind: "precondition", message: "拔出需要在场的目标角色。" } };
+    }
+    const site = activeHInsertionSite(ctx.state, ctx.target);
+    return site
+      ? { ok: true }
+      : { ok: false, reason: { kind: "precondition", message: "当前没有可解除的 V／A 插入状态。" } };
   },
   handler: (ctx: CommandContext) => {
-    // The 868-line body is the climax/withdrawal state machine:
-    //   - TCVAR:PLAYER:イきそう branch: 外出し成功 (TFLAG:SELECTCOMの分岐>=0,
-    //     射精箇所=8, 強度=350+ABL*50, SOURCE:快Ｖ/快Ａ+60, condom 摘除) vs
-    //     膣内暴発 (分岐<0, 射精箇所=1/2, 強度=750+ABL*80, SOURCE+150).
-    //   - 抜く branch: condom economy (ゴム使用済み → 换新/取下, TFLAG:ゴム内).
-    //   - COM26_TOUCH: VAGINAL/ANAL flag + 暴発/だいしゅきホールド prevent arms
-    //     (ABL:膣/アナル>=4 → 100% fail; 妊娠願望/膣射中毒 → 50% prevent;
-    //     RAND-based) + TOUCH_SET(SET_FROM_V/A,0) 挿入解除.
-    //   - TIME += 1; RETURN 1.
-    // Needs TEQUIP:Ｖ·Ａセックス + TCVAR:イきそう + BASE:射精/EJAC_ENDURANCE_LIMIT
-    // + 充填率 + TFLAG:SELECTCOMの分岐 + condom economy. Blocked — no shell.
+    const next = cloneGameState(ctx.state);
+    const activeSites = activeHInsertionSites(next, ctx.target);
+    // COMF26 records both VAGINAL and ANAL when both insertion links exist;
+    // its source branch selects ANAL whenever that marker is present. COM71
+    // makes this a valid dual state, so withdrawal must use the same priority.
+    const site = activeSites.includes("a") ? "a" : activeHInsertionSite(next, ctx.target);
+    if (!site) {
+      return {
+        state: next,
+        events: [{ kind: "NARRATION" as const, timestamp: ctx.now(), text: "当前没有可解除的插入状态。" }],
+        outcome: "blocked" as const,
+        failReason: { kind: "precondition" as const, message: "当前没有可解除的 V／A 插入状态。" },
+      };
+    }
+    const target = next.charas[ctx.target]!;
+    const master = next.master;
+    const insideSite: 1 | 2 = site === "v" ? 1 : 2;
+    const intercourseExp = site === "v" ? EXP_ID.Ｖ性交経験 : EXP_ID.Ａ性交経験;
+    const pleasureSource = site === "v" ? SOURCE_ID.快Ｖ : SOURCE_ID.快Ａ;
+    const orificeAbl = site === "v" ? ABL_ID.膣 : ABL_ID.肛門;
+    const wearingCondom = isEquipped(master, TEQUIP_ID.避孕套);
+    const critical = (master.state.TCVAR[TCVAR_ID.要去了] ?? 0) !== 0;
+    const source: Record<number, number> = {};
+
+    target.state.TCVAR[TCVAR_ID.行為者] = PLAYER;
+    master.state.TCVAR[TCVAR_ID.行為者] = PLAYER;
+    let outcome: "withdraw" | "outside" | "inside" | "condom" = "withdraw";
+    let failureReason: "burst" | "held" | null = null;
+    if (critical) {
+      if (wearingCondom) {
+        outcome = "condom";
+      } else {
+        const overstimulated = (master.state.BASE[BASE_ID.射精] ?? 0) >= 15000;
+        const developed = (target.state.ABL[orificeAbl] ?? 0) >= 4;
+        const burst = overstimulated && (developed || ctx.rng.int(3) <= 1);
+        const addiction = target.state.ABL[site === "v" ? ABL_ID.膣射中毒 : ABL_ID.肛射中毒] ?? 0;
+        const pregnancyWish = (target.state.TALENT[TALENT_ID.妊娠願望] ?? 0) !== 0;
+        const fill = bodyFillRate(target.state, site === "v" ? 1 : 2, true) ?? 0;
+        // The target's wish/addiction can stop a withdrawal, but a pregnancy
+        // wish is only one upstream arm, not an unconditional override.
+        const wantsInside = addiction > 3 || (pregnancyWish && fill < 50);
+        const held = !burst && wantsInside && ctx.rng.int(2) !== 0;
+        if (burst || held) {
+          outcome = "inside";
+          failureReason = burst ? "burst" : "held";
+        } else {
+          outcome = "outside";
+        }
+      }
+    }
+
+    if (outcome === "inside") {
+      master.state.TCVAR[TCVAR_ID.射精箇所] = insideSite;
+      master.state.TCVAR[TCVAR_ID.射精快感強度] = 750 + (master.state.ABL[orificeAbl] ?? 0) * 80;
+      target.state.TCVAR[TCVAR_ID.射精快感強度] = 500 +
+        100 * (target.state.ABL[site === "v" ? ABL_ID.Ｖ感覚 : ABL_ID.Ａ感覚] ?? 0);
+      settleHEjaculation(next, {
+        sender: PLAYER,
+        receiver: ctx.target,
+        channel: site,
+        inside: true,
+        amount: undefined,
+        pulloutFailed: failureReason !== null,
+      });
+      addExp(target, intercourseExp);
+      source[pleasureSource] = 150;
+    } else if (outcome === "outside" || outcome === "condom") {
+      master.state.TCVAR[TCVAR_ID.射精箇所] = outcome === "condom" ? insideSite : 8;
+      master.state.TCVAR[TCVAR_ID.射精快感強度] = 350 + (master.state.ABL[orificeAbl] ?? 0) * 50;
+      settleHEjaculation(next, {
+        sender: PLAYER,
+        receiver: ctx.target,
+        channel: site,
+        inside: false,
+        site: outcome === "condom" ? insideSite : 8,
+        condom: outcome === "condom",
+        amount: undefined,
+      });
+      source[pleasureSource] = 60;
+      if (outcome === "condom") setEquipped(master, TEQUIP_ID.避孕套, false);
+    } else {
+      master.state.TCVAR[TCVAR_ID.射精箇所] = 0;
+      master.state.TCVAR[TCVAR_ID.射精快感強度] = 0;
+    }
+
+    const settled = Object.keys(source).length > 0
+      ? applyHSourceCheck(next, ctx.target, source, site, 0)
+      : { events: [], favorDelta: 0 };
+    const history = activeSites.flatMap((activeSite) =>
+      settleHInsertionHistory(next, ctx.target, activeSite));
+    const channelHistory = activeSites.flatMap((activeSite) =>
+      recordHChannelHistory(next, ctx.target, activeSite));
+    clearHInsertionState(next, ctx.target);
+    const clockEvents = advanceTimeTicks(next, 1).map((event) => ({ ...event, timestamp: ctx.now() }));
+    const choiceText = outcome === "inside"
+      ? failureReason === "held"
+        ? `本想拔出，却被对方阻止，只能在${site === "v" ? "膣内" : "肛门内"}射精了。`
+        : `没能忍住，在${site === "v" ? "膣内" : "肛门内"}暴发后才拔出。`
+      : outcome === "outside"
+        ? "赶在临界前拔出，在体外射精了。"
+        : outcome === "condom"
+          ? "拔出后在避孕套内射精，并取下了避孕套。"
+          : `从${site === "v" ? "膣" : "肛门"}中拔出，解除了插入状态。`;
     return {
-      state: cloneGameState(ctx.state),
-      events: [{ kind: "NARRATION", timestamp: ctx.now(), text: "（拔出：插入姿势状态机与射精／避孕套机制尚未建模。）" }],
-      outcome: "blocked",
-      failReason: { kind: "precondition", message: "TEQUIP 的 V／A 插入状态、高潮与避孕套机制尚未实现" },
+      state: next,
+      events: [
+        { kind: "NARRATION" as const, timestamp: ctx.now(), text: choiceText },
+        ...history.map((text) => ({ kind: "NARRATION" as const, timestamp: ctx.now(), text })),
+        ...channelHistory.map((text) => ({ kind: "NARRATION" as const, timestamp: ctx.now(), text })),
+        ...clockEvents,
+        ...settled.events,
+      ],
+      outcome: "ok" as const,
     };
   },
 };

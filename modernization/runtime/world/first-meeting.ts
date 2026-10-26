@@ -36,10 +36,10 @@ import type {
 } from "../kojo/types.js";
 import type { Rng } from "../command/types.js";
 import type { CharaSlot, GameState } from "../state/index.js";
-import { CFLAG_ID, FLAG_ID } from "../state/settlement.js";
+import { CFLAG_ID, FLAG_ID, TCVAR_ID } from "../state/settlement.js";
 import { applyKojoEffects } from "../kojo/effects.js";
 import type { DomainTransition } from "../state/domain-transition.js";
-import { applyValentineFirstMeetingReward } from "./seasonal-events.js";
+import { applySeasonalEncounterEffects } from "./seasonal-events.js";
 
 export interface FirstMeetingDeps {
   now: () => number;
@@ -333,10 +333,11 @@ export function runFirstMeeting(
     if (liveSlot) {
       const firstMet = cflag(liveSlot, CFLAG_ID.认识) === 0;
       liveSlot.state.CFLAG[CFLAG_ID.认识] = 1;
+      liveSlot.state.CFLAG[CFLAG_ID.最后见面的日子] = state.time.dayIndex;
+      liveSlot.state.TCVAR[TCVAR_ID.今天有否见面] = 1;
       if (firstMet) {
         transitions.push({ kind: "first-met", charaNum });
-        const seasonalReward = applyValentineFirstMeetingReward(state, charaNum, deps.now);
-        if (seasonalReward) events.push(seasonalReward);
+        events.push(...applySeasonalEncounterEffects(state, charaNum, deps.now));
       }
     }
   }

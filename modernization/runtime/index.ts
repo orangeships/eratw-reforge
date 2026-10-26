@@ -10,12 +10,20 @@
  * the rules.
  */
 
+export * from "./story/index.js";
+export * from "./weather/narrative-incident.js";
+export * from "./agent/action-offers.js";
+
 export type {
   GameState,
   TimeSlot,
   CharaSlot,
   CharaSlotState,
   SleepSession,
+  DailyEventSession,
+  FestivalEventSession,
+  EventPromptLine,
+  EventPromptSpec,
   MobMealSession,
   DynamicCharacterMeta,
   GeneratedDynamicCharacterMeta,
@@ -181,6 +189,11 @@ export {
   getHudWorkInfo,
   getHBodyStats,
   estrusCategory,
+  effectivePortraitCharaNum,
+  portraitVariantOf,
+  renderedPortraitVariant,
+  clampPortraitVariant,
+  setPortraitVariant,
   seedRelationStats,
   seedNamedStats,
   seedNamedStatMaxes,
@@ -196,6 +209,7 @@ export {
   type AblParamGroup,
   type HudActionHints,
   type HudWorkInfo,
+  type PortraitVariantAvailability,
 } from "./state/index.js";
 export {
   charaStatsToSlotState,
@@ -331,6 +345,7 @@ export {
   resolveKojoNodeDetailed,
   resolveKojoFunctionDetailed,
   resolveKojoNodeWithChoices,
+  hasActionableKojoNode,
 } from "./kojo/static-router.js";
 export { applyKojoEffects } from "./kojo/effects.js";
 export {
@@ -364,7 +379,7 @@ export {
   type RebellionMarkLevel,
 } from "./kojo/mark-kojo.js";
 export { palamKojoKey } from "./kojo/palam-kojo.js";
-export { iraiKojoSelectorKeys } from "./kojo/irai-kojo.js";
+export { iraiKojoSelectorKeys, mergeIraiKojoResolutions } from "./kojo/irai-kojo.js";
 export { isKojoAiFallbackEligible } from "./kojo/ai-fallback.js";
 export {
   createNativeDialogueRouter,
@@ -428,6 +443,13 @@ export {
   isTrainingCommand,
   isTrainingTarget,
 } from "./command/training-session.js";
+// H settlement receipt — the persisted snapshot of one H command's NOWEX /
+// edging / marks, taken before the resolver's frame is cleared.
+export {
+  attachHSettlementReceipt,
+  buildHSettlementReceipt,
+  isHSettlementCommand,
+} from "./command/h-settlement-receipt.js";
 
 // Act_COM 过滤器 (Parity QA P-1) — the faithful single-grid filter toggles.
 // The UI renders COM_FILTERS as the toggle row and applies quickFilterHidden
@@ -448,6 +470,7 @@ export {
 // `dateOf` read the (season, date) pair off `time`; `monthName` = 春之月…
 export {
   weekdayName,
+  weekdayLabelZh,
   isWeekday,
   isWeekend,
   youbiMatch,
@@ -457,6 +480,19 @@ export {
   seasonName,
   festivalOf,
 } from "./world/calendar.js";
+export {
+  applyNewYearEveSchedule,
+  restoreFestivalSchedule,
+  runFestivalMorning,
+  resolveFestivalEvent,
+  newYearFestivalPrompt,
+} from "./world/festival-events.js";
+export {
+  projectCalendarAgenda,
+  type CalendarAgendaDay,
+  type CalendarAgendaItem,
+  type CalendarAgendaKind,
+} from "./world/calendar-agenda.js";
 
 export {
   applyConfiguredSchedule,
@@ -473,6 +509,19 @@ export {
   resolveConfiguredHomeLocation,
   resolveConfiguredRoomLocation,
 } from "./world/configured-room-locations.js";
+export {
+  ROOM_CATALOG,
+  ROOM_CATALOG_BY_ID,
+  ROOM_CATALOG_BY_LOCATION,
+  ROOM_CATALOG_COUNT,
+  roomCatalogEntryForId,
+  roomCatalogEntryForLocation,
+  roomCatalogLocationForId,
+  roomCatalogIdForLocation,
+  type RoomCatalogEntry,
+  type RoomMapKey,
+  type RoomMapPlacement,
+} from "./world/room-catalog.js";
 export {
   encounterBaseRate,
   encounterLocationForSpot,
@@ -547,6 +596,23 @@ export {
   type DrawnGift,
   type GiftHistoryRow,
 } from "./state/gifts.js";
+export {
+  setItemExplanations,
+  itemExplanationsLoaded,
+  itemExplanation,
+  type ItemExplanationTable,
+  type ItemExplanationEntry,
+  type ItemExplanationCondition,
+} from "./state/item-explanation.js";
+export {
+  setFortuneCatalog,
+  fortuneCatalogLoaded,
+  fortuneSlip,
+  fortuneCharacterId,
+  fortuneMaxNum,
+  type FortuneCatalog,
+  type FortuneSlip,
+} from "./state/fortune.js";
 export {
   uwakiRecord,
   getUwakiHistory,
@@ -645,3 +711,28 @@ export {
   type DayCycleDeps,
   type MorningPhase,
 } from "./world/day-cycle.js";
+
+export {
+  ACCEPTED_EXPERIENCE_SCHEMA_VERSION,
+  MAX_ACCEPTED_EXPERIENCES,
+  MAX_SELECTED_EXPERIENCES,
+  MAX_L1_EXPERIENCES,
+  L1_EXPERIENCE_LOOKBACK_TICKS,
+  validateAcceptedExperience,
+  isAcceptedExperience,
+  pruneAcceptedExperiences,
+  acceptExperience,
+  getVisibleExperiences,
+  selectRelevantExperiencesForL1,
+  formatExperiencesForL1,
+  type AcceptedExperienceFactClass,
+  type AcceptedExperienceKind,
+  type RuntimeHardExperienceKind,
+  type CharacterSoftExperienceKind,
+  type StoryRuntimeExperienceKind,
+  type AcceptedExperienceVisibility,
+  type AcceptedExperiencePayload,
+  type AcceptedExperience,
+  type AcceptedExperienceAcceptance,
+  type L1ExperienceQuery,
+} from "./experience.js";

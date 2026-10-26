@@ -1,10 +1,10 @@
 /**
  * Phase 4.5D — InteractionBox (action sub-loop modal, S4).
  *
- * era's `BEGIN TRAIN` "screen takeover" modernized into a popup. It is a UI
- * overlay (A1 / S1: not GameState, not persisted). While open it shows this
- * sub-loop's reaction, then the player closes the box and picks the next
- * command from the bottom bar.
+ * era's `BEGIN TRAIN` "screen takeover" modernized into an owned transcript
+ * surface (A1 / S1: not GameState, not persisted). Modal callers retain the
+ * close-and-continue controls; H-session callers write the same output into
+ * their center narrative panel and release automatically after it completes.
  *
  * 实玩反馈 (2026-06-28) — restructured into a 立绘 + 口上 dialogue panel:
  *  1. LEFT  = the speaker's portrait (立绘), keyed by the kojo line's charaNum.
@@ -27,17 +27,73 @@ import type { ObservationEvent } from "../../../modernization/schemas/types.js";
 import portraits from "./portraits.bundle.json";
 import { isInteractionVisibleEvent, isMovementNarration } from "./player-visible-events.js";
 import SpriteCrop from "./SpriteCrop.js";
-import { portraitForSpriteName, type PortraitSource } from "./portrait-expression.js";
+import {
+  portraitForSpriteName,
+  portraitForState,
+  portraitSourceForState,
+  type PortraitSource,
+} from "./portrait-expression.js";
 import { kojoColor } from "./kojo-colors.js";
 import { formatGameEvent } from "./event-format.js";
 import RadioBroadcast from "../ai/RadioBroadcast.js";
 import { SceneAmbientPanel } from "./SceneSidebar.js";
-import type { SceneAmbientEntry } from "../ai/types.js";
+import type { SceneAmbientEntry, SceneAmbientLine } from "../ai/types.js";
 import { portraitForDynamicCharacter } from "../../../modernization/runtime/world/dynamic-portraits.js";
 import MobPortrait from "./MobPortrait.js";
+import { AsciiSpinner, TypingHead, useTypewriter } from "./ascii/AsciiEffects.js";
+import DialogueAccompanyChoices, { type DialogueAccompanyChoicesProps } from "./DialogueAccompanyChoices.js";
+import { dialogueAccompanyInvitations } from "../../../modernization/runtime/ai-state/dialogue-action.js";
 
 const PORTRAITS = portraits as unknown as Record<string, PortraitSource>;
+
+/**
+ * COM496 keeps its formal interaction surface, but character reactions belong
+ * in the radio side column. Only formal character dialogue is eligible here;
+ * scene-ambient prose must stay out of this surface.
+ */
+export function buildRadioCharacterEntry(
+  events: ReadonlyArray<ObservationEvent>,
+  sessionId?: string,
+): SceneAmbientEntry | null {
+  const lines: SceneAmbientLine[] = [];
+  const seen = new Set<string>();
+  const append = (line: SceneAmbientLine): void => {
+    const text = line.text.trim();
+    if (!text) return;
+    const key = `${line.participantId}:${line.form}:${text}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    lines.push({ ...line, text });
+  };
+
+  for (const event of events) {
+    if (event.kind !== "DIALOGUE_LINE" || event.charaNum <= 0) continue;
+    append({
+      participantId: event.charaNum,
+      // PRINT*D / PRINTFORMD* are authored plain-prose forms; all other
+      // dialogue forms retain a visible speaker label in the side column.
+      form: event.form?.includes("D") ? "action" : "speech",
+      text: event.text,
+    });
+  }
+
+  if (lines.length === 0) return null;
+  return {
+    requestId: `radio:${sessionId ?? "current"}`,
+    trigger: "interaction-ended",
+    mode: "character-dialogue",
+    kind: "event-echo",
+    participantIds: [...new Set(lines.map((line) => line.participantId))],
+    lines,
+    complete: true,
+  };
+}
+
 export interface InteractionBoxProps {
+  /** Development preview: float the owned transcript above the scene portraits. */
+  presentation?: "modal" | "scene";
+  /** Release the owning session once its text and all choices have completed. */
+  onReadComplete?: (events: ReadonlyArray<ObservationEvent>) => void;
   /** Stable owner-aware session identity. Reveal state resets when it changes. */
   sessionId?: string;
   /** The sub-loop's output: eventLog tail since the box opened. */
@@ -56,39 +112,28 @@ export interface InteractionBoxProps {
   /** This exact command session is waiting for a realtime AI reaction. */
   aiPending?: boolean;
   aiCharaNum?: number;
+  /** Explicit presentation-only AI chat stays inside this existing character
+   * dialogue surface. Draft input and the generated reply share one box. */
+  aiChatMode?: boolean;
+  aiChatInput?: boolean;
+  onSubmitAiChat?: (semantic: string) => boolean;
+  /** Persist a picked AI branch in the same chat episode when available. */
+  onPickAiBranch?: (choiceLabel: string, lines: ObservationEvent[]) => void | Promise<boolean>;
+  /** COM496 owns the formal radio surface regardless of AI settings. */
+  radioActive?: boolean;
   /** AI-enhanced deterministic weather broadcast from COM496. */
   radioBroadcast?: string;
-  /** Latest scene AI entry shown beside the COM496 radio surface. */
-  sceneAmbientEntry?: SceneAmbientEntry | null;
+  /** Whether the protagonist can understand the broadcast language. */
+  radioUnderstood?: boolean;
+  /** Formal authored/AI character dialogue shown beside the COM496 radio. */
+  radioCharacterEntry?: SceneAmbientEntry | null;
+  onRespondAccompany?: DialogueAccompanyChoicesProps["onRespond"];
 }
 
 export default function InteractionBox(props: InteractionBoxProps) {
   const streamRef = useRef<HTMLDivElement | null>(null);
-
-  if (props.radioBroadcast) {
-    return (
-      <div className="interaction-box__scrim" data-testid="interaction-box">
-        <div className="interaction-box interaction-box--radio" role="dialog" aria-modal="true" aria-label="收音机天气播报">
-          <div className="interaction-box__radio-layout">
-            <div className="interaction-box__radio-main">
-              <RadioBroadcast rawBroadcast={props.radioBroadcast} />
-            </div>
-            <div className="interaction-box__radio-side" data-testid="radio-scene-dialogue">
-              <SceneAmbientPanel
-                entry={props.sceneAmbientEntry}
-                state={props.state}
-                enabled
-                allowCharacterDialogue
-              />
-            </div>
-          </div>
-          <div className="interaction-box__grid" data-testid="interaction-actions">
-            <button type="button" className="interaction-box__btn interaction-box__btn--exit" onClick={props.onExit}>[关闭]</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const inScene = props.presentation === "scene";
+  const completedTranscriptRef = useRef<{ sessionId?: string; events: ReadonlyArray<ObservationEvent>; branch: number | null } | null>(null);
 
   // DISPLAY_COM_IMAGE is a visual request, not printable dialogue. The
   // browser currently uses the deterministic speaker portrait; retaining the
@@ -109,75 +154,110 @@ export default function InteractionBox(props: InteractionBoxProps) {
   // Keep command prose, kojo, and later world narration in the exact order the
   // runtime emitted them. Grouping all narration before all dialogue made NPC
   // background messages appear to interrupt the command reaction.
-  const lines: ReadonlyArray<ObservationEvent> = props.events.filter(
+  const baseLines: ReadonlyArray<ObservationEvent> = props.events.filter(
     (e) => e.kind === "DIALOGUE_LINE" || (e.kind === "NARRATION" && isInteractionVisibleEvent(e)),
   );
+  const aiChoiceLine = [...baseLines].reverse().find(
+    (line): line is Extract<ObservationEvent, { kind: "DIALOGUE_LINE" }> =>
+      line.kind === "DIALOGUE_LINE" && line.origin === "ai" && line.aiChoice !== undefined,
+  );
+  const [selectedAiChoice, setSelectedAiChoice] = useState<number | null>(null);
+  const [branchPending, setBranchPending] = useState(false);
+  const branchEpoch = useRef(0);
+  const selectedAiOption = selectedAiChoice === null
+    ? undefined
+    : aiChoiceLine?.aiChoice?.options[selectedAiChoice];
+  const aiBranchLines: ObservationEvent[] = selectedAiOption?.lines.map((line) => ({
+    kind: "DIALOGUE_LINE" as const,
+    timestamp: aiChoiceLine?.timestamp ?? Date.now(),
+    charaNum: aiChoiceLine?.charaNum ?? props.aiCharaNum ?? 0,
+    text: line.text,
+    form: line.form,
+    origin: "ai" as const,
+  })) ?? [];
+  const lines: ReadonlyArray<ObservationEvent> = selectedAiOption
+    ? [...baseLines, ...aiBranchLines]
+    : baseLines;
+  const omikujiResultCount = baseLines[0]?.kind === "NARRATION" && baseLines[0].surface === "omikuji"
+    ? baseLines.findIndex((line) => line.kind !== "NARRATION" || line.surface !== "omikuji")
+    : 0;
+  const initialRevealCount = omikujiResultCount < 0 ? baseLines.length : Math.max(1, omikujiResultCount);
   const hasStreamingAi = lines.some(
     (line) => line.kind === "DIALOGUE_LINE" && line.origin === "ai",
   );
 
   // Click-to-advance: reveal lines one at a time. Starts at 1 on open; new
   // lines appended later stay hidden until the player clicks (eraTW pacing).
-  const [revealed, setRevealed] = useState(1);
-  const [authoredProgress, setAuthoredProgress] = useState({ line: -1, characters: 0 });
+  const [revealed, setRevealed] = useState(initialRevealCount);
   const [inputValue, setInputValue] = useState("");
   useEffect(() => {
-    setRevealed(1);
-    setAuthoredProgress({ line: -1, characters: 0 });
+    setRevealed(initialRevealCount);
     setInputValue("");
-  }, [props.sessionId]);
+    setSelectedAiChoice(null);
+    setBranchPending(false);
+    branchEpoch.current++;
+  }, [props.sessionId, initialRevealCount]);
   // A choice pause belongs after the lines emitted before it. Keep the normal
   // line-by-line pacing until then, so a selected branch can continue in this
   // same dialogue session instead of appearing to replay its prelude.
   const inputMode = props.pendingChoice?.inputMode;
-  const hasChoice = (props.pendingChoice?.options.length ?? 0) > 0 || inputMode !== undefined;
-  // A real AI stream is already paced by provider chunks. Reveal newly
-  // appended AI snapshots immediately instead of requiring a click that would
-  // hide the stream behind the command narration.
-  useEffect(() => {
-    if (props.aiPending && hasStreamingAi) {
-      setRevealed(lines.length);
-    }
-  }, [hasStreamingAi, lines.length, props.aiPending]);
+  const hasAiChoice = aiChoiceLine?.aiChoice !== undefined && selectedAiChoice === null
+    && dialogueAccompanyInvitations(props.state).length === 0;
+  const hasChoice = (props.pendingChoice?.options.length ?? 0) > 0 || inputMode !== undefined || hasAiChoice;
+  const streamingAi = (props.aiPending === true || props.aiChatMode === true) && hasStreamingAi;
   const shownCount = Math.min(revealed, lines.length);
   const more = shownCount < lines.length;
   const choiceReady = hasChoice && !more;
   const shownLines = lines.slice(0, shownCount);
-  const typingAuthoredLine = shownLines.length - 1;
-  const typingAuthoredEvent = shownLines[typingAuthoredLine];
-  const typingAuthoredText = typingAuthoredEvent?.kind === "DIALOGUE_LINE" && typingAuthoredEvent.origin !== "ai"
-    ? formatGameEvent(typingAuthoredEvent, props.state)
-    : "";
-  const typingAuthoredCharacters = authoredProgress.line === typingAuthoredLine
-    ? authoredProgress.characters
-    : 0;
+  const typingLine = shownLines.length - 1;
+  const typingEvent = shownLines[typingLine];
+  const typeable = (typingEvent?.kind === "DIALOGUE_LINE" || (inScene && typingEvent?.kind === "NARRATION"))
+    && (inScene || (typingEvent?.kind === "DIALOGUE_LINE" && (typingEvent.origin === "ai" || !props.aiChatMode)));
+  const typingText = typeable ? formatGameEvent(typingEvent, props.state) : "";
+  // Character text is typed glyph by glyph. Streamed AI chunks extend the same
+  // line key, so arrival bursts never restart or skip the typing head.
+  const typed = useTypewriter(typingText, {
+    key: `${props.sessionId ?? "default"}:${typingLine}`,
+    active: typeable,
+    backlog: streamingAi ? lines.length - shownCount : 0,
+  });
 
-  // CSS clip-path reveals every wrapped visual row in parallel. Reveal the
-  // actual text one character at a time instead, so browser line wrapping
-  // naturally completes the first visual row before continuing onto the next.
+  // A live AI reply flows on by itself: each line starts once the previous one
+  // has finished typing. A long backlog (reopened chat history) jumps to the
+  // newest line instead of replaying the whole transcript.
   useEffect(() => {
-    if (!typingAuthoredText) return;
-    if (authoredProgress.line !== typingAuthoredLine) {
-      setAuthoredProgress({ line: typingAuthoredLine, characters: 0 });
+    if ((!streamingAi && !inScene) || !more) return;
+    if (!inScene && lines.length - shownCount > 3) {
+      setRevealed(lines.length - 1);
       return;
     }
-    if (typingAuthoredCharacters >= typingAuthoredText.length) return;
-    const totalDuration = Math.max(280, Math.min(4_000, typingAuthoredText.length * 34));
-    const characterDelay = Math.max(16, Math.ceil(totalDuration / Math.max(1, typingAuthoredText.length)));
+    if (typed.done) setRevealed((r) => Math.max(r, shownCount) + 1);
+  }, [streamingAi, inScene, more, typed.done, lines.length, shownCount]);
+
+  const hasAccompanyInvitation = props.onRespondAccompany !== undefined
+    && dialogueAccompanyInvitations(props.state).some((invitation) =>
+      props.aiCharaNum === undefined || invitation.target === props.aiCharaNum);
+  // Empty shells cannot auto-acknowledge a command that is still preparing.
+  // Keep a manual exit after preparation fails or the UI outlives its owner;
+  // App's preparation gate still intercepts input until preparation settles.
+  const canCloseEmptyScene = inScene && props.onReadComplete !== undefined
+    && lines.length === 0 && !props.aiChatInput && !hasAccompanyInvitation
+    && !props.radioActive && !props.radioBroadcast;
+  useEffect(() => {
+    if (!inScene || !props.onReadComplete || props.events.length === 0 || more || !typed.done
+      || props.aiPending || props.aiChatInput || hasChoice || hasAccompanyInvitation
+      || props.radioActive || props.radioBroadcast) return;
+    const completed = completedTranscriptRef.current;
+    if (completed && completed.sessionId === props.sessionId && completed.events === props.events && completed.branch === selectedAiChoice) return;
+    // Cancel on transcript/owner updates. Opening an empty shell before async
+    // command preparation must never acknowledge a command that has not run.
     const timer = window.setTimeout(() => {
-      setAuthoredProgress((current) =>
-        current.line === typingAuthoredLine
-          ? { ...current, characters: current.characters + 1 }
-          : current,
-      );
-    }, characterDelay);
+      completedTranscriptRef.current = { sessionId: props.sessionId, events: props.events, branch: selectedAiChoice };
+      props.onReadComplete?.(lines);
+    }, 0);
     return () => window.clearTimeout(timer);
-  }, [
-    typingAuthoredCharacters,
-    typingAuthoredLine,
-    typingAuthoredText,
-    authoredProgress.line,
-  ]);
+  }, [inScene, more, typed.done, props.onReadComplete, props.events, props.aiPending, props.aiChatInput,
+    hasChoice, hasAccompanyInvitation, props.radioActive, props.radioBroadcast, props.sessionId, selectedAiChoice, lines]);
 
   // The portrait + name follow the most-recently-revealed speaker. If the first
   // revealed line is narration, use the first kojo speaker so the portrait is
@@ -185,15 +265,22 @@ export default function InteractionBox(props: InteractionBoxProps) {
   const lastShownDialogue = [...lines.slice(0, shownCount)]
     .reverse()
     .find((e): e is Extract<ObservationEvent, { kind: "DIALOGUE_LINE" }> => e.kind === "DIALOGUE_LINE");
-  const activeSpeakerLine = hasKojo ? lastShownDialogue ?? kojoLines[0] : undefined;
-  const speakerNum = activeSpeakerLine?.charaNum ?? commandImage?.charaNum;
+  const showingOmikujiResult = shownLines.some(
+    (line) => line.kind === "NARRATION" && line.surface === "omikuji",
+  ) && lastShownDialogue === undefined;
+  const activeSpeakerLine = hasKojo ? lastShownDialogue ?? (showingOmikujiResult ? undefined : kojoLines[0]) : undefined;
+  const speakerNum = props.aiChatMode
+    ? props.aiCharaNum
+    : activeSpeakerLine?.charaNum ?? commandImage?.charaNum ?? props.aiCharaNum;
   const speakerName =
     speakerNum !== undefined
       ? props.state.charas[speakerNum]?.callName ?? `角色${speakerNum}`
       : undefined;
   const speakerColor = speakerNum !== undefined ? kojoColor(speakerNum) : undefined;
   const speakerPortrait = portraitForSpriteName(
-    speakerNum !== undefined ? PORTRAITS[String(speakerNum)] as PortraitSource | undefined : undefined,
+    speakerNum !== undefined
+      ? portraitForState(props.state, speakerNum, portraitSourceForState(props.state, speakerNum, PORTRAITS))
+      : undefined,
     commandImage?.args?.[0],
   );
   const dynamicSpeakerPortrait = speakerNum !== undefined
@@ -205,11 +292,15 @@ export default function InteractionBox(props: InteractionBoxProps) {
   // several visual rows before `shownCount` changes.
   useEffect(() => {
     const el = streamRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [lines.length, shownCount, typingAuthoredCharacters]);
+    if (!inScene && el) el.scrollTop = el.scrollHeight;
+  }, [inScene, lines.length, shownCount, typed.shown]);
 
   const advance = (): void => {
     if (more) setRevealed((r) => r + 1);
+  };
+  const onStreamClick = (): void => {
+    if (!typed.done) typed.complete();
+    else advance();
   };
 
   // 跳过 — reveal every remaining line belonging to the currently-shown
@@ -234,17 +325,54 @@ export default function InteractionBox(props: InteractionBoxProps) {
     setRevealed(target);
   };
 
+  // Keep this branch after all hooks. The radio surface and the ordinary
+  // dialogue surface can replace each other when a queued session advances;
+  // returning before the dialogue hooks would change the hook count and blank
+  // the app with React's "Rendered more hooks" error.
+  if (props.radioActive || props.radioBroadcast) {
+    const hasRadioCharacterEntry = (props.radioCharacterEntry?.lines.length ?? 0) > 0;
+    return (
+      <div className="interaction-box__scrim" data-testid="interaction-box">
+        <div className="interaction-box interaction-box--radio" role="dialog" aria-modal="true" aria-label="收音机天气播报">
+          <div className={`interaction-box__radio-layout${hasRadioCharacterEntry ? "" : " interaction-box__radio-layout--solo"}`}>
+            <div className="interaction-box__radio-main">
+              <RadioBroadcast
+                rawBroadcast={props.radioBroadcast ?? ""}
+                canUnderstand={props.radioUnderstood ?? true}
+              />
+            </div>
+            {hasRadioCharacterEntry && (
+              <div className="interaction-box__radio-side" data-testid="radio-character-dialogue">
+                <SceneAmbientPanel
+                  entry={props.radioCharacterEntry}
+                  state={props.state}
+                  enabled
+                  allowCharacterDialogue
+                  title="角色口上"
+                />
+              </div>
+            )}
+          </div>
+          <div className="interaction-box__grid" data-testid="interaction-actions">
+            <button type="button" className="interaction-box__btn interaction-box__btn--exit" onClick={props.onExit}>[关闭]</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="interaction-box__scrim" data-testid="interaction-box">
+    <div className={inScene ? "interaction-box__scene" : "interaction-box__scrim"} data-testid="interaction-box">
       <div
         className={
-          "interaction-box" + (hasKojo || hasCommandImage ? " interaction-box--kojo" : "")
+          "interaction-box" + (hasKojo || hasCommandImage || props.aiChatMode ? " interaction-box--kojo" : "")
+          + (inScene ? " interaction-box--scene" : "")
         }
-        role="dialog"
-        aria-modal="true"
-        aria-label="动作交互"
+        role={inScene ? "region" : "dialog"}
+        aria-modal={inScene ? undefined : true}
+        aria-label={inScene ? "当前对话" : "动作交互"}
       >
-        {(hasKojo || hasCommandImage) && (
+        {!inScene && (hasKojo || hasCommandImage || props.aiChatMode) && (
           <div
             className="interaction-box__portrait"
             data-testid="interaction-portrait"
@@ -274,7 +402,7 @@ export default function InteractionBox(props: InteractionBoxProps) {
         )}
 
         <div className="interaction-box__body">
-          {speakerName && (
+          {!inScene && speakerName && (
             <div
               className="interaction-box__speaker"
               data-testid="interaction-speaker-name"
@@ -288,54 +416,89 @@ export default function InteractionBox(props: InteractionBoxProps) {
             className="interaction-box__stream"
             ref={streamRef}
             data-testid="interaction-stream"
-            onClick={advance}
-            role={more ? "button" : undefined}
-            title={more ? "点击继续" : undefined}
+            onClick={onStreamClick}
+            role={more || !typed.done ? "button" : undefined}
+            title={!typed.done ? "点击显示整句" : more ? "点击继续" : undefined}
           >
-            {lines.length === 0 && !props.aiPending ? (
+            {lines.length === 0 && !props.aiPending && !props.aiChatInput ? (
               <p className="interaction-box__empty">……</p>
             ) : (
               shownLines.map((event, i) => {
                 const authored = event.kind === "DIALOGUE_LINE" && event.origin !== "ai";
+                const generated = event.kind === "DIALOGUE_LINE" && event.origin === "ai";
                 const eventText = formatGameEvent(event, props.state);
-                const typing = authored && i === typingAuthoredLine;
-                const visibleText = typing ? eventText.slice(0, typingAuthoredCharacters) : eventText;
+                const typing = i === typingLine && typeable && !typed.done;
+                const visibleText = typing ? eventText.slice(0, typed.shown) : eventText;
                 return (
                 <p
                   key={`${props.sessionId ?? "default"}:${i}`}
                   className={
                     `interaction-box__line interaction-box__line--${event.kind}` +
                     (isMovementNarration(event) ? " interaction-box__line--movement" : "") +
-                    (authored ? " interaction-box__line--authored-stream" : "")
+                    (authored ? " interaction-box__line--authored-stream" : "") +
+                    (generated ? " interaction-box__line--ai-stream" : "") +
+                    (event.kind === "NARRATION" && event.surface !== undefined
+                      ? ` interaction-box__line--${event.surface} interaction-box__line--${event.surface}-${event.tone ?? "plain"}`
+                      : "")
                   }
                   data-event-kind={event.kind}
+                  data-scene-dialogue-line={inScene ? true : undefined}
                   data-origin={event.kind === "DIALOGUE_LINE" ? event.origin : undefined}
-                  data-stream-state={authored ? typing ? "typing" : "complete" : undefined}
-                  style={
-                    event.kind === "DIALOGUE_LINE"
-                      ? { color: kojoColor(event.charaNum) }
-                      : undefined
-                  }
+                  data-stream-state={authored || generated ? typing ? "typing" : "complete" : undefined}
+                  style={{
+                    ...(event.kind === "DIALOGUE_LINE" ? { color: kojoColor(event.charaNum) } : {}),
+                  }}
                 >
-                  {visibleText}
-                  {typing && <span className="interaction-box__stream-source">{eventText}</span>}
-                  {event.kind === "DIALOGUE_LINE" && event.origin === "ai" && (
-                    <span className="interaction-box__ai-badge" aria-label="AI补写">AI</span>
+                  {inScene && event.kind === "DIALOGUE_LINE" && (
+                    <span className="scene-dialogue__name">
+                      {props.state.charas[event.charaNum]?.callName ?? (event.charaNum === 0 ? props.state.master.callName ?? "你" : `角色${event.charaNum}`)}
+                    </span>
                   )}
+                  {visibleText}
+                  {typing && <TypingHead seed={typed.shown} />}
+                  {typing && <span className="interaction-box__stream-source">{eventText}</span>}
                 </p>
                 );
               })
             )}
             {props.aiPending && (
               <p className="interaction-box__ai-pending" data-testid="interaction-ai-pending">
-                {props.state.charas[props.aiCharaNum ?? -1]?.callName ?? "角色"}正在回应……
+                <AsciiSpinner label={`${props.state.charas[props.aiCharaNum ?? -1]?.callName ?? "角色"}正在回应`} />
               </p>
             )}
           </div>
 
+          {props.aiChatInput && (
+            <form
+              className="interaction-box__ai-chat-input"
+              data-testid="interaction-ai-chat-input"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!inputValue.trim()) return;
+                if (props.onSubmitAiChat?.(inputValue)) setInputValue("");
+              }}
+            >
+              <textarea
+                autoFocus
+                aria-label="想对当前角色说什么，或希望聊什么？"
+                maxLength={1_000}
+                placeholder="直接输入本轮对话内容或语义……"
+                value={inputValue}
+                onChange={(event) => setInputValue(event.target.value)}
+              />
+              <button
+                type="submit"
+                className="interaction-box__btn interaction-box__btn--ai-chat-send"
+                disabled={!inputValue.trim()}
+              >
+                [发送]
+              </button>
+            </form>
+          )}
+
           <div className="interaction-box__controls" data-testid="interaction-controls">
           <div className="interaction-box__grid" data-testid="interaction-actions">
-            {more && (
+            {!inScene && more && (
               <>
                 <button
                   type="button"
@@ -356,7 +519,7 @@ export default function InteractionBox(props: InteractionBoxProps) {
                 </button>
               </>
             )}
-            {!more && !hasChoice && !props.aiPending && (
+            {(!inScene || canCloseEmptyScene) && !more && !hasChoice && !props.aiPending && (
               <button
                 type="button"
                 className="interaction-box__btn interaction-box__btn--exit"
@@ -368,6 +531,10 @@ export default function InteractionBox(props: InteractionBoxProps) {
             )}
           </div>
 
+          {props.onRespondAccompany && shownCount >= lines.length && typed.done && !props.pendingChoice && (
+            <DialogueAccompanyChoices state={props.state} target={props.aiCharaNum}
+              pending={props.aiPending} onRespond={props.onRespondAccompany} />
+          )}
           {choiceReady && (
             <div
               className="interaction-box__choice"
@@ -402,6 +569,41 @@ export default function InteractionBox(props: InteractionBoxProps) {
                     [确定]
                   </button>
                 </>
+              ) : hasAiChoice ? (
+                <div className="interaction-box__ai-choice" data-testid="interaction-ai-choice">
+                  {aiChoiceLine!.aiChoice!.options.map((option, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="interaction-box__btn interaction-box__btn--choice"
+                      data-testid={`interaction-ai-choice-${idx}`}
+                      disabled={branchPending}
+                      onClick={() => {
+                        const option = aiChoiceLine!.aiChoice!.options[idx];
+                        const epoch = branchEpoch.current;
+                        const reveal = () => { setSelectedAiChoice(idx); setRevealed(baseLines.length + 1); };
+                        const result = props.onPickAiBranch?.(option.label, option.lines.map((line) => ({
+                          kind: "DIALOGUE_LINE" as const,
+                          timestamp: aiChoiceLine?.timestamp ?? Date.now(),
+                          charaNum: aiChoiceLine?.charaNum ?? props.aiCharaNum ?? 0,
+                          text: line.text,
+                          form: line.form,
+                          origin: "ai" as const,
+                        })));
+                        if (result instanceof Promise) {
+                          setBranchPending(true);
+                          void result.then(ok => {
+                            if (epoch !== branchEpoch.current) return;
+                            setBranchPending(false);
+                            if (ok) reveal();
+                          }).catch(() => { if (epoch === branchEpoch.current) setBranchPending(false); });
+                        } else reveal();
+                      }}
+                    >
+                      [{idx + 1}] {option.label}
+                    </button>
+                  ))}
+                </div>
               ) : props.pendingChoice!.options.map((opt, idx) => (
                 <button
                   key={idx}

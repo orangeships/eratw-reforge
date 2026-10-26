@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useSceneStore } from "../state/scene-store.js";
 import { useGameStateStore } from "../state/game-state-store.js";
-import SpriteCrop, { type SpriteCropSource } from "./SpriteCrop.js";
-import portraits from "./portraits.bundle.json";
 import charas from "./charas.bundle.json";
 import { clampDragVector, dragToDirectionalInput } from "./touch-gesture.js";
 import {
@@ -16,11 +14,29 @@ import {
   type DanmakuBattleState,
   type GameState,
 } from "../../../modernization/runtime/state/index.js";
+import type { SpriteCropSource } from "./SpriteCrop.js";
+import portraits from "./portraits.bundle.json";
+import { dimensionForKind, portraitForClothing, portraitForState, portraitKind, portraitSourceForState, type PortraitSource } from "./portrait-expression.js";
+import { portraitWithOutfit } from "./portrait-special-outfit-runtime.js";
+import { checkNude } from "../../../modernization/runtime/state/portrait-outfit-context.js";
+import { drawBattle as draw } from "./ascii/danmaku-renderer.js";
+import "./ascii/danmaku.css";
 
 const WIDTH = 480;
 const HEIGHT = 640;
-const PORTRAITS = portraits as unknown as Record<string, SpriteCropSource>;
+const PORTRAITS = portraits as unknown as Record<string, PortraitSource>;
 const CHARAS = charas as unknown as Record<string, { name?: string; CSTR?: Record<string, string> }>;
+
+function BattlePortrait({ source, name, className }: { source: SpriteCropSource; name: string; className: string }) {
+  const clipId = useId();
+  const [x, y, width, height] = source.rect;
+  // SVG's viewBox crops the manifest rectangle and scales with the viewport,
+  // including at 4K. No fixed-size rasterisation of the character art.
+  return <svg className={className} viewBox={source.rect.join(" ")} role="img" aria-label={name}>
+    <defs><clipPath id={clipId}><rect x={x} y={y} width={width} height={height} /></clipPath></defs>
+    <image href={source.src} x="0" y="0" clipPath={`url(#${clipId})`} />
+  </svg>;
+}
 
 function mergeBattleInput(keyboard: BattleInput, touch: BattleInput): BattleInput {
   return {
@@ -47,78 +63,9 @@ function replay(state: GameState): DanmakuBattleState {
   return current;
 }
 
-function drawBullet(ctx: CanvasRenderingContext2D, bullet: DanmakuBattleState["bullets"][number]): void {
-  const angle = Math.atan2(bullet.vy, bullet.vx);
-  const speed = Math.hypot(bullet.vx, bullet.vy);
-  ctx.save();
-  ctx.strokeStyle = bullet.color;
-  ctx.fillStyle = bullet.color;
-  ctx.globalAlpha = .08;
-  ctx.lineWidth = Math.max(1, bullet.radius * .45);
-  ctx.beginPath();
-  ctx.moveTo(bullet.x, bullet.y);
-  ctx.lineTo(bullet.x - bullet.vx * Math.min(5, 2 + speed * 1.2), bullet.y - bullet.vy * Math.min(5, 2 + speed * 1.2));
-  ctx.stroke();
-  ctx.translate(bullet.x, bullet.y);
-  ctx.globalAlpha = 1;
-  if (bullet.shape === "needle") { ctx.rotate(angle); ctx.fillRect(-bullet.radius * 1.8, -bullet.radius * .42, bullet.radius * 3.6, bullet.radius * .84); }
-  else if (bullet.shape === "diamond") { ctx.rotate(Math.PI / 4); ctx.fillRect(-bullet.radius, -bullet.radius, bullet.radius * 2, bullet.radius * 2); }
-  else if (bullet.shape === "petal") { ctx.rotate(angle); ctx.beginPath(); ctx.ellipse(0, 0, bullet.radius * 1.5, bullet.radius * .7, 0, 0, Math.PI * 2); ctx.fill(); }
-  else { ctx.beginPath(); ctx.arc(0, 0, bullet.radius, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = .55; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(-bullet.radius * .27, -bullet.radius * .27, bullet.radius * .36, 0, Math.PI * 2); ctx.fill(); }
-  ctx.restore();
-}
-
-function draw(canvas: HTMLCanvasElement, battle: DanmakuBattleState, focus: boolean): void {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  if (battle.gravityStrength > 0) {
-    ctx.save();
-    ctx.translate(battle.bossX, battle.bossY);
-    ctx.fillStyle = "#000";
-    ctx.beginPath(); ctx.arc(0, 0, 31, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "rgba(134,78,201,.42)";
-    ctx.lineWidth = 3;
-    for (let ring = 0; ring < 3; ring += 1) {
-      ctx.globalAlpha = .5 - ring * .12;
-      ctx.beginPath();
-      ctx.arc(0, 0, 34 + ring * 9, battle.frame * .018 + ring, battle.frame * .018 + ring + Math.PI * 1.45);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-  ctx.save(); ctx.globalCompositeOperation = "lighter";
-  for (const shot of battle.shots) {
-    ctx.strokeStyle = "#8cf8ff";
-    ctx.globalAlpha = .12; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(shot.x, shot.y + 17); ctx.lineTo(shot.x, shot.y - 17); ctx.stroke();
-    ctx.globalAlpha = 1; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(shot.x, shot.y + 13); ctx.lineTo(shot.x, shot.y - 13); ctx.stroke();
-  }
-  ctx.restore();
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  for (const emitter of battle.emitters) {
-    ctx.globalAlpha = .18;
-    ctx.fillStyle = emitter.color;
-    ctx.beginPath(); ctx.arc(emitter.x, emitter.y, emitter.radius * 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = .92;
-    ctx.beginPath(); ctx.arc(emitter.x, emitter.y, emitter.radius, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = .7;
-    ctx.fillStyle = "#fff";
-    ctx.beginPath(); ctx.arc(emitter.x - 2, emitter.y - 2, 2.2, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.restore();
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  for (const bullet of battle.bullets) drawBullet(ctx, bullet);
-  ctx.restore();
-  ctx.beginPath(); ctx.fillStyle = "rgba(183,230,255,.08)"; ctx.arc(battle.playerX, battle.playerY, 20, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.fillStyle = battle.invulnerableFrames > 0 && battle.frame % 6 < 3 ? "#fff" : "#61e7ff"; ctx.arc(battle.playerX, battle.playerY, 7, 0, Math.PI * 2); ctx.fill();
-  if (focus) { ctx.beginPath(); ctx.fillStyle = "#fff"; ctx.arc(battle.playerX, battle.playerY, 2, 0, Math.PI * 2); ctx.fill(); }
-}
-
 function Meter({ label, value, max, className, concealed = false }: { label: string; value: number; max: number; className: string; concealed?: boolean }) {
-  return <div className={`danmaku-meter ${className}${concealed ? " danmaku-meter--concealed" : ""}`}><span>{label}</span><div className="danmaku-meter__track">{!concealed && <i style={{ width: `${Math.max(0, Math.min(100, value / max * 100))}%` }} />}</div><b>{concealed ? "??? / ???" : `${Math.ceil(value)} / ${Math.ceil(max)}`}</b></div>;
+  const filled = Math.round(Math.max(0, Math.min(1, value / Math.max(1, max))) * 12);
+  return <div className={`danmaku-meter ${className}`}><span>{label}</span><span className="danmaku-meter__glyphs" aria-hidden="true">[{concealed ? "????????????" : "=".repeat(filled) + ".".repeat(12 - filled)}]</span><b>{concealed ? "??? / ???" : `${Math.ceil(value)} / ${Math.ceil(max)}`}</b></div>;
 }
 
 function battleKojo(
@@ -170,7 +117,6 @@ export default function DanmakuBattleScreen({ state }: { state: GameState }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bossRef = useRef<HTMLDivElement>(null);
   const bossTwinRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<HTMLDivElement>(null);
   const keyboardInputRef = useRef<BattleInput>({ ...EMPTY_BATTLE_INPUT });
   const touchInputRef = useRef<BattleInput>({ ...EMPTY_BATTLE_INPUT });
   const touchDragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
@@ -196,17 +142,23 @@ export default function DanmakuBattleScreen({ state }: { state: GameState }) {
   const finishBattle = useGameStateStore((s) => s.finishDanmakuBattleAction);
   const setScreen = useSceneStore((s) => s.setScreen);
   const beginBattleReturn = useSceneStore((s) => s.beginBattleReturn);
-  const portrait = PORTRAITS[String(session.config.target)];
   const identity = battleIdentity(session.config.target, session.config.targetName);
   const kojo = battleKojo(session, battle);
   const phaseCount = danmakuPhaseCount(session.config);
   const bossMeterVisible = danmakuBossMeterVisible(battle, session.config);
   const settlementText = settlementKojo(session, state, finished);
   const phaseLabel = session.config.mode === "training"
-    ? "PATTERN 1 + 2 MIX"
-    : `PHASE ${battle.phase} / ${phaseCount} · ${danmakuPhaseLabel(battle, session.config)}`;
+    ? "基础弹幕 · 混合练习"
+    : `符卡 ${battle.phase} / ${phaseCount} · ${danmakuPhaseLabel(battle, session.config)}`;
+  const bossSource = portraitForState(state, session.config.target, portraitSourceForState(state, session.config.target, PORTRAITS));
+  const naked = checkNude(state, session.config.target);
+  const kind = portraitKind(state);
+  const portrait = portraitWithOutfit(state, session.config.target, bossSource, portraitForClothing(dimensionForKind(bossSource, kind), naked), naked, kind);
+  const enemyArt = (className: string, name = identity.fullName) => portrait
+    ? <BattlePortrait source={portrait} name={name} className={className} />
+    : <span className="era-duel__enemy-fallback" aria-label={name}>{session.config.target > 0 ? "[ 相手 ]" : "[ + ]"}</span>;
 
-  useEffect(() => { const timer = window.setTimeout(() => setIntro(false), 1350); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => { const timer = window.setTimeout(() => setIntro(false), 650); return () => window.clearTimeout(timer); }, []);
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift", "w", "a", "s", "d", "W", "A", "S", "D", "Escape"].includes(event.key)) event.preventDefault();
@@ -265,7 +217,6 @@ export default function DanmakuBattleScreen({ state }: { state: GameState }) {
       const twins = configRef.current.pattern === "aunn" && current.phase >= 3;
       if (bossRef.current) { bossRef.current.style.left = `${(current.bossX + (twins ? -68 : 0)) / WIDTH * 100}%`; bossRef.current.style.top = `${current.bossY / HEIGHT * 100}%`; }
       if (bossTwinRef.current) { bossTwinRef.current.style.display = twins ? "block" : "none"; bossTwinRef.current.style.left = `${(current.bossX + 68) / WIDTH * 100}%`; bossTwinRef.current.style.top = `${current.bossY / HEIGHT * 100}%`; }
-      if (playerRef.current) { playerRef.current.style.left = `${current.playerX / WIDTH * 100}%`; playerRef.current.style.top = `${current.playerY / HEIGHT * 100}%`; }
       if (refreshHud || current.frame - lastHudFrameRef.current >= 12) {
         lastHudFrameRef.current = current.frame;
         setBattle(current);
@@ -307,7 +258,7 @@ export default function DanmakuBattleScreen({ state }: { state: GameState }) {
   const leave = (result: "victory" | "defeat" | "complete" | "aborted") => {
     if (leaving) return;
     setLeaving(true);
-    window.setTimeout(() => { beginBattleReturn(); finishBattle(result, battle.playerLives); setScreen("mainGame"); }, 520);
+    window.setTimeout(() => { beginBattleReturn(); finishBattle(result, battle.playerLives); setScreen("mainGame"); }, 160);
   };
   const result = finished === "complete" ? "complete" : finished === "victory" ? "victory" : "defeat";
   const resultStreaming = Boolean(finished && settlementText && victoryReveal < settlementText.length);
@@ -316,21 +267,35 @@ export default function DanmakuBattleScreen({ state }: { state: GameState }) {
     leave(result);
   } : undefined;
   const twinsVisible = session.config.pattern === "aunn" && battle.phase >= 3;
-  return <section className={`danmaku-battle${intro ? " danmaku-battle--intro" : ""}${hitFlash ? " danmaku-battle--hit" : ""}${leaving ? " danmaku-battle--leaving" : ""}${finished ? " danmaku-battle--finished" : ""}${resultStreaming ? " danmaku-battle--streaming" : ""}`} data-testid="danmaku-battle" onClick={onFinishedClick}>
-    <header className="danmaku-battle__title"><span>{session.commandNo === 411 ? "战斗训练" : "弹幕胜负"}</span></header>
-    <aside className="danmaku-battle__stats danmaku-battle__stats--player"><Meter label="PLAYER HP" value={battle.playerHp} max={battle.playerMaxHp} className="danmaku-meter--player" /><span>残机 {session.config.mode === "training" ? "∞" : battle.playerLives}　自动 B {battle.bombs}　擦弹 {battle.grazes}</span></aside>
-    <aside className="danmaku-battle__stats danmaku-battle__stats--boss"><Meter label={`${identity.fullName} HP`} value={battle.bossHp} max={battle.bossMaxHp} className="danmaku-meter--boss" concealed={!bossMeterVisible} />{identity.title && <span className="danmaku-battle__identity">{identity.title}</span>}<span>{phaseLabel}</span>{kojo && <div className="danmaku-battle__kojo" data-testid="danmaku-kojo"><b>{kojo.speaker}</b><p>{kojo.text}</p></div>}</aside>
-    <button className="danmaku-battle__mobile-pause" type="button" aria-label="暂停弹幕战斗" onClick={(event) => { event.stopPropagation(); setPaused((value) => !value); }}>Ⅱ</button>
-    <div className="danmaku-battle__stage" onPointerDown={beginTouchInput} onPointerMove={updateTouchInput} onPointerUp={(event) => clearTouchInput(event.pointerId)} onPointerCancel={(event) => clearTouchInput(event.pointerId)} onLostPointerCapture={(event) => clearTouchInput(event.pointerId)}>
+  return <section className={`era-duel danmaku-battle${intro ? " danmaku-battle--intro" : ""}${hitFlash ? " danmaku-battle--hit" : ""}${leaving ? " danmaku-battle--leaving" : ""}${finished ? " danmaku-battle--finished" : ""}${resultStreaming ? " danmaku-battle--streaming" : ""}`} data-testid="danmaku-battle" onClick={onFinishedClick}>
+    <header className="danmaku-battle__title">
+      <h1><span aria-hidden="true">&gt; </span>[{session.commandNo === 411 ? "战斗训练" : "弹幕胜负"}]</h1>
+      <button className="era-duel__button" type="button" aria-label="暂停弹幕战斗" disabled={Boolean(finished || leaving)} onClick={event => { event.stopPropagation(); setPaused(value => !value); }}>[ Esc {paused ? "继续" : "暂停"} ]</button>
+    </header>
+    <aside className="danmaku-battle__stats danmaku-battle__stats--player">
+      <h2>┌ {state.master.callName || "你"} ┐</h2>
+      <Meter label="体力" value={battle.playerHp} max={battle.playerMaxHp} className="danmaku-meter--player" />
+      <dl className="danmaku-battle__numbers"><div><dt>残机</dt><dd>{session.config.mode === "training" ? "∞" : battle.playerLives}</dd></div><div><dt>自动灵击</dt><dd>{battle.bombs}</dd></div><div><dt>擦弹</dt><dd>{battle.grazes.toString().padStart(3, "0")}</dd></div></dl>
+      <p className="danmaku-battle__rule">{session.config.mode === "training" ? "基础练习" : "符卡规则"}<br /><span>{session.config.mode === "training" ? "自由躲避，自动射击" : "躲避弹幕，击破符卡"}</span></p>
+    </aside>
+    <div className="danmaku-battle__stage" onPointerDown={beginTouchInput} onPointerMove={updateTouchInput} onPointerUp={event => clearTouchInput(event.pointerId)} onPointerCancel={event => clearTouchInput(event.pointerId)} onLostPointerCapture={event => clearTouchInput(event.pointerId)}>
       <canvas ref={canvasRef} className="danmaku-battle__canvas" width={WIDTH} height={HEIGHT} aria-label="弹幕战斗画面" />
-      <div ref={bossRef} className="danmaku-battle__boss" style={{ left: `${(battle.bossX + (twinsVisible ? -68 : 0)) / WIDTH * 100}%`, top: `${battle.bossY / HEIGHT * 100}%` }}>{portrait ? <SpriteCrop source={portrait} alt={identity.fullName} className="danmaku-battle__boss-sprite" frameWidth={104} frameHeight={104} /> : <span className="danmaku-battle__enemy-core">✦</span>}</div>
-      <div ref={bossTwinRef} className="danmaku-battle__boss danmaku-battle__boss--twin" style={{ display: twinsVisible ? "block" : "none", left: `${(battle.bossX + 68) / WIDTH * 100}%`, top: `${battle.bossY / HEIGHT * 100}%` }}>{portrait ? <SpriteCrop source={portrait} alt={`${identity.fullName}分身`} className="danmaku-battle__boss-sprite" frameWidth={104} frameHeight={104} /> : <span className="danmaku-battle__enemy-core">✦</span>}</div>
-      <div ref={playerRef} className="danmaku-battle__player" style={{ left: `${battle.playerX / WIDTH * 100}%`, top: `${battle.playerY / HEIGHT * 100}%` }}><span>✧</span></div>
+      <div ref={bossRef} className="danmaku-battle__boss" style={{ left: `${(battle.bossX + (twinsVisible ? -68 : 0)) / WIDTH * 100}%`, top: `${battle.bossY / HEIGHT * 100}%` }}>{enemyArt("era-duel__actor")}</div>
+      <div ref={bossTwinRef} className="danmaku-battle__boss danmaku-battle__boss--twin" style={{ display: twinsVisible ? "block" : "none", left: `${(battle.bossX + 68) / WIDTH * 100}%`, top: `${battle.bossY / HEIGHT * 100}%` }}>{enemyArt("era-duel__actor", `${identity.fullName}分身`)}</div>
       <div ref={touchControlRef} className="danmaku-battle__touch-control" data-testid="danmaku-touch-control" hidden><span ref={touchKnobRef} /></div>
-      <p className="danmaku-battle__touch-hint">轻拖精细移动 · 拉远快速移动</p>
+      <p className="danmaku-battle__touch-hint">轻拖慢移 · 拉远快移</p>
     </div>
-    {intro && <div className="danmaku-battle__entry"><p>DUEL START</p><h2>{identity.fullName}</h2><span>{identity.title || "SPELL CARD DUEL"}</span></div>}
-    {paused && !finished && <div className="danmaku-battle__overlay"><h2>暂停</h2><button type="button" onClick={() => setPaused(false)}>继续</button>{session.config.mode === "training" && <button type="button" onClick={() => leave("aborted")}>结束练习</button>}{session.config.mode === "duel" && <button type="button" onClick={() => leave("defeat")}>认输</button>}</div>}
-    {finished && <div className="danmaku-battle__overlay"><h2>{finished === "victory" ? "胜利！" : finished === "complete" ? "训练结束" : "败北"}</h2>{settlementText ? <div className="danmaku-battle__victory-kojo"><b>{session.config.targetName}</b><p>{settlementText.slice(0, victoryReveal)}{victoryReveal < settlementText.length && <i aria-hidden="true">▌</i>}</p></div> : <p>被弹 {battle.hits}　擦弹 {battle.grazes}　自动 Bomb {battle.autoBombs}</p>}</div>}
+    <aside className="danmaku-battle__stats danmaku-battle__stats--boss">
+      <h2>┌ 相手 ┐</h2>
+      <div className="danmaku-battle__portrait">{enemyArt("era-duel__portrait")}<span>{identity.fullName}</span></div>
+      {identity.title && <span className="danmaku-battle__identity">{identity.title}</span>}
+      <Meter label="符力" value={battle.bossHp} max={battle.bossMaxHp} className="danmaku-meter--boss" concealed={!bossMeterVisible} />
+      <span className="danmaku-battle__phase">{phaseLabel}</span>
+      {kojo && <div className="danmaku-battle__kojo" data-testid="danmaku-kojo"><b>{kojo.speaker}</b><p>{kojo.text}</p></div>}
+    </aside>
+    <footer className="danmaku-battle__controls"><span><kbd>WASD</kbd> / <kbd>方向键</kbd> 移动</span><span><kbd>Shift</kbd> 精细移动</span><span>自动射击</span></footer>
+    {intro && <div className="danmaku-battle__entry"><div className="era-duel__intro"><span>{session.config.mode === "training" ? "[ 开始演练 ]" : "[ 符卡对决 ]"}</span><h2>{identity.fullName}</h2>{identity.title && <p>{identity.title}</p>}</div></div>}
+    {paused && !finished && <div className="danmaku-battle__overlay"><div className="era-duel__dialog" role="dialog" aria-label="战斗暂停"><h2>┌ 暂停 ┐</h2><button className="era-duel__button" type="button" onClick={() => setPaused(false)}>[ 继续对决 ]</button><button className="era-duel__button" type="button" onClick={() => leave(session.config.mode === "training" ? "aborted" : "defeat")}>[ {session.config.mode === "training" ? "结束练习" : "认输"} ]</button></div></div>}
+    {finished && <div className="danmaku-battle__overlay"><div className="era-duel__dialog" role="dialog" aria-label="战斗结果"><h2>┌ {finished === "victory" ? "胜利" : finished === "complete" ? "训练结束" : "败北"} ┐</h2><dl className="danmaku-battle__result-numbers"><div><dt>被弹</dt><dd>{battle.hits}</dd></div><div><dt>擦弹</dt><dd>{battle.grazes}</dd></div><div><dt>自动灵击</dt><dd>{battle.autoBombs}</dd></div></dl>{settlementText && <div className="danmaku-battle__victory-kojo"><b>{session.config.targetName}</b><p>{settlementText.slice(0, victoryReveal)}{resultStreaming && <i aria-hidden="true">▌</i>}</p></div>}<button className="era-duel__button" type="button" onClick={event => { event.stopPropagation(); onFinishedClick?.(); }}>[ {resultStreaming ? "显示全部" : "返回"} ]</button></div></div>}
   </section>;
 }

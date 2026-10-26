@@ -260,7 +260,7 @@ function IntroView({ paragraphs, workInfo }: { paragraphs: string[]; workInfo: s
     <div>
       {workInfo && workInfo.trim() !== "" && (
         <p className="ci-panel__intro" data-testid="ci-work-info">
-          <b style={{ color: "#8893a3", marginRight: 6 }}>工作情報</b>
+          <b style={{ color: "#8893a3", marginRight: 6 }}>工作情报</b>
           {workInfo}
         </p>
       )}
@@ -317,7 +317,7 @@ function BasicHeaderView({ header, callName, charaNum }: { header: BasicHeader; 
             <span className="ci-panel__kv"><b>信赖度</b> {header.favor?.trust ?? 0}</span>
             {header.lust && (
               <span className="ci-panel__kv ci-panel__kv--lust">
-                <b>欲求不満</b> {lustTierEmoji(header.lust.tier)} {header.lust.value}
+                <b>欲求不满</b> {lustTierEmoji(header.lust.tier)} {header.lust.value}
               </span>
             )}
             {header.brand && header.brand.tier > 0 && (
@@ -325,6 +325,15 @@ function BasicHeaderView({ header, callName, charaNum }: { header: BasicHeader; 
                 <b>反发刻印</b> Lv{header.brand.tier}/{header.brand.max}
               </span>
             )}
+            {header.trainingMarks?.filter((mark) => mark.id !== 3 && mark.tier > 0).map((mark) => (
+              <span
+                key={mark.id}
+                className="ci-panel__kv ci-panel__kv--lust"
+                data-testid={`ci-training-mark-${mark.id}`}
+              >
+                <b>{mark.label}刻印</b> Lv{mark.tier}/{mark.max}
+              </span>
+            ))}
           </div>
         )}
 
@@ -487,7 +496,7 @@ function Page1ExpJuel({ snap }: { snap: CharaInfoSnapshot }) {
 
       {snap.inTraining && (
         <p className="ci-panel__in-training" data-testid="ci-in-training">
-          ✿ 调教中（うふふ） ✿　 PAGE 1 切到绝顶回数板
+          ✿ 调教中（诶嘿嘿） ✿　切换到第 1 页绝顶次数板
         </p>
       )}
 
@@ -533,7 +542,7 @@ function Page1ExpJuel({ snap }: { snap: CharaInfoSnapshot }) {
       </Section>
 
       {snap.pregnancy && (
-        <Section title="妊娠関連" testid="ci-pregnancy-body">
+        <Section title="妊娠相关" testid="ci-pregnancy-body">
           <div data-testid="ci-pregnancy-info">
             <PregnancyView info={snap.pregnancy} />
           </div>
@@ -595,14 +604,14 @@ function Page2Personal({ snap, state }: { snap: CharaInfoSnapshot; state: GameSt
 
       <Section title="个人情报" testid="ci-personal-body">
         <div className="ci-panel__grid2">
-          <div className="ci-panel__kv"><b>性格傾向</b> <span className="ci-panel__kv-val">{p.type || "（未判明）"}</span></div>
-          <div className="ci-panel__kv"><b>自宅位置</b> <span className="ci-panel__kv-val">{p.homeLocationMasked ? "■■■■■" : (p.homeLocation ?? "（未知）")}</span></div>
+          <div className="ci-panel__kv"><b>性格倾向</b> <span className="ci-panel__kv-val">{p.type || "（未判明）"}</span></div>
+          <div className="ci-panel__kv"><b>住址</b> <span className="ci-panel__kv-val">{p.homeLocationMasked ? "■■■■■" : (p.homeLocation ?? "（未知）")}</span></div>
           <div className="ci-panel__kv"><b>起床</b> <span className="ci-panel__kv-val">{hhmm(p.schedule.wakeMin)}</span></div>
           <div className="ci-panel__kv"><b>就寝</b> <span className="ci-panel__kv-val">{hhmm(p.schedule.sleepMin)}</span></div>
           {!snap.header.isMaster && (
             <>
-              <div className="ci-panel__kv"><b>来訪</b> <span className="ci-panel__kv-val">{hhmm(p.schedule.visitMin)}</span></div>
-              <div className="ci-panel__kv"><b>帰宅</b> <span className="ci-panel__kv-val">{hhmm(p.schedule.returnMin)}</span></div>
+              <div className="ci-panel__kv"><b>来访</b> <span className="ci-panel__kv-val">{hhmm(p.schedule.visitMin)}</span></div>
+              <div className="ci-panel__kv"><b>回家</b> <span className="ci-panel__kv-val">{hhmm(p.schedule.returnMin)}</span></div>
             </>
           )}
         </div>
@@ -651,16 +660,16 @@ function Page3Preference({ snap }: { snap: CharaInfoSnapshot }) {
       <BasicHeaderView header={snap.header} callName={snap.callName} charaNum={snap.charaNum} />
 
       <Section title="感性 · 喜欢" testid="ci-taste-sense-like">
-        <TasteView title="好き" view={pref.likes} locked={pref.likes?.masked ?? false} />
+        <TasteView title="喜欢" view={pref.likes} locked={pref.likes?.masked ?? false} />
       </Section>
       <Section title="感性 · 讨厌" testid="ci-taste-sense-dislike">
-        <TasteView title="嫌い" view={pref.dislikes} locked={pref.dislikes?.masked ?? false} />
+        <TasteView title="讨厌" view={pref.dislikes} locked={pref.dislikes?.masked ?? false} />
       </Section>
       <Section title="料理 · 喜欢味道" testid="ci-taste-food-like">
-        <TasteView title="好きな味" view={pref.foodLikes} locked={pref.foodLikes?.masked ?? false} />
+        <TasteView title="喜欢的味道" view={pref.foodLikes} locked={pref.foodLikes?.masked ?? false} />
       </Section>
       <Section title="料理 · 讨厌味道" testid="ci-taste-food-dislike">
-        <TasteView title="讨厌な味" view={pref.foodDislikes} locked={pref.foodDislikes?.masked ?? false} />
+        <TasteView title="讨厌的味道" view={pref.foodDislikes} locked={pref.foodDislikes?.masked ?? false} />
       </Section>
 
       {pref.assistEffects.length > 0 && (
@@ -819,12 +828,20 @@ function AgentPage({ snap }: { snap: AgentInfoSnapshot }) {
         </section>
       )}
 
-      {snap.latestReflection && (
+      {snap.latestReflectionParts ? (
+        <section className="ci-panel__section" data-testid="ci-agent-reflection">
+          <h4>最近三段反思</h4>
+          <p><strong>对主角的态度：</strong>{snap.latestReflectionParts.attitudeToPlayer}</p>
+          <p><strong>今天有意思的事：</strong>{snap.latestReflectionParts.interestingEvent ?? "没有足够事实锚点。"}</p>
+          <p><strong>接下来的倾向：</strong>{snap.latestReflectionParts.nextTendency}</p>
+          <p className="ci-panel__note">故事为核查后的主观记忆（{snap.latestReflectionParts.auditStatus}）；实时关系与 Runtime 状态优先。</p>
+        </section>
+      ) : snap.latestReflection ? (
         <section className="ci-panel__section" data-testid="ci-agent-reflection">
           <h4>最近心境</h4>
           <p>{snap.latestReflection}</p>
         </section>
-      )}
+      ) : null}
 
       {snap.topMemories.length > 0 && (
         <section className="ci-panel__section" data-testid="ci-agent-memories">

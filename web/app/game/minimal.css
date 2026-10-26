@@ -1,0 +1,284 @@
+/* ============================================================
+   Mobile minimal presentation mode (presentationMode="minimal")
+   Ultra-slim phone-portrait surface: text stream + Act_COM only.
+   Loaded AFTER styles.css + immersive.css so these rules win.
+
+   Visual order (top → bottom), via `order`:
+     top(0) → middle text stream(0) → bottom command grid(1)
+     → excom tool row(2) → docks choice/AI bar(3) → footer(4)
+   ============================================================ */
+
+.game-client--minimal {
+  /* 页面整体滚动（网页式）：不锁视口高度、不给区域定死内部滚动框。
+     内容长时页面自然变长，excom/命令/聊天条跟随内容排布，不被挤压。 */
+  grid-template-rows: auto auto auto auto auto auto;
+  min-height: 100dvh;
+  gap: 2px;
+  background: #000;
+}
+/* The normal game shell deliberately locks itself to one viewport. Minimal
+   mode is a document instead: release both the fullscreen container and the
+   client height so long ACTCOM/EXCOM content extends the page and the browser
+   owns one vertical scrollbar. */
+.container--fullscreen.container--minimal {
+  width: 100%;
+  height: auto;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+.container--fullscreen > .game-client--minimal {
+  height: auto;
+  min-height: 100dvh;
+}
+/* styles.css is imported from the app entry and may be emitted after this
+   component stylesheet. Beat its fullscreen and mobile root rules by scope,
+   not source order: the minimal client must remain an auto-height document. */
+.container--fullscreen.container--minimal > .game-client.game-client--minimal {
+  display: grid;
+  grid-template-rows: auto auto auto auto auto auto;
+  height: auto;
+  min-height: 100dvh;
+  align-content: start;
+}
+.game-client--minimal .game-client__middle { order: 0; padding: 0; }
+.game-client--minimal .game-client__bottom { order: 1; }
+.game-client--minimal .excom-row { order: 2; }
+.game-client--minimal .game-client__docks { order: 3; }
+.game-client--minimal .game-client__footer { order: 4; }
+
+/* Top band: pinned (outside the scrolling stream), safe-area aware. */
+.game-client--minimal .game-client__top {
+  order: 0;
+  z-index: 20;
+  padding: calc(env(safe-area-inset-top, 0px) + 2px) 6px 0;
+}
+.game-client--minimal .status-bar {
+  padding: 2px 4px;
+}
+/* Two-row top band: date/time/weather/time-stop on line 1, location +
+   present-NPC chips inline on line 2. Rules are visual separators only. */
+.game-client--minimal .status-bar__rule { display: none; }
+.game-client--minimal .status-bar__present-inline {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 2px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* Middle = the text stream flows in the page (no inner scroll box). */
+.game-client--minimal .game-client__scene-slot {
+  height: auto;
+  overflow-y: visible;
+  overscroll-behavior: auto;
+  border: 0;
+  background: transparent;
+}
+/* The history/band is NOT a floating box in minimal mode: it flows as plain
+   text on the page background (no frame, no gradient, no blur). */
+.game-client--minimal .scene-view__band {
+  position: static;
+  height: auto;
+  max-height: none;
+  padding: 6px 10px 12px;
+  overflow-y: visible;
+  overscroll-behavior: auto;
+  border-top: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+/* Ex_COM row: ONE horizontal line, scrollable on narrow screens — the tool
+   groups and the [▸ 工具] fold never wrap into stacked rows. */
+.game-client--minimal .excom-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 0;
+  padding: 2px 6px;
+}
+.game-client--minimal .excom-row__tools {
+  /* Never let the flex row shrink the tool group out of view — the parent
+     row scrolls horizontally instead. */
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.game-client--minimal .excom-row__collapse {
+  flex: 0 0 auto;
+}
+
+/* Bottom command zone: flows in the page (no bounded internal scroll — the
+   command grid's box (border/gradient background/shadow) is stripped so the
+   output and the commands read as one continuous block). */
+.game-client--minimal .game-client__bottom {
+  max-height: none;
+  overflow-y: visible;
+  overscroll-behavior: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.game-client--minimal .command-grid {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 6px 4px;
+}
+.game-client--minimal .command-filter-row {
+  border-bottom: 0;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+}
+
+/* Encounter cards keep their choices but drop the portrait art. */
+.game-client--minimal .walk-encounter__portrait { display: none; }
+
+/* Top-band tweaks: clickable roster chips + compact time-stop/H session. */
+.game-client--minimal .status-bar__present {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 2px;
+}
+.game-client--minimal .status-bar__present-name--chip {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  padding: 0 2px;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.game-client--minimal .status-bar__present-name--selected {
+  color: #ffd75e;
+  font-weight: bold;
+}
+.game-client--minimal .status-bar__timestop--compact {
+  margin-left: auto;
+}
+/* The story badge follows the compact time-stop button onto the date line. It
+   keeps its own small gap so it does not disturb the `auto` push above. */
+.game-client--minimal .status-bar__narrative-toggle--compact {
+  margin-left: 6px;
+  max-width: 14ch;
+}
+.game-client--minimal .status-bar__narrative-toggle--compact .status-bar__narrative-toggle-label {
+  display: none;
+}
+.game-client--minimal .status-bar__h-session {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  font-size: 11px;
+  gap: 4px;
+  padding: 0;
+}
+
+/* Touch targets. */
+.game-client--minimal .command-grid__btn { min-height: 40px; }
+
+/* Ex_COM row buttons: borderless like the Act_COM command buttons
+   (command-grid__btn), green-gradient hover. */
+.game-client--minimal .excom-row__btn {
+  padding: 2px 8px;
+  font-size: calc(var(--era-fs) - 1px);
+  color: #d5dde6;
+  text-align: left;
+  border: none;
+  border-radius: 0;
+}
+.game-client--minimal .excom-row__btn:hover {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(98, 235, 160, 0.14), rgba(98, 235, 160, 0.025));
+  box-shadow: inset 2px 0 var(--era-green);
+}
+
+/* Move/Outing destination lists (minimal 移动/外出 surfaces): borderless
+   command-style buttons, rendered inside the scrolling scene slot. */
+.minimal-move-list, .minimal-outing-list { padding: 6px 10px; }
+.minimal-move-list__header, .minimal-outing-list__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.minimal-move-list__current, .minimal-outing-list__current {
+  color: #9fc7ff;
+  font-size: calc(var(--era-fs) - 2px);
+}
+.minimal-move-list ul, .minimal-outing-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.minimal-move-list__btn, .minimal-outing-list__btn {
+  width: 100%;
+  padding: 2px 8px;
+  font-family: var(--era-mono);
+  font-size: calc(var(--era-fs) - 1px);
+  text-align: left;
+  color: #d5dde6;
+  background: none;
+  border: none;
+  border-radius: 0;
+  min-height: 40px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.minimal-move-list__btn:hover:not(:disabled), .minimal-outing-list__btn:hover:not(:disabled) {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(98, 235, 160, 0.14), rgba(98, 235, 160, 0.025));
+  box-shadow: inset 2px 0 var(--era-green);
+}
+.minimal-move-list__btn:disabled, .minimal-outing-list__btn:disabled {
+  color: #5a6068;
+  cursor: not-allowed;
+}
+.minimal-move-list__badge {
+  margin-left: 6px;
+  color: #9ecbff;
+  font-size: calc(var(--era-fs) - 2px);
+}
+
+/* Minimal morning page: no card "window" — the wake-up actions render
+   straight on the page background (no border/radius/gradient/shadow/blur). */
+.game-client--minimal .morning-menu {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: clamp(10px, 2vh, 22px) 10px;
+}
+.game-client--minimal .morning-menu__panel {
+  width: 100%;
+  max-height: none;
+  padding: 8px 12px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.game-client--minimal .morning-menu__panel::before {
+  display: none;
+}
+/* Minimal morning page: the save slots render inline, no modal box. */
+.game-client--minimal .morning-menu__inline-save {
+  margin-top: 6px;
+  padding: 4px 8px;
+}
+.game-client--minimal .morning-menu__field-title {
+  font-size: calc(var(--era-fs) - 1px);
+  margin: 4px 0;
+}
+
+/* Neutralize the legacy 700px-portrait flex-column override so minimal
+   keeps its own grid rows. */
+@media (max-width: 700px) and (orientation: portrait) {
+  .game-client--minimal { display: grid; }
+  .game-client--minimal .game-client__middle { flex: none; }
+  .game-client--minimal .status-bar { flex: none; }
+}

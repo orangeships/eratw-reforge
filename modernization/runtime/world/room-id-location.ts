@@ -15,21 +15,23 @@
  * The fix: one bridge here, and `setSlotLocation` as the ONLY way to move a
  * character — it writes the string AND keeps `CFLAG[300]` in sync.
  *
- * SOURCE OF TRUTH for the id↔name mapping is eraTW's `CSV/Str.csv` id segment
- * (1=鳥居, 2=境内, 13=風呂, 22=参道, …). We don't re-copy it — the runtime
- * already encodes the relevant rooms two ways:
+ * SOURCE OF TRUTH for built numbered rooms is the generated `ROOM_CATALOG`
+ * (`modernization/runtime/world/room-catalog.generated.ts`), which is derived
+ * from the upstream colored-map cells and the map-specific room sources. Its
+ * identity is the full location plus the global P number; consumers must not
+ * reconstruct another room table. The upstream numeric source remains
+ * eraTW's `CSV/Str.csv` id segment (1=鳥居, 2=境内, 13=風呂, 22=参道, …).
+ * The runtime keeps the following older tables only as compatibility fallbacks:
  *   - `SHRINE_ROOM_PROPS` (shrine-rooms.ts): pNum "P13" → "神社:風呂" — the
  *     public shrine rooms our handlers gate on. The pNum number IS the Str.csv id.
  *   - `CONFIGURED_ROOM_LOCATIONS` (configured-room-locations.ts): id → location
  *     for character home rooms (私室) across shrine / 人間之里.
- * We compose both, in BOTH directions. Shrine public rooms win on a collision
- * (they're the gated ones), consistent for forward and reverse.
+ * The catalog is queried first in BOTH directions. A canonical catalog entry
+ * therefore wins over a stale or differently-spelled legacy mapping.
  *
- * COVERAGE: shrine public rooms + bundled character homes. Locations with no
- * numeric id (scheduler activity rooms like "人間之里:中央広場", 温泉, 外出) and
- * ids with no modern room resolve to null — callers leave the other side
- * untouched (no fabricated id, no regression). The oracle traces live in the
- * shrine, which is fully mapped, so this un-blinds the oracle for position.
+ * COVERAGE: all 547 built numbered rooms in maps 0-10. Special activity/home
+ * strings without a P number, FIELD region cells, and unbuilt map 11 resolve
+ * to null; callers leave the other side untouched rather than inventing ids.
  */
 
 import { SHRINE_ROOM_PROPS } from "../command/comable/shrine-rooms.js";
@@ -37,10 +39,7 @@ import {
   resolveConfiguredRoomLocation,
   CONFIGURED_ROOM_LOCATIONS_REVERSE,
 } from "./configured-room-locations.js";
-import {
-  GENERATED_ROOM_ID_TO_LOCATION,
-  GENERATED_LOCATION_TO_ROOM_ID,
-} from "./generated-room-locations.js";
+import { ROOM_CATALOG_BY_ID, ROOM_CATALOG_BY_LOCATION } from "./room-catalog.js";
 import { CFLAG_ID } from "../state/settlement.js";
 import type { CharaSlot } from "../state/game-state.js";
 
@@ -63,10 +62,9 @@ const SHRINE_LOCATION_TO_ID: Readonly<Record<string, number>> = Object.freeze(
 );
 
 /**
- * Public rooms outside the shrine that the ported work manifest can send NPCs
- * to. These are copied from the generated multi-map room tables; keep this
- * list narrow so unrelated legacy ids still resolve to null until their map
- * semantics are explicitly wired.
+ * Legacy aliases outside the canonical catalog. These remain only so older
+ * callers using a historical spelling can still resolve; new code must use
+ * the catalog's canonical location strings.
  */
 const PUBLIC_WORK_ROOM_ID_TO_LOCATION: Readonly<Record<number, string>> = Object.freeze({
   218: "人間の里:小料理屋",
@@ -120,17 +118,15 @@ const PUBLIC_WORK_LOCATION_TO_ID: Readonly<Record<string, number>> = Object.free
 
 /**
  * Resolve a `CFLAG:現在位置` numeric id to a modern location string, or null
- * when no modern room exists for it. Shrine public rooms take priority over
- * configured home rooms, then the generated multi-map room tables
- * (modernization/runtime/world/generated-room-locations.ts, see
- * gen-remaining-map-scenes.mjs) so roomIds 501..10xxx round-trip.
+ * when no modern room exists for it. The canonical catalog is queried first;
+ * shrine/work/generated/configured tables are legacy compatibility fallbacks.
  */
 export function roomIdToLocation(roomId: number): string | null {
   if (roomId <= 0) return null;
   return (
+    ROOM_CATALOG_BY_ID[roomId]?.location ??
     SHRINE_ID_TO_LOCATION[roomId] ??
     PUBLIC_WORK_ROOM_ID_TO_LOCATION[roomId] ??
-    GENERATED_ROOM_ID_TO_LOCATION[roomId] ??
     resolveConfiguredRoomLocation(roomId) ??
     null
   );
@@ -139,15 +135,15 @@ export function roomIdToLocation(roomId: number): string | null {
 /**
  * Resolve a modern location string back to its `CFLAG:現在位置` numeric id, or
  * null when the location has no eraTW room id (scheduler activity rooms,
- * unbuilt maps). Shrine public rooms take priority over configured home rooms,
- * then generated multi-map rooms — mirroring `roomIdToLocation`.
+ * special rooms, or unbuilt maps). The fallback order mirrors
+ * `roomIdToLocation` after the canonical catalog lookup.
  */
 export function locationToRoomId(location: string): number | null {
   if (!location) return null;
   return (
+    ROOM_CATALOG_BY_LOCATION[location]?.roomId ??
     SHRINE_LOCATION_TO_ID[location] ??
     PUBLIC_WORK_LOCATION_TO_ID[location] ??
-    GENERATED_LOCATION_TO_ROOM_ID[location] ??
     CONFIGURED_ROOM_LOCATIONS_REVERSE[location] ??
     null
   );

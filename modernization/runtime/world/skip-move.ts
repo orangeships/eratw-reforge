@@ -157,6 +157,15 @@ export interface WalkStepResult {
   /** True when the walk concluded (arrived or stopped) this call. When false,
    *  `state.walkSession` holds the encounter awaiting a choice. */
   done: boolean;
+  /** Shell-layer hint: when present, an EVENT kojo route needs AI completion.
+   * The shell layer can use this to trigger L1 AI generation for world events
+   * (sneak-in, kick-out) that have no authored dialogue. */
+  eventKojoMeta?: {
+    needsAi: boolean;
+    target: number;
+    eventArm: number;
+    eventSub: number[];
+  };
 }
 
 export interface WalkKojoDeps {
@@ -593,6 +602,14 @@ export function resolveWalkEncounter(
       // @潜入房間 resolves the final position (entered dest / kicked back).
       const res = attemptSneakIn(state, ld.location, ws.prevLocation, now, kojo);
       events.push(...res.events);
+      const eventKojoMeta = res.needsAiKojo ? {
+        needsAi: true,
+        target: ld.ownerCharaNum,
+        eventArm: res.eventArm!,
+        eventSub: res.eventSub!,
+      } : undefined;
+      state.walkSession = null;
+      return { events, done: true, eventKojoMeta };
     } else {
       // 算了 — stay at 直前位置 (already set when the walk paused).
       events.push(narr(now, `还是算了，没有潜入${ld.ownerName}的房间。`));

@@ -96,8 +96,9 @@ export const comf95Def: ComfDef = {
   canExecute: com95Check,
   hModeMenuCheck: com95Check,
 
-  // Target/master drain handled in body().
-  downbase: {},
+  // ERB 30-31 / 50-51: both participants' BASE drains share preflight.
+  downbase: { [BASE_ID.体力]: 10, [BASE_ID.気力]: 20 },
+  targetDownbase: { [BASE_ID.体力]: 50, [BASE_ID.気力]: 60 },
 
   buildSources: (c) => {
     const sources: Record<number, number> = {
@@ -126,14 +127,8 @@ export const comf95Def: ComfDef = {
 
   body: (c) => {
     // ERB 50-51: target 体力 50 / 気力 60 drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 50;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 60;
 
     // ERB 30-31: master 体力 10 / 気力 20 drain.
-    c.master.state.BASE[BASE_ID.体力] =
-      (c.master.state.BASE[BASE_ID.体力] ?? 0) - 10;
-    c.master.state.BASE[BASE_ID.気力] =
-      (c.master.state.BASE[BASE_ID.気力] ?? 0) - 20;
 
     // ERB 72-73: EXP:Ｖ経験 target++.
     c.t.state.EXP[EXP_ID.Ｖ経験] = (c.t.state.EXP[EXP_ID.Ｖ経験] ?? 0) + 1;

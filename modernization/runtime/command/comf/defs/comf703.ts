@@ -53,6 +53,7 @@ export const comf703Def: ComfDef = {
 
   // No target — self-pleasure command.
   requiresTarget: false,
+  settleSourcesOnMaster: true,
 
   // ERB 19-20: master 体力 30 / 気力 80.
   downbase: { [BASE_ID.体力]: 30, [BASE_ID.気力]: 80 },

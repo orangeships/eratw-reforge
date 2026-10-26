@@ -24,6 +24,7 @@ import ResidenceSelect from "./game/pre/ResidenceSelect.js";
 import KojoSelect from "./game/pre/KojoSelect.js";
 import NewGameOptions from "./game/pre/NewGameOptions.js";
 import NewGameKojoUpdate from "./game/pre/NewGameKojoUpdate.js";
+import MinimalNewGameScreen from "./game/pre/MinimalNewGameScreen.js";
 import NightSettlementScreen from "./game/NightSettlementScreen.js";
 import MorningMenuScreen from "./game/MorningMenuScreen.js";
 import DanmakuBattleScreen from "./game/DanmakuBattleScreen.js";
@@ -46,13 +47,14 @@ export interface ScreenRouterProps {
   onIntent: (intent: AgentIntent) => void;
   /** Phase D (#9): walk a multi-hop map path (SKIP_MOVE) with pass-through
    *  encounters instead of teleporting. */
-  onWalkPath?: (rooms: string[]) => void;
+  onWalkPath?: (rooms: string[]) => void | Promise<void>;
+  onPrepareKojoForLocations?: (locations: readonly string[]) => Promise<void>;
   /** Phase D slice 2: resolve the current mid-walk encounter (无视/打招呼/停下来). */
   onResolveWalkEncounter?: (choice: WalkChoice) => void;
   onFinishSleep?: () => void;
   onResolveDailyEvent?: (answer: boolean | PromptAnswer) => void;
   onRecoverDailyEvent?: () => void;
-  onOpenEyes?: () => void;
+  onOpenEyes?: () => void | Promise<void>;
   /** SAVE/LOAD 页面 — 3 存档位. Save / load a specific slot; refresh reads all
    *  slots' metadata for the page. */
   onSaveSlot?: (slot: SaveSlot) => void | boolean | Promise<void | boolean>;
@@ -70,15 +72,20 @@ export interface ScreenRouterProps {
   onReleaseBug?: (id: string) => boolean;
   onMaterializeBug?: (id: string) => boolean;
   onTogglePortraitKind?: () => void;
+  onSetPortraitVariant?: (charaNum: number, variantId: number) => void;
   onTogglePantyGapAuto?: () => void;
   onClaimPantyCollectionBonus?: (id: number) => boolean;
   onSellPantyDuplicates?: () => number;
+  onTriggerManualNarrative?: (playerIntent?: string) => Promise<boolean>;
   lastSavedAt?: number | null;
   /** Toggle an Act_COM filter (Parity QA P-1) for the focused target. */
   onToggleFilter?: (toggleId: number, target: number) => void;
   /** 开始游戏 — begin the new-game wizard (#13): reset the draft and enter
    *  身份设定. (The faithful NEWGAME opening: identity → 口上 → 居住地.) */
   onStartGame: () => void;
+  /** Minimal mode: commit the default draft + entered name and enter the
+   *  game (App: 神社:居間 default residence → newGame → kojoUpdate). */
+  onMinimalNewGameStart?: () => void;
   /** Commit the wizard draft into a fresh GameState and enter the main game
    *  (the residence step's 就此开始吧). */
   onEnterGame: () => void;
@@ -87,8 +94,10 @@ export interface ScreenRouterProps {
     charaNum: number,
     choices?: readonly number[],
   ) => NewGameKojoUpdateResult | null;
-  /** A game state is available (gate 继续游戏 / mainGame). */
+  /** A valid project + a game state are available (gate 继续游戏 / mainGame). */
   canPlay: boolean;
+  /** A valid project is selected (gate developer tools). */
+  canBrowse: boolean;
 }
 
 export default function ScreenRouter(props: ScreenRouterProps) {
@@ -102,10 +111,25 @@ export default function ScreenRouter(props: ScreenRouterProps) {
         <Title
           // 开始游戏 begins the new-game wizard (#13: identity → 口上 → 居住地).
           onStart={props.onStartGame}
-          onContinue={props.canPlay ? () => setScreen("mainGame") : undefined}
+          // SAVE/LOAD 都在「睁开眼睛前」主菜单进行（原版 morning SHOP），
+          // 所以读档/继续游戏落到 morningMenu，而不是直接进 mainGame。
+          onContinue={props.canPlay ? () => setScreen("morningMenu") : undefined}
           onLoadSlot={props.onLoadSlot}
           onRefreshSlots={props.onRefreshSlots}
           saveSlots={props.saveSlots}
+          // PLAYER_BUILD hides the developer-tools entry point (4.5H).
+          onDev={undefined}
+        />
+      );
+
+    case "projectSelect":
+      return null;
+
+    case "minimalNewGame":
+      return (
+        <MinimalNewGameScreen
+          onStart={props.onMinimalNewGameStart ?? (() => setScreen("kojoUpdate"))}
+          onBack={() => setScreen("title")}
         />
       );
 
@@ -160,8 +184,10 @@ export default function ScreenRouter(props: ScreenRouterProps) {
         <GameClient
           state={props.gameState}
           presentationMode={props.presentationMode}
+          sceneDialogue={true}
           onIntent={props.onIntent}
           onWalkPath={props.onWalkPath}
+          onPrepareKojoForLocations={props.onPrepareKojoForLocations}
           onResolveWalkEncounter={props.onResolveWalkEncounter}
           onToggleFilter={props.onToggleFilter}
         />
@@ -197,13 +223,6 @@ export default function ScreenRouter(props: ScreenRouterProps) {
         <p data-testid="farm-loading">正在准备菜园…</p>
       );
 
-    // The public player build has no authoring surface. These states are kept
-    // in the shared scene store for development compatibility, but never
-    // expose the Mod Studio screens in this repository.
-    case "projectSelect":
-    case "developerTools":
-      return <p data-testid="player-tools-unavailable">玩家版不包含开发工具。</p>;
-
     case "nightSettlement":
       return props.gameState ? (
         <NightSettlementScreen
@@ -212,7 +231,8 @@ export default function ScreenRouter(props: ScreenRouterProps) {
           onResolveDailyEvent={props.onResolveDailyEvent ?? (() => undefined)}
           onRecoverDailyEvent={props.onRecoverDailyEvent ?? (() => undefined)}
           onContinue={() => {
-            setMorningInitialPanel("gap-shop");
+            // Minimal mode drops the post-night gap-shop page entirely.
+            setMorningInitialPanel(props.presentationMode === "minimal" ? null : "gap-shop");
             setScreen("morningMenu");
           }}
         />
@@ -238,19 +258,28 @@ export default function ScreenRouter(props: ScreenRouterProps) {
           onReleaseBug={props.onReleaseBug}
           onMaterializeBug={props.onMaterializeBug}
           onTogglePortraitKind={props.onTogglePortraitKind}
+          onSetPortraitVariant={props.onSetPortraitVariant}
           onTogglePantyGapAuto={props.onTogglePantyGapAuto}
           onClaimPantyCollectionBonus={props.onClaimPantyCollectionBonus}
           onSellPantyDuplicates={props.onSellPantyDuplicates}
+          onTriggerManualNarrative={props.onTriggerManualNarrative}
           initialPanel={morningInitialPanel}
-          onOpenEyes={() => {
+          onOpenEyes={async () => {
             setMorningInitialPanel(null);
-            props.onOpenEyes?.();
+            await props.onOpenEyes?.();
+            // Screen navigation preserves the scene store. Drop only the old
+            // presentation shell; GameClient will open the current morning
+            // dialogue/choice from its authoritative owner-aware queue.
+            useSceneStore.getState().closeInteraction();
             setScreen("mainGame");
           }}
         />
       ) : (
         <p data-testid="morning-loading">正在准备起床前主菜单…</p>
       );
+
+    case "developerTools":
+      return null;
 
     default: {
       const _exhaustive: never = screen;

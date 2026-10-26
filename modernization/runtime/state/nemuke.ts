@@ -15,10 +15,10 @@
  *   - `@COM_ABLE403 休憩`  — `NEMUKE() >= 960 → RETURN 0` (too tired to rest,
  *     must sleep)
  *
- * **Time model.** The modernized `state.time.tickValue` is the monotonic
- * absolute minute count — it never wraps at midnight (the clock authority
- * `advanceClock` derives `dayIndex = floor(tickValue/1440)` and
- * `hourOfDay = floor((tickValue%1440)/60)` from it). ERA's `TIME` resets
+ * **Time model.** The modernized `state.time.tickValue` is the absolute
+ * `DAY*1440 + TIME` stamp — it does not wrap at midnight. Normal elapsed
+ * time advances the authoritative `dayIndex`; a direct negative H TIME
+ * correction does not decrement DAY. ERA's `TIME` resets
  * each day (`TIME -= 1440`) while `DAY++`, so `TIME + 1440*DAY` is ERA's
  * monotonic equivalent. Therefore `absoluteTime(state) === tickValue`,
  * and `你起床` (set on wake to `TIME + 1440*DAY`) holds a `tickValue`.
@@ -38,7 +38,7 @@ import type { GameState } from "./game-state.js";
 import { CFLAG_ID } from "./settlement.js";
 import { TFLAG_ID, getTflag } from "./tflag.js";
 
-/** The monotonic absolute game time in minutes (= ERA `TIME + 1440 * DAY`).
+/** The absolute game time in minutes (= ERA `TIME + 1440 * DAY`).
  *  Equal to `state.time.tickValue`; named for clarity at call sites. */
 export function absoluteTime(state: GameState): number {
   return state.time.tickValue;

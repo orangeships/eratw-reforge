@@ -41,6 +41,8 @@ import type {
 } from "../../schemas/types.js";
 import { juelUpSpecial } from "../state/juel.js";
 import {
+  ABL_ID,
+  BASE_ID,
   CFLAG_ID,
   EXP_ID,
   TALENT_ID,
@@ -51,6 +53,9 @@ import { relationOf } from "./relation.js";
 import { atPlayerBase, mapIdOfLocation, placeFlagsOf } from "./location-predicates.js";
 import { hasPlace, PLACE_MOON } from "./place-flags.js";
 import { weatherIndexNow } from "../state/weather.js";
+import { depositEjaculate } from "./semen-residue.js";
+import { setStainBit, stainSwapInsertV, STAIN_BIT, STAIN_PART } from "../state/stain.js";
+import { applyTemporaryStayover } from "./temporary-stay.js";
 
 // =====================================================================
 // Scenario enum (mirrors the modded DAYEVENTS constants header).
@@ -806,6 +811,39 @@ function addKissExp(st: CharaSlotState): void {
   st.EXP[CFLAG_キス経験] = (st.EXP[CFLAG_キス経験] ?? 0) + 1;
 }
 
+function recordFirstKiss(state: GameState, slot: CharaSlot, partner: number): void {
+  if ((slot.state.TALENT[TALENT_ID.キス未経験] ?? 0) <= 0) return;
+  slot.state.TALENT[TALENT_ID.キス未経験] = 0;
+  slot.state.CFLAG[CFLAG_ID.初吻喪失記念日] = state.time.dayIndex;
+  slot.state.CFLAG[CFLAG_ID.初吻喪失对手] = partner;
+  slot.state.CFLAG[CFLAG_ID.初吻喪失対象] = 0;
+  state.firstKissHistory ??= {};
+  state.firstKissHistory[slot.charaNum] = {
+    dayIndex: state.time.dayIndex,
+    location: slot.location,
+    partner: { kind: "character", charaNum: partner },
+    situation: "ordinary",
+  };
+}
+
+/** `MUTUAL_KISS`: both participants receive the same kiss count. */
+function mutualKiss(state: GameState, target: CharaSlot, count = 1): void {
+  recordFirstKiss(state, state.master, target.charaNum);
+  recordFirstKiss(state, target, 0);
+  grantExp(state.master.state, EXP_ID.キス経験, count);
+  grantExp(target.state, EXP_ID.キス経験, count);
+  target.state.CFLAG[CFLAG_ID.既成事実] = (target.state.CFLAG[CFLAG_ID.既成事実] ?? 0) | 1;
+}
+
+/** `ADD_EXP_LESNIAN`: female/female -> 51, male/male -> 52, mixed -> none. */
+function addSameSexExp(state: GameState, target: CharaSlot, amount: number): void {
+  const masterFemale = hasVagina(state.master);
+  if (masterFemale !== hasVagina(target)) return;
+  const id = masterFemale ? 51 : 52;
+  grantExp(state.master.state, id, amount);
+  grantExp(target.state, id, amount);
+}
+
 /** Faithful mainline slice for NIGHTEVENT_KISS (ERB 478-482) + post-tail. */
 function executeNightKiss(
   state: GameState,
@@ -814,16 +852,13 @@ function executeNightKiss(
   rng: Rng,
   now: () => number,
 ): ObservationEvent[] {
-  addPalam(t.state, PALAM_恭順, 1500);
-  addKissExp(t.state);
-  t.state.CFLAG[CFLAG_溜まってる度] = Math.max(0, (t.state.CFLAG[CFLAG_溜まってる度] ?? 0) - 100);
+  addSameSexExp(state, t, 5);
+  mutualKiss(state, t);
   const spEvent = spEventForScenario(NIGHTEVENT_KISS);
   const kojoLines: KojoLine[] = spEvent
     ? fireSpEvent(router, t.charaNum, spEvent.arm, spEvent.subid, state, rng)
     : [];
-  // ERB 658-661: 今日会ったか + 親密×3 CFLAG:2 + LastHomeVisit night.
-  // 今日会ったか TCVAR id deferred; we record only LastHomeVisit in MVP.
-  stampLastHomeVisit(state, t.charaNum, "night");
+  applyDayEventTail(state, t, NIGHTEVENT_KISS);
   return [
     ...kojoLines.map<ObservationEvent>((l) => ({
       kind: "DIALOGUE_LINE",
@@ -1052,23 +1087,72 @@ function executeDayPrank(state: GameState, t: CharaSlot, router: DialogueRouter 
   return scenarioEvents(state, t, DAYEVENT_PRANK, router, rng, now, `【晨事件】${角色名(t)} 对 ${master名(state)} 恶作剧。`);
 }
 
-/** NIGHTEVENT_YOBAI (ERB 483-600). Organ-specific branches (player fucks /
- *  gets fucked, ERB 492-547) deferred — no HAS_PENIS/HAS_VAGINA modeling; the
- *  organ-agnostic lez branch (548-566) + common tail (568-577) are ported. */
+function yobaiSemenAmount(rng: Rng, vaginalAbl: number, energy: number, count: number): number {
+  const each = Math.max((vaginalAbl + 1) * 20 + Math.trunc(energy / 25), 1);
+  let amount = 0;
+  for (let i = 1; i < count; i += 1) amount += each + rng.int(each);
+  return Math.min(amount, Math.max(0, energy));
+}
+
+/** NIGHTEVENT_YOBAI (ERB 483-600), including all three anatomy branches,
+ * semen/stain settlement, same-sex EXP, and QOL_STAYOVER. */
 function executeNightYobai(state: GameState, t: CharaSlot, router: DialogueRouter | undefined, rng: Rng, now: () => number): ObservationEvent[] {
   const n = Math.max(
     Math.min(Math.trunc((t.state.ABL[ABL_欲望] ?? 0) / 2), 5)
       + Math.trunc((t.state.CFLAG[CFLAG_溜まってる度] ?? 0) / 200),
     1,
   );
-  grantExp(t.state, EXP_絶頂経験, 2 * n);
-  grantExp(t.state, EXP_Ｃ絶頂経験, 2 * n);
-  grantExp(t.state, EXP_Ｃ経験, 2 * n);
-  grantExp(state.master.state, EXP_絶頂経験, n);
-  grantExp(state.master.state, EXP_Ｃ絶頂経験, n);
-  grantExp(state.master.state, EXP_Ｃ経験, n);
-  juelUpSpecial(t.state, false, PALAM_快Ｃ, ABL_Ｃ感覚, 15);
-  juelUpSpecial(state.master.state, true, PALAM_快Ｃ, ABL_Ｃ感覚, 15);
+  if (hasVagina(t) && !hasVagina(state.master) && hasPenis(state.master)) {
+    grantExp(t.state, EXP_絶頂経験, 2 * n);
+    grantExp(t.state, EXP_Ｖ絶頂経験, 2 * n);
+    grantExp(t.state, EXP_Ｖ経験, 2 * n);
+    grantExp(t.state, EXP_ID.Ｖ性交経験, n);
+    grantExp(t.state, EXP_ID.膣射経験, n);
+    grantExp(state.master.state, EXP_ID.挿入経験, n);
+    grantExp(state.master.state, EXP_ID.射精経験, n);
+    grantExp(state.master.state, EXP_絶頂経験, n);
+    const amount = yobaiSemenAmount(rng, t.state.ABL[ABL_ID.膣] ?? 0, state.master.state.BASE[BASE_ID.精力] ?? 0, n);
+    depositEjaculate(state, { sender: 0, receiver: t.charaNum, site: 1, amount });
+    stainSwapInsertV(t, state.master);
+    setStainBit(t, STAIN_PART.Ｖ, STAIN_BIT.精液);
+    setStainBit(t, STAIN_PART.膣内, STAIN_BIT.精液);
+    juelUpSpecial(t.state, false, PALAM_快Ｖ, ABL_Ｖ感覚, 15);
+    juelUpSpecial(state.master.state, true, PALAM_快Ｃ, ABL_Ｃ感覚, 10);
+    state.master.state.BASE[BASE_ID.勃起] = 0;
+  } else if (hasPenis(t) && hasVagina(state.master)) {
+    grantExp(t.state, EXP_絶頂経験, 2 * n);
+    grantExp(t.state, EXP_ID.挿入経験, 2 * n);
+    grantExp(t.state, EXP_ID.射精経験, 2 * n);
+    grantExp(state.master.state, EXP_Ｖ経験, n);
+    grantExp(state.master.state, EXP_Ｖ絶頂経験, n);
+    grantExp(state.master.state, EXP_ID.Ｖ性交経験, n);
+    grantExp(state.master.state, EXP_ID.膣射経験, n);
+    grantExp(state.master.state, EXP_絶頂経験, n);
+    const energy = t.state.BASE[BASE_ID.精力] ?? 0;
+    const amount = yobaiSemenAmount(rng, state.master.state.ABL[ABL_ID.膣] ?? 0, energy, n);
+    depositEjaculate(state, { sender: t.charaNum, receiver: 0, site: 1, amount });
+    t.state.BASE[BASE_ID.精力] = Math.max(0, energy - amount);
+    stainSwapInsertV(state.master, t);
+    setStainBit(state.master, STAIN_PART.Ｖ, STAIN_BIT.精液);
+    setStainBit(state.master, STAIN_PART.膣内, STAIN_BIT.精液);
+    setStainBit(t, STAIN_PART.Ｐ, STAIN_BIT.愛液);
+    setStainBit(t, STAIN_PART.Ｐ, STAIN_BIT.精液);
+    juelUpSpecial(state.master.state, true, PALAM_快Ｖ, ABL_Ｖ感覚, 15);
+    juelUpSpecial(t.state, false, PALAM_快Ｃ, ABL_Ｃ感覚, 10);
+    t.state.BASE[BASE_ID.勃起] = 0;
+  } else {
+    grantExp(t.state, EXP_絶頂経験, 2 * n);
+    grantExp(t.state, EXP_Ｃ絶頂経験, 2 * n);
+    grantExp(t.state, EXP_Ｃ経験, 2 * n);
+    grantExp(state.master.state, EXP_絶頂経験, n);
+    grantExp(state.master.state, EXP_Ｃ絶頂経験, n);
+    grantExp(state.master.state, EXP_Ｃ経験, n);
+    if (hasPenis(state.master)) grantExp(state.master.state, EXP_ID.射精経験, n);
+    if (hasPenis(t)) grantExp(t.state, EXP_ID.射精経験, n);
+    mutualKiss(state, t, n);
+    juelUpSpecial(t.state, false, PALAM_快Ｃ, ABL_Ｃ感覚, 15);
+    juelUpSpecial(state.master.state, true, PALAM_快Ｃ, ABL_Ｃ感覚, 15);
+  }
   // common (ERB 568-577).
   juelUpSpecial(t.state, false, PALAM_欲情, ABL_欲望, 20);
   downBase(state.master.state, BASE_体力, 100);
@@ -1076,8 +1160,13 @@ function executeNightYobai(state: GameState, t: CharaSlot, router: DialogueRoute
   downBase(t.state, BASE_体力, 100);
   downBase(t.state, BASE_気力, 150);
   t.state.CFLAG[CFLAG_溜まってる度] = 0;
+  addSameSexExp(state, t, 5);
+  const stayed = applyTemporaryStayover(state, t.charaNum, true, true);
   applyDayEventTail(state, t, NIGHTEVENT_YOBAI);
-  return scenarioEvents(state, t, NIGHTEVENT_YOBAI, router, rng, now, `【夜事件】${角色名(t)} 夜爬到了 ${master名(state)} 的床上。`);
+  return scenarioEvents(state, t, NIGHTEVENT_YOBAI, router, rng, now,
+    stayed
+      ? `【夜事件】${角色名(t)} 夜爬到了 ${master名(state)} 的床上，并决定留下过夜。`
+      : `【夜事件】${角色名(t)} 夜爬到了 ${master名(state)} 的床上，之后决定离开。`);
 }
 
 /** NIGHTEVENT_DRINK (ERB 601-604). RECOVER 酒気 +500 on both. */
@@ -1094,10 +1183,14 @@ function executeNightMoonviewing(state: GameState, t: CharaSlot, router: Dialogu
   return scenarioEvents(state, t, NIGHTEVENT_MOONVIEWING, router, rng, now, `【夜事件】${master名(state)} 与 ${角色名(t)} 一同赏月。`);
 }
 
-/** NIGHTEVENT_SLEEPOVER (ERB 607-612). QOL_STAYOVER 留宿状态机 deferred. */
+/** NIGHTEVENT_SLEEPOVER (ERB 607-612), including QOL_STAYOVER. */
 function executeNightSleepover(state: GameState, t: CharaSlot, router: DialogueRouter | undefined, rng: Rng, now: () => number): ObservationEvent[] {
+  const stayed = applyTemporaryStayover(state, t.charaNum, false, true);
   applyDayEventTail(state, t, NIGHTEVENT_SLEEPOVER);
-  return scenarioEvents(state, t, NIGHTEVENT_SLEEPOVER, router, rng, now, `【夜事件】${角色名(t)} 在 ${master名(state)} 身边留宿。`);
+  return scenarioEvents(state, t, NIGHTEVENT_SLEEPOVER, router, rng, now,
+    stayed
+      ? `【夜事件】${角色名(t)} 在 ${master名(state)} 身边留宿。`
+      : `【夜事件】${角色名(t)} 本想留下，不久后却又躲开离去了。`);
 }
 
 /** Top-level entry. Unknown scenario IDs fail closed without effects. */

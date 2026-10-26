@@ -21,9 +21,9 @@
  *   - Owner target picking (`COM406_CHECK_OWNER`): TARGET if co-resident,
  *     else OMANEKI invitee, else the PRIVATE_ROOM of master's current
  *     room. Faithful.
- *   - Reading a chara's diary (option 3) — surfaces the chara's
- *     `charaDiaries[charaNum]` entries (placeholder NARRATION until the
- *     DIARY kojo channel lands in the runtime wiring).
+ *   - Reading a chara's diary (option 3) — first surfaces accepted Agent
+ *     Runtime diary entries or stored `charaDiaries`, then falls back to the
+ *     authored DIARY kojo channel.
  *   - V1 SOURCE settlement (歓楽/受動/征服 bracket ladder + 話術技能
  *     multiplier × outcome roll TFLAG:193) — same shape as upstream.
  *
@@ -32,9 +32,6 @@
  *     ABL:親密 model for TARGET + a shared-narration subsystem.
  *   - WRITE/READ_MASTER_DIARY_FILE (file save/load) — needs a file-storage
  *     backend (Tauri fs / browser download).
- *   - Personal-kojo diary text rendering — `state.charaDiaries[charaNum]`
- *     is the V1 placeholder; once `resolveDiaryKojo` is wired into the
- *     runtime handler loop, replace this with the kojo's emitted lines.
  *   - 4 layout branches (master's room / OWNER's room etc.) — V1
  *     collapses to "in your own room or with TARGET present" (a single
  *     prompt loop that supports both 写 and 读). The 3 other layouts
@@ -76,6 +73,7 @@ import {
 } from "../../state/diary.js";
 import type { DialogueRouter } from "../../kojo/types.js";
 import { resolveDiaryKojoAndApply } from "../../kojo/effects.js";
+import type { Narration } from "../../../schemas/types.js";
 
 // Numeric ids pinned in settlement.ts; mirrored here for resilience.
 const ABL_話術技能 = ABL_ID.話術技能;
@@ -131,15 +129,36 @@ function menuPrompt(state: GameState, target: number, owner: number): PromptSpec
   );
 }
 
-/** Read the player's diary (option 1). Pure NARRATION. */
-function readMasterDiaryLines(state: Readonly<GameState>): string[] {
+function diaryPageEvent(
+  now: () => number,
+  page: NonNullable<Narration["diary"]>,
+): Narration {
+  const fallbackLabel = page.dayIndex !== undefined
+    ? `第 ${page.dayIndex + 1} 日`
+    : page.kind === "authored"
+      ? `特别篇 ${page.authoredSlot ?? page.sequence ?? 1}`
+      : `记录 ${page.sequence ?? 1}`;
+  return {
+    kind: "NARRATION",
+    timestamp: now(),
+    surface: "diary",
+    diary: page,
+    text: `${fallbackLabel}\n${page.body}`,
+  };
+}
+
+function readMasterDiaryEvents(state: Readonly<GameState>, now: () => number): Narration[] {
   const entries = readMasterDiary(state);
-  if (entries.length === 0) return ["日记本是空的。"];
-  const lines: string[] = ["日记本里写着："];
-  for (let i = 0; i < entries.length; i++) {
-    lines.push(`  [${i + 1}] ${entries[i]}`);
+  if (entries.length === 0) {
+    return [{ kind: "NARRATION", timestamp: now(), text: "日记本是空的。" }];
   }
-  return lines;
+  return entries.map((body, index) => diaryPageEvent(now, {
+    bookTitle: "你的日记",
+    pageId: `master:${index + 1}`,
+    body,
+    kind: "record",
+    sequence: index + 1,
+  }));
 }
 
 /** Read a chara's diary (option 3) — `CHARA_DIARY_COM`. Walks the
@@ -160,17 +179,45 @@ function readMasterDiaryLines(state: Readonly<GameState>): string[] {
  *  (ASK_M 上下页按钮) is deferred — the upstream ASK_M loop needs
  *  multi-pass UI coordination that doesn't fit the one-shot B9 model.
  */
-function readCharaDiaryLines(
+function readCharaDiaryEvents(
   state: Readonly<GameState>,
   owner: number,
   router: DialogueRouter | undefined,
   rng: { int(max: number): number; next(): number; pick<T>(a: readonly T[]): T } | undefined,
-): string[] {
+  now: () => number,
+): Narration[] {
   const fallbackRng = { int: () => 0, next: () => 0, pick: <T,>(a: readonly T[]) => a[0]! };
-  if (owner <= 0) return ["这里没有别人的日记。"];
+  if (owner <= 0) return [{ kind: "NARRATION", timestamp: now(), text: "这里没有别人的日记。" }];
   const callName = state.charas[owner]?.callName ?? "对方";
+  const bookTitle = `${callName}的日记`;
+  const acceptedDiaries = state.agentRuntime?.cognitions[owner]?.diaries
+    .filter((entry) => entry.text.trim().length > 0)
+    .slice(-10)
+    .reverse();
+  if (acceptedDiaries && acceptedDiaries.length > 0) {
+    return acceptedDiaries.map((entry) => diaryPageEvent(now, {
+      bookTitle,
+      pageId: entry.id,
+      body: entry.text,
+      kind: "dated",
+      dayIndex: entry.dayIndex,
+    }));
+  }
+  const storedDiaries = (state.charaDiaries?.[owner] ?? [])
+    .filter((entry) => entry.trim().length > 0)
+    .slice(-10)
+    .reverse();
+  if (storedDiaries.length > 0) {
+    return storedDiaries.map((body, index) => diaryPageEvent(now, {
+      bookTitle,
+      pageId: `stored:${storedDiaries.length - index}`,
+      body,
+      kind: "record",
+      sequence: storedDiaries.length - index,
+    }));
+  }
   if (!router?.hasDiaryKojo?.(owner, state, rng ?? fallbackRng)) {
-    return [`${callName}似乎不写日记。`];
+    return [{ kind: "NARRATION", timestamp: now(), text: `${callName}似乎不写日记。` }];
   }
   // Walk PAGESET slots 1..N, render the first non-empty slot's page.
   const slotMap = state.diaryPageSet?.[owner] ?? {};
@@ -184,18 +231,34 @@ function readCharaDiaryLines(
     //  author set DIARY:CHARA:DCOUNT = 2. If it didn't, the diary is
     //  effectively empty.)
     if (readDiaryFlag(state, owner, 1) === 0 && findFirstUnreadAutoPage(state, owner) === 0) {
-      return [`${callName}的日记本是空的。`];
+      return [{ kind: "NARRATION", timestamp: now(), text: `${callName}的日记本是空的。` }];
     }
     const page = 1;
     const lines = resolveDiaryKojoAndApply(router, state, owner, page, rng ?? fallbackRng, [page, 1]);
-    if (lines.length === 0) return [`${callName}的日记本是空的。`];
-    return [`▼${callName}的日记　PAGE.1 ─────`, ...lines.map((l) => l.text), "───────────────"];
+    if (lines.length === 0) return [{ kind: "NARRATION", timestamp: now(), text: `${callName}的日记本是空的。` }];
+    return [diaryPageEvent(now, {
+      bookTitle,
+      pageId: "authored:1",
+      body: lines.map((line) => line.text).join("\n"),
+      kind: "authored",
+      authoredSlot: 1,
+      sequence: 1,
+      unread: readDiaryFlag(state, owner, page) === 3,
+    })];
   }
   const firstSlot = sortedSlots[0]!;
   const page = slotMap[firstSlot]!;
   const lines = resolveDiaryKojoAndApply(router, state, owner, page, rng ?? fallbackRng, [page, firstSlot]);
-  if (lines.length === 0) return [`${callName}的日记本是空的。`];
-  return [`▼${callName}的日记　PAGE.${firstSlot} ─────`, ...lines.map((l) => l.text), "───────────────"];
+  if (lines.length === 0) return [{ kind: "NARRATION", timestamp: now(), text: `${callName}的日记本是空的。` }];
+  return [diaryPageEvent(now, {
+    bookTitle,
+    pageId: `authored:${firstSlot}`,
+    body: lines.map((line) => line.text).join("\n"),
+    kind: "authored",
+    authoredSlot: firstSlot,
+    sequence: firstSlot,
+    unread: readDiaryFlag(state, owner, page) === 3,
+  })];
 }
 
 /** Faithful SOURCE ladder (downstream of @COM406's $SKIP block, lines 132-204).
@@ -319,7 +382,7 @@ export const diary406HandlerEntry: HandlerEntry = {
     const owner = checkOwner(ctx.state, ctx.target);
     let choice = requirePickOne(menuPrompt(ctx.state, ctx.target, owner), ctx.promptAnswer);
     let next = cloneGameState(ctx.state);
-    let lines: string[];
+    let events: Narration[];
     // Fast path: when the UI has already mounted the textarea and the
     // player submitted text, the answer is a free_text payload — we
     // bypass the menu and write the entry directly. The UI surfaces
@@ -328,7 +391,7 @@ export const diary406HandlerEntry: HandlerEntry = {
     // textarea; then with a free_text answer, which writes the entry.
     if (ctx.promptAnswer?.kind === "free_text") {
       next = appendMasterDiaryEntry(next, ctx.promptAnswer.value);
-      lines = isMasterDiaryFull(next)
+      const lines = isMasterDiaryFull(next)
         ? ["日记本写满了。"]
         : ["日记写完了。"];
       return {
@@ -347,36 +410,36 @@ export const diary406HandlerEntry: HandlerEntry = {
           multiline: true,
           submitLabel: "写入日记",
         });
-        lines = [
+        events = [
           `(待输入：${textSpec.question})`,
           "提示：玩家界面应在此处显示文本框。",
-        ];
+        ].map((text) => ({ kind: "NARRATION" as const, timestamp: ctx.now(), text }));
         break;
       }
       case 1: {
-        lines = readMasterDiaryLines(next);
+        events = readMasterDiaryEvents(next, ctx.now);
         break;
       }
       case 2: {
         const targetSlot = next.charas[ctx.target];
         const intim = targetSlot?.state.ABL[ABL_親密] ?? 0;
         if (intim < 5) {
-          lines = [`${targetSlot?.callName ?? "对方"}似乎不感兴趣…`];
+          events = [{ kind: "NARRATION", timestamp: ctx.now(), text: `${targetSlot?.callName ?? "对方"}似乎不感兴趣…` }];
           break;
         }
-        lines = [
-          `${targetSlot?.callName ?? "对方"}拿起了你的日记…`,
-          ...readMasterDiaryLines(next),
+        events = [
+          { kind: "NARRATION", timestamp: ctx.now(), text: `${targetSlot?.callName ?? "对方"}拿起了你的日记…` },
+          ...readMasterDiaryEvents(next, ctx.now),
         ];
         break;
       }
       case 3: {
-        lines = readCharaDiaryLines(next, owner, ctx.dialogueRouter, ctx.rng);
+        events = readCharaDiaryEvents(next, owner, ctx.dialogueRouter, ctx.rng, ctx.now);
         break;
       }
       case 4:
       case 5: {
-        lines = ["（日记簿文件读写尚未实装。）"];
+        events = [{ kind: "NARRATION", timestamp: ctx.now(), text: "（日记簿文件读写尚未实装。）" }];
         break;
       }
       case 6:
@@ -401,7 +464,7 @@ export const diary406HandlerEntry: HandlerEntry = {
 
     return {
       state: next,
-      events: lines.map((text) => ({ kind: "NARRATION" as const, timestamp: ctx.now(), text })),
+      events,
       outcome: "noop" as const,
     };
   },

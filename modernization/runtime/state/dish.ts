@@ -33,21 +33,21 @@
  *     + `COOKING_UI` — B7-cook (413/498).
  *   - 仕込み drug TCVAR (媚薬/利尿剤/催情薬/睡眠薬/新鲜精液 → TCVAR = 下药强度
  *     210) — P4-wired (fires when 413 sets DISH_DRG on a non-master eater).
- *   - `CHECK_CHARA` race beyond 人类 — modeled via TALENT:人类(190) only;
- *     妖怪/神霊/妖精/魔法使/幽霊/付喪神/半人类 arms defer (need race map).
- *   - `GETMETH_STR` per-chara taste data — defer (no chara-data layer).
- *   - `GET_MONTH` seasonal taste — defer (no calendar; Phase 8).
- *   - 鮮度 (DISH_LIMIT) ambient decay — stored, decays on Phase 8 time tick;
- *     414 non-DLC does not branch on it.
- *   - `INROOM`/`BATHCHECK` indoor/bath gates — need ROOMDATA (not imported);
- *     主食 indoor requirement not enforced (documented in handlers).
- *   - TFLAG:授乳コマンド / TFLAG:信頼度管理 — set in ERB but no consumer in
- *     our slice; skipped (Phase 8 trust/授乳 wiring).
- *   - `KOJO_MESSAGE_SEND` / TFLAG:192 口上 evaluation override — no kojo
- *     override reachable → pre-loop 評価値=0 → REVIEW_DISH fills it (correct).
+ *   - 鮮度 (DISH_LIMIT) ambient decay — stored, decays on Phase 8 time tick.
+ *     (Upstream `@REVIEW_DISH` adds 劣化×3 / 过季×6 unconditionally, which this
+ *     port does too; neither reads DISH_LIMIT at meal time.)
+ *   - `KOJO_MESSAGE_SEND` / `TFLAG:192` 口上 evaluation override — the authored
+ *     kojo can force 大成功/成功/失敗 (700/500/400) or abort the whole command
+ *     (`-2`). We have no channel for an authored kojo or the AI to return an
+ *     outcome, so the pre-loop 評価値=0 always falls through to `reviewDish`.
+ *     That is the correct *fallback* arm, but it is NOT equivalent to upstream:
+ *     a character who would have refused the dish still eats it.
+ *   - TFLAG:授乳コマンド — set in ERB, no consumer in our slice.
  *   - 約會経験 / 约会临时标记 — no dating subsystem.
- *   - 料理リセット (clear dish after meal) — deferred; the 空腹 gate
- *     (満腹度上昇 sets 空腹時刻 forward) prevents immediate re-eat.
+ *
+ * Race arms in `reviewDish` are COMPLETE: `CHECK_CHARA` reads the race TALENTs
+ * directly (妖怪 191 / 妖精 192 / 神霊 193 / 幽霊 194 / 付喪神 195 / 人形 196 /
+ * 人类 190) and 半人类 is derived from them; 魔法使 is 追加種族 == 2.
  */
 
 import type { CharaSlot, Dish, GameState } from "./game-state.js";
@@ -55,6 +55,7 @@ import {
   ABL_ID,
   BASE_ID,
   CFLAG_ID,
+  EQUIP_SLOT,
   EXP_ID,
   SOURCE_ID,
   TALENT_ID,
@@ -63,6 +64,8 @@ import {
   times,
 } from "./settlement.js";
 import { TFLAG_ID, setTflag } from "./tflag.js";
+import { charaDataOf } from "./chara-data.js";
+import { SEASON_SUMMER, SEASON_WINTER } from "../world/calendar.js";
 
 /**
  * The eraBASIC `RAND` surface this module needs — a slice of
@@ -267,9 +270,10 @@ export function kigenChange(
 
 /**
  * Evaluate the current dish for `charaNum` and write `TCVAR:料理評価値`.
- * Models the **common** taste settings (race/talent/seasonal gates) for a
- * 人类 chara; per-chara `GETMETH_STR` data + non-人类 races + `GET_MONTH`
- * seasonal taste defer (see header). Returns the computed 評価値 (0-999).
+ * Models the per-chara `GETMETH_STR` キャラデータ taste (foodLike/foodDislike,
+ * `ERB 758-759`) + the **common** taste settings (race/talent/seasonal gates)
+ * for a 人类 chara; the non-人类 race arms defer (need the race map; the
+ * `人类`-gated arms ARE ported). Returns the computed 評価値 (0-999).
  *
  * Faithful formula (ERB 840-845):
  *   TASTE_GOOD = 300 + (80 + RAND:20) * STR_MULTI_COUNT(GOOD, taste)
@@ -288,32 +292,86 @@ export function reviewDish(
   if (!dish) return 0;
   const taste = dish.taste;
 
+  // --- 個人設定：キャラデータ 料理の好み (ERB 758-759) ---
+  // GETMETH_STR(, "キャラデータ", CHARA, "料理：喜欢的味道"/"料理：讨厌的味道")
+  // — the weighted slash-delimited tag strings from chara-data.bundle.json.
+  // Multiplicity = weight, matched via STR_MULTI_COUNT below.
+  const data = charaDataOf(slot.charaNum);
+  let good = data?.foodLike ?? "";
+  let bad = data?.foodDislike ?? "";
+
   // --- 共通設定：好き (ERB 764-807) ---
-  let good = "";
   good += "甜点/"; // 甜点はみんな好き (766)
   good += "できたて/"; // できたてはみんな好き (768)
-  // 妖怪/神霊/妖精/魔法使/幽霊/付喪神 race arms defer (need race map).
-  // 人类 && !半人类 → 神力 好き (ERB 773).
-  const isHuman = (slot.state.TALENT[TALENT_ID.人类] ?? 0) !== 0;
-  if (isHuman) good += "神力/";
-  // 幼稚 → 母亲的味道/儿童午餐×5 (788-792); 動物耳 → まんま×3 (800) — defer
-  //   (TALENT ids not imported; a clean chara has them off).
+  // Race arms. `CHECK_CHARA` reads the race TALENTs directly, and 半人类 is
+  // derived from them (`COMMON.ERB` @CHECK_CHARA: 人类 && (妖怪||妖精||神霊||
+  // 幽霊||付喪神||人形)) — no separate race table is needed. 魔法使 is the one
+  // exception: it lives in 追加種族 (value 2, `@GET_TRIBENAME`).
+  const race = slot.state.TALENT;
+  const isHuman = (race[TALENT_ID.人类] ?? 0) !== 0;
+  const isHalfHuman = isHuman && (
+    (race[TALENT_ID.妖怪] ?? 0) !== 0 || (race[TALENT_ID.妖精] ?? 0) !== 0
+    || (race[TALENT_ID.神霊] ?? 0) !== 0 || (race[TALENT_ID.幽霊] ?? 0) !== 0
+    || (race[TALENT_ID.付喪神] ?? 0) !== 0 || (race[TALENT_ID.人形] ?? 0) !== 0
+  );
+  const isYoukai = (race[TALENT_ID.妖怪] ?? 0) !== 0;
+  const isDivineSpirit = (race[TALENT_ID.神霊] ?? 0) !== 0;
+  const isFairy = (race[TALENT_ID.妖精] ?? 0) !== 0;
+  const isMagician = (race[TALENT_ID.追加種族] ?? 0) === 2; // 追加種族 2 = 魔法使
+  const isGhost = (race[TALENT_ID.幽霊] ?? 0) !== 0;
+  const isTsukumogami = (race[TALENT_ID.付喪神] ?? 0) !== 0;
+  // [妖怪] && !半人类 → 妖力 好き (770-771).
+  if (isYoukai && !isHalfHuman) good += "妖力/";
+  // [神霊] || ([人类] && !半人类) → 神力 好き (772-774).
+  if (isDivineSpirit || (isHuman && !isHalfHuman)) good += "神力/";
+  // [妖精] → 生命力 好き (775-777).
+  if (isFairy) good += "生命力/";
+  // [魔法使] → 魔力 好き (778-780).
+  if (isMagician) good += "魔力/";
+  // [幽霊][付喪神] → 霊障 好き, unless they already dislike it (781-783).
+  if ((isGhost || isTsukumogami) && !hasTaste(bad, "霊障")) good += "霊障/";
+  // [付喪神] → 鬼の魔力 ×3 (784-786).
+  if (isTsukumogami) good += "鬼の魔力/鬼の魔力/鬼の魔力/";
+  // 幼稚 → 母亲的味道 + 儿童午餐×5 (ERB 788-792).
+  if ((slot.state.TALENT[TALENT_ID.幼稚] ?? 0) !== 0) {
+    good += "母亲的味道/";
+    good += "儿童午餐/儿童午餐/儿童午餐/儿童午餐/儿童午餐/";
+  }
   // DISH_ASSI → 嫉妬×3 (794); DISH_BASEPOINT>=500 → 隠し味×2 (797-798).
   if (dish.assi !== 0 && charaNum === dish.assi) good += "嫉妬/嫉妬/嫉妬/";
   if (dish.basepoint >= 500) good += "隠し味/隠し味/";
-  // GET_MONTH seasonal (803-807) — defer (no calendar).
+  // 動物耳 → まんま×3 (ERB 800).
+  if ((slot.state.TALENT[TALENT_ID.動物耳] ?? 0) !== 0) {
+    good += "まんま/まんま/まんま/";
+  }
+  // GET_MONTH seasonal (803-807): 夏 likes 冷, 冬 likes 温暖 — unless the
+  // personal/common dislike list already carries the tag.
+  if (state.time.season === SEASON_SUMMER && !hasTaste(bad, "冷")) {
+    good += "冷/";
+  } else if (state.time.season === SEASON_WINTER && !hasTaste(bad, "温暖")) {
+    good += "温暖/";
+  }
+  // 愛情,ASSI→MASTERへの愛情 — flavor only upstream, not scored.
 
   // --- 共通設定：嫌い (ERB 811-837) ---
-  let bad = "";
   bad += "劣化/劣化/劣化/"; // 劣化×3 (813)
   bad += "过季/过季/过季/过季/过季/过季/"; // 过季×6 (815)
-  // 人类/神霊 && !妖力 good → 妖力 嫌い (817-821).
-  if (isHuman && !hasTaste(good, "妖力")) bad += "妖力/";
-  // 人类 && !半人类 && !霊障 good → 霊障 嫌い (822-824).
-  if (isHuman && !hasTaste(good, "霊障")) bad += "霊障/";
-  // 嫉妬 嫌い (826-834): not assi → 恋人×5/恋慕×3/思慕×1. Defer talent arms
-  //   (clean chara) — a chara that IS the assi skipped above; others with no
-  //   恋人/恋慕/思慕 add nothing (faithful).
+  // [妖怪][幽霊][付喪神] && !神力 good → 神力 嫌い (816-818).
+  if ((isYoukai || isGhost || isTsukumogami) && !hasTaste(good, "神力")) bad += "神力/";
+  // [人类][神霊] && !妖力 good → 妖力 嫌い (819-821).
+  if ((isHuman || isDivineSpirit) && !hasTaste(good, "妖力")) bad += "妖力/";
+  // [人类] && !半人类 && !霊障 good → 霊障 嫌い (822-824).
+  if (isHuman && !isHalfHuman && !hasTaste(good, "霊障")) bad += "霊障/";
+  // 嫉妬 嫌い (826-834): not the assi → 恋人×5 / 恋慕×3 / 思慕×1.
+  if (charaNum !== dish.assi) {
+    if ((slot.state.TALENT[TALENT_ID.恋人] ?? 0) !== 0) {
+      bad += "嫉妬/嫉妬/嫉妬/嫉妬/嫉妬/";
+    } else if ((slot.state.TALENT[TALENT_ID.恋慕] ?? 0) !== 0) {
+      bad += "嫉妬/嫉妬/嫉妬/";
+    } else if ((slot.state.TALENT[TALENT_ID.思慕] ?? 0) !== 0) {
+      bad += "嫉妬/";
+    }
+  }
   // DISH_BASEPOINT<500 → 隠し味×2 嫌い (836-837).
   if (dish.basepoint < 500) bad += "隠し味/隠し味/";
 
@@ -330,6 +388,30 @@ export function reviewDish(
   slot.state.TCVAR[TCVAR_ID.前回料理評価値] = slot.state.TCVAR[TCVAR_ID.料理評価値] ?? 0;
   slot.state.TCVAR[TCVAR_ID.料理評価値] = value;
   return value;
+}
+
+/**
+ * `TFLAG:信頼度管理` for a finished meal — `@COM414` ERB 139 / `@COM415` ERB 93:
+ *
+ *     TFLAG:信頼度管理 = (TCVAR:TARGET:料理評価値 / 100) / 2 + 1
+ *
+ * Both arms use ERA integer division and read the **TARGET's** evaluation (set
+ * by `reviewDish`), so the range is 1..5 and a well-cooked meal is worth more
+ * trust than a badly received one. This is the flag `SOURCE.ERB:1251` gates
+ * `@TRUST_CALC` on, and it is the only channel by which a meal raises 信頼度 —
+ * 好感度 comes separately through the SOURCE → PALAM settle.
+ *
+ * Returns 0 when the upstream gate (`SOURCE.ERB:1251`:
+ * `TFLAG:信頼度管理 && !CFLAG:TARGET:诶嘿嘿 && !CFLAG:TARGET:睡眠`) is closed,
+ * because `applySourceCheck` reads a zero seed as "do not run TRUST_CALC".
+ */
+export function mealTrustSeed(state: GameState, charaNum: number): number {
+  const slot = charaNum === 0 ? state.master : state.charas[charaNum];
+  if (!slot) return 0;
+  if ((slot.state.CFLAG[CFLAG_ID.诶嘿嘿] ?? 0) !== 0) return 0;
+  if ((slot.state.CFLAG[CFLAG_ID.睡眠] ?? 0) !== 0) return 0;
+  const evaluated = slot.state.TCVAR[TCVAR_ID.料理評価値] ?? 0;
+  return Math.trunc(Math.trunc(evaluated / 100) / 2) + 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -605,10 +687,11 @@ export function computeMealSources(
     sources[SOURCE_ID.不潔] = dirty;
     sources[SOURCE_ID.反感] = dirty;
   }
-  // 没穿内裤涮涮锅 (ERB 264-265): TFLAG:194==1 && !EQUIP下半身内衣２ → 露出 1000.
-  // EQUIP namespace deferred → treat as "not wearing" (露出 fires). Faithful for
-  // a seed scenario; EQUIP gate wires when the equip subsystem lands.
-  if (tflag194 === 1) {
+  // 没穿内裤涮涮锅 (ERB 264-265): `TFLAG:194 == 1 && ! EQUIP:CHARA:下半身内衣２`
+  // → 露出 1000. The EQUIP test is PER EATER: `@COM414` sets 194=1 when *any*
+  // present character is uncovered, so a guest who is wearing theirs eats the
+  // hot pot without the 露出 source.
+  if (tflag194 === 1 && (slot.state.EQUIP[EQUIP_SLOT.下半身内衣２] ?? 0) === 0) {
     sources[SOURCE_ID.露出] = 1000;
   }
 

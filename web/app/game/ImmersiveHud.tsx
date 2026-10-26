@@ -30,7 +30,7 @@ function StatPill(props: { label: string; value: number; max: number; tone: "hea
 /**
  * Player-facing HUD for the compact presentation mode. It deliberately
  * exposes only facts needed to make the next decision; the existing
- * GameStatusBar remains the classic/creator surface.
+ * GameStatusBar remains the full status surface.
  */
 export default function ImmersiveHud(props: ImmersiveHudProps) {
   const { state } = props;

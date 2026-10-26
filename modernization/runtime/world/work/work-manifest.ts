@@ -64,26 +64,54 @@ export const JOB_ID = {
 
 const JOB = JOB_ID;
 
-/** eraTW `職種` (CFLAG:350) labels for narration. */
+/** Simplified Chinese labels for player-facing `職種` (CFLAG:350) text. */
 export const JOB_LABEL: Readonly<Record<number, string>> = {
-  [JOB.清掃]: "清掃",
-  [JOB.会話]: "会話",
-  [JOB.戦闘]: "戦闘",
-  [JOB.教養]: "教養",
+  [JOB.清掃]: "清扫",
+  [JOB.会話]: "交谈",
+  [JOB.戦闘]: "战斗",
+  [JOB.教養]: "学习",
   [JOB.料理]: "料理",
-  [JOB.音楽]: "音楽",
-  [JOB.遊び]: "遊び",
-  [JOB.商売]: "商売",
-  [JOB.宴会準備]: "宴会準備",
-  [JOB.宴会参加]: "宴会参加",
-  [JOB.宴会片づけ]: "宴会の片づけ",
-  [JOB.酔いつぶれる]: "酔いつぶれる",
-  [JOB.お酒]: "お酒",
-  [JOB.家事]: "家事",
-  [JOB.採集]: "採集",
-  [JOB.釣り]: "釣り",
-  [JOB.調合]: "調合",
+  [JOB.音楽]: "音乐",
+  [JOB.遊び]: "游玩",
+  [JOB.商売]: "生意",
+  [JOB.宴会準備]: "宴会准备",
+  [JOB.宴会参加]: "参加宴会",
+  [JOB.宴会片づけ]: "宴会收尾",
+  [JOB.酔いつぶれる]: "醉倒",
+  [JOB.お酒]: "饮酒",
+  [JOB.家事]: "家务",
+  [JOB.採集]: "采集",
+  [JOB.釣り]: "钓鱼",
+  [JOB.調合]: "炼药",
 };
+
+const WORK_INFO_WEEKDAYS: Readonly<Record<string, string>> = {
+  日: "周日",
+  月: "周一",
+  火: "周二",
+  水: "周三",
+  木: "周四",
+  金: "周五",
+  土: "周六",
+};
+
+/** Translate recurring Japanese schedule notation in upstream CSTR work text. */
+export function localizeWorkInfoText(text: string): string {
+  return text
+    .replace(/毎朝/g, "每天早晨")
+    .replace(/毎日/g, "每天")
+    .replace(/毎週/g, "每周")
+    .replace(/毎月/g, "每月")
+    .replace(/([日月火水木金土])曜日/g, (_match, day: string) => WORK_INFO_WEEKDAYS[day]!)
+    .replace(/清掃/g, "清扫")
+    .replace(/女子会/g, "女生聚会")
+    .replace(/お酒/g, "饮酒")
+    .replace(/時/g, "时")
+    .replace(/＆/g, "与")
+    .replace(/[０-９]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0xfee0))
+    .replace(/(^|[　\s、，,·・与&])([日月火水木金土])(?=$|[　\s、，,·・与&])/g,
+      (_match, prefix: string, day: string) => `${prefix}${WORK_INFO_WEEKDAYS[day]!}`);
+}
 
 export interface WorkEntry {
   charaNum: number;

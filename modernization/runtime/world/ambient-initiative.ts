@@ -23,7 +23,6 @@ export type AmbientInitiativeMode =
   | "scene-interaction";
 
 export type AmbientInitiativeKind =
-  | "self-gesture"
   | "address-player"
   | "question-player"
   | "npc-exchange"
@@ -108,19 +107,19 @@ function weightedKind(
   trigger: AmbientInitiativeTrigger,
   hasPartner: boolean,
   affinity: number,
-): AmbientInitiativeKind {
+): AmbientInitiativeKind | null {
   const weights: Array<readonly [AmbientInitiativeKind, number]> = mode === "character-dialogue"
     ? [
         ["address-player", 22 + affinity * 18],
         ["question-player", 12 + affinity * 16],
       ]
     : [
-        ["self-gesture", Math.max(10, 32 - affinity * 12)],
         ...(hasPartner ? [["npc-exchange", 28] as const] : []),
         ...(trigger === "interaction-ended" || trigger === "free-action-changed"
           ? [["event-echo", 18] as const]
           : []),
       ];
+  if (weights.length === 0) return null;
   const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
   // Salt 3 is reserved for the independent 50/50 mode decision. Keep kind
   // selection on its own deterministic stream so changing the mode does not
@@ -181,18 +180,20 @@ export function selectAmbientInitiativeOpportunity(
     partner !== undefined,
     clamp01(initiator.playerAffinity),
   );
+  if (!kind) return null;
 
-  if (kind !== "npc-exchange" || !partner) {
+  if (kind !== "npc-exchange") {
     return {
       trigger: input.trigger,
       mode,
-      kind: kind === "npc-exchange" ? "self-gesture" : kind,
+      kind,
       location: input.location,
       participantIds: [initiator.participantId],
       probability,
       initiatorId: initiator.participantId,
     };
   }
+  if (!partner) return null;
 
   const forwardRelation = partner.relation;
   const reverseRelation = input.relationOf(partner.candidate.participantId, initiator.participantId);

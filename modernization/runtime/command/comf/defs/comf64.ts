@@ -127,7 +127,7 @@ export const comf64Def: ComfDef = {
   },
 
   narration: (_c, favorDelta) =>
-    `%CALLNAME:MASTER% — 逆レイプ；好感度 ${
+    `%CALLNAME:TARGET%主导了与%CALLNAME:MASTER%的交合；好感度 ${
       favorDelta >= 0 ? "+" : ""
     }${favorDelta}.`,
 };

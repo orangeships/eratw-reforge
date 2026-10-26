@@ -12,6 +12,7 @@ import {
   STONE_CONTEST_THEMES,
   stoneClerkStoryOpportunity,
   stoneContestDifficulty,
+  stoneContestReplayConfig,
   stoneOpponentStatus,
   type StoneContestItem,
   type StoneContestStrategy,
@@ -20,6 +21,7 @@ import {
   STONE_CONTEST_DURATION_FRAMES,
   STONE_PLATFORM_LEFT_Q,
   STONE_PLATFORM_RIGHT_Q,
+  STONE_SPAWN_Y_Q,
   STONE_WORLD_WIDTH_Q,
   advanceStoneSimulation,
   createStoneSimulation,
@@ -35,6 +37,7 @@ import {
 } from "../../../modernization/runtime/state/stone-contest-physics.js";
 import { useGameStateStore } from "../state/game-state-store.js";
 import { useSceneStore } from "../state/scene-store.js";
+import { stoneContestViewport } from "./stone-contest-viewport.js";
 
 const WIDTH = 1_000;
 const HEIGHT = 680;
@@ -64,7 +67,7 @@ function polygonPath(ctx: CanvasRenderingContext2D, body: Pick<StoneBody, "verti
 
 function drawBody(ctx: CanvasRenderingContext2D, body: StoneBody, width: number, floorY: number, scale: number): void {
   const returned = body.state === "returned";
-  const x = returned ? 62 + (body.id % 10) * Math.min(58, (width - 120) / 10) : body.xQ / STONE_WORLD_WIDTH_Q * width;
+  const x = returned ? 62 + (body.id % 10) * Math.min(58, (width - 120) / 10) : width / 2 + (body.xQ - STONE_WORLD_WIDTH_Q / 2) * scale;
   const y = returned ? floorY + 72 + (body.id % 2) * 13 : floorY - body.yQ * scale;
   ctx.save();
   ctx.translate(x, y);
@@ -130,8 +133,8 @@ function drawContest(
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#010303";
   ctx.fillRect(0, 0, width, height);
-  const floorY = height * .76;
-  const scale = Math.min(width / STONE_WORLD_WIDTH_Q, height * .68 / 7_000);
+  const viewport = stoneContestViewport(width, height);
+  const { floorY, scale } = viewport;
 
   ctx.strokeStyle = "rgba(103, 226, 206, .055)";
   ctx.lineWidth = 1;
@@ -143,8 +146,8 @@ function drawContest(
     }
     ctx.stroke();
   }
-  const left = STONE_PLATFORM_LEFT_Q / STONE_WORLD_WIDTH_Q * width;
-  const right = STONE_PLATFORM_RIGHT_Q / STONE_WORLD_WIDTH_Q * width;
+  const left = viewport.x(STONE_PLATFORM_LEFT_Q);
+  const right = viewport.x(STONE_PLATFORM_RIGHT_Q);
   const platform = ctx.createLinearGradient(left, 0, right, 0);
   platform.addColorStop(0, "rgba(50,104,96,.4)");
   platform.addColorStop(.5, "rgba(128,255,235,.82)");
@@ -159,10 +162,12 @@ function drawContest(
   ctx.font = "10px 'Cascadia Mono', monospace";
   ctx.fillText("RETURN TRAY / 落石回收区", left + 8, floorY + 42);
 
-  for (const body of replay?.bodies ?? []) drawBody(ctx, body, width, floorY, scale);
+  for (const body of replay?.bodies ?? []) {
+    if (body.state !== "returned") drawBody(ctx, body, width, floorY, scale);
+  }
 
-  const cursorX = cursorQ / STONE_WORLD_WIDTH_Q * width;
-  drawCandidateGhost(ctx, candidate, cursorX, Math.max(66, height * .115), rotationQ, scale);
+  const cursorX = viewport.x(cursorQ);
+  drawCandidateGhost(ctx, candidate, cursorX, floorY - (STONE_SPAWN_Y_Q + candidate.heightQ / 2) * scale, rotationQ, scale);
   ctx.setLineDash([5, 9]);
   ctx.strokeStyle = "rgba(128,255,236,.19)";
   ctx.beginPath();
@@ -209,8 +214,8 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
   const advanceStory = useGameStateStore((store) => store.advanceStoneClerkStoryAction);
   const [replay, setReplay] = useState<StoneReplayResult | null>(null);
   const difficulty = stoneContestDifficulty(state);
-  const candidates = useMemo(() => stoneCandidateQueue(session.seed, difficulty, session.operations), [difficulty, session.operations, session.seed]);
-  const candidate = candidates[Math.min(candidateSlot, 2)]!;
+  const candidates = useMemo(() => stoneCandidateQueue(session.seed, difficulty, session.operations, replay?.bodies), [difficulty, session.operations, session.seed, replay]);
+  const candidate = candidates[Math.min(candidateSlot, candidates.length - 1)]!;
   const opponentStatus = stoneOpponentStatus(state);
   const story = stoneClerkStoryOpportunity(state);
   const clerk = progress.clerkCharaNum === undefined ? undefined : state.charas[progress.clerkCharaNum];
@@ -222,22 +227,20 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
   const remainingSeconds = Math.max(0, Math.ceil((STONE_CONTEST_DURATION_FRAMES - session.elapsedFrames) * 20 / 1_000));
   const standing = replay?.stableCount ?? 0;
   const returned = replay?.returnedCount ?? 0;
+  const supportToleranceQ = stoneContestReplayConfig(state).supportToleranceQ;
+  const visualInputs = useRef({ session, config: stoneContestReplayConfig(state), candidate, cursorQ, rotationQ });
+  visualInputs.current = { session, config: stoneContestReplayConfig(state), candidate, cursorQ, rotationQ };
 
   useEffect(() => {
-    const key = `${session.id}:${session.round}:${session.bout}:${difficulty}:${session.item}:${session.strategy}`;
-    const config = {
-      seed: session.seed,
-      difficulty,
-      rescueCollapse: session.item === "small-hat",
-      supportToleranceQ: session.strategy === "careful" ? 260 : session.strategy === "quick" ? -120 : 0,
-    };
+    const key = `${session.id}:${session.round}:${session.bout}:${difficulty}:${session.item}:${supportToleranceQ}`;
+    const config = stoneContestReplayConfig(state);
     if (simulationKeyRef.current !== key || session.elapsedFrames < simulationRef.current.frame) {
       simulationKeyRef.current = key;
       simulationRef.current = createStoneSimulation(config);
     }
     simulationRef.current = advanceStoneSimulation(simulationRef.current, session.operations, config, session.elapsedFrames);
     setReplay(stoneReplayFromSimulation(simulationRef.current, session.operations));
-  }, [difficulty, session.bout, session.elapsedFrames, session.id, session.item, session.operations, session.round, session.seed, session.strategy]);
+  }, [difficulty, session.bout, session.elapsedFrames, session.id, session.item, session.operations, session.round, session.seed, session.strategy, supportToleranceQ]);
 
   useEffect(() => {
     if (session.phase !== "round") return;
@@ -245,9 +248,13 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
     const startedAt = performance.now();
     let lastCommitted = baseFrame;
     let raf = 0;
+    let visualSimulation = createStoneSimulation(visualInputs.current.config);
     const tick = (now: number) => {
       const frame = Math.min(STONE_CONTEST_DURATION_FRAMES, baseFrame + Math.floor((now - startedAt) / 20));
       liveFrameRef.current = frame;
+      const input = visualInputs.current;
+      visualSimulation = advanceStoneSimulation(visualSimulation, input.session.operations, input.config, frame);
+      if (canvasRef.current) drawContest(canvasRef.current, stoneReplayFromSimulation(visualSimulation, input.session.operations), input.cursorQ, input.rotationQ, input.candidate, frame);
       if (frame - lastCommitted >= 5 || frame === STONE_CONTEST_DURATION_FRAMES) {
         lastCommitted = frame;
         advanceClock(frame);
@@ -259,8 +266,8 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
   }, [advanceClock, session.bout, session.id, session.phase, session.round]);
 
   useEffect(() => {
-    if (canvasRef.current && candidate) drawContest(canvasRef.current, replay, cursorQ, rotationQ, candidate, session.elapsedFrames);
-  }, [candidate, cursorQ, replay, rotationQ, session.elapsedFrames]);
+    if (session.phase !== "round" && canvasRef.current && candidate) drawContest(canvasRef.current, replay, cursorQ, rotationQ, candidate, session.elapsedFrames);
+  }, [candidate, cursorQ, replay, rotationQ, session.elapsedFrames, session.phase]);
 
   const place = useCallback((operation: StonePlacementOperation) => {
     if (session.phase !== "round") return;
@@ -299,18 +306,20 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
 
   const updatePointer = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    setCursorQ(Math.max(0, Math.min(STONE_WORLD_WIDTH_Q, Math.round((event.clientX - rect.left) / Math.max(1, rect.width) * STONE_WORLD_WIDTH_Q))));
+    const viewport = stoneContestViewport(rect.width, rect.height);
+    setCursorQ(Math.max(0, Math.min(STONE_WORLD_WIDTH_Q, Math.round((event.clientX - rect.left - viewport.left) / viewport.scale))));
   };
 
   const onCanvasPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (session.phase !== "round") return;
     event.preventDefault();
     const rect = event.currentTarget.getBoundingClientRect();
+    const viewport = stoneContestViewport(rect.width, rect.height);
     const operation = stoneOperationFromPointer(
       liveFrameRef.current,
       event.clientX,
-      rect.left,
-      rect.width,
+      rect.left + viewport.left,
+      viewport.worldWidth,
       rotationQ,
       candidate.sizeQ,
       candidate.candidateId % 4,
@@ -337,9 +346,9 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
       {session.phase === "lobby" ? (
         <section className="stone-contest__lobby" data-testid="stone-contest-lobby">
           <div className="stone-contest__panel stone-contest__welcome">
-            <small className="stone-contest__eyebrow">30 SECOND PHYSICS MATCH</small>
-            <h2>三选一，落下，然后让重力裁决。</h2>
-            <p>每次从三枚随机不规则石头中选择一枚。越高 Rank，候选轮廓越险。石头会真实下落、碰撞、滚动；掉出台面的石头进入回收区，你可以继续选择下一枚。</p>
+            <small className="stone-contest__eyebrow">赛之河原 · 受付处</small>
+            <h2>来试试手气和眼力吧！</h2>
+            <p>「规矩很简单——三块里挑一块，稳稳垒上去。三十秒内垒得越高越好！等级越高，石头就越爱闹脾气；滚下台也别慌，下一块马上给你送来。」</p>
             <div className="stone-contest__tabs">
               <button className={mode === "solo" ? "is-active" : ""} type="button" onClick={() => setMode("solo")} disabled={dateLocked}>单人锦标赛</button>
               <button className={mode === "couple" ? "is-active" : ""} type="button" onClick={() => setMode("couple")} disabled={partners.length === 0 && !dateLocked}>双人共筑赛</button>
@@ -398,10 +407,10 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
             <span>STACKED <b>{standing}</b> · RETURNED {returned}</span>
           </div>
           {session.phase === "round" && session.elapsedFrames < 34 && <div className="stone-contest__count-in">READY<br /><strong>30 SEC</strong></div>}
-          <div className="stone-contest__candidate-rack" aria-label="三枚候选石">
+          <div className="stone-contest__candidate-rack" aria-label="石头库：候选石与回库石">
             {candidates.map((entry, index) => (
-              <button key={entry.candidateId} className={candidateSlot === index ? "is-active" : ""} type="button" onClick={() => setCandidateSlot(index)}>
-                <small>0{index + 1}</small><CandidateGlyph candidate={entry} /><span>不规则 {entry.irregularityQ}</span>
+              <button key={entry.candidateId} className={candidate.candidateId === entry.candidateId ? "is-active" : ""} type="button" onClick={() => setCandidateSlot(index)}>
+                <small>{index < 3 ? `0${index + 1}` : "回库"}</small><CandidateGlyph candidate={entry} /><span>不规则 {entry.irregularityQ}</span>
               </button>
             ))}
           </div>
@@ -414,7 +423,8 @@ export default function StoneContestScreen({ state }: { state: GameState }) {
             <small>LIVE OPPONENT FEED</small>
             {opponentStatus ? <p>{opponentStatus.text}</p> : <p>{state.charas[session.partner]?.callName ?? "搭档"} 正在自动挑选候选石，并与你交替共筑。</p>}
             {replay?.rescued && <p>小石帽介入：一枚落石被送回投放线上。</p>}
-            {returned > 0 && <p>{returned} 枚石头已落入候选回收区，比赛继续。</p>}
+            {(replay?.failedCount ?? 0) > 0 && <p>发生倒塌：失败的石头不计分，落地两秒后回到石头库。</p>}
+            {returned > 0 && <p>已回收 {returned} 次落石，可在石头库重新选择。</p>}
           </aside>
           {session.phase === "between-rounds" && <div className="stone-contest__modal"><small>ROUND CLEAR</small><h2>本场胜利</h2>{result && <div className="stone-contest__versus"><span>我方<strong>{result.playerTotal}</strong></span><i>VS</i><span>对方<strong>{result.opponentTotal}</strong></span></div>}<button type="button" onClick={continueContest}>继续下一场</button><button type="button" onClick={withdrawContest}>结束并退还参赛费</button></div>}
           {session.phase === "settlement" && <div className="stone-contest__modal stone-contest__modal--result"><small>TIME UP / RESULT</small><h2>{session.pendingSettlement?.outcome === "champion" ? "锦标赛冠军" : session.pendingSettlement?.outcome === "couple" ? "双人赛结算" : "比赛结束"}</h2>{result && <div className="stone-contest__versus"><span>我方共堆<strong>{result.playerTotal}</strong><em>块</em></span><i>VS</i><span>对方共堆<strong>{result.opponentTotal}</strong><em>块</em></span></div>}{session.pendingSettlement?.coupleScore && <p>主题评分 {session.pendingSettlement.coupleScore.total} · {session.pendingSettlement.coupleScore.award}</p>}<button type="button" onClick={settleAndLeave}>确认结算并返回</button></div>}

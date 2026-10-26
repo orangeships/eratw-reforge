@@ -65,8 +65,7 @@ export function resolveNewGameKojoUpdate(
   charaNum: number,
   choices: readonly number[] = [],
 ): NewGameKojoUpdateResult {
-  const resolver = router.resolveUpdateKojoInteractive;
-  if (!resolver) {
+  if (!router.resolveUpdateKojoInteractive) {
     return {
       state: state as GameState,
       status: "unsupported",
@@ -80,7 +79,10 @@ export function resolveNewGameKojoUpdate(
   // The resolver replays from the root after every pick. A stable per-character
   // seed keeps every replay on the same authored random branches.
   const rng = createRng((0x45524154 ^ Math.imul(charaNum, 0x9e3779b1)) | 0);
-  const resolution = resolver(charaNum, state, rng, choices);
+  // DialogueRouter may be a stateful adapter (notably KojoCache). Calling a
+  // detached method loses its `this` receiver and throws before the UI can
+  // receive a fail-closed result.
+  const resolution = router.resolveUpdateKojoInteractive(charaNum, state, rng, choices);
   const diagnostics = diagnosticsOf(resolution);
 
   if (

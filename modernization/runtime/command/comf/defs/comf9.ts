@@ -42,6 +42,7 @@ export const comf9Def: ComfDef = {
   greatThreshold: 0,
   failThreshold: 101,
   timeCost: 0,
+  targetDownbase: { [BASE_ID.体力]: 5, [BASE_ID.気力]: 50 },
 
   buildSources: (c) => {
     const sources: Record<number, number> = {
@@ -61,9 +62,6 @@ export const comf9Def: ComfDef = {
   },
 
   body: (c) => {
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 5;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 50;
-
     // Base ELSE path: 自慰経験 +1, 調教自慰経験 +1 (TEQUIP video +2 deferred).
     c.t.state.EXP[EXP_ID.自慰経験] = (c.t.state.EXP[EXP_ID.自慰経験] ?? 0) + 1;
     c.t.state.EXP[EXP_ID.調教自慰経験] =

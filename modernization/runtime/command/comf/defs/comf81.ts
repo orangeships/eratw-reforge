@@ -106,8 +106,9 @@ export const comf81Def: ComfDef = {
   canExecute: com81Check,
   hModeMenuCheck: com81Check,
 
-  // Target drain is in body; factory downbase is master-only → empty.
+  // The master cost is empty; target cost is declared separately below.
   downbase: {},
+  targetDownbase: { [BASE_ID.体力]: 10, [BASE_ID.気力]: 80 },
 
   // SOURCE target: ERB normal ELSE.
   buildSources: (c) => {
@@ -157,9 +158,6 @@ export const comf81Def: ComfDef = {
 
   body: (c) => {
     // target 体力 10 / 気力 80 drain.
-    c.t.state.BASE[BASE_ID.体力] = (c.t.state.BASE[BASE_ID.体力] ?? 0) - 10;
-    c.t.state.BASE[BASE_ID.気力] = (c.t.state.BASE[BASE_ID.気力] ?? 0) - 80;
-
     // ERB 112-113: EXP:口淫経験 += 3 (target) on the non-time-stop,
     // non-恶作剧 path. (An earlier port wrongly marked this "no ID" and
     // instead invented a 愛情経験/恋慕 grant that the ERB does not have.)

@@ -1,0 +1,132 @@
+/* Responsive presentation shared by the game shell and its body portals. */
+html :is(.ascii-ui, body:has(.ascii-ui)) {
+  --era-fs: calc(clamp(13px, min(1.1111vw, 1.78dvh), 40px) * var(--ui-font-scale, 1));
+  font-size: var(--era-fs);
+}
+body:has(.ascii-ui) *, body:has(.ascii-ui) *::before, body:has(.ascii-ui) *::after { box-sizing: border-box; }
+@media (min-width: 901px) {
+  .ascii-ui .game-client.game-client--immersive .game-client__middle {
+    display: grid;
+    grid-template-columns: minmax(0, 26fr) minmax(0, 44fr) minmax(0, 30fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 1.2em;
+    overflow: hidden;
+  }
+  .ascii-ui .game-client.game-client--immersive .game-client__scene-slot { min-height: 0; }
+  .ascii-ui .game-client.game-client--immersive .text-game-right { max-height: none; grid-column: auto; }
+}
+.ascii-ui .game-client__scene-slot--dialogue > .scene-dialogue {
+  top: 15%;
+  bottom: calc(var(--scene-dialogue-portrait-height) - min(8dvh, 64px) + 1.5em);
+}
+.scene-dialogue .scene-dialogue__transcript { flex: 1; min-height: 0; }
+.scene-dialogue .scene-dialogue__content { min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+.scene-dialogue .scene-dialogue__content > * { flex: 0 0 auto; }
+.game-client.game-client--scene-dialogue .scene-dialogue :is(.interaction-box__line, .scene-dialogue__line) {
+  line-height: var(--ui-line-height, 1.5);
+  letter-spacing: 0;
+  transition: none;
+}
+html[data-dialogue-fade="off"] .scene-dialogue [data-scene-dialogue-line] { opacity: 1 !important; }
+
+/* Real panel surfaces replace stepped ASCII window reveals. This higher
+   specificity also covers dialogs portalled outside the app container. */
+html body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) {
+  --panel-accent: #8fbaa9;
+  color: #d9ded8;
+  background: linear-gradient(135deg, #121b1b, #0a0f12 65%);
+  border: 1px solid #50625b;
+  border-top: 2px solid #b3a574;
+  border-radius: 6px;
+  box-shadow: 0 20px 64px #0009, inset 0 0 0 3px #ffffff03;
+  font: var(--era-fs)/1.5 var(--era-mono);
+  max-width: calc(100dvw - 2em);
+  max-height: calc(100dvh - 2em - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+  animation: era-dialog-enter 120ms ease-out both;
+}
+html body:has(.ascii-ui) :is(.interaction-box__scrim, .ci-panel__scrim, .commission-popup-scrim, .ai-settings__scrim, .excom-panel__scrim, .diary-book__scrim, .tackle-shop__scrim, .kojo-debug__backdrop, .morning-menu__modal-scrim) {
+  position: fixed;
+  inset: 0;
+  padding: max(1em, env(safe-area-inset-top, 0px)) max(1em, env(safe-area-inset-right, 0px)) max(1em, env(safe-area-inset-bottom, 0px)) max(1em, env(safe-area-inset-left, 0px));
+  background: #0009;
+  backdrop-filter: none;
+}
+html body:has(.ascii-ui) :is(.ai-settings, .morning-menu__modal, .excom-panel) { width: min(48em, calc(100dvw - 2em)); }
+html body:has(.ascii-ui) :is(.ci-panel, .diary-book) { width: min(60em, calc(100dvw - 2em)); height: min(48em, calc(100dvh - 2em)); }
+html body:has(.ascii-ui) :is(.interaction-box, .commission-popup, .tackle-shop, .kojo-debug) { width: min(48em, calc(100dvw - 2em)); }
+html body:has(.ascii-ui) .prompt-menu { width: min(48em, calc(100dvw - 2em)); }
+html body:has(.ascii-ui) :is(.prompt-menu--cooking, .prompt-menu--shop-grid) { width: min(64em, calc(100dvw - 2em)); }
+html body:has(.ascii-ui) :is(.interaction-box, .prompt-menu, .ci-panel, .commission-popup, .ai-settings, .excom-panel, .diary-book, .walk-encounter, .kojo-debug, .outing-event-frame__panel, .outing-event-dialog, .date-invitation-card, .tackle-shop, .morning-menu__modal, .cooking-workbench) :where(*) { font-size: inherit; }
+html body:has(.ascii-ui) :is(.morning-menu__modal, .ai-settings, .excom-panel, .commission-popup, .kojo-debug) { display: flex; flex-direction: column; overflow: hidden; }
+html body:has(.ascii-ui) :is(.morning-menu__modal-body, .ai-settings__body, .excom-panel__body, .commission-popup__body) { padding: 1em; }
+html body:has(.ascii-ui) .ai-settings__tabs { position: static; flex-shrink: 0; }
+html body:has(.ascii-ui) :is(.ai-settings__tabs button, .ci-panel__tab) { padding: .55em .7em; min-height: 2.5em; }
+html body:has(.ascii-ui) :is(.ai-settings__tabs .is-active, .ci-panel__tab--active) { border-bottom: 2px solid #b3a574; background: #8fbaa912; }
+html body:has(.ascii-ui) :is(.ai-settings__tabs .is-active, .ci-panel__tab, .diary-book__index-entry.is-active)::before { content: none; }
+html body:has(.ascii-ui) .ai-settings__section { padding: .8em; gap: .65em; border: 1px solid #34483e; }
+html body:has(.ascii-ui) :is(.ai-settings__section h3, .ai-settings__master-row strong) { color: #d5c496; }
+html body:has(.ascii-ui) .ai-settings__compact-field { grid-template-columns: minmax(0, 1fr) 6em; }
+html body:has(.ascii-ui) :is(.ai-settings, .game-options) input[type="checkbox"] { width: 1.1em; height: 1.1em; padding: 0; accent-color: #8fbaa9; }
+html body:has(.ascii-ui) .ai-settings__enable { border-style: solid !important; }
+html body:has(.ascii-ui) :is(.ai-settings__pane, .ai-settings__section, .ci-panel__pagebody, .excom-panel__body, .commission-popup__body, .morning-menu__modal-body) { font-size: 1em; }
+html body:has(.ascii-ui) :is(.ai-settings__note, .ai-settings__details summary, .ai-settings__toggle, .ai-settings__roster, .morning-menu__note) { font-size: .85em; }
+html body:has(.ascii-ui) :is(.ci-panel__head, .ai-settings__head, .excom-panel__head, .morning-menu__modal-head) { background: #111c1b; }
+html body:has(.ascii-ui) :is(.ci-panel, .diary-book, .ai-settings, .excom-panel, .commission-popup, .kojo-debug) :is(table, .ci-panel__ability-grid) { max-width: 100%; }
+html body:has(.ascii-ui) :is(.ci-panel__head, .ai-settings__head, .excom-panel__head, .commission-popup__header, .diary-book__header, .kojo-debug__head, .morning-menu__modal-head, .tackle-shop > header, .interaction-box__speaker) {
+  gap: .8em;
+  color: #d5c496;
+  padding: .65em .9em;
+  border-bottom: 1px solid #526357;
+  flex-shrink: 0;
+}
+html body:has(.ascii-ui) :is(.ci-panel__title, .excom-panel__title, .commission-popup__title, .ai-settings__head > span:first-child, .morning-menu__modal-head > span:first-child, .interaction-box__speaker)::before,
+html body:has(.ascii-ui) :is(.ci-panel__title, .excom-panel__title, .commission-popup__title, .ai-settings__head > span:first-child, .morning-menu__modal-head > span:first-child, .interaction-box__speaker)::after { content: none; }
+html body:has(.ascii-ui) :is(.ci-panel__pagebody, .ai-settings__body, .excom-panel__body, .morning-menu__modal-body, .commission-popup__body, .interaction-box__body, .diary-book__body) {
+  min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain;
+}
+html body:has(.ascii-ui) :is(.ai-settings, .morning-menu__modal, .excom-panel, .ci-panel, .commission-popup, .kojo-debug) :is(input, select, textarea) {
+  max-width: 100%; min-width: 0; font: inherit; border: 1px solid #526357; border-radius: 3px; background: #060d10; padding: .4em .55em;
+}
+html body:has(.ascii-ui) :is(.ai-settings, .morning-menu__modal, .excom-panel, .ci-panel, .commission-popup, .kojo-debug) :is(button, [role="button"]) {
+  white-space: normal; overflow-wrap: anywhere; border-radius: 3px; transition: background-color 90ms ease;
+}
+html body:has(.ascii-ui) :is(.ai-settings, .morning-menu__modal, .excom-panel, .ci-panel, .commission-popup, .kojo-debug) button:not(:disabled):hover { background: #8fbaa91a; color: #f0e4c6; }
+body:has(.ascii-ui) :is(button, input, select, textarea):focus-visible { outline: 2px solid #8fbaa9; outline-offset: 2px; }
+body:has(.ascii-ui):has([role="dialog"]) .kojo-debug__launch { visibility: hidden; }
+html body:has(.ascii-ui) :is(.ai-settings, .excom-panel, .ci-panel, .kojo-debug) pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Scene narration is an overlay, not a framed modal. */
+html body:has(.ascii-ui) .game-client .scene-dialogue .interaction-box--scene {
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  max-width: none; max-height: none; overflow: visible; animation: none; scrollbar-gutter: auto;
+}
+@keyframes era-dialog-enter { from { opacity: .4; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.game-options { width: min(40em, 100%); margin: auto; }
+.game-options__intro { color: #a7b4ad; margin: 0 0 1em; }
+html body:has(.ascii-ui) .game-options__section { padding: .9em 1em; margin: .7em 0; border: 1px solid #34483e; border-radius: 4px; background: #8fbaa905; }
+.game-options h3 { display: flex; align-items: center; justify-content: space-between; margin: 0 0 .8em; color: #d5c496; font-size: 1em; }
+.game-options h3 small { font-size: .7em; letter-spacing: .15em; color: #8fbaa9; }
+.game-options__row { display: grid; grid-template-columns: 1fr auto; gap: .5em; align-items: center; }
+.game-options__row input { grid-column: 1 / -1; width: 100%; accent-color: #8fbaa9; }
+.game-options__hint { font-size: .85em; color: #9baaa3; line-height: 1.6; }
+.game-options__toggle { display: flex; justify-content: space-between; align-items: center; gap: 1em; padding: .65em 0; }
+.game-options__toggle small { display: block; color: #9baaa3; font-size: .8em; margin-top: .3em; }
+.game-options__toggle input { flex: 0 0 auto; width: 1.2em; height: 1.2em; accent-color: #8fbaa9; }
+.game-options__select { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .7em; padding: .9em 0; }
+html body:has(.ascii-ui) .game-options button { border: 1px solid #526357; padding: .5em .9em; font: inherit; }
+.game-options__footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .7em; padding-top: .8em; }
+@media (max-width: 600px) {
+  html body:has(.ascii-ui) :is(.ai-settings__row, .ai-settings__compact-field) { grid-template-columns: minmax(0, 1fr); }
+  html body:has(.ascii-ui) :is(.ci-panel__tabs, .ai-settings__tabs, .excom-panel__tabs) { flex-wrap: wrap; overflow: auto; }
+  .game-options__section { padding: .65em; }
+}
+@media (min-width: 901px) {
+  .ascii-ui .game-client__scene-slot--dialogue { --scene-dialogue-portrait-height: min(32dvh, 18em); }
+}
+html[data-ui-motion="reduced"] body:has(.ascii-ui) *, html[data-ui-motion="reduced"] body:has(.ascii-ui) *::before, html[data-ui-motion="reduced"] body:has(.ascii-ui) *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) { body:has(.ascii-ui) *, body:has(.ascii-ui) *::before, body:has(.ascii-ui) *::after { animation: none !important; transition: none !important; } }

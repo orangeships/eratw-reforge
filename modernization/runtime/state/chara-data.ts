@@ -27,6 +27,15 @@ export interface CharaDataEntry {
   foodLike?: string;
   foodDislike?: string;
   assistEffect?: string;
+  /**
+   * 衣装セット id for `デート衣装` — the outfit `EX_COSTUME(C_ID, "デート")`
+   * applies at date start (SET_CMN.ERB:309). Upstream resolves the character's
+   * `[[const]]` through `衣装セットNN`; most characters declare no such arm and
+   * are therefore left undefined.
+   */
+  dateOutfitSet?: number;
+  /** 衣装セット id for `人里デート衣装` — the MAPID-2 variant (SET_CMN.ERB:303). */
+  villageDateOutfitSet?: number;
 }
 
 let table: Record<number, CharaDataEntry> = {};
@@ -69,7 +78,10 @@ export function foldTasteTags(raw: string | undefined): TasteTag[] {
   for (const [tag, weight] of counts) {
     out.push({ tag, weight, tier: weight >= 5 ? 3 : weight >= 2 ? 2 : 1 });
   }
-  out.sort((a, b) => b.weight - a.weight || a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0);
+  // 权重降序，同权重按 tag 码点升序。括号是必须的：`||` 比 `?:` 结合得更紧，
+  // 早先漏了括号 → 只要权重不同就恒返回 -1（比较器自相矛盾），权重排序失效，
+  // 排序结果取决于实现。面板的 [名]LvN 顺序和 L1 的「最强 6 条」都依赖这个顺序。
+  out.sort((a, b) => b.weight - a.weight || (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
   return out;
 }
 

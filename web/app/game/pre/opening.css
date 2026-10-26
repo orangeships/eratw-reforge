@@ -1,0 +1,92 @@
+/* Opening-only terminal design. Gameplay dialogs retain their own surfaces. */
+html:has(.container--opening) { height: auto; min-height: 100%; overflow-x: clip; overflow-y: auto; }
+body:has(.container--opening) { height: auto; min-height: 100dvh; overflow-x: clip; overflow-y: visible; }
+body:has(.container--opening) #root { height: auto; min-height: 100dvh; }
+.ascii-ui.container--opening { padding: 1em clamp(.7em, 3vw, 3em) 2em; }
+.ascii-ui.container--opening > .app-header { display: none; }
+.ascii-ui.container--opening > .app-header h1 { color: #858585; font-size: .85em; }
+.ascii-ui .pre-screen.pre-screen--title {
+  width: min(92ch, 100%); margin: auto; padding: 1em 0;
+  min-height: calc(100dvh - 6em); gap: 0; justify-content: center;
+  background: #000; animation: none;
+}
+.ascii-ui .pre-screen--title .ascii-title { font: clamp(9px, 1.45vw, 34px)/1.15 EraHalf, Consolas, monospace; color: #dfc88e; margin: 0 0 2.5em; animation: none; }
+.ascii-ui .pre-screen--title .pre-screen__menu--title { width: min(26ch, 100%); padding: 0; border: 0; gap: .7em; }
+.ascii-ui .pre-screen--title .pre-screen__menu--title button { display: block; width: 100%; padding: .6em 1ch; color: #d5d5d5; font: inherit; text-align: left; }
+.ascii-ui .pre-screen--title .pre-screen__menu--title button:not(:disabled):is(:hover, :focus-visible) { color: #dfc88e; background: #0b0b0b; }
+.ascii-ui .pre-screen--title .pre-screen__load-panel { width: min(60ch, 100%); padding: 1em; margin-top: 1em; text-align: left; font-size: .9em; }
+.ascii-ui .pre-screen--title .pre-screen__load-panel button { max-width: 100%; text-align: left; white-space: normal; overflow-wrap: anywhere; font: inherit; padding: .6em; }
+.ascii-ui .pre-screen--title .pre-screen__dev { margin: 2em 0 0; padding: .4em 1ch; font-size: .7em; color: #6c6c6c; }
+
+.ascii-ui.container--opening .pre-screen:not(.pre-screen--title) {
+  width: min(92ch, 100%); max-width: 100%; margin: 0 auto;
+  min-height: calc(100dvh - 7em); padding: 1em 0 2em;
+  display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 1em;
+  font: inherit; background: #000; animation: none; text-align: left;
+}
+.ascii-ui .pre-screen:not(.pre-screen--title) :where(*) {
+  min-width: 0; font-family: var(--era-mono); font-size: inherit; letter-spacing: 0;
+  border-radius: 0; box-shadow: none; text-shadow: none; background-image: none;
+}
+.ascii-ui .pre-screen:not(.pre-screen--title) :is(.pre-screen__field, .abl-row, .talent-row, .talent-chip, .talent-toggle, .kojo-row, .kojo-variant-chip, .pre-screen__kojo-list, .pre-screen__kojo-detail, .pre-card, .residence-info, .kojo-update__roster, .kojo-update__dialogue, .kojo-update__history) { background: #000; border: 0; border-bottom: 1px dashed #292929; }
+.ascii-ui .pre-screen:not(.pre-screen--title) :is(.pre-screen__menu button, .abl-row__step, .talent-chip, .talent-toggle, .kojo-row button) { color: #c8c8c8; background: #000; border: 0; padding: .45em .8ch; font: inherit; }
+.ascii-ui .pre-screen:not(.pre-screen--title) button:not(:disabled):is(:hover, :focus-visible) { color: #fff; background: #111; }
+.ascii-ui .pre-screen:not(.pre-screen--title) button:disabled { color: #555; }
+.ascii-ui .pre-screen:not(.pre-screen--title) :is([aria-pressed="true"], .pre-card--active, .kojo-variant-chip--active) { color: #dfc88e; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__primary { color: #dfc88e !important; background: #000 !important; border: 1px dashed #85734d; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__primary:disabled { color: #555 !important; border-color: #333; }
+.ascii-ui .pre-screen:not(.pre-screen--title) :is(.intro-text, .pre-screen__lead) { width: 100%; max-width: none; margin: 0; font-size: .9em; line-height: 1.8; white-space: normal; overflow-wrap: anywhere; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .intro-text { padding: .6em 1.5ch; border-left: 1px dashed #555; gap: .4em; text-align: left; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .intro-text__line { opacity: 1; transform: none; margin: 0; font-size: inherit; animation: none; white-space: normal; overflow-wrap: anywhere; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .intro-text__line--emph { font-size: inherit; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__field { width: 100%; max-width: none; margin: 0; padding: .8em 0 1em; text-align: left; }
+.ascii-ui .pre-screen:not(.pre-screen--title) :is(.pre-screen__field-title, .residence-map-ui__title) { color: #90b7c0; font-size: 1em; font-weight: 400; margin: 0 0 .8em; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__field-title::before { content: "-- "; color: #555; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__input { width: min(32ch, 100%); padding: .5em 1ch; color: #dfc88e; background: #000; border: 1px dashed #666; font: inherit; text-align: left; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__menu { gap: .5em 1ch; justify-content: flex-start; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__menu--nav { width: 100%; display: flex; justify-content: flex-end; flex-wrap: wrap; border-top: 1px dashed #444; padding: 1em 0; margin-top: .5em; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__menu--nav button { min-height: 2.5em; padding: .5em 1.5ch; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__menu--stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: .4em; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__menu--stack > button { text-align: left; border-bottom: 1px dashed #292929; padding: .8em 1ch; white-space: normal; overflow-wrap: anywhere; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__abl-grid { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .2em 3ch; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .abl-row { padding: .35em 0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .abl-row__step { color: #90b7c0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__talent-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35em 2ch; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .talent-row { grid-template-columns: minmax(5em, .8fr) minmax(0, 1.5fr); padding: .4em 0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .talent-row__chips { display: flex; flex-wrap: wrap; }
+.ascii-ui .pre-screen--setup [aria-pressed]::before { content: "[ ] "; color: #666; }
+.ascii-ui .pre-screen--setup [aria-pressed="true"]::before { content: "[x] "; color: #dfc88e; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__kojo-layout { width: 100%; max-height: none; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 2ch; align-items: start; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__kojo-list { min-height: 0; max-height: 55dvh; padding: 0 1ch 0 0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-row { opacity: 1; transform: none; animation: none; padding: .7em 0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-row__variants { flex-wrap: wrap; gap: .35em; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__kojo-detail { width: 100%; padding: 1em 1.5ch; border: 1px dashed #444; overflow-wrap: anywhere; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-variant { background: #000; border: 0; border-bottom: 1px dashed #333; box-shadow: none; color: #c8c8c8; justify-content: flex-start; gap: 1ch; text-align: left; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-variant::before { content: "[ ] "; color: #666; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-variant--selected { color: #dfc88e; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-variant--selected::before { content: "[x] "; color: #dfc88e; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-detail__counts li { border: 0; border-bottom: 1px dashed #333; background: #000; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-row__head { justify-content: flex-start; gap: 1ch; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-row__name { margin-right: auto; }
+.ascii-ui .pre-screen:not(.pre-screen--title) :is(.kojo-detail__description, .pre-screen__hint, .pre-card__meta, .pre-card__blurb) { font-size: .85em; line-height: 1.6; color: #858585; }
+.ascii-ui .pre-screen:not(.pre-screen--title) :is(.residence-map-ui, .residence-info) { width: 100%; padding-inline: 0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .residence-mappreview { max-width: 100%; width: 100%; overflow: auto; border: 1px dashed #333; padding: .8em; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .residence-mappreview__grid { width: max-content; max-width: none; margin: 0 auto; font-size: .85em; line-height: 1; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .residence-mappreview__cell { flex-shrink: 0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .residence-map-ui__rule { background: none; border-top: 1px dashed #444; height: 0; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__cards--residence { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5em 2ch; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-card { padding: .8em 1ch; text-align: left; overflow-wrap: anywhere; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-card__label::before { content: "[ ] "; color: #666; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .pre-card--active .pre-card__label::before { content: "[x] "; color: #dfc88e; }
+.ascii-ui .pre-screen:not(.pre-screen--title) .kojo-update__layout { width: 100%; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.ascii-ui .pre-screen:not(.pre-screen--title) :is(.kojo-update__roster, .kojo-update__dialogue) { border: 1px dashed #444; padding: 1em; }
+.ascii-ui .pre-screen:not(.pre-screen--title) h2 { color: #90b7c0; font-weight: 400; margin: 0; }
+@media (max-width: 700px) {
+  .ascii-ui.container--opening .pre-screen:not(.pre-screen--title) { padding-top: .4em; }
+  .ascii-ui .pre-screen:not(.pre-screen--title) :is(.pre-screen__kojo-layout, .pre-screen__talent-list, .pre-screen__cards--residence, .kojo-update__layout) { grid-template-columns: minmax(0, 1fr); }
+  .ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__kojo-list { max-height: 45dvh; }
+  .ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__menu--nav { justify-content: stretch; }
+  .ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__menu--nav button { flex: 1 1 auto; }
+  .ascii-ui .pre-screen:not(.pre-screen--title) .pre-screen__kojo-detail { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { .ascii-ui .pre-screen *, .ascii-ui .pre-screen *::before { animation: none !important; transition: none !important; } }

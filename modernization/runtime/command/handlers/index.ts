@@ -80,6 +80,7 @@ import { clinic616HandlerEntry } from "./clinic-616.js";
 import { serveMealHandlerEntry } from "./serve-meal.js";
 import { serveDrinkHandlerEntry } from "./serve-drink.js";
 import { prayerHandlerEntry } from "./prayer.js";
+import { mushiBattle483HandlerEntry } from "./mushi-battle-483.js";
 import { omikujiHandlerEntry } from "./omikuji.js";
 import { moriyaOmikujiHandlerEntry } from "./moriya-omikuji.js";
 import { whiteDayHandlerEntry } from "./white-day.js";
@@ -132,10 +133,13 @@ import {
   comf367HandlerEntry,
   comf630HandlerEntry,
 } from "./commission.js";
+import { selfPleasure433HandlerEntry } from "./self-pleasure-433.js";
+import { comf443HandlerEntry } from "./unique-443.js";
 import {
   condom50HandlerEntry,
   pill51HandlerEntry,
   swapRoles24HandlerEntry,
+  teasing826HandlerEntry,
 } from "./h-toggles.js";
 import {
   comf351HandlerEntry,
@@ -364,9 +368,13 @@ export function registerDailyHandlers(catalog: CommandCatalog): void {
   // Phase 7 — MONEY namespace (C-tier bespoke; spends the global yen pool
   // via runtime/state/money.ts). 421 願掛け (option 2 心の平安 only — the
   // other 14 options are IKENIE/ subsystem and deferred) + 434 おみくじ
-  // (8-bucket MVP fortune; the full FORTUNE 12-CASE subsystem is deferred).
+  // (base upstream 129-slip FORTUNE flow; optional richer DLC remains separate).
   // These unblock the家族 4 shrine tail + 家族 5 shop money-gated commands.
   catalog.register(prayerHandlerEntry);
+  // 斗虫: the battle engine is ported (`state/bug-battle.ts`), so 483 leaves the
+  // `unsupported` isolation the generated gate audit had assigned it. 497 ムシ合わせ
+  // stays unregistered — it is a separate command with its own flow.
+  catalog.register(mushiBattle483HandlerEntry);
   catalog.register(omikujiHandlerEntry);
   catalog.register(moriyaOmikujiHandlerEntry);
   catalog.register(whiteDayHandlerEntry);
@@ -396,6 +404,12 @@ export function registerDailyHandlers(catalog: CommandCatalog): void {
   catalog.register(comf366HandlerEntry);
   catalog.register(comf367HandlerEntry);
   catalog.register(comf630HandlerEntry);
+  // Upstream Train.csv comments out 433, but the implementation is the
+  // canonical owner of the CFLAG:346 session used by the migrated 700–751
+  // family. Keep this explicit compatibility deviation visible in the
+  // handler metadata and tests.
+  catalog.register(selfPleasure433HandlerEntry);
+  catalog.register(comf443HandlerEntry);
   // Phase 7 (Wave 2a) — upstream-disabled COMF stubs. ERB audit found
   // their @COM_ABLE<NNN> leads with an unconditional RETURN 0 (;一時停止),
   // so they're not executable upstream — faithful port = execCheck blocked.
@@ -477,6 +491,7 @@ export function registerDailyHandlers(catalog: CommandCatalog): void {
   catalog.register(condom50HandlerEntry);
   catalog.register(pill51HandlerEntry);
   catalog.register(swapRoles24HandlerEntry);
+  catalog.register(teasing826HandlerEntry);
   // Phase 7 (Wave 4e) — family 7 H-mode / mode-machine cluster (11 cmds).
   // うふふ mode-control + social/ability siblings of 350 押し倒す: enter /
   // re-route / exit the H-mode session + the partner-led (诶嘿嘿==2) counter
@@ -516,10 +531,11 @@ export function registerDailyHandlers(catalog: CommandCatalog): void {
   catalog.register(comf233HandlerEntry);
   // Phase 7 (Wave 4h) — Wave 4 H-mode remainder. COMF144 放尿 is a full
   // faithful port (gates ride on おもらし有効/利尿剤/漏尿癖/従順, all modeled).
-  // COMF71 二穴挿し / COMF122 助手を犯させる / COMF185 助手を犯す /
-  // COMF511 二本フェラ / COMF26 抜く are faithful BLOCKED: their @COM_ABLE
-  // gates ride on the unmodeled TEQUIP insertion-pose / ASSI subsystems
-  // (systematically deferred to the COMABLE/equipment layer). No empty shells.
+  // COMF71 二穴挿し now owns the bounded single-target 双槍 route: it
+  // requires one existing insertion, adds the second V/A link, and settles
+  // both channels through the shared SOURCE path. Ordinary multi-participant
+  // COM71 plus COMF122/185/511 remain faithfully gated because ASSI identity
+  // and the remaining COMABLE/equipment graph are not modeled. No empty shells.
   catalog.register(comf144HandlerEntry);
   catalog.register(comf71HandlerEntry);
   catalog.register(comf122HandlerEntry);
@@ -537,9 +553,8 @@ export function registerDailyHandlers(catalog: CommandCatalog): void {
   catalog.register(comf401HandlerEntry);
   catalog.register(comf430HandlerEntry);
   // Phase 7 (Wave 1) — COMF364 豆まき. Multi-target bespoke (loops all
-  // present NPCs, can't be a ComfDef). execCheck is double-deferred
-  // (節分 calendar + 鬼族 race) so it blocks live; settlement pinned by
-  // direct-call tests. The presentNpcs helper is the reusable deliverable.
+  // present NPCs, can't be a ComfDef). Its winter-date and 鬼族 gates are
+  // calendar-backed; the presentNpcs helper keeps the settlement deterministic.
   catalog.register(comf364HandlerEntry);
   // Phase A (实玩反馈 #2) — COMF416 演奏する. Multi-target ORCHESTRATOR
   // (instrument picker + band/合奏 loop) the ComfDef factory can't express;
